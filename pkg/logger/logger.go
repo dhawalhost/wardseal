@@ -1,14 +1,17 @@
-
 package logger
 
 import (
-	"log/slog"
-	"os"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-// New returns a new logger.
-func New(level slog.Level) *slog.Logger {
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: level,
-	}))
+// New returns a new Zap logger.
+func New(level zapcore.Level) *zap.Logger {
+	config := zap.NewProductionConfig()
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncoderConfig.TimeKey = "timestamp"
+	config.Level.SetLevel(level)
+
+	logger, _ := config.Build()
+	return logger
 }

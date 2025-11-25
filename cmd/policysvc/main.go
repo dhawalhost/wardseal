@@ -1,24 +1,28 @@
 package main
 
 import (
-	"fmt"
-	"log/slog"
-	"net/http"
 	"os"
 
+	"github.com/dhawalhost/velverify/internal/policy"
 	"github.com/dhawalhost/velverify/pkg/logger"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
-	log := logger.New(slog.LevelDebug)
+	log := logger.New(zapcore.DebugLevel)
+	defer log.Sync()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, Policy Service!")
-	})
+	svc := policy.NewService()
 
-	log.Info("HTTP server starting", "addr", ":8083")
-	if err := http.ListenAndServe(":8083", nil); err != nil {
-		log.Error("HTTP server failed", "err", err)
+	router := gin.Default()
+	policyHandlers := policy.NewHTTPHandler(svc, log)
+	policyHandlers.RegisterRoutes(router)
+
+	log.Info("Policy service starting", zap.String("addr", ":8083"))
+	if err := router.Run(":8083"); err != nil {
+		log.Error("Policy service failed", zap.Error(err))
 		os.Exit(1)
 	}
 }

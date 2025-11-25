@@ -1,50 +1,46 @@
 package main
 
 import (
-	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/dhawalhost/velverify/internal/auth"
 	"github.com/dhawalhost/velverify/pkg/logger"
-	"github.com/dhawalhost/velverify/pkg/middleware"
 	"github.com/dhawalhost/velverify/pkg/observability"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
-	log := logger.New(slog.LevelDebug)
+	log := logger.New(zapcore.DebugLevel)
+	defer log.Sync()
 
 	directoryServiceURL := os.Getenv("DIRECTORY_SERVICE_URL")
 	if directoryServiceURL == "" {
-		directoryServiceURL = "http://localhost:8081"
+		directoryServiceURL = "http://dirsvc:8081" // Use service name in docker-compose
 	}
 
-	var svc auth.Service
-	var err error
-	{
-		svc, err = auth.NewService(directoryServiceURL)
-		if err != nil {
-			log.Error("Failed to create service", "err", err)
-			os.Exit(1)
-		}
+	svc, err := auth.NewService(directoryServiceURL)
+	if err != nil {
+		log.Error("Failed to create auth service", zap.Error(err))
+		os.Exit(1)
 	}
 
+	router := gin.Default()
+
+	// Initialize and apply Prometheus middleware
 	metrics := observability.NewMetrics()
+	router.Use(observability.PrometheusMiddleware(metrics))
 
-	var h http.Handler
-	{
-		endpoints := auth.MakeEndpoints(svc)
-		h = auth.NewHTTPHandler(endpoints, svc, log)
-	}
+	authHandlers := auth.NewHTTPHandler(svc, log)
+	authHandlers.RegisterRoutes(router)
 
-	r := mux.NewRouter()
-	r.Handle("/metrics", observability.Handler())
-	r.PathPrefix("/").Handler(h)
+	// Register Prometheus metrics handler
+	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
 
-	log.Info("HTTP server starting", "addr", ":8080")
-	if err := http.ListenAndServe(":8080", middleware.Metrics(metrics)(r)); err != nil {
-		log.Error("HTTP server failed", "err", err)
+	log.Info("Auth service starting", zap.String("addr", ":8080"))
+	if err := router.Run(":8080"); err != nil {
+		log.Error("Auth service failed", zap.Error(err))
 		os.Exit(1)
 	}
 }

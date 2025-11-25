@@ -1,11 +1,11 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq" // postgres driver
 )
 
 // Config holds the configuration for the database connection.
@@ -19,11 +19,11 @@ type Config struct {
 }
 
 // NewConnection creates a new database connection.
-func NewConnection(config Config) (*sql.DB, error) {
+func NewConnection(config Config) (*sqlx.DB, error) { // Use sqlx.DB
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		config.Host, config.Port, config.User, config.Password, config.DBName, config.SSLMode)
 
-	db, err := sql.Open("postgres", connStr)
+	db, err := sqlx.Connect("postgres", connStr) // Use sqlx.Connect
 	if err != nil {
 		return nil, err
 	}

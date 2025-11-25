@@ -1,9 +1,12 @@
 package observability
 
 import (
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
 )
 
 // NewMetrics returns a new set of Prometheus metrics.
@@ -14,7 +17,7 @@ func NewMetrics() *Metrics {
 				Name: "http_requests_total",
 				Help: "Total number of HTTP requests.",
 			},
-			[]string{"method", "path"},
+			[]string{"code", "method", "path"},
 		),
 		RequestDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
@@ -22,7 +25,7 @@ func NewMetrics() *Metrics {
 				Help:    "Histogram of latencies for HTTP requests.",
 				Buckets: prometheus.DefBuckets,
 			},
-			[]string{"method", "path"},
+			[]string{"code", "method", "path"},
 		),
 	}
 	prometheus.MustRegister(m.RequestsTotal)
@@ -36,7 +39,22 @@ type Metrics struct {
 	RequestDuration *prometheus.HistogramVec
 }
 
-// Handler returns an http.Handler for the Prometheus metrics.
-func Handler() http.Handler {
+// PrometheusMiddleware returns a Gin middleware that records Prometheus metrics for HTTP requests.
+func PrometheusMiddleware(metrics *Metrics) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next() // Process request
+
+		statusCode := strconv.Itoa(c.Writer.Status())
+		path := c.Request.URL.Path
+		method := c.Request.Method
+
+		metrics.RequestsTotal.WithLabelValues(statusCode, method, path).Inc()
+		metrics.RequestDuration.WithLabelValues(statusCode, method, path).Observe(time.Since(start).Seconds())
+	}
+}
+
+// PrometheusHandler returns an http.Handler for the Prometheus metrics.
+func PrometheusHandler() http.Handler {
 	return promhttp.Handler()
 }

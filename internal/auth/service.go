@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dhawalhost/velverify/internal/auth/endpoint" // Import endpoint package
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/square/go-jose.v2"
@@ -17,8 +18,8 @@ import (
 // Service defines the interface for the auth service.
 type Service interface {
 	Login(ctx context.Context, username, password string) (string, error)
-	Authorize(ctx context.Context, req AuthorizeRequest) (AuthorizeResponse, error)
-	Token(ctx context.Context, req TokenRequest) (TokenResponse, error)
+	Authorize(ctx context.Context, req endpoint.AuthorizeRequest) (endpoint.AuthorizeResponse, error)
+	Token(ctx context.Context, req endpoint.TokenRequest) (endpoint.TokenResponse, error)
 	JWKS() jose.JSONWebKeySet
 }
 
@@ -109,7 +110,7 @@ func (s *authService) JWKS() jose.JSONWebKeySet {
 	}
 }
 
-func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (AuthorizeResponse, error) {
+func (s *authService) Authorize(ctx context.Context, req endpoint.AuthorizeRequest) (endpoint.AuthorizeResponse, error) {
 	// In a real implementation, we would:
 	// 1. Validate the client_id.
 	// 2. Validate the redirect_uri.
@@ -118,10 +119,10 @@ func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (Auth
 	// For now, we'll just redirect to a dummy login page with the request parameters.
 	redirectURI := fmt.Sprintf("/login?response_type=%s&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
 		req.ResponseType, req.ClientID, req.RedirectURI, req.Scope, req.State)
-	return AuthorizeResponse{RedirectURI: redirectURI}, nil
+	return endpoint.AuthorizeResponse{RedirectURI: redirectURI}, nil
 }
 
-func (s *authService) Token(ctx context.Context, req TokenRequest) (TokenResponse, error) {
+func (s *authService) Token(ctx context.Context, req endpoint.TokenRequest) (endpoint.TokenResponse, error) {
 	// In a real implementation, we would:
 	// 1. Validate the client_id.
 	// 2. Validate the authorization code.
@@ -143,10 +144,10 @@ func (s *authService) Token(ctx context.Context, req TokenRequest) (TokenRespons
 
 	signedToken, err := token.SignedString(s.privateKey)
 	if err != nil {
-		return TokenResponse{}, err
+		return endpoint.TokenResponse{}, err
 	}
 
-	return TokenResponse{
+	return endpoint.TokenResponse{
 		AccessToken: signedToken,
 		TokenType:   "Bearer",
 		ExpiresIn:   3600,

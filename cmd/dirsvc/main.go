@@ -1,20 +1,24 @@
 package main
 
 import (
-	"log/slog"
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/dhawalhost/velverify/internal/directory"
 	"github.com/dhawalhost/velverify/pkg/database"
 	"github.com/dhawalhost/velverify/pkg/logger"
-	"github.com/dhawalhost/velverify/pkg/middleware"
 	"github.com/dhawalhost/velverify/pkg/observability"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq" // postgres driver
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
-	log := logger.New(slog.LevelDebug)
+	log := logger.New(zapcore.DebugLevel)
+	defer log.Sync()
 
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
@@ -22,41 +26,39 @@ func main() {
 	}
 
 	// Database connection
-	dbConfig := database.Config{
-		Host:     dbHost,
-		Port:     5432,
-		User:     "user",
-		Password: "password",
-		DBName:   "identity_platform",
-		SSLMode:  "disable",
-	}
-	db, err := database.NewConnection(dbConfig)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		dbHost, 5432, "user", "password", "identity_platform", "disable")
+
+	db, err := database.NewConnection(psqlInfo)
 	if err != nil {
-		log.Error("Failed to connect to database", "err", err)
+		log.Error("Failed to connect to database", zap.Error(err))
 		os.Exit(1)
 	}
 
-	var svc directory.Service
-	{
-		svc = directory.NewService(db)
-		// Add logging and metrics middleware here
-	}
+	svc := directory.NewService(db)
 
+	router := gin.Default()
+
+	// Initialize and apply Prometheus middleware
 	metrics := observability.NewMetrics()
+	router.Use(observability.PrometheusMiddleware(metrics))
 
-	var h http.Handler
-	{
-		endpoints := directory.MakeEndpoints(svc)
-		h = directory.NewHTTPHandler(endpoints, log)
-	}
+	// Register Prometheus metrics handler
+	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
 
-	r := mux.NewRouter()
-	r.Handle("/metrics", observability.Handler())
-	r.PathPrefix("/").Handler(h)
+	// Temporary placeholder for registering routes, will be replaced with proper API layer
+	router.GET("/health", func(c *gin.Context) {
+		ok, err := svc.HealthCheck(c.Request.Context())
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"healthy": ok})
+	})
 
-	log.Info("HTTP server starting", "addr", ":8081")
-	if err := http.ListenAndServe(":8081", middleware.Metrics(metrics)(r)); err != nil {
-		log.Error("HTTP server failed", "err", err)
+	log.Info("HTTP server starting", zap.String("addr", ":8081"))
+	if err := router.Run(":8081"); err != nil {
+		log.Error("HTTP server failed", zap.Error(err))
 		os.Exit(1)
 	}
 }
