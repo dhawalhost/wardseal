@@ -3,10 +3,9 @@ package auth
 import (
 	"net/http"
 
-	"github.com/dhawalhost/velverify/internal/auth/endpoint"
 	"github.com/dhawalhost/velverify/pkg/logger"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10" // Import validator
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
@@ -14,12 +13,12 @@ import (
 type HTTPHandler struct {
 	svc    Service
 	logger *zap.Logger
-	validate *validator.Validate // Add validator instance
+	validate *validator.Validate
 }
 
 // NewHTTPHandler creates a new HTTPHandler.
 func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
-	return &HTTPHandler{svc: svc, logger: logger, validate: validator.New()} // Initialize validator
+	return &HTTPHandler{svc: svc, logger: logger, validate: validator.New()}
 }
 
 // RegisterRoutes registers the authentication routes.
@@ -31,14 +30,14 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 }
 
 func (h *HTTPHandler) login(c *gin.Context) {
-	var req endpoint.LoginRequest
+	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind login request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil { // Validate the request
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Login request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -55,18 +54,18 @@ func (h *HTTPHandler) login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, endpoint.LoginResponse{Token: token})
+	c.JSON(http.StatusOK, LoginResponse{Token: token})
 }
 
 func (h *HTTPHandler) authorize(c *gin.Context) {
-	var req endpoint.AuthorizeRequest
+	var req AuthorizeRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		h.logger.Error("Failed to bind authorize request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil { // Validate the request
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Authorize request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -83,7 +82,7 @@ func (h *HTTPHandler) authorize(c *gin.Context) {
 }
 
 func (h *HTTPHandler) token(c *gin.Context) {
-	var req endpoint.TokenRequest
+	var req TokenRequest
 	// Gin's ShouldBind handles different content types
 	if err := c.ShouldBind(&req); err != nil {
 		h.logger.Error("Failed to bind token request", zap.Error(err))
@@ -91,7 +90,7 @@ func (h *HTTPHandler) token(c *gin.Context) {
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil { // Validate the request
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Token request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

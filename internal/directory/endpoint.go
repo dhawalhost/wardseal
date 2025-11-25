@@ -87,7 +87,7 @@ type GetGroupByIDRequest struct {
 	ID string `json:"id" validate:"required,uuid"`
 }
 
-// GetGroupByIDResponse holds the response values for theGetGroupByID endpoint.
+// GetGroupByIDResponse holds the response values for the GetGroupByID endpoint.
 type GetGroupByIDResponse struct {
 	Group Group `json:"group"`
 }

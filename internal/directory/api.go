@@ -3,10 +3,9 @@ package directory
 import (
 	"net/http"
 
-	"github.com/dhawalhost/velverify/internal/directory/endpoint"
 	"github.com/dhawalhost/velverify/pkg/logger"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10" // Import validator
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
@@ -14,12 +13,12 @@ import (
 type HTTPHandler struct {
 	svc    Service
 	logger *zap.Logger
-	validate *validator.Validate // Add validator instance
+	validate *validator.Validate
 }
 
 // NewHTTPHandler creates a new HTTPHandler.
 func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
-	return &HTTPHandler{svc: svc, logger: logger, validate: validator.New()} // Initialize validator
+	return &HTTPHandler{svc: svc, logger: logger, validate: validator.New()}
 }
 
 // RegisterRoutes registers the directory routes.
@@ -61,20 +60,20 @@ func (h *HTTPHandler) healthCheck(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, endpoint.HealthCheckResponse{Healthy: ok})
+	c.JSON(http.StatusOK, HealthCheckResponse{Healthy: ok})
 }
 
 // User handlers
 func (h *HTTPHandler) createUser(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	var req endpoint.CreateUserRequest
+	var req CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind create user request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil { // Validate the request
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Create user request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -86,13 +85,13 @@ func (h *HTTPHandler) createUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, endpoint.CreateUserResponse{UserID: userID})
+	c.JSON(http.StatusCreated, CreateUserResponse{UserID: userID})
 }
 
 func (h *HTTPHandler) getUserByID(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	req := endpoint.GetUserByIDRequest{ID: c.Param("id")} // Extract ID from param
-	if err := h.validate.Struct(req); err != nil {        // Validate the request
+	req := GetUserByIDRequest{ID: c.Param("id")} // Extract ID from param
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Get user by ID request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -104,13 +103,13 @@ func (h *HTTPHandler) getUserByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, endpoint.GetUserByIDResponse{User: user})
+	c.JSON(http.StatusOK, GetUserByIDResponse{User: user})
 }
 
 func (h *HTTPHandler) getUserByEmail(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	req := endpoint.GetUserByEmailRequest{Email: c.Query("email")} // Extract email from query
-	if err := h.validate.Struct(req); err != nil {                  // Validate the request
+	req := GetUserByEmailRequest{Email: c.Query("email")} // Extract email from query
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Get user by email request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -122,21 +121,21 @@ func (h *HTTPHandler) getUserByEmail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, endpoint.GetUserByEmailResponse{User: user})
+	c.JSON(http.StatusOK, GetUserByEmailResponse{User: user})
 }
 
 func (h *HTTPHandler) updateUser(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
 	id := c.Param("id")
-	var user endpoint.User
+	var user User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		h.logger.Error("Failed to bind update user request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	req := endpoint.UpdateUserRequest{ID: id, User: user} // Create UpdateUserRequest
-	if err := h.validate.Struct(req); err != nil {        // Validate the request
+	req := UpdateUserRequest{ID: id, User: user} // Create UpdateUserRequest
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Update user request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -153,12 +152,13 @@ func (h *HTTPHandler) updateUser(c *gin.Context) {
 
 func (h *HTTPHandler) deleteUser(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	req := endpoint.DeleteUserRequest{ID: c.Param("id")} // Extract ID from param
-	if err := h.validate.Struct(req); err != nil {        // Validate the request
+	req := DeleteUserRequest{ID: c.Param("id")} // Extract ID from param
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Delete user request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	err := h.svc.DeleteUser(c.Request.Context(), tenantID, req.ID)
 	if err != nil {
 		h.logger.Error("Delete user failed", zap.Error(err))
@@ -171,14 +171,14 @@ func (h *HTTPHandler) deleteUser(c *gin.Context) {
 // Group handlers
 func (h *HTTPHandler) createGroup(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	var req endpoint.CreateGroupRequest
-	if err := c.ShouldBindJSON(&req.Group); err != nil {
+	var req CreateGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind create group request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil { // Validate the request
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Create group request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -190,13 +190,13 @@ func (h *HTTPHandler) createGroup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, endpoint.CreateGroupResponse{GroupID: groupID})
+	c.JSON(http.StatusCreated, CreateGroupResponse{GroupID: groupID})
 }
 
 func (h *HTTPHandler) getGroupByID(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	req := endpoint.GetGroupByIDRequest{ID: c.Param("id")} // Extract ID from param
-	if err := h.validate.Struct(req); err != nil {          // Validate the request
+	req := GetGroupByIDRequest{ID: c.Param("id")} // Extract ID from param
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Get group by ID request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -208,21 +208,21 @@ func (h *HTTPHandler) getGroupByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, endpoint.GetGroupByIDResponse{Group: group})
+	c.JSON(http.StatusOK, GetGroupByIDResponse{Group: group})
 }
 
 func (h *HTTPHandler) updateGroup(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
 	id := c.Param("id")
-	var group endpoint.Group
+	var group Group
 	if err := c.ShouldBindJSON(&group); err != nil {
 		h.logger.Error("Failed to bind update group request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	req := endpoint.UpdateGroupRequest{ID: id, Group: group} // Create UpdateGroupRequest
-	if err := h.validate.Struct(req); err != nil {             // Validate the request
+	req := UpdateGroupRequest{ID: id, Group: group} // Create UpdateGroupRequest
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Update group request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -239,8 +239,8 @@ func (h *HTTPHandler) updateGroup(c *gin.Context) {
 
 func (h *HTTPHandler) deleteGroup(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
-	req := endpoint.DeleteGroupRequest{ID: c.Param("id")} // Extract ID from param
-	if err := h.validate.Struct(req); err != nil {         // Validate the request
+	req := DeleteGroupRequest{ID: c.Param("id")} // Extract ID from param
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Delete group request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -259,14 +259,14 @@ func (h *HTTPHandler) deleteGroup(c *gin.Context) {
 func (h *HTTPHandler) addUserToGroup(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
 	groupID := c.Param("id")
-	var req endpoint.AddUserToGroupRequest
+	var req AddUserToGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind add user to group request", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.validate.Struct(req); err != nil { // Validate the request
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Add user to group request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -284,8 +284,8 @@ func (h *HTTPHandler) addUserToGroup(c *gin.Context) {
 func (h *HTTPHandler) removeUserFromGroup(c *gin.Context) {
 	tenantID := "dummy-tenant-id" // Placeholder, should come from middleware/context
 	groupID := c.Param("id")
-	req := endpoint.RemoveUserFromGroupRequest{GroupID: groupID, UserID: c.Param("userID")} // Create RemoveUserFromGroupRequest
-	if err := h.validate.Struct(req); err != nil {                                            // Validate the request
+	req := RemoveUserFromGroupRequest{GroupID: groupID, UserID: c.Param("userID")} // Create RemoveUserFromGroupRequest
+	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Remove user from group request validation failed", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
