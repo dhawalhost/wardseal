@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Identity & Governance Platform - Management API
+  version: v1
+  description: |-
+    This is the management API for the Identity & Governance Platform.
+    It is used by the admin UI and other internal services to manage
+    tenants, users, groups, and other resources.
+
+paths:
+  /users:
+    post:
+      summary: Create a new user
+      operationId: createUser
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request body
+        '500':
+          description: Internal server error
+
+  /users/{email}:
+    get:
+      summary: Get a user by email
+      operationId: getUserByEmail
+      tags:
+        - Users
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    format: email
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /login:
+    post:
+      summary: Authenticate a user and get a token
+      operationId: login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Invalid credentials
+        '500':
+          description: Internal server error
+
+  /.well-known/jwks.json:
+    get:
+      summary: Get the JSON Web Key Set (JWKS)
+      operationId: getJWKS
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: JWKS retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object # A more specific schema can be added here
+        '500':
+          description: Internal server error
