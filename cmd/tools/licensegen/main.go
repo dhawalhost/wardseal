@@ -76,7 +76,7 @@ func main() {
 	}
 
 	fmt.Printf("\nLicense Key for %s:\n\n%s\n\n", *customer, tokenString)
-	fmt.Printf("Expires: %s\n", claims.ExpiresAt.Time.Format(time.RFC822))
+	fmt.Printf("Expires: %s\n", claims.ExpiresAt.Format(time.RFC822))
 }
 
 func generateKeys() {

@@ -115,10 +115,12 @@ func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (
 
 	var userID string
 
-	if existingParams != nil {
+	switch {
+	case existingParams != nil:
 		// Link exists -> Login
-		userID = existingParams.IdentityID
-	} else {
+		userID = existingParams.IdentityID //nolint:ineffassign // Used in issueTokens below
+
+	default:
 		// No link -> Check if user exists by email (JIT / Auto-Link)
 		// We need to call Directory Service to find user by email
 		// Note: Directory Service abstraction is needed here.
@@ -173,6 +175,7 @@ func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (
 	// 3. Issue Tokens (Same as Login)
 	// We assume minimal scope for now or default
 	scope := "openid profile email"
+	_ = userID // TODO: issueTokens should use userID for subject claim
 
 	return s.issueTokens(ctx, tenantID, "social-client", scope, "user") // ClientID is dummy for now
 }

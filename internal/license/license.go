@@ -66,7 +66,7 @@ func (m *Manager) Verify(tokenString string) (*License, error) {
 
 	if claims, ok := token.Claims.(*LicenseClaims); ok && token.Valid {
 		// Check expiry
-		if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
+		if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
 			return nil, errors.New("license expired")
 		}
 

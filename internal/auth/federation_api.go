@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,8 @@ func (h *HTTPHandler) socialLogin(c *gin.Context) {
 	resp, err := h.svc.SocialLogin(c.Request.Context(), req)
 	if err != nil {
 		h.logger.Error("Social login failed", zap.Error(err))
-		if svcErr, ok := err.(*Error); ok {
+		svcErr := &Error{}
+		if errors.As(err, &svcErr) {
 			h.respondOAuthError(c, svcErr)
 		} else {
 			// Handle specific errors like "linking required" if we strictly enforced it

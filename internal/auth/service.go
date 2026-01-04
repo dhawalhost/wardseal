@@ -1126,8 +1126,8 @@ func (s *authService) FinishWebAuthnRegistration(ctx context.Context, userID str
 
 	// Store credential
 	// Using TenantID from context? registration usually requires auth, so yes.
-	tenantID, _ := middleware.TenantIDFromContext(ctx)
-	tenantID = SystemTenantID // Fallback to System Tenant
+	_, _ = middleware.TenantIDFromContext(ctx)
+	tenantID := SystemTenantID // Fallback to System Tenant
 
 	return s.webAuthnStore.SaveCredential(ctx, tenantID, userID, credential)
 }
@@ -1177,8 +1177,8 @@ func (s *authService) FinishWebAuthnLogin(ctx context.Context, userID string, se
 	// Retrieve TenantID from... context?
 	// If this is a login flow, we might not have tenant yet if purely public endpoint?
 	// But usually we do.
-	tenantID, _ := middleware.TenantIDFromContext(ctx)
-	tenantID = SystemTenantID
+	_, _ = middleware.TenantIDFromContext(ctx)
+	tenantID := SystemTenantID
 
 	// Scopes? Default.
 	return s.generateAccessToken(tenantID, userID, "openid", "user")
@@ -1256,7 +1256,7 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName s
 	// Need to re-read body if I didn't close it? `defer` closes at end of func.
 	// Re-reading is fine if I decode it now.
 	if err := json.NewDecoder(resp.Body).Decode(&createUserResp); err != nil {
-		return "", "", fmt.Errorf("failed to decode create user response: %v", err)
+		return "", "", fmt.Errorf("failed to decode create user response: %w", err)
 	}
 
 	claims := jwt.MapClaims{

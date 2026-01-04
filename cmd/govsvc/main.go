@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -99,7 +98,7 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	// Add metrics endpoint
-	router.GET("/metrics", gin.WrapH(http.Handler(observability.PrometheusHandler())))
+	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
 
 	govHandlers := governance.NewHTTPHandler(svc, log)
 	govHandlers.RegisterRoutes(router)

@@ -51,10 +51,10 @@ func (s *store) Get(ctx context.Context, tenantID, id string) (Config, error) {
 		return Config{}, err
 	}
 
-	c.Config.Credentials = make(map[string]string)
-	c.Config.Settings = make(map[string]string)
-	json.Unmarshal(c.CredentialsRaw, &c.Config.Credentials)
-	json.Unmarshal(c.SettingsRaw, &c.Config.Settings)
+	c.Credentials = make(map[string]string)
+	c.Settings = make(map[string]string)
+	json.Unmarshal(c.CredentialsRaw, &c.Credentials)
+	json.Unmarshal(c.SettingsRaw, &c.Settings)
 
 	return c.Config, nil
 }
@@ -73,10 +73,10 @@ func (s *store) List(ctx context.Context, tenantID string) ([]Config, error) {
 
 	configs := make([]Config, len(rows))
 	for i, r := range rows {
-		r.Config.Credentials = make(map[string]string)
-		r.Config.Settings = make(map[string]string)
-		json.Unmarshal(r.CredentialsRaw, &r.Config.Credentials)
-		json.Unmarshal(r.SettingsRaw, &r.Config.Settings)
+		r.Credentials = make(map[string]string)
+		r.Settings = make(map[string]string)
+		json.Unmarshal(r.CredentialsRaw, &r.Credentials)
+		json.Unmarshal(r.SettingsRaw, &r.Settings)
 		configs[i] = r.Config
 	}
 	return configs, nil

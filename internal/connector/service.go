@@ -45,8 +45,8 @@ func (s *service) CreateConnector(ctx context.Context, tenantID string, config C
 	// Initialize and register with registry if enabled
 	if config.Enabled {
 		if _, err := s.registry.Create(config.Type, config); err != nil {
-			// Log error but don't fail creation? Or maybe fail?
-			// For now, let's treat it as success but maybe mark as unhealthy
+			// Log error but don't fail creation - connector may be created but marked unhealthy
+			_ = err // Intentionally ignored
 		}
 	}
 
