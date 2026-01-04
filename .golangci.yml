@@ -1,5 +1,6 @@
-# golangci-lint configuration
+# golangci-lint v2 configuration
 # See: https://golangci-lint.run/usage/configuration/
+version: "2"
 
 run:
   timeout: 5m
@@ -8,9 +9,8 @@ run:
 
 linters:
   enable:
-    # Default linters
+    # Default linters (gosimple merged into staticcheck in v2)
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
@@ -18,13 +18,10 @@ linters:
     
     # Additional recommended linters
     - bodyclose       # Check HTTP response body is closed
-    - contextcheck    # Check context.Context usage
     - durationcheck   # Check for two durations multiplied together
     - errorlint       # Proper error wrapping
     - exhaustive      # Check switch statements are exhaustive
-    - exportloopref   # Check for loop variable captures in closures
-    - gofmt           # Check code formatting
-    - goimports       # Check import order
+    - copyloopvar     # Check for loop variable captures
     - gocritic        # Opinionated linter
     - gosec           # Security checker
     - misspell        # Spell checker
@@ -35,6 +32,11 @@ linters:
     - unconvert       # Remove unnecessary type conversions
     - unparam         # Check for unused function parameters
     - whitespace      # Check for unnecessary whitespace
+
+formatters:
+  enable:
+    - gofmt           # Code formatting
+    - goimports       # Import ordering
 
 linters-settings:
   errcheck:
@@ -89,7 +91,8 @@ linters-settings:
       - name: unreachable-code
 
   goimports:
-    local-prefixes: github.com/dhawalhost/wardseal
+    local-prefixes:
+      - github.com/dhawalhost/wardseal
 
 issues:
   exclude-rules:
@@ -116,6 +119,6 @@ issues:
 
 output:
   formats:
-    - format: colored-line-number
+    colored-line-number: {}
   print-issued-lines: true
   print-linter-name: true
