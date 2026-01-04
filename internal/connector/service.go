@@ -85,9 +85,9 @@ func (s *service) UpdateConnector(ctx context.Context, tenantID string, config C
 	}
 
 	// Refresh in registry
-	s.registry.Remove(config.ID)
+	_ = s.registry.Remove(config.ID)
 	if config.Enabled {
-		s.registry.Create(config.Type, config)
+		_, _ = s.registry.Create(config.Type, config)
 	}
 
 	return nil
@@ -97,7 +97,7 @@ func (s *service) DeleteConnector(ctx context.Context, tenantID, id string) erro
 	if err := s.store.Delete(ctx, tenantID, id); err != nil {
 		return err
 	}
-	s.registry.Remove(id)
+	_ = s.registry.Remove(id)
 	return nil
 }
 
@@ -109,10 +109,10 @@ func (s *service) ToggleConnector(ctx context.Context, tenantID, id string, enab
 	if enabled {
 		config, err := s.store.Get(ctx, tenantID, id)
 		if err == nil {
-			s.registry.Create(config.Type, config)
+			_, _ = s.registry.Create(config.Type, config)
 		}
 	} else {
-		s.registry.Remove(id)
+		_ = s.registry.Remove(id)
 	}
 	return nil
 }
@@ -124,7 +124,7 @@ func (s *service) TestConnection(ctx context.Context, config Config) error {
 		return fmt.Errorf("failed to create connector: %w", err)
 	}
 	// Don't keep it in the registry
-	defer s.registry.Remove(config.ID)
+	defer func() { _ = s.registry.Remove(config.ID) }()
 
 	return conn.HealthCheck(ctx)
 }

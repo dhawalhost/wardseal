@@ -44,7 +44,7 @@ func (c *Connector) connect() error {
 	bindDN := c.config.Credentials["bind_dn"]
 	bindPassword := c.config.Credentials["bind_password"]
 	if err := conn.Bind(bindDN, bindPassword); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("failed to bind: %w", err)
 	}
 
@@ -67,7 +67,7 @@ func (c *Connector) HealthCheck(ctx context.Context) error {
 
 func (c *Connector) Close() error {
 	if c.conn != nil {
-		c.conn.Close()
+		_ = c.conn.Close()
 		c.conn = nil
 	}
 	return nil

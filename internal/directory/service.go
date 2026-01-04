@@ -68,7 +68,7 @@ func (s *directoryService) CreateUser(ctx context.Context, tenantID string, user
 	if err != nil {
 		return "", err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var userID string
 	err = tx.QueryRowxContext(ctx, // Use QueryRowxContext for sqlx
@@ -131,7 +131,7 @@ func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, 
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if user.Email != "" {
 		_, err := tx.ExecContext(ctx, `UPDATE accounts SET login = $1 WHERE identity_id = $2 AND tenant_id = $3`, user.Email, id, tenantID)

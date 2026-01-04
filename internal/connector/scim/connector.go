@@ -48,7 +48,7 @@ func (c *Connector) HealthCheck(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("health check failed: %d", resp.StatusCode)
 	}
@@ -72,7 +72,7 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -204,7 +204,7 @@ func (c *Connector) CreateGroup(ctx context.Context, group connector.Group) (str
 	}
 
 	var result scimGroupResource
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 
@@ -222,7 +222,7 @@ func (c *Connector) GetGroup(ctx context.Context, id string) (connector.Group, e
 	defer resp.Body.Close()
 
 	var result scimGroupResource
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return connector.Group{ExternalID: result.ID, Name: result.DisplayName}, nil
 }
 
@@ -277,7 +277,7 @@ func (c *Connector) ListGroups(ctx context.Context, filter string, limit, offset
 		TotalResults int                 `json:"totalResults"`
 		Resources    []scimGroupResource `json:"Resources"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	groups := make([]connector.Group, len(result.Resources))
 	for i, r := range result.Resources {

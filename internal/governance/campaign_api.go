@@ -223,7 +223,7 @@ func (h *CampaignHTTPHandler) approveItem(c *gin.Context) {
 	var body struct {
 		Comment string `json:"comment"`
 	}
-	c.ShouldBindJSON(&body)
+	_ = c.ShouldBindJSON(&body)
 
 	if err := h.svc.ApproveItem(c.Request.Context(), itemID, body.Comment); err != nil {
 		h.logger.Error("Failed to approve item", zap.Error(err))
@@ -238,7 +238,7 @@ func (h *CampaignHTTPHandler) revokeItem(c *gin.Context) {
 	var body struct {
 		Comment string `json:"comment"`
 	}
-	c.ShouldBindJSON(&body)
+	_ = c.ShouldBindJSON(&body)
 
 	if err := h.svc.RevokeItem(c.Request.Context(), itemID, body.Comment); err != nil {
 		h.logger.Error("Failed to revoke item", zap.Error(err))
