@@ -18,8 +18,8 @@ This is the fastest way to get the entire stack running locally.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/dhawalhost/velverify.git
-cd velverify
+git clone https://github.com/dhawalhost/wardseal.git
+cd wardseal
 ```
 
 ### 2. Start the infrastructure services
@@ -205,7 +205,7 @@ go mod download
 ### 4. Run the governance service
 
 ```bash
-cd /path/to/velverify
+cd /path/to/wardseal
 go run ./cmd/govsvc
 ```
 
@@ -470,5 +470,5 @@ For Helm deployment examples, see the "Kubernetes deployment" section in `README
 
 For issues, questions, or contributions:
 
-- GitHub Issues: [https://github.com/dhawalhost/velverify/issues](https://github.com/dhawalhost/velverify/issues)
+- GitHub Issues: [https://github.com/dhawalhost/wardseal/issues](https://github.com/dhawalhost/wardseal/issues)
 - Documentation: See `README.md`, `identity-platform-spec.md`, and `ROADMAP.md`

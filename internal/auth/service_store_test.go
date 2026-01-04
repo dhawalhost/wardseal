@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dhawalhost/velverify/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclients"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -15,7 +15,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	store := newStubClientStore()
 	store.addClient(oauthclients.Client{
-		TenantID:      "tenant-1",
+		TenantID:      "11111111-1111-1111-1111-111111111111",
 		ClientID:      "db-client",
 		ClientType:    "public",
 		Name:          "DB Client",
@@ -27,7 +27,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 	})
 
 	svc := newServiceWithStore(t, store)
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
 	challenge := pkceChallenge(verifier)
@@ -64,7 +64,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 	store := newStubClientStore()
 	store.addClient(oauthclients.Client{
-		TenantID:      "tenant-1",
+		TenantID:      "11111111-1111-1111-1111-111111111111",
 		ClientID:      "db-client",
 		ClientType:    "public",
 		Name:          "DB Client",
@@ -76,7 +76,7 @@ func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 	})
 
 	svc := newServiceWithStore(t, store)
-	ctx := contextWithTenant(t, "tenant-2")
+	ctx := contextWithTenant(t, "22222222-2222-2222-2222-222222222222")
 
 	_, err := svc.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
@@ -93,7 +93,7 @@ func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 
 func TestAuthorizeRejectsUnknownClientFromStore(t *testing.T) {
 	svc := newServiceWithStore(t, newStubClientStore())
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 
 	_, err := svc.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
@@ -111,6 +111,7 @@ func TestAuthorizeRejectsUnknownClientFromStore(t *testing.T) {
 func newServiceWithStore(t *testing.T, store oauthclients.Store) Service {
 	t.Helper()
 	svc, err := NewService(Config{
+		BaseURL:             "http://example.com",
 		DirectoryServiceURL: "http://dirsvc",
 		ClientStore:         store,
 	})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,9 @@ const DefaultTenantHeader = "X-Tenant-ID"
 type tenantContextKey string
 
 const tenantIDContextKey tenantContextKey = "tenantID"
+
+// uuidRegex is the regular expression for validating UUIDs.
+var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // TenantConfig captures the knobs for tenant extraction.
 type TenantConfig struct {
@@ -48,6 +52,14 @@ func TenantExtractor(cfg TenantConfig) gin.HandlerFunc {
 				})
 				return
 			}
+		}
+
+		// Validate UUID format
+		if !uuidRegex.MatchString(tenantID) {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "invalid tenant id format",
+			})
+			return
 		}
 
 		c.Set(string(tenantIDContextKey), tenantID)

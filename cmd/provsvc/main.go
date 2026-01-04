@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/dhawalhost/velverify/internal/provisioning"
-	"github.com/dhawalhost/velverify/pkg/logger"
+	"github.com/dhawalhost/wardseal/internal/provisioning"
+	"github.com/dhawalhost/wardseal/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

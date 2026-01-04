@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dhawalhost/velverify/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -29,7 +29,7 @@ func TestCreateUserUsesTenantHeader(t *testing.T) {
 	body := strings.NewReader(`{"user":{"email":"user@example.com","password":"password123","status":"active"}}`)
 	req := httptest.NewRequest(http.MethodPost, "/users", body)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, "tenant-xyz")
+	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
 	resp := httptest.NewRecorder()
 
 	r.ServeHTTP(resp, req)
@@ -38,7 +38,7 @@ func TestCreateUserUsesTenantHeader(t *testing.T) {
 		t.Fatalf("expected 201, got %d", resp.Code)
 	}
 
-	if svc.lastTenantID != "tenant-xyz" {
+	if svc.lastTenantID != "22222222-2222-2222-2222-222222222222" {
 		t.Fatalf("expected tenant tenant-xyz, got %s", svc.lastTenantID)
 	}
 }
@@ -77,7 +77,7 @@ func TestVerifyCredentialsUsesTenantHeader(t *testing.T) {
 	body := strings.NewReader(`{"email":"user@example.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, "tenant-xyz")
+	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
 	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
 	resp := httptest.NewRecorder()
 
@@ -91,7 +91,7 @@ func TestVerifyCredentialsUsesTenantHeader(t *testing.T) {
 		t.Fatalf("expected verify credentials to be called")
 	}
 
-	if svc.verifyTenantID != "tenant-xyz" {
+	if svc.verifyTenantID != "22222222-2222-2222-2222-222222222222" {
 		t.Fatalf("expected tenant tenant-xyz, got %s", svc.verifyTenantID)
 	}
 
@@ -138,7 +138,7 @@ func TestVerifyCredentialsUnauthorized(t *testing.T) {
 	body := strings.NewReader(`{"email":"user@example.com","password":"badpassword"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, "tenant-xyz")
+	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
 	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
 	resp := httptest.NewRecorder()
 
@@ -159,7 +159,7 @@ func TestVerifyCredentialsMissingServiceToken(t *testing.T) {
 	body := strings.NewReader(`{"email":"user@example.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, "tenant-xyz")
+	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
 	resp := httptest.NewRecorder()
 
 	r.ServeHTTP(resp, req)
@@ -200,6 +200,10 @@ func (m *mockDirectoryService) GetUserByEmail(context.Context, string, string) (
 	return User{}, nil
 }
 
+func (m *mockDirectoryService) ListUsers(context.Context, string, int, int) ([]User, int, error) {
+	return []User{}, 0, nil
+}
+
 func (m *mockDirectoryService) UpdateUser(context.Context, string, string, User) error {
 	return nil
 }
@@ -214,6 +218,10 @@ func (m *mockDirectoryService) CreateGroup(context.Context, string, Group) (stri
 
 func (m *mockDirectoryService) GetGroupByID(context.Context, string, string) (Group, error) {
 	return Group{}, nil
+}
+
+func (m *mockDirectoryService) ListGroups(context.Context, string, int, int) ([]Group, int, error) {
+	return []Group{}, 0, nil
 }
 
 func (m *mockDirectoryService) UpdateGroup(context.Context, string, string, Group) error {
@@ -240,4 +248,8 @@ func (m *mockDirectoryService) VerifyCredentials(ctx context.Context, tenantID, 
 		return User{}, m.verifyErr
 	}
 	return m.verifyReturnUser, nil
+}
+
+func (m *mockDirectoryService) GetTenantByEmail(context.Context, string) (string, error) {
+	return "22222222-2222-2222-2222-222222222222", nil
 }

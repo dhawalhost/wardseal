@@ -9,15 +9,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dhawalhost/velverify/internal/oauthclients"
-	"github.com/dhawalhost/velverify/pkg/middleware"
+	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
 func TestListOAuthClientsReturnsClients(t *testing.T) {
-	tenantID := "tenant-123"
+	tenantID := "11111111-1111-1111-1111-111111111111"
 	stub := &stubService{
 		listOAuthClientsFn: func(ctx context.Context, gotTenant string) ([]oauthclients.Client, error) {
 			if gotTenant != tenantID {
@@ -86,7 +86,7 @@ func TestCreateOAuthClientValidationErrorPropagates(t *testing.T) {
 	})
 
 	resp := performRequest(router, http.MethodPost, "/api/v1/oauth/clients", body, map[string]string{
-		middleware.DefaultTenantHeader: "tenant-1",
+		middleware.DefaultTenantHeader: "11111111-1111-1111-1111-111111111111",
 		"Content-Type":                 "application/json",
 	})
 
@@ -112,7 +112,7 @@ func TestGetOAuthClientNotFound(t *testing.T) {
 	router := newTestRouter(t, stub)
 
 	resp := performRequest(router, http.MethodGet, "/api/v1/oauth/clients/missing", nil, map[string]string{
-		middleware.DefaultTenantHeader: "tenant-1",
+		middleware.DefaultTenantHeader: "11111111-1111-1111-1111-111111111111",
 	})
 
 	if resp.Code != http.StatusNotFound {
@@ -176,12 +176,16 @@ func decodeJSON(t *testing.T, data []byte, out interface{}) {
 }
 
 type stubService struct {
-	healthCheckFn       func(ctx context.Context) (bool, error)
-	listOAuthClientsFn  func(ctx context.Context, tenantID string) ([]oauthclients.Client, error)
-	getOAuthClientFn    func(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error)
-	createOAuthClientFn func(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error)
-	updateOAuthClientFn func(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error)
-	deleteOAuthClientFn func(ctx context.Context, tenantID, clientID string) error
+	healthCheckFn          func(ctx context.Context) (bool, error)
+	listOAuthClientsFn     func(ctx context.Context, tenantID string) ([]oauthclients.Client, error)
+	getOAuthClientFn       func(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error)
+	createOAuthClientFn    func(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error)
+	updateOAuthClientFn    func(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error)
+	deleteOAuthClientFn    func(ctx context.Context, tenantID, clientID string) error
+	createAccessRequestFn  func(ctx context.Context, tenantID string, input CreateAccessRequest) (AccessRequest, error)
+	listAccessRequestsFn   func(ctx context.Context, tenantID, status string) ([]AccessRequest, error)
+	approveAccessRequestFn func(ctx context.Context, tenantID, requestID, approverID, comment string) error
+	rejectAccessRequestFn  func(ctx context.Context, tenantID, requestID, approverID, comment string) error
 }
 
 func (s *stubService) HealthCheck(ctx context.Context) (bool, error) {
@@ -224,4 +228,32 @@ func (s *stubService) DeleteOAuthClient(ctx context.Context, tenantID, clientID 
 		panic("DeleteOAuthClient called unexpectedly")
 	}
 	return s.deleteOAuthClientFn(ctx, tenantID, clientID)
+}
+
+func (s *stubService) CreateAccessRequest(ctx context.Context, tenantID string, input CreateAccessRequest) (AccessRequest, error) {
+	if s.createAccessRequestFn == nil {
+		panic("CreateAccessRequest called unexpectedly")
+	}
+	return s.createAccessRequestFn(ctx, tenantID, input)
+}
+
+func (s *stubService) ListAccessRequests(ctx context.Context, tenantID, status string) ([]AccessRequest, error) {
+	if s.listAccessRequestsFn == nil {
+		panic("ListAccessRequests called unexpectedly")
+	}
+	return s.listAccessRequestsFn(ctx, tenantID, status)
+}
+
+func (s *stubService) ApproveAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error {
+	if s.approveAccessRequestFn == nil {
+		panic("ApproveAccessRequest called unexpectedly")
+	}
+	return s.approveAccessRequestFn(ctx, tenantID, requestID, approverID, comment)
+}
+
+func (s *stubService) RejectAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error {
+	if s.rejectAccessRequestFn == nil {
+		panic("RejectAccessRequest called unexpectedly")
+	}
+	return s.rejectAccessRequestFn(ctx, tenantID, requestID, approverID, comment)
 }

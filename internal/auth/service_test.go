@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/dhawalhost/velverify/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +20,7 @@ func TestAuthorizationCodePkceFlow(t *testing.T) {
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
 	challenge := pkceChallenge(verifier)
 
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 
 	authResp, err := as.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
@@ -57,7 +57,7 @@ func TestTokenFailsWithInvalidVerifier(t *testing.T) {
 
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
 	challenge := pkceChallenge(verifier)
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 
 	authResp, err := as.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
@@ -86,7 +86,7 @@ func TestTokenFailsWithInvalidVerifier(t *testing.T) {
 
 func TestAuthorizeRejectsUnknownClient(t *testing.T) {
 	as := newTestService(t)
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 	_, err := as.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "unknown",
@@ -102,7 +102,7 @@ func TestAuthorizeRejectsUnknownClient(t *testing.T) {
 
 func TestAuthorizeRejectsInvalidRedirect(t *testing.T) {
 	as := newTestService(t)
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 	_, err := as.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "test-client",
@@ -118,7 +118,7 @@ func TestAuthorizeRejectsInvalidRedirect(t *testing.T) {
 
 func TestAuthorizeRejectsInvalidScope(t *testing.T) {
 	as := newTestService(t)
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "11111111-1111-1111-1111-111111111111")
 	_, err := as.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "test-client",
@@ -167,11 +167,12 @@ func contextWithTenant(t *testing.T, tenant string) context.Context {
 func newTestService(t *testing.T) *authService {
 	t.Helper()
 	svc, err := NewService(Config{
+		BaseURL:             "http://example.com",
 		DirectoryServiceURL: "http://dirsvc",
 		Clients: []ClientConfig{
 			{
 				ID:            "test-client",
-				TenantID:      "tenant-1",
+				TenantID:      "11111111-1111-1111-1111-111111111111",
 				Name:          "Test Client",
 				RedirectURIs:  []string{"https://app.example.com/callback"},
 				AllowedScopes: []string{"openid", "profile"},

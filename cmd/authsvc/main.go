@@ -1,21 +1,61 @@
 package main
 
 import (
+	"context"
 	"os"
 
-	"github.com/dhawalhost/velverify/internal/auth"
-	"github.com/dhawalhost/velverify/internal/oauthclients"
-	"github.com/dhawalhost/velverify/pkg/database"
-	"github.com/dhawalhost/velverify/pkg/logger"
-	"github.com/dhawalhost/velverify/pkg/observability"
+	"github.com/dhawalhost/wardseal/internal/auth"
+	"github.com/dhawalhost/wardseal/internal/license"
+	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/saml"
+	"github.com/dhawalhost/wardseal/pkg/database"
+	"github.com/dhawalhost/wardseal/pkg/logger"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/observability"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"golang.org/x/time/rate"
 )
 
 func main() {
-	log := logger.New(zapcore.DebugLevel)
+	log := logger.NewFromEnv()
 	defer log.Sync()
+
+	// Enterprise License Verification
+	if os.Getenv("REQUIRE_LICENSE") == "true" {
+		log.Info("Checking Enterprise License...")
+
+		pubKeyPath := os.Getenv("LICENSE_PUBLIC_KEY_PATH")
+		if pubKeyPath == "" {
+			pubKeyPath = "/etc/wardseal/license_public.pem"
+		}
+
+		pubKey, err := os.ReadFile(pubKeyPath)
+		if err != nil {
+			log.Fatal("Failed to read license public key", zap.Error(err))
+		}
+
+		mgr, err := license.NewManager(pubKey)
+		if err != nil {
+			log.Fatal("Failed to initialize license manager", zap.Error(err))
+		}
+
+		licenseKey := os.Getenv("LICENSE_KEY")
+		if licenseKey == "" {
+			log.Fatal("LICENSE_KEY environment variable is required for enterprise edition")
+		}
+
+		lic, err := mgr.Verify(licenseKey)
+		if err != nil {
+			log.Fatal("Invalid license key", zap.Error(err))
+		}
+
+		log.Info("Enterprise License Verified",
+			zap.String("customer", lic.CustomerName),
+			zap.Time("expires_at", lic.ExpiresAt),
+			zap.String("plan", lic.Plan))
+	}
 
 	directoryServiceURL := os.Getenv("DIRECTORY_SERVICE_URL")
 	if directoryServiceURL == "" {
@@ -48,12 +88,41 @@ func main() {
 		os.Exit(1)
 	}
 	clientStore := oauthclients.NewRepository(db)
+	samlStore := saml.NewStore(db)
+	deviceStore := auth.NewDeviceStore(db)
+	signalStore := auth.NewSignalStore(db)
+	webauthnStore := auth.NewWebAuthnRepository(db)
+	brandingStore := auth.NewBrandingStore(db)
+	ssoProviderStore := auth.NewSQLSSOProviderStore(db)
+
+	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
+	if authServiceURL == "" {
+		authServiceURL = "http://localhost:8080"
+	}
+
+	// Initialize persistent stores for production durability
+	codeStore := auth.NewSQLAuthorizationCodeStore(db)
+	refreshStore := auth.NewSQLRefreshTokenStore(db)
+	revocationStore := auth.NewSQLRevocationStore(db)
+	totpStore := auth.NewTOTPStore(db)
 
 	svc, err := auth.NewService(auth.Config{
 		DirectoryServiceURL: directoryServiceURL,
 		ServiceAuthToken:    serviceToken,
 		ServiceAuthHeader:   serviceHeader,
 		ClientStore:         clientStore,
+		SAMLStore:           samlStore,
+		DeviceStore:         deviceStore,
+		SignalStore:         signalStore,
+		WebAuthnStore:       webauthnStore,
+		BrandingStore:       brandingStore,
+		BaseURL:             authServiceURL,
+		// Use SQL stores for persistence
+		CodeStore:        codeStore,
+		RefreshStore:     refreshStore,
+		RevocationStore:  revocationStore,
+		TOTPStore:        totpStore,
+		SSOProviderStore: ssoProviderStore,
 	})
 	if err != nil {
 		log.Error("Failed to create auth service", zap.Error(err))
@@ -62,15 +131,49 @@ func main() {
 
 	router := gin.Default()
 
-	// Initialize and apply Prometheus middleware
-	metrics := observability.NewMetrics()
-	router.Use(observability.PrometheusMiddleware(metrics))
+	// Initialize OpenTelemetry tracing
+	shutdownTracer, err := observability.InitTracer(context.Background(), observability.TracerConfig{
+		ServiceName:    "authsvc",
+		ServiceVersion: "1.0.0",
+		Environment:    envOr("ENVIRONMENT", "development"),
+	}, log)
+	if err != nil {
+		log.Error("Failed to initialize tracer", zap.Error(err))
+	}
+	defer shutdownTracer(context.Background())
 
-	authHandlers := auth.NewHTTPHandler(svc, log)
+	// Initialize and apply observability middleware
+	metrics := observability.NewMetrics()
+	router.Use(otelgin.Middleware("authsvc"))
+	router.Use(observability.PrometheusMiddleware(metrics))
+	router.Use(logger.RequestLogger(log))
+
+	// Security Middleware
+	router.Use(middleware.SecurityHeadersMiddleware())
+	// Rate limit: 20 requests/second, burst of 40
+	router.Use(middleware.RateLimitMiddleware(rate.Limit(20), 40))
+
+	// Initialize login attempt store for brute-force protection
+	loginAttemptStore := auth.NewLoginAttemptStore(db)
+
+	authHandlers := auth.NewHTTPHandler(svc, log, loginAttemptStore)
 	authHandlers.RegisterRoutes(router)
+	authHandlers.RegisterBrandingRoutes(router.Group("/"))
 
 	// Register Prometheus metrics handler
 	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
+
+	// SAML Setup
+
+	// Register SAML management API
+	samlHandlers := saml.NewHTTPHandler(samlStore, log)
+	samlHandlers.RegisterRoutes(router.Group("/api/v1"))
+
+	// Developer Portal API (self-service app registration, API keys)
+	developerHandlers := auth.NewDeveloperAPIHandler(db, log)
+	developerHandlers.RegisterRoutes(router.Group("/api/v1"))
+
+	// Register IdP-initiated endpoint logic is handled inside authHandlers.RegisterRoutes -> svc.SAML()
 
 	log.Info("Auth service starting", zap.String("addr", ":8080"))
 	if err := router.Run(":8080"); err != nil {

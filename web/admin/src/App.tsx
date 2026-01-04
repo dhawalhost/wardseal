@@ -1,267 +1,81 @@
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from "@/components/theme-provider";
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
 
-const DEFAULT_BASE_URL = import.meta.env.VITE_GOVSVC_URL || 'http://localhost:8082'
+import AccessRequests from './pages/AccessRequests';
+import RequestAccess from './pages/RequestAccess';
+import Roles from './pages/Roles';
+import AuditLogs from './pages/AuditLogs';
+import Campaigns from './pages/Campaigns';
 
-interface OAuthClient {
-  client_id: string
-  tenant_id: string
-  client_type: 'public' | 'confidential'
-  name: string
-  description?: string
-  redirect_uris: string[]
-  allowed_scopes: string[]
-}
+import SSOConfig from './pages/SSOConfig';
+import Connectors from './pages/Connectors';
+import Developer from './pages/Developer';
+import Passkeys from './pages/Passkeys';
+import Branding from './pages/Branding';
+import Webhooks from './pages/Webhooks';
+import Devices from './pages/Devices';
+import MFASetup from './pages/MFASetup';
+import Organizations from './pages/Organizations';
+import DeveloperApps from './pages/DeveloperApps';
 
-interface ClientListResponse {
-  clients: OAuthClient[]
-}
-
-interface CreateClientPayload {
-  client_id: string
-  name: string
-  client_type: 'public' | 'confidential'
-  redirect_uris: string
-  allowed_scopes: string
-  client_secret?: string
-}
-
-const initialForm: CreateClientPayload = {
-  client_id: '',
-  name: '',
-  client_type: 'public',
-  redirect_uris: '',
-  allowed_scopes: '',
-}
-
-function App() {
-  const [tenantID, setTenantID] = useState('11111111-1111-1111-1111-111111111111')
-  const [baseURL, setBaseURL] = useState(() => DEFAULT_BASE_URL)
-  const [clients, setClients] = useState<OAuthClient[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState<CreateClientPayload>(initialForm)
-  const [secret, setSecret] = useState('')
-
-  const resolveBaseURL = useCallback(() => {
-    const fallback = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
-    let candidate = baseURL.trim()
-    if (!candidate) {
-      candidate = fallback || DEFAULT_BASE_URL
-    }
-    if (candidate.startsWith('/')) {
-      if (!fallback) {
-        throw new Error('Unable to resolve relative base URL outside the browser')
-      }
-      candidate = `${fallback}${candidate}`
-    }
-    if (!/^https?:\/\//i.test(candidate)) {
-      candidate = `http://${candidate}`
-    }
-    const parsed = new URL(candidate)
-    const pathname = parsed.pathname.replace(/\/$/, '')
-    return `${parsed.origin}${pathname}`
-  }, [baseURL])
-
-  const fetchClients = useCallback(async () => {
-    if (!tenantID) {
-      setError('Tenant ID is required')
-      return
-    }
-    let apiBase: string
-    try {
-      apiBase = resolveBaseURL()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid base URL')
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await fetch(`${apiBase}/api/v1/oauth/clients`, {
-        headers: {
-          'X-Tenant-ID': tenantID,
-        },
-      })
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}))
-        throw new Error(body.error || response.statusText)
-      }
-      const json = (await response.json()) as ClientListResponse
-      setClients(json.clients)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch clients')
-    } finally {
-      setLoading(false)
-    }
-  }, [tenantID, resolveBaseURL])
-
-  useEffect(() => {
-    fetchClients()
-  }, [fetchClients])
-
-  const canSubmit = useMemo(() => {
-    return form.client_id && form.name && form.redirect_uris && form.allowed_scopes
-  }, [form])
-
-  const createClient = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!canSubmit) return
-
-    let apiBase: string
-    try {
-      apiBase = resolveBaseURL()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid base URL')
-      return
-    }
-
-    try {
-      const payload: Record<string, unknown> = {
-        client_id: form.client_id,
-        name: form.name,
-        client_type: form.client_type,
-        redirect_uris: form.redirect_uris
-          .split(',')
-          .map((uri: string) => uri.trim())
-          .filter(Boolean),
-        allowed_scopes: form.allowed_scopes
-          .split(',')
-          .map((scope: string) => scope.trim())
-          .filter(Boolean),
-      }
-      if (form.client_type === 'confidential') {
-        if (!secret) {
-          throw new Error('Secret is required for confidential clients')
-        }
-        payload.client_secret = secret
-      }
-
-  const response = await fetch(`${apiBase}/api/v1/oauth/clients`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': tenantID,
-        },
-        body: JSON.stringify(payload),
-      })
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}))
-        throw new Error(body.error || response.statusText)
-      }
-      setForm(initialForm)
-      setSecret('')
-      fetchClients()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create client')
-    }
+// Basic protected route
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
+  return children;
+};
 
+const App: React.FC = () => {
   return (
-    <div className="app">
-      <header>
-        <h1>Governance OAuth Clients</h1>
-        <div className="config">
-          <label>
-            Tenant ID
-            <input value={tenantID} onChange={(e: ChangeEvent<HTMLInputElement>) => setTenantID(e.target.value)} />
-          </label>
-          <label>
-            Base URL
-            <input
-              value={baseURL}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setBaseURL(e.target.value)}
-              placeholder="http://localhost:8082"
-            />
-          </label>
-          <button onClick={fetchClients} disabled={loading}>
-            Refresh
-          </button>
-        </div>
-      </header>
+    <ThemeProvider defaultTheme="dark" storageKey="wardseal-ui-theme">
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/" element={<Landing />} />
 
-      {error && <div className="error">{error}</div>}
+          {/* Protected Routes using Layout */}
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/requests" element={<AccessRequests />} />
+                    <Route path="/request-access" element={<RequestAccess />} />
+                    <Route path="/roles" element={<Roles />} />
+                    <Route path="/audit" element={<AuditLogs />} />
+                    <Route path="/campaigns" element={<Campaigns />} />
+                    <Route path="/sso" element={<SSOConfig />} />
+                    <Route path="/connectors" element={<Connectors />} />
+                    <Route path="/developer" element={<Developer />} />
+                    <Route path="/passkeys" element={<Passkeys />} />
+                    <Route path="/branding" element={<Branding />} />
+                    <Route path="/webhooks" element={<Webhooks />} />
+                    <Route path="/devices" element={<Devices />} />
+                    <Route path="/mfa" element={<MFASetup />} />
+                    <Route path="/organizations" element={<Organizations />} />
+                    <Route path="/apps" element={<DeveloperApps />} />
 
-      <section>
-        <h2>Existing clients</h2>
-        {loading ? (
-          <p>Loading…</p>
-        ) : clients.length === 0 ? (
-          <p>No clients found</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Client ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Redirect URIs</th>
-                <th>Scopes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client) => (
-                <tr key={client.client_id}>
-                  <td>{client.client_id}</td>
-                  <td>{client.name}</td>
-                  <td>{client.client_type}</td>
-                  <td>
-                    {client.redirect_uris.map((uri) => (
-                      <div key={uri}>{uri}</div>
-                    ))}
-                  </td>
-                  <td>{client.allowed_scopes.join(', ')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </ThemeProvider>
+  );
+};
 
-      <section>
-        <h2>Create client</h2>
-        <form onSubmit={createClient}>
-          <label>
-            Client ID
-            <input value={form.client_id} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, client_id: e.target.value })} />
-          </label>
-          <label>
-            Name
-            <input value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })} />
-          </label>
-          <label>
-            Client type
-            <select
-              value={form.client_type}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                setForm({ ...form, client_type: e.target.value as 'public' | 'confidential' })
-              }
-            >
-              <option value="public">Public</option>
-              <option value="confidential">Confidential</option>
-            </select>
-          </label>
-          <label>
-            Redirect URIs (comma separated)
-            <input value={form.redirect_uris} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, redirect_uris: e.target.value })} />
-          </label>
-          <label>
-            Allowed scopes (comma separated)
-            <input value={form.allowed_scopes} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, allowed_scopes: e.target.value })} />
-          </label>
-          {form.client_type === 'confidential' && (
-            <label>
-              Client secret
-              <input type="password" value={secret} onChange={(e: ChangeEvent<HTMLInputElement>) => setSecret(e.target.value)} />
-            </label>
-          )}
-          <button type="submit" disabled={!canSubmit || loading}>
-            Create client
-          </button>
-        </form>
-      </section>
-    </div>
-  )
-}
+export default App;
 
-export default App

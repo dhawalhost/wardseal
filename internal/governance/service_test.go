@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dhawalhost/velverify/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclients"
 )
 
 var ctx = context.Background()
 
 func TestCreateOAuthClientValidatesRedirects(t *testing.T) {
-	svc := NewService(&fakeStore{})
-	_, err := svc.CreateOAuthClient(ctx, "tenant-1", CreateOAuthClientInput{
+	svc := NewService(&fakeStore{}, nil, &fakeDirClient{}, nil)
+	_, err := svc.CreateOAuthClient(ctx, "11111111-1111-1111-1111-111111111111", CreateOAuthClientInput{
 		ClientID:      "client-a",
 		Name:          "Client A",
 		RedirectURIs:  nil,
@@ -24,9 +24,9 @@ func TestCreateOAuthClientValidatesRedirects(t *testing.T) {
 
 func TestCreateOAuthClientHashesSecret(t *testing.T) {
 	store := &fakeStore{}
-	svc := NewService(store)
+	svc := NewService(store, nil, &fakeDirClient{}, nil)
 	secret := "super-secret"
-	client, err := svc.CreateOAuthClient(ctx, "tenant-1", CreateOAuthClientInput{
+	client, err := svc.CreateOAuthClient(ctx, "11111111-1111-1111-1111-111111111111", CreateOAuthClientInput{
 		ClientID:      "client-b",
 		Name:          "Client B",
 		ClientType:    "confidential",
@@ -47,8 +47,8 @@ func TestCreateOAuthClientHashesSecret(t *testing.T) {
 
 func TestUpdateOAuthClientValidatesRedirects(t *testing.T) {
 	store := &fakeStore{}
-	svc := NewService(store)
-	_, err := svc.UpdateOAuthClient(ctx, "tenant-1", "client-x", UpdateOAuthClientInput{
+	svc := NewService(store, nil, &fakeDirClient{}, nil)
+	_, err := svc.UpdateOAuthClient(ctx, "11111111-1111-1111-1111-111111111111", "client-x", UpdateOAuthClientInput{
 		RedirectURIs: []string{"http://localhost:bad"},
 	})
 	if err == nil || !IsValidationError(err) {
@@ -121,5 +121,11 @@ func (f *fakeStore) UpdateClient(ctx context.Context, tenantID, clientID string,
 func (f *fakeStore) DeleteClient(ctx context.Context, tenantID, clientID string) error {
 	f.ensureClients()
 	delete(f.clients, tenantID+clientID)
+	return nil
+}
+
+type fakeDirClient struct{}
+
+func (f *fakeDirClient) AddUserToGroup(ctx context.Context, tenantID, userID, groupID string) error {
 	return nil
 }

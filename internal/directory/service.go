@@ -17,12 +17,14 @@ type Service interface {
 	CreateUser(ctx context.Context, tenantID string, user User) (string, error)
 	GetUserByID(ctx context.Context, tenantID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, tenantID, email string) (User, error)
+	ListUsers(ctx context.Context, tenantID string, limit, offset int) ([]User, int, error)
 	UpdateUser(ctx context.Context, tenantID, id string, user User) error
 	DeleteUser(ctx context.Context, tenantID, id string) error
 
 	// Group management
 	CreateGroup(ctx context.Context, tenantID string, group Group) (string, error)
 	GetGroupByID(ctx context.Context, tenantID, id string) (Group, error)
+	ListGroups(ctx context.Context, tenantID string, limit, offset int) ([]Group, int, error)
 	UpdateGroup(ctx context.Context, tenantID, id string, group Group) error
 	DeleteGroup(ctx context.Context, tenantID, id string) error
 
@@ -32,6 +34,9 @@ type Service interface {
 
 	// Credential validation
 	VerifyCredentials(ctx context.Context, tenantID, email, password string) (User, error)
+
+	// Discovery
+	GetTenantByEmail(ctx context.Context, email string) (string, error)
 }
 
 type directoryService struct {
@@ -99,6 +104,28 @@ func (s *directoryService) GetUserByEmail(ctx context.Context, tenantID, email s
 	return user, err
 }
 
+func (s *directoryService) ListUsers(ctx context.Context, tenantID string, limit, offset int) ([]User, int, error) {
+	// Get total count
+	var total int
+	err := s.db.GetContext(ctx, &total, `SELECT COUNT(*) FROM identities WHERE tenant_id = $1`, tenantID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated users
+	var users []User
+	err = s.db.SelectContext(ctx, &users, `SELECT i.id, i.tenant_id, a.login AS email, i.status, i.created_at, i.updated_at
+		FROM identities i JOIN accounts a ON i.id = a.identity_id 
+		WHERE i.tenant_id = $1 
+		ORDER BY i.created_at DESC 
+		LIMIT $2 OFFSET $3`,
+		tenantID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
+}
+
 func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, user User) error {
 	tx, err := s.db.BeginTxx(ctx, nil)
 	if err != nil {
@@ -159,6 +186,23 @@ func (s *directoryService) GetGroupByID(ctx context.Context, tenantID, id string
 	return group, err
 }
 
+func (s *directoryService) ListGroups(ctx context.Context, tenantID string, limit, offset int) ([]Group, int, error) {
+	var total int
+	err := s.db.GetContext(ctx, &total, `SELECT COUNT(*) FROM groups WHERE tenant_id = $1`, tenantID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var groups []Group
+	err = s.db.SelectContext(ctx, &groups, `SELECT id, tenant_id, name, created_at, updated_at 
+		FROM groups WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+		tenantID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	return groups, total, nil
+}
+
 func (s *directoryService) UpdateGroup(ctx context.Context, tenantID, id string, group Group) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE groups SET name = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3`, group.Name, id, tenantID)
 	return err
@@ -204,4 +248,17 @@ func (s *directoryService) VerifyCredentials(ctx context.Context, tenantID, emai
 	}
 
 	return record.User, nil
+}
+
+func (s *directoryService) GetTenantByEmail(ctx context.Context, email string) (string, error) {
+	var tenantID string
+	// We just need the tenant_id from accounts table
+	err := s.db.GetContext(ctx, &tenantID, `SELECT tenant_id FROM accounts WHERE login = $1 LIMIT 1`, email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil // Not found
+		}
+		return "", err
+	}
+	return tenantID, nil
 }

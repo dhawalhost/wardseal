@@ -28,18 +28,57 @@ type AuthorizeResponse struct {
 }
 
 // TokenRequest holds the request parameters for the Token endpoint.
+// Fields are conditionally required based on grant_type.
 type TokenRequest struct {
-	GrantType    string `form:"grant_type" json:"grant_type" validate:"required,eq=authorization_code"`
-	Code         string `form:"code" json:"code" validate:"required"`
-	RedirectURI  string `form:"redirect_uri" json:"redirect_uri" validate:"required,url"`
-	ClientID     string `form:"client_id" json:"client_id" validate:"required"`
-	CodeVerifier string `form:"code_verifier" json:"code_verifier" validate:"required,min=43,max=128"`
+	GrantType string `form:"grant_type" json:"grant_type" validate:"required,oneof=authorization_code client_credentials refresh_token"`
+
+	// For authorization_code grant
+	Code         string `form:"code" json:"code"`
+	RedirectURI  string `form:"redirect_uri" json:"redirect_uri"`
+	CodeVerifier string `form:"code_verifier" json:"code_verifier"`
+
+	// Common fields
+	ClientID     string `form:"client_id" json:"client_id"`
+	ClientSecret string `form:"client_secret" json:"client_secret"`
+	Scope        string `form:"scope" json:"scope"`
+
+	// For refresh_token grant
+	RefreshToken string `form:"refresh_token" json:"refresh_token"`
 }
 
 // TokenResponse holds the response values for the Token endpoint.
 type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-	IDToken     string `json:"id_token,omitempty"`
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	IDToken      string `json:"id_token,omitempty"`
+	Scope        string `json:"scope,omitempty"`
+}
+
+// IntrospectRequest holds the request parameters for the Introspect endpoint.
+type IntrospectRequest struct {
+	Token         string `form:"token" json:"token" validate:"required"`
+	TokenTypeHint string `form:"token_type_hint" json:"token_type_hint"`
+}
+
+// IntrospectResponse holds the response values for the Introspect endpoint.
+type IntrospectResponse struct {
+	Active    bool   `json:"active"`
+	Scope     string `json:"scope,omitempty"`
+	ClientID  string `json:"client_id,omitempty"`
+	Username  string `json:"username,omitempty"`
+	TokenType string `json:"token_type,omitempty"`
+	Exp       int64  `json:"exp,omitempty"`
+	Iat       int64  `json:"iat,omitempty"`
+	Sub       string `json:"sub,omitempty"`
+	Aud       string `json:"aud,omitempty"`
+	Iss       string `json:"iss,omitempty"`
+	TenantID  string `json:"tenant_id,omitempty"`
+}
+
+// RevokeRequest holds the request parameters for the Revoke endpoint.
+type RevokeRequest struct {
+	Token         string `form:"token" json:"token" validate:"required"`
+	TokenTypeHint string `form:"token_type_hint" json:"token_type_hint"`
 }

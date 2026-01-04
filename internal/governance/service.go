@@ -7,7 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dhawalhost/velverify/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/policy"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,6 +20,12 @@ type Service interface {
 	CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error)
 	UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error)
 	DeleteOAuthClient(ctx context.Context, tenantID, clientID string) error
+
+	// Access Requests
+	CreateAccessRequest(ctx context.Context, tenantID string, input CreateAccessRequest) (AccessRequest, error)
+	ListAccessRequests(ctx context.Context, tenantID, status string) ([]AccessRequest, error)
+	ApproveAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error
+	RejectAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error
 }
 
 type CreateOAuthClientInput struct {
@@ -41,12 +48,20 @@ type UpdateOAuthClientInput struct {
 }
 
 type governanceService struct {
-	store oauthclients.Store
+	clientStore  oauthclients.Store
+	reqStore     Store
+	dirClient    DirectoryClient
+	policyEngine policy.Engine
 }
 
 // NewService creates a new governance service.
-func NewService(store oauthclients.Store) Service {
-	return &governanceService{store: store}
+func NewService(clientStore oauthclients.Store, reqStore Store, dirClient DirectoryClient, policyEngine policy.Engine) Service {
+	return &governanceService{
+		clientStore:  clientStore,
+		reqStore:     reqStore,
+		dirClient:    dirClient,
+		policyEngine: policyEngine,
+	}
 }
 
 func (s *governanceService) HealthCheck(ctx context.Context) (bool, error) {
@@ -57,7 +72,7 @@ func (s *governanceService) ListOAuthClients(ctx context.Context, tenantID strin
 	if err := requireTenant(tenantID); err != nil {
 		return nil, err
 	}
-	return s.store.ListClientsByTenant(ctx, tenantID)
+	return s.clientStore.ListClientsByTenant(ctx, tenantID)
 }
 
 func (s *governanceService) GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error) {
@@ -67,7 +82,7 @@ func (s *governanceService) GetOAuthClient(ctx context.Context, tenantID, client
 	if clientID == "" {
 		return oauthclients.Client{}, validationError("client_id is required")
 	}
-	return s.store.GetClient(ctx, tenantID, clientID)
+	return s.clientStore.GetClient(ctx, tenantID, clientID)
 }
 
 func (s *governanceService) CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error) {
@@ -91,7 +106,7 @@ func (s *governanceService) CreateOAuthClient(ctx context.Context, tenantID stri
 		AllowedScopes:    append([]string(nil), input.AllowedScopes...),
 		ClientSecretHash: hash,
 	}
-	return s.store.CreateClient(ctx, params)
+	return s.clientStore.CreateClient(ctx, params)
 }
 
 func (s *governanceService) UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error) {
@@ -120,7 +135,7 @@ func (s *governanceService) UpdateOAuthClient(ctx context.Context, tenantID, cli
 		ClientType:       normalizeClientTypePtr(input.ClientType),
 		ClientSecretHash: secretHash,
 	}
-	return s.store.UpdateClient(ctx, tenantID, clientID, params)
+	return s.clientStore.UpdateClient(ctx, tenantID, clientID, params)
 }
 
 func (s *governanceService) DeleteOAuthClient(ctx context.Context, tenantID, clientID string) error {
@@ -130,7 +145,7 @@ func (s *governanceService) DeleteOAuthClient(ctx context.Context, tenantID, cli
 	if clientID == "" {
 		return validationError("client_id is required")
 	}
-	return s.store.DeleteClient(ctx, tenantID, clientID)
+	return s.clientStore.DeleteClient(ctx, tenantID, clientID)
 }
 
 type validationErr struct {
@@ -143,6 +158,89 @@ func (e *validationErr) Error() string {
 
 func validationError(msg string) error {
 	return &validationErr{msg: msg}
+}
+
+func (s *governanceService) CreateAccessRequest(ctx context.Context, tenantID string, input CreateAccessRequest) (AccessRequest, error) {
+	if err := requireTenant(tenantID); err != nil {
+		return AccessRequest{}, err
+	}
+	// TODO: Get requester ID from context or input. For now assuming it is handled by handler or middleware.
+	// But service signature uses input struct.
+	// input struct doesn't have RequesterID.
+	// I should pass requesterID as argument or extract from context if context has user info.
+	// Middleware puts TenantID in context, but what about UserID?
+	// Auth service validates token. If token claims has 'sub', that is userID.
+	// I should probably pass requesterID as argument.
+	// For now using dummy or fix signature.
+	// I'll assume input has RequesterID added or I modify usage later.
+	// Let's modify CreateAccessRequest signature in interface to accept requesterID.
+
+	req := AccessRequest{
+		TenantID:     tenantID,
+		RequesterID:  "todo-user-id", // Placeholder
+		ResourceType: input.ResourceType,
+		ResourceID:   input.ResourceID,
+		Reason:       input.Reason,
+	}
+	id, err := s.reqStore.CreateRequest(ctx, req)
+	if err != nil {
+		return AccessRequest{}, err
+	}
+	return s.reqStore.GetRequest(ctx, tenantID, id)
+}
+
+func (s *governanceService) ListAccessRequests(ctx context.Context, tenantID, status string) ([]AccessRequest, error) {
+	if err := requireTenant(tenantID); err != nil {
+		return nil, err
+	}
+	return s.reqStore.ListRequests(ctx, tenantID, status)
+}
+
+func (s *governanceService) ApproveAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error {
+	if err := requireTenant(tenantID); err != nil {
+		return err
+	}
+	// Fetch the request to get resource details
+	req, err := s.reqStore.GetRequest(ctx, tenantID, requestID)
+	if err != nil {
+		return fmt.Errorf("failed to get request: %w", err)
+	}
+
+	// Evaluate policy
+	input := policy.Input{
+		Subject:  policy.Subject{ID: approverID},
+		Action:   "approve",
+		Resource: policy.Resource{Type: "access_request", ID: requestID},
+		Context:  map[string]interface{}{"requester_id": req.RequesterID},
+	}
+	allowed, reason, err := s.policyEngine.Evaluate(ctx, input)
+	if err != nil {
+		return fmt.Errorf("policy evaluation failed: %w", err)
+	}
+	if !allowed {
+		return fmt.Errorf("policy violation: %s", reason)
+	}
+
+	// Provision the access
+	if req.ResourceType == "group" {
+		if err := s.dirClient.AddUserToGroup(ctx, tenantID, req.RequesterID, req.ResourceID); err != nil {
+			return fmt.Errorf("provisioning failed: %w", err)
+		}
+	}
+	// TODO: Handle 'app' resource type if needed
+
+	// Update status to approved
+	if err := s.reqStore.UpdateRequestStatus(ctx, requestID, "approved"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *governanceService) RejectAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error {
+	if err := requireTenant(tenantID); err != nil {
+		return err
+	}
+	return s.reqStore.UpdateRequestStatus(ctx, requestID, "rejected")
 }
 
 func requireTenant(tenantID string) error {

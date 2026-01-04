@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/dhawalhost/velverify/internal/oauthclients"
-	"github.com/dhawalhost/velverify/pkg/middleware"
+	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -34,6 +34,14 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 		clients.GET("/:clientID", h.getOAuthClient)
 		clients.PUT("/:clientID", h.updateOAuthClient)
 		clients.DELETE("/:clientID", h.deleteOAuthClient)
+	}
+
+	requests := tenantGroup.Group("/governance/requests")
+	{
+		requests.POST("", h.createAccessRequest)
+		requests.GET("", h.listAccessRequests)
+		requests.POST("/:accessRequestID/approve", h.approveAccessRequest)
+		requests.POST("/:accessRequestID/reject", h.rejectAccessRequest)
 	}
 }
 
@@ -143,6 +151,79 @@ func (h *HTTPHandler) deleteOAuthClient(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
+}
+
+func (h *HTTPHandler) createAccessRequest(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+	var req CreateAccessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind create access request", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := h.svc.CreateAccessRequest(c.Request.Context(), tenantID, req)
+	if err != nil {
+		h.handleServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, resp)
+}
+
+func (h *HTTPHandler) listAccessRequests(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+	status := c.Query("status")
+	requests, err := h.svc.ListAccessRequests(c.Request.Context(), tenantID, status)
+	if err != nil {
+		h.handleServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, AccessRequestList{Requests: requests})
+}
+
+func (h *HTTPHandler) approveAccessRequest(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+	requestID := c.Param("accessRequestID")
+	var body ApprovalDecision
+	if err := c.ShouldBindJSON(&body); err != nil {
+		// Optional body
+	}
+	// TODO: Get approver ID from context (authenticated user)
+	approverID := "todo-admin-id"
+
+	if err := h.svc.ApproveAccessRequest(c.Request.Context(), tenantID, requestID, approverID, body.Comment); err != nil {
+		h.handleServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "approved"})
+}
+
+func (h *HTTPHandler) rejectAccessRequest(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+	requestID := c.Param("accessRequestID")
+	var body ApprovalDecision
+	if err := c.ShouldBindJSON(&body); err != nil {
+		// Optional body
+	}
+	approverID := "todo-admin-id"
+
+	if err := h.svc.RejectAccessRequest(c.Request.Context(), tenantID, requestID, approverID, body.Comment); err != nil {
+		h.handleServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "rejected"})
 }
 
 func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {

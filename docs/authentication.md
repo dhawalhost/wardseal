@@ -1,0 +1,253 @@
+# Authentication Guide
+
+WardSeal provides comprehensive authentication capabilities including password-based login, multi-factor authentication, social login, and enterprise SSO.
+
+## Table of Contents
+
+- [Password Login](#password-login)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication)
+- [Social Login](#social-login)
+- [SAML SSO](#saml-sso)
+- [OAuth 2.0 / OIDC](#oauth-20--oidc)
+- [Sessions & Tokens](#sessions--tokens)
+
+---
+
+## Password Login
+
+### Basic Login
+
+**Endpoint:** `POST /login`
+
+```bash
+curl -X POST http://localhost:8080/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: 11111111-1111-1111-1111-111111111111" \
+  -d '{
+    "username": "admin@example.com",
+    "password": "password123"
+  }'
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+### If MFA is Enabled
+
+If the user has TOTP enabled, you'll receive:
+
+```json
+{
+  "mfa_required": true,
+  "pending_token": "eyJhbGciOi...",
+  "user_id": "admin@example.com"
+}
+```
+
+Complete the login with the TOTP code:
+
+```bash
+curl -X POST http://localhost:8080/login/mfa \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: 11111111-1111-1111-1111-111111111111" \
+  -d '{
+    "pending_token": "eyJhbGciOi...",
+    "totp_code": "123456",
+    "user_id": "admin@example.com"
+  }'
+```
+
+---
+
+## Multi-Factor Authentication
+
+WardSeal supports two MFA methods:
+
+### TOTP (Authenticator Apps)
+
+Compatible with Google Authenticator, Authy, 1Password, etc.
+
+#### Enroll TOTP
+
+**Endpoint:** `POST /api/v1/mfa/totp/enroll`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/mfa/totp/enroll \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: YOUR_TENANT_ID" \
+  -d '{"user_id": "user@example.com"}'
+```
+
+**Response:**
+```json
+{
+  "secret": "JBSWY3DPEHPK3PXP",
+  "qr_code": "data:image/png;base64,...",
+  "otpauth_url": "otpauth://totp/WardSeal:user@example.com?..."
+}
+```
+
+#### Verify & Activate
+
+```bash
+curl -X POST http://localhost:8080/api/v1/mfa/totp/verify \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: YOUR_TENANT_ID" \
+  -d '{
+    "user_id": "user@example.com",
+    "code": "123456"
+  }'
+```
+
+### WebAuthn (Passkeys)
+
+Support for hardware security keys and biometric authentication.
+
+**Register:**
+1. Call `POST /api/v1/mfa/webauthn/register/begin`
+2. Use browser WebAuthn API with returned options
+3. Call `POST /api/v1/mfa/webauthn/register/finish`
+
+---
+
+## Social Login
+
+WardSeal supports OAuth-based social login providers.
+
+### Supported Providers
+
+- Google
+- GitHub
+- Microsoft
+- Apple
+
+### Configuration
+
+Configure social providers in the Admin UI under **SSO Config** or via API:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/social-providers \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: YOUR_TENANT_ID" \
+  -d '{
+    "provider": "google",
+    "client_id": "YOUR_GOOGLE_CLIENT_ID",
+    "client_secret": "YOUR_GOOGLE_CLIENT_SECRET",
+    "enabled": true
+  }'
+```
+
+### Usage
+
+```javascript
+// Redirect user to:
+window.location = '/oauth2/authorize?provider=google&redirect_uri=...';
+```
+
+---
+
+## SAML SSO
+
+WardSeal acts as a SAML 2.0 Identity Provider (IdP).
+
+### Metadata
+
+Get your IdP metadata:
+```
+GET http://localhost:8080/saml/metadata
+```
+
+### Configure Service Provider
+
+```bash
+curl -X POST http://localhost:8080/api/v1/saml/providers \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: YOUR_TENANT_ID" \
+  -d '{
+    "name": "My App",
+    "entity_id": "https://myapp.com/saml/metadata",
+    "acs_url": "https://myapp.com/saml/acs",
+    "metadata_url": "https://myapp.com/saml/metadata"
+  }'
+```
+
+---
+
+## OAuth 2.0 / OIDC
+
+WardSeal is a fully compliant OAuth 2.0 and OpenID Connect provider.
+
+### Endpoints
+
+| Endpoint | URL |
+|----------|-----|
+| Authorization | `/oauth2/authorize` |
+| Token | `/oauth2/token` |
+| Introspect | `/oauth2/introspect` |
+| Revoke | `/oauth2/revoke` |
+| JWKS | `/.well-known/jwks.json` |
+
+### Authorization Code Flow (with PKCE)
+
+```javascript
+// 1. Generate PKCE
+const codeVerifier = generateRandomString(64);
+const codeChallenge = base64url(sha256(codeVerifier));
+
+// 2. Redirect to authorize
+window.location = `http://localhost:8080/oauth2/authorize?
+  response_type=code&
+  client_id=YOUR_CLIENT_ID&
+  redirect_uri=https://yourapp.com/callback&
+  scope=openid profile email&
+  code_challenge=${codeChallenge}&
+  code_challenge_method=S256&
+  state=random_state`;
+
+// 3. Exchange code for tokens
+const response = await fetch('/oauth2/token', {
+  method: 'POST',
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: 'AUTHORIZATION_CODE',
+    redirect_uri: 'https://yourapp.com/callback',
+    client_id: 'YOUR_CLIENT_ID',
+    client_secret: 'YOUR_CLIENT_SECRET',
+    code_verifier: codeVerifier
+  })
+});
+```
+
+---
+
+## Sessions & Tokens
+
+### Token Types
+
+| Token | Lifetime | Purpose |
+|-------|----------|---------|
+| Access Token | 1 hour | API authorization |
+| Refresh Token | 7 days | Get new access tokens |
+| ID Token | 1 hour | User identity (OIDC) |
+
+### httpOnly Cookies
+
+WardSeal sets secure httpOnly cookies automatically:
+
+| Cookie | Path | Purpose |
+|--------|------|---------|
+| `wardseal_access_token` | `/` | Access token |
+| `wardseal_refresh_token` | `/oauth2/token` | Refresh token |
+
+### Logout
+
+```bash
+curl -X POST http://localhost:8080/logout \
+  -H "X-Tenant-ID: YOUR_TENANT_ID"
+```
+
+This clears authentication cookies.

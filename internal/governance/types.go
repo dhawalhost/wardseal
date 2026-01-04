@@ -1,6 +1,6 @@
 package governance
 
-import "github.com/dhawalhost/velverify/internal/oauthclients"
+import "github.com/dhawalhost/wardseal/internal/oauthclients"
 
 // OAuthClientResponse is the wire format for OAuth clients.
 type OAuthClientResponse struct {
@@ -45,4 +45,32 @@ type updateOAuthClientRequest struct {
 	RedirectURIs  []string `json:"redirect_uris"`
 	AllowedScopes []string `json:"allowed_scopes"`
 	ClientSecret  *string  `json:"client_secret"`
+}
+
+// Access Request types
+
+type AccessRequest struct {
+	ID           string `json:"id"`
+	TenantID     string `json:"tenant_id"`
+	RequesterID  string `json:"requester_id"`
+	ResourceType string `json:"resource_type"`
+	ResourceID   string `json:"resource_id"`
+	Status       string `json:"status"`
+	Reason       string `json:"reason"`
+	CreatedAt    string `json:"created_at"` // ISO8601
+	UpdatedAt    string `json:"updated_at"`
+}
+
+type CreateAccessRequest struct {
+	ResourceType string `json:"resource_type"`
+	ResourceID   string `json:"resource_id"`
+	Reason       string `json:"reason"`
+}
+
+type AccessRequestList struct {
+	Requests []AccessRequest `json:"requests"`
+}
+
+type ApprovalDecision struct {
+	Comment string `json:"comment"`
 }

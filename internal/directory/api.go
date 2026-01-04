@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/dhawalhost/velverify/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
@@ -45,6 +45,11 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	internalRoutes.Use(middleware.ServiceAuthenticator(h.serviceAuth))
 	internalRoutes.Use(middleware.TenantExtractor(middleware.TenantConfig{}))
 	internalRoutes.POST("/credentials/verify", h.verifyCredentials)
+
+	// Global internal routes (no tenant context required)
+	globalInternalRoutes := router.Group("/internal")
+	globalInternalRoutes.Use(middleware.ServiceAuthenticator(h.serviceAuth))
+	globalInternalRoutes.GET("/discover", h.discoverTenant)
 
 	// User routes
 	users := tenantProtected.Group("/users")
@@ -383,6 +388,27 @@ func (h *HTTPHandler) verifyCredentials(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, VerifyCredentialsResponse{User: user})
+}
+
+func (h *HTTPHandler) discoverTenant(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email required"})
+		return
+	}
+
+	tenantID, err := h.svc.GetTenantByEmail(c.Request.Context(), email)
+	if err != nil {
+		h.logger.Error("Discover tenant failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if tenantID == "" {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tenant_id": tenantID})
 }
 
 func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {

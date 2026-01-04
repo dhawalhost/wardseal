@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WardSeal Login Widget Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      margin-top: 2rem;
+    }
+    pre {
+      background: #eee;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 WardSeal Login Widget</h1>
+  
+  <div id="login-container"></div>
+  
+  <div id="result" style="display:none;margin-top:2rem;">
+    <h3>✅ Login Successful!</h3>
+    <pre id="token-display"></pre>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Load Widget -->
+  <script src="./wardseal-login.js"></script>
+  
+  <script>
+    // Initialize Widget
+    WardSeal.init({
+      container: '#login-container',
+      tenantId: '11111111-1111-1111-1111-111111111111', // Default Dev Tenant
+      clientId: 'test-client',
+      branding: {
+        logoUrl: 'https://via.placeholder.com/150x50?text=Your+Logo',
+        primaryColor: '#6366f1' // Indigo
+      },
+      onSuccess: (token) => {
+        console.log('Login Success:', token);
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('token-display').textContent = JSON.stringify(token, null, 2);
+      },
+      onError: (err) => {
+        console.error('Login Error:', err);
+      }
+    });
+
+    function logout() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>

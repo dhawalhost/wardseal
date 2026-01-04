@@ -1,23 +1,28 @@
 package directory
 
+import (
+	"time"
+)
+
+// User represents a user in the system.
 // User represents a user in the system.
 type User struct {
-	ID        string `json:"id,omitempty" validate:"omitempty,uuid"`
-	TenantID  string `json:"tenant_id,omitempty" validate:"omitempty,uuid"`
-	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password,omitempty" validate:"required,min=8"`
-	Status    string `json:"status,omitempty" validate:"required,oneof=active inactive suspended"`
-	CreatedAt string `json:"created_at,omitempty"`
-	UpdatedAt string `json:"updated_at,omitempty"`
+	ID        string    `json:"id,omitempty" db:"id" validate:"omitempty,uuid"`
+	TenantID  string    `json:"tenant_id,omitempty" db:"tenant_id" validate:"omitempty,uuid"`
+	Email     string    `json:"email" db:"email" validate:"required,email"`
+	Password  string    `json:"password,omitempty" db:"-" validate:"required,min=8"` // Ignore password for db scan, normally not selected or manual
+	Status    string    `json:"status,omitempty" db:"status" validate:"required,oneof=active inactive suspended"`
+	CreatedAt time.Time `json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 // Group represents a group in the system.
 type Group struct {
-	ID        string `json:"id,omitempty" validate:"omitempty,uuid"`
-	TenantID  string `json:"tenant_id,omitempty" validate:"omitempty,uuid"`
-	Name      string `json:"name" validate:"required"`
-	CreatedAt string `json:"created_at,omitempty"`
-	UpdatedAt string `json:"updated_at,omitempty"`
+	ID        string    `json:"id,omitempty" db:"id" validate:"omitempty,uuid"`
+	TenantID  string    `json:"tenant_id,omitempty" db:"tenant_id" validate:"omitempty,uuid"`
+	Name      string    `json:"name" db:"name" validate:"required"`
+	CreatedAt time.Time `json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 // HealthCheckResponse holds the response values for the HealthCheck endpoint.
