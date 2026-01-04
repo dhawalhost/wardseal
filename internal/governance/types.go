@@ -1,6 +1,6 @@
 package governance
 
-import "github.com/dhawalhost/wardseal/internal/oauthclients"
+import "github.com/dhawalhost/wardseal/internal/oauthclient"
 
 // OAuthClientResponse is the wire format for OAuth clients.
 type OAuthClientResponse struct {
@@ -13,7 +13,7 @@ type OAuthClientResponse struct {
 	AllowedScopes []string `json:"allowed_scopes"`
 }
 
-func newOAuthClientResponse(client oauthclients.Client) OAuthClientResponse {
+func newOAuthClientResponse(client oauthclient.Client) OAuthClientResponse {
 	resp := OAuthClientResponse{
 		ClientID:      client.ClientID,
 		TenantID:      client.TenantID,

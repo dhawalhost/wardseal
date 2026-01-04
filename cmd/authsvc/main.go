@@ -6,7 +6,7 @@ import (
 
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/license"
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/database"
 	"github.com/dhawalhost/wardseal/pkg/logger"
@@ -87,7 +87,7 @@ func main() {
 		log.Error("Failed to connect to database", zap.Error(err))
 		os.Exit(1)
 	}
-	clientStore := oauthclients.NewRepository(db)
+	clientStore := oauthclient.NewRepository(db)
 	samlStore := saml.NewStore(db)
 	deviceStore := auth.NewDeviceStore(db)
 	signalStore := auth.NewSignalStore(db)

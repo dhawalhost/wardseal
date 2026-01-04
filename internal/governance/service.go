@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/policy"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,10 +15,10 @@ import (
 // Service defines the interface for the governance service.
 type Service interface {
 	HealthCheck(ctx context.Context) (bool, error)
-	ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclients.Client, error)
-	GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error)
-	CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error)
-	UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error)
+	ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclient.Client, error)
+	GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error)
+	CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclient.Client, error)
+	UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclient.Client, error)
 	DeleteOAuthClient(ctx context.Context, tenantID, clientID string) error
 
 	// Access Requests
@@ -48,14 +48,14 @@ type UpdateOAuthClientInput struct {
 }
 
 type governanceService struct {
-	clientStore  oauthclients.Store
+	clientStore  oauthclient.Store
 	reqStore     Store
 	dirClient    DirectoryClient
 	policyEngine policy.Engine
 }
 
 // NewService creates a new governance service.
-func NewService(clientStore oauthclients.Store, reqStore Store, dirClient DirectoryClient, policyEngine policy.Engine) Service {
+func NewService(clientStore oauthclient.Store, reqStore Store, dirClient DirectoryClient, policyEngine policy.Engine) Service {
 	return &governanceService{
 		clientStore:  clientStore,
 		reqStore:     reqStore,
@@ -68,35 +68,35 @@ func (s *governanceService) HealthCheck(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (s *governanceService) ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclients.Client, error) {
+func (s *governanceService) ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclient.Client, error) {
 	if err := requireTenant(tenantID); err != nil {
 		return nil, err
 	}
 	return s.clientStore.ListClientsByTenant(ctx, tenantID)
 }
 
-func (s *governanceService) GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error) {
+func (s *governanceService) GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error) {
 	if err := requireTenant(tenantID); err != nil {
-		return oauthclients.Client{}, err
+		return oauthclient.Client{}, err
 	}
 	if clientID == "" {
-		return oauthclients.Client{}, validationError("client_id is required")
+		return oauthclient.Client{}, validationError("client_id is required")
 	}
 	return s.clientStore.GetClient(ctx, tenantID, clientID)
 }
 
-func (s *governanceService) CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error) {
+func (s *governanceService) CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclient.Client, error) {
 	if err := requireTenant(tenantID); err != nil {
-		return oauthclients.Client{}, err
+		return oauthclient.Client{}, err
 	}
 	if err := validateCreateInput(input); err != nil {
-		return oauthclients.Client{}, err
+		return oauthclient.Client{}, err
 	}
 	hash, err := maybeHashSecret(input.ClientType, input.ClientSecret)
 	if err != nil {
-		return oauthclients.Client{}, err
+		return oauthclient.Client{}, err
 	}
-	params := oauthclients.CreateClientParams{
+	params := oauthclient.CreateClientParams{
 		TenantID:         tenantID,
 		ClientID:         input.ClientID,
 		ClientType:       normalizedClientType(input.ClientType),
@@ -109,25 +109,25 @@ func (s *governanceService) CreateOAuthClient(ctx context.Context, tenantID stri
 	return s.clientStore.CreateClient(ctx, params)
 }
 
-func (s *governanceService) UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error) {
+func (s *governanceService) UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclient.Client, error) {
 	if err := requireTenant(tenantID); err != nil {
-		return oauthclients.Client{}, err
+		return oauthclient.Client{}, err
 	}
 	if clientID == "" {
-		return oauthclients.Client{}, validationError("client_id is required")
+		return oauthclient.Client{}, validationError("client_id is required")
 	}
 	if err := validateUpdateInput(input); err != nil {
-		return oauthclients.Client{}, err
+		return oauthclient.Client{}, err
 	}
 	var secretHash *[]byte
 	if input.ClientSecret != nil {
 		hash, err := bcrypt.GenerateFromPassword([]byte(*input.ClientSecret), bcrypt.DefaultCost)
 		if err != nil {
-			return oauthclients.Client{}, err
+			return oauthclient.Client{}, err
 		}
 		secretHash = &hash
 	}
-	params := oauthclients.UpdateClientParams{
+	params := oauthclient.UpdateClientParams{
 		Name:             input.Name,
 		Description:      input.Description,
 		RedirectURIs:     cloneSlice(input.RedirectURIs),

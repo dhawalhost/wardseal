@@ -3,7 +3,7 @@ package governance
 import (
 	"net/http"
 
-	"github.com/dhawalhost/wardseal/internal/webhooks"
+	"github.com/dhawalhost/wardseal/internal/webhook"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -11,11 +11,11 @@ import (
 
 // WebhookHTTPHandler handles webhook management requests.
 type WebhookHTTPHandler struct {
-	svc    webhooks.Service
+	svc    webhook.Service
 	logger *zap.Logger
 }
 
-func NewWebhookHTTPHandler(svc webhooks.Service, logger *zap.Logger) *WebhookHTTPHandler {
+func NewWebhookHTTPHandler(svc webhook.Service, logger *zap.Logger) *WebhookHTTPHandler {
 	return &WebhookHTTPHandler{svc: svc, logger: logger}
 }
 

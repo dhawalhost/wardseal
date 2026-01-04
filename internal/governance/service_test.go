@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
 )
 
 var ctx = context.Background()
@@ -57,28 +57,28 @@ func TestUpdateOAuthClientValidatesRedirects(t *testing.T) {
 }
 
 type fakeStore struct {
-	clients          map[string]oauthclients.Client
-	lastCreateParams oauthclients.CreateClientParams
+	clients          map[string]oauthclient.Client
+	lastCreateParams oauthclient.CreateClientParams
 }
 
 func (f *fakeStore) ensureClients() {
 	if f.clients == nil {
-		f.clients = map[string]oauthclients.Client{}
+		f.clients = map[string]oauthclient.Client{}
 	}
 }
 
-func (f *fakeStore) ListClients(ctx context.Context) ([]oauthclients.Client, error) {
+func (f *fakeStore) ListClients(ctx context.Context) ([]oauthclient.Client, error) {
 	f.ensureClients()
-	out := make([]oauthclients.Client, 0, len(f.clients))
+	out := make([]oauthclient.Client, 0, len(f.clients))
 	for _, c := range f.clients {
 		out = append(out, c)
 	}
 	return out, nil
 }
 
-func (f *fakeStore) ListClientsByTenant(ctx context.Context, tenantID string) ([]oauthclients.Client, error) {
+func (f *fakeStore) ListClientsByTenant(ctx context.Context, tenantID string) ([]oauthclient.Client, error) {
 	f.ensureClients()
-	var out []oauthclients.Client
+	var out []oauthclient.Client
 	for _, c := range f.clients {
 		if c.TenantID == tenantID {
 			out = append(out, c)
@@ -87,19 +87,19 @@ func (f *fakeStore) ListClientsByTenant(ctx context.Context, tenantID string) ([
 	return out, nil
 }
 
-func (f *fakeStore) GetClient(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error) {
+func (f *fakeStore) GetClient(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error) {
 	f.ensureClients()
 	c, ok := f.clients[tenantID+clientID]
 	if !ok {
-		return oauthclients.Client{}, oauthclients.ErrNotFound
+		return oauthclient.Client{}, oauthclient.ErrNotFound
 	}
 	return c, nil
 }
 
-func (f *fakeStore) CreateClient(ctx context.Context, params oauthclients.CreateClientParams) (oauthclients.Client, error) {
+func (f *fakeStore) CreateClient(ctx context.Context, params oauthclient.CreateClientParams) (oauthclient.Client, error) {
 	f.ensureClients()
 	f.lastCreateParams = params
-	client := oauthclients.Client{
+	client := oauthclient.Client{
 		TenantID:      params.TenantID,
 		ClientID:      params.ClientID,
 		ClientType:    params.ClientType,
@@ -111,9 +111,9 @@ func (f *fakeStore) CreateClient(ctx context.Context, params oauthclients.Create
 	return client, nil
 }
 
-func (f *fakeStore) UpdateClient(ctx context.Context, tenantID, clientID string, params oauthclients.UpdateClientParams) (oauthclients.Client, error) {
+func (f *fakeStore) UpdateClient(ctx context.Context, tenantID, clientID string, params oauthclient.UpdateClientParams) (oauthclient.Client, error) {
 	f.ensureClients()
-	client := oauthclients.Client{TenantID: tenantID, ClientID: clientID}
+	client := oauthclient.Client{TenantID: tenantID, ClientID: clientID}
 	f.clients[tenantID+clientID] = client
 	return client, nil
 }

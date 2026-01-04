@@ -14,11 +14,11 @@ import (
 	"github.com/dhawalhost/wardseal/internal/connector/ldap"
 	"github.com/dhawalhost/wardseal/internal/connector/scim"
 	"github.com/dhawalhost/wardseal/internal/governance"
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/policy"
 	"github.com/dhawalhost/wardseal/internal/rbac"
 	"github.com/dhawalhost/wardseal/internal/sso"
-	"github.com/dhawalhost/wardseal/internal/webhooks"
+	"github.com/dhawalhost/wardseal/internal/webhook"
 	"github.com/dhawalhost/wardseal/pkg/database"
 	"github.com/dhawalhost/wardseal/pkg/logger"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
@@ -49,7 +49,7 @@ func main() {
 		log.Error("Failed to connect to database", zap.Error(err))
 		os.Exit(1)
 	}
-	clientRepo := oauthclients.NewRepository(db)
+	clientRepo := oauthclient.NewRepository(db)
 	reqStore := governance.NewStore(db)
 
 	dirSvcURL := envOr("DIRSVC_URL", "http://localhost:8081")
@@ -153,7 +153,7 @@ func main() {
 	connHandlers.RegisterRoutes(apiGroup)
 
 	// Webhooks
-	webhookSvc := webhooks.NewService(db)
+	webhookSvc := webhook.NewService(db)
 	webhookHandlers := governance.NewWebhookHTTPHandler(webhookSvc, log)
 	webhookHandlers.RegisterRoutes(apiGroup)
 

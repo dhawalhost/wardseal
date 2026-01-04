@@ -1,4 +1,4 @@
-package events
+package event
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dhawalhost/wardseal/internal/webhooks"
+	"github.com/dhawalhost/wardseal/internal/webhook"
 	"go.uber.org/zap"
 )
 
@@ -25,13 +25,13 @@ type Event struct {
 
 // Dispatcher handles event publication.
 type Dispatcher struct {
-	webhookSvc webhooks.Service
+	webhookSvc webhook.Service
 	logger     *zap.Logger
 	httpClient *http.Client
 }
 
 // NewDispatcher creates a new event dispatcher.
-func NewDispatcher(webhookSvc webhooks.Service, logger *zap.Logger) *Dispatcher {
+func NewDispatcher(webhookSvc webhook.Service, logger *zap.Logger) *Dispatcher {
 	return &Dispatcher{
 		webhookSvc: webhookSvc,
 		logger:     logger,
@@ -72,7 +72,7 @@ func (d *Dispatcher) processEvent(ctx context.Context, event Event) {
 	}
 }
 
-func (d *Dispatcher) sendWebhook(ctx context.Context, hook webhooks.Webhook, payload []byte, eventID string) {
+func (d *Dispatcher) sendWebhook(ctx context.Context, hook webhook.Webhook, payload []byte, eventID string) {
 	req, err := http.NewRequestWithContext(ctx, "POST", hook.URL, bytes.NewBuffer(payload))
 	if err != nil {
 		d.logger.Error("Failed to create webhook request", zap.Error(err))

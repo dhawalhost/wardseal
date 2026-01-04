@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -169,6 +170,7 @@ func newTestService(t *testing.T) *authService {
 	svc, err := NewService(Config{
 		BaseURL:             "http://example.com",
 		DirectoryServiceURL: "http://dirsvc",
+		SAMLStore:           saml.NewStore(nil),
 		Clients: []ClientConfig{
 			{
 				ID:            "test-client",

@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -80,7 +80,7 @@ type authService struct {
 	refreshTokenStore   RefreshTokenStore
 	revokedTokens       RevocationStore
 	clients             map[clientKey]ClientConfig
-	clientStore         oauthclients.Store
+	clientStore         oauthclient.Store
 	samlProvider        *saml.Provider
 	deviceStore         DeviceStore
 	signalStore         SignalStore
@@ -120,7 +120,7 @@ type Config struct {
 	ServiceAuthToken    string
 	ServiceAuthHeader   string
 	Clients             []ClientConfig
-	ClientStore         oauthclients.Store
+	ClientStore         oauthclient.Store
 	SAMLStore           *saml.Store
 	DeviceStore         DeviceStore
 	SignalStore         SignalStore
@@ -982,7 +982,7 @@ func (s *authService) resolveClient(ctx context.Context, tenantID, clientID stri
 	if s.clientStore != nil {
 		record, err := s.clientStore.GetClient(ctx, tenantID, clientID)
 		if err != nil {
-			if errors.Is(err, oauthclients.ErrNotFound) {
+			if errors.Is(err, oauthclient.ErrNotFound) {
 				return ClientConfig{}, ErrInvalidClient
 			}
 			return ClientConfig{}, err
@@ -1003,7 +1003,7 @@ func (s *authService) resolveClient(ctx context.Context, tenantID, clientID stri
 	return client, nil
 }
 
-func clientConfigFromRecord(record oauthclients.Client) ClientConfig {
+func clientConfigFromRecord(record oauthclient.Client) ClientConfig {
 	description := ""
 	if record.Description.Valid {
 		description = record.Description.String

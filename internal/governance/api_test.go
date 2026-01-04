@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
@@ -19,11 +19,11 @@ import (
 func TestListOAuthClientsReturnsClients(t *testing.T) {
 	tenantID := "11111111-1111-1111-1111-111111111111"
 	stub := &stubService{
-		listOAuthClientsFn: func(ctx context.Context, gotTenant string) ([]oauthclients.Client, error) {
+		listOAuthClientsFn: func(ctx context.Context, gotTenant string) ([]oauthclient.Client, error) {
 			if gotTenant != tenantID {
 				t.Fatalf("unexpected tenant id: %s", gotTenant)
 			}
-			return []oauthclients.Client{{
+			return []oauthclient.Client{{
 				TenantID:     tenantID,
 				ClientID:     "client-one",
 				ClientType:   "public",
@@ -67,11 +67,11 @@ func TestListOAuthClientsReturnsClients(t *testing.T) {
 
 func TestCreateOAuthClientValidationErrorPropagates(t *testing.T) {
 	stub := &stubService{
-		createOAuthClientFn: func(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error) {
+		createOAuthClientFn: func(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclient.Client, error) {
 			if input.ClientID == "" {
 				t.Fatalf("expected client_id to be parsed")
 			}
-			return oauthclients.Client{}, validationError("invalid redirect")
+			return oauthclient.Client{}, validationError("invalid redirect")
 		},
 	}
 
@@ -105,8 +105,8 @@ func TestCreateOAuthClientValidationErrorPropagates(t *testing.T) {
 
 func TestGetOAuthClientNotFound(t *testing.T) {
 	stub := &stubService{
-		getOAuthClientFn: func(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error) {
-			return oauthclients.Client{}, oauthclients.ErrNotFound
+		getOAuthClientFn: func(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error) {
+			return oauthclient.Client{}, oauthclient.ErrNotFound
 		},
 	}
 	router := newTestRouter(t, stub)
@@ -177,10 +177,10 @@ func decodeJSON(t *testing.T, data []byte, out interface{}) {
 
 type stubService struct {
 	healthCheckFn          func(ctx context.Context) (bool, error)
-	listOAuthClientsFn     func(ctx context.Context, tenantID string) ([]oauthclients.Client, error)
-	getOAuthClientFn       func(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error)
-	createOAuthClientFn    func(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error)
-	updateOAuthClientFn    func(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error)
+	listOAuthClientsFn     func(ctx context.Context, tenantID string) ([]oauthclient.Client, error)
+	getOAuthClientFn       func(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error)
+	createOAuthClientFn    func(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclient.Client, error)
+	updateOAuthClientFn    func(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclient.Client, error)
 	deleteOAuthClientFn    func(ctx context.Context, tenantID, clientID string) error
 	createAccessRequestFn  func(ctx context.Context, tenantID string, input CreateAccessRequest) (AccessRequest, error)
 	listAccessRequestsFn   func(ctx context.Context, tenantID, status string) ([]AccessRequest, error)
@@ -195,28 +195,28 @@ func (s *stubService) HealthCheck(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (s *stubService) ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclients.Client, error) {
+func (s *stubService) ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclient.Client, error) {
 	if s.listOAuthClientsFn == nil {
 		panic("ListOAuthClients called unexpectedly")
 	}
 	return s.listOAuthClientsFn(ctx, tenantID)
 }
 
-func (s *stubService) GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error) {
+func (s *stubService) GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error) {
 	if s.getOAuthClientFn == nil {
 		panic("GetOAuthClient called unexpectedly")
 	}
 	return s.getOAuthClientFn(ctx, tenantID, clientID)
 }
 
-func (s *stubService) CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclients.Client, error) {
+func (s *stubService) CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclient.Client, error) {
 	if s.createOAuthClientFn == nil {
 		panic("CreateOAuthClient called unexpectedly")
 	}
 	return s.createOAuthClientFn(ctx, tenantID, input)
 }
 
-func (s *stubService) UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclients.Client, error) {
+func (s *stubService) UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclient.Client, error) {
 	if s.updateOAuthClientFn == nil {
 		panic("UpdateOAuthClient called unexpectedly")
 	}

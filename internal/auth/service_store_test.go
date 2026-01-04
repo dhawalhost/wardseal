@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dhawalhost/wardseal/internal/oauthclients"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
+	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -14,7 +15,7 @@ import (
 func TestPKCEFlowWithClientStore(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	store := newStubClientStore()
-	store.addClient(oauthclients.Client{
+	store.addClient(oauthclient.Client{
 		TenantID:      "11111111-1111-1111-1111-111111111111",
 		ClientID:      "db-client",
 		ClientType:    "public",
@@ -63,7 +64,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 
 func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 	store := newStubClientStore()
-	store.addClient(oauthclients.Client{
+	store.addClient(oauthclient.Client{
 		TenantID:      "11111111-1111-1111-1111-111111111111",
 		ClientID:      "db-client",
 		ClientType:    "public",
@@ -108,12 +109,13 @@ func TestAuthorizeRejectsUnknownClientFromStore(t *testing.T) {
 	}
 }
 
-func newServiceWithStore(t *testing.T, store oauthclients.Store) Service {
+func newServiceWithStore(t *testing.T, store oauthclient.Store) Service {
 	t.Helper()
 	svc, err := NewService(Config{
 		BaseURL:             "http://example.com",
-		DirectoryServiceURL: "http://dirsvc",
+		DirectoryServiceURL: "http://dir-service",
 		ClientStore:         store,
+		SAMLStore:           saml.NewStore(nil),
 	})
 	if err != nil {
 		t.Fatalf("failed to create auth service with store: %v", err)
@@ -122,31 +124,31 @@ func newServiceWithStore(t *testing.T, store oauthclients.Store) Service {
 }
 
 type stubClientStore struct {
-	clients map[string]oauthclients.Client
+	clients map[string]oauthclient.Client
 }
 
 func newStubClientStore() *stubClientStore {
-	return &stubClientStore{clients: make(map[string]oauthclients.Client)}
+	return &stubClientStore{clients: make(map[string]oauthclient.Client)}
 }
 
 func (s *stubClientStore) key(tenantID, clientID string) string {
 	return tenantID + "::" + clientID
 }
 
-func (s *stubClientStore) addClient(client oauthclients.Client) {
+func (s *stubClientStore) addClient(client oauthclient.Client) {
 	s.clients[s.key(client.TenantID, client.ClientID)] = client
 }
 
-func (s *stubClientStore) ListClients(ctx context.Context) ([]oauthclients.Client, error) {
-	out := make([]oauthclients.Client, 0, len(s.clients))
+func (s *stubClientStore) ListClients(ctx context.Context) ([]oauthclient.Client, error) {
+	out := make([]oauthclient.Client, 0, len(s.clients))
 	for _, c := range s.clients {
 		out = append(out, c)
 	}
 	return out, nil
 }
 
-func (s *stubClientStore) ListClientsByTenant(ctx context.Context, tenantID string) ([]oauthclients.Client, error) {
-	var out []oauthclients.Client
+func (s *stubClientStore) ListClientsByTenant(ctx context.Context, tenantID string) ([]oauthclient.Client, error) {
+	var out []oauthclient.Client
 	for _, c := range s.clients {
 		if c.TenantID == tenantID {
 			out = append(out, c)
@@ -155,15 +157,15 @@ func (s *stubClientStore) ListClientsByTenant(ctx context.Context, tenantID stri
 	return out, nil
 }
 
-func (s *stubClientStore) GetClient(ctx context.Context, tenantID, clientID string) (oauthclients.Client, error) {
+func (s *stubClientStore) GetClient(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error) {
 	if client, ok := s.clients[s.key(tenantID, clientID)]; ok {
 		return client, nil
 	}
-	return oauthclients.Client{}, oauthclients.ErrNotFound
+	return oauthclient.Client{}, oauthclient.ErrNotFound
 }
 
-func (s *stubClientStore) CreateClient(ctx context.Context, params oauthclients.CreateClientParams) (oauthclients.Client, error) {
-	client := oauthclients.Client{
+func (s *stubClientStore) CreateClient(ctx context.Context, params oauthclient.CreateClientParams) (oauthclient.Client, error) {
+	client := oauthclient.Client{
 		TenantID:      params.TenantID,
 		ClientID:      params.ClientID,
 		ClientType:    params.ClientType,
@@ -178,10 +180,10 @@ func (s *stubClientStore) CreateClient(ctx context.Context, params oauthclients.
 	return client, nil
 }
 
-func (s *stubClientStore) UpdateClient(ctx context.Context, tenantID, clientID string, params oauthclients.UpdateClientParams) (oauthclients.Client, error) {
+func (s *stubClientStore) UpdateClient(ctx context.Context, tenantID, clientID string, params oauthclient.UpdateClientParams) (oauthclient.Client, error) {
 	client, ok := s.clients[s.key(tenantID, clientID)]
 	if !ok {
-		return oauthclients.Client{}, oauthclients.ErrNotFound
+		return oauthclient.Client{}, oauthclient.ErrNotFound
 	}
 	if params.Name != nil {
 		client.Name = *params.Name
@@ -204,7 +206,7 @@ func (s *stubClientStore) UpdateClient(ctx context.Context, tenantID, clientID s
 
 func (s *stubClientStore) DeleteClient(ctx context.Context, tenantID, clientID string) error {
 	if _, ok := s.clients[s.key(tenantID, clientID)]; !ok {
-		return oauthclients.ErrNotFound
+		return oauthclient.ErrNotFound
 	}
 	delete(s.clients, s.key(tenantID, clientID))
 	return nil
