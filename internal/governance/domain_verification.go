@@ -175,7 +175,7 @@ func (h *DomainVerificationHandler) verifyDomain(c *gin.Context) {
 	if verified {
 		// Mark domain as verified
 		updateQuery := `UPDATE organizations SET domain_verified = TRUE WHERE id = $1`
-		h.db.ExecContext(c.Request.Context(), updateQuery, orgID)
+		_, _ = h.db.ExecContext(c.Request.Context(), updateQuery, orgID)
 
 		c.JSON(http.StatusOK, gin.H{
 			"verified": true,

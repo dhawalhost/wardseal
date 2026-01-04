@@ -42,7 +42,7 @@ func (c *directoryHTTPClient) AddUserToGroup(ctx context.Context, tenantID, user
 	if err != nil {
 		return fmt.Errorf("request to dirsvc failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("dirsvc returned status %d", resp.StatusCode)

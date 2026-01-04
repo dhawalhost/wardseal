@@ -147,7 +147,7 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	}
 
 	var result graphUserResponse
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 

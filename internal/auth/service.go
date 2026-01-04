@@ -554,7 +554,7 @@ func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (Auth
 		CodeChallengeMethod: method,
 		ExpiresAt:           expiresAt,
 	}
-	s.codeStore.Save(ctx, entry)
+	_ = s.codeStore.Save(ctx, entry)
 	redirectURI, err := buildAuthorizationRedirect(req.RedirectURI, code, req.State)
 	if err != nil {
 		return AuthorizeResponse{}, err
@@ -605,7 +605,7 @@ func (s *authService) handleAuthorizationCodeGrant(ctx context.Context, tenantID
 	if err := verifyCodeChallenge(code.CodeChallenge, code.CodeChallengeMethod, req.CodeVerifier); err != nil {
 		return TokenResponse{}, err
 	}
-	s.codeStore.Delete(ctx, req.Code)
+	_ = s.codeStore.Delete(ctx, req.Code)
 
 	return s.issueTokens(ctx, tenantID, req.ClientID, code.Scope, "user")
 }
@@ -700,7 +700,7 @@ func (s *authService) handleRefreshTokenGrant(ctx context.Context, tenantID stri
 	}
 
 	// Rotate refresh token - delete old and issue new
-	s.refreshTokenStore.Delete(ctx, req.RefreshToken)
+	_ = s.refreshTokenStore.Delete(ctx, req.RefreshToken)
 
 	return s.issueTokens(ctx, tenantID, stored.ClientID, stored.Scope, stored.SubjectType)
 }
@@ -856,7 +856,7 @@ func (s *authService) Revoke(ctx context.Context, req RevokeRequest) error {
 	}
 
 	// Also delete from refresh token store if it exists there
-	s.refreshTokenStore.Delete(ctx, req.Token)
+	_ = s.refreshTokenStore.Delete(ctx, req.Token)
 
 	return nil
 }
@@ -1220,14 +1220,14 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName s
 	if err != nil {
 		return "", "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		// Try to read error body
 		var errResp struct {
 			Error string `json:"error"`
 		}
-		json.NewDecoder(resp.Body).Decode(&errResp)
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
 		return "", "", fmt.Errorf("failed to create user: status %d, error: %s", resp.StatusCode, errResp.Error)
 	}
 
