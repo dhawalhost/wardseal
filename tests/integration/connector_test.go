@@ -26,7 +26,7 @@ func TestConnectorCRUD(t *testing.T) {
 			"type":    "scim",
 			"enabled": false,
 			"config": map[string]interface{}{
-				"base_url": "https://api.example.com/scim/v2",
+				"base_url": "https://api.wardseal.com/scim/v2",
 				"token":    "test-bearer-token",
 			},
 		}
@@ -77,7 +77,7 @@ func TestConnectorCRUD(t *testing.T) {
 			"type":    "scim",
 			"enabled": true,
 			"config": map[string]interface{}{
-				"base_url": "https://api.example.com/scim/v2",
+				"base_url": "https://api.wardseal.com/scim/v2",
 				"token":    "updated-bearer-token",
 			},
 		}
@@ -124,7 +124,7 @@ func TestConnectorTestConnection(t *testing.T) {
 			"name": "Test Connection",
 			"type": "scim",
 			"config": map[string]interface{}{
-				"base_url": "https://invalid.example.com/scim",
+				"base_url": "https://invalid.wardseal.com/scim",
 				"token":    "invalid-token",
 			},
 		}

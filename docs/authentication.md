@@ -24,7 +24,7 @@ curl -X POST http://localhost:8080/login \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: 11111111-1111-1111-1111-111111111111" \
   -d '{
-    "username": "admin@example.com",
+    "username": "admin@wardseal.com",
     "password": "password123"
   }'
 ```
@@ -44,7 +44,7 @@ If the user has TOTP enabled, you'll receive:
 {
   "mfa_required": true,
   "pending_token": "eyJhbGciOi...",
-  "user_id": "admin@example.com"
+  "user_id": "admin@wardseal.com"
 }
 ```
 
@@ -57,7 +57,7 @@ curl -X POST http://localhost:8080/login/mfa \
   -d '{
     "pending_token": "eyJhbGciOi...",
     "totp_code": "123456",
-    "user_id": "admin@example.com"
+    "user_id": "admin@wardseal.com"
   }'
 ```
 
@@ -79,7 +79,7 @@ Compatible with Google Authenticator, Authy, 1Password, etc.
 curl -X POST http://localhost:8080/api/v1/mfa/totp/enroll \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: YOUR_TENANT_ID" \
-  -d '{"user_id": "user@example.com"}'
+  -d '{"user_id": "user@wardseal.com"}'
 ```
 
 **Response:**
@@ -87,7 +87,7 @@ curl -X POST http://localhost:8080/api/v1/mfa/totp/enroll \
 {
   "secret": "JBSWY3DPEHPK3PXP",
   "qr_code": "data:image/png;base64,...",
-  "otpauth_url": "otpauth://totp/WardSeal:user@example.com?..."
+  "otpauth_url": "otpauth://totp/WardSeal:user@wardseal.com?..."
 }
 ```
 
@@ -98,7 +98,7 @@ curl -X POST http://localhost:8080/api/v1/mfa/totp/verify \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: YOUR_TENANT_ID" \
   -d '{
-    "user_id": "user@example.com",
+    "user_id": "user@wardseal.com",
     "code": "123456"
   }'
 ```

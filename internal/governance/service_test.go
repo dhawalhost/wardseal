@@ -30,7 +30,7 @@ func TestCreateOAuthClientHashesSecret(t *testing.T) {
 		ClientID:      "client-b",
 		Name:          "Client B",
 		ClientType:    "confidential",
-		RedirectURIs:  []string{"https://app.example.com/callback"},
+		RedirectURIs:  []string{"https://app.wardseal.com/callback"},
 		AllowedScopes: []string{"openid"},
 		ClientSecret:  secret,
 	})

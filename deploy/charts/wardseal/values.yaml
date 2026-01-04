@@ -1,0 +1,158 @@
+# Wardseal Identity Platform - Default Values
+# This file contains default values for all services.
+# Override these in environment-specific values files (values-staging.yaml, values-production.yaml)
+
+global:
+  # Image registry for all services
+  imageRegistry: ghcr.io/dhawalhost
+  # Image pull secrets
+  imagePullSecrets: []
+  # Common labels applied to all resources
+  commonLabels: {}
+
+# Database configuration (shared by all services)
+database:
+  host: postgres
+  port: 5432
+  name: identity_platform
+  sslMode: disable
+  # Credentials should be provided via secrets
+  existingSecret: wardseal-db-credentials
+  secretKeys:
+    username: username
+    password: password
+
+# Service-to-service authentication
+serviceAuth:
+  token: ""  # Override in secrets
+  header: X-Service-Auth
+
+# =====================
+# Auth Service
+# =====================
+authsvc:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-authsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  env:
+    DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
+    AUTH_SERVICE_URL: http://wardseal-authsvc:8080
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+
+# =====================
+# Directory Service
+# =====================
+dirsvc:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-dirsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8081
+
+  env:
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# =====================
+# Governance Service
+# =====================
+govsvc:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-govsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8082
+
+  env:
+    DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# =====================
+# Ingress Configuration
+# =====================
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: auth.wardseal.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+    - host: api.wardseal.com
+      paths:
+        - path: /api/v1/users
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/groups
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/oauth
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/governance
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+  tls:
+    - secretName: wardseal-tls
+      hosts:
+        - auth.wardseal.com
+        - api.wardseal.com

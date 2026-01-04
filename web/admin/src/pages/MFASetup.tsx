@@ -17,7 +17,7 @@ const MFASetup: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     const getUserId = () => {
-        return localStorage.getItem('userId') || 'admin@example.com';
+        return localStorage.getItem('userId') || 'admin@wardseal.com';
     };
 
     const fetchStatus = async () => {

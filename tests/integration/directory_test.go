@@ -42,7 +42,7 @@ func TestUserCRUD(t *testing.T) {
 	// 1. Create User
 	t.Run("Create", func(t *testing.T) {
 		createReq := map[string]interface{}{
-			"email":    "newuser@example.com",
+			"email":    "newuser@wardseal.com",
 			"password": "SecurePassword123!",
 		}
 		resp := client.Post(t, "/api/v1/users", createReq)
@@ -55,8 +55,8 @@ func TestUserCRUD(t *testing.T) {
 			t.Fatal("Expected user ID in response")
 		}
 		createdUserID = id
-		if created["email"] != "newuser@example.com" {
-			t.Errorf("Expected email=newuser@example.com, got %v", created["email"])
+		if created["email"] != "newuser@wardseal.com" {
+			t.Errorf("Expected email=newuser@wardseal.com, got %v", created["email"])
 		}
 	})
 
@@ -77,13 +77,13 @@ func TestUserCRUD(t *testing.T) {
 
 	// 3. Get User by Email
 	t.Run("GetByEmail", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/users/by-email/newuser@example.com")
+		resp := client.Get(t, "/api/v1/users/by-email/newuser@wardseal.com")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
 		ReadJSON(t, resp, &result)
-		if result["email"] != "newuser@example.com" {
-			t.Errorf("Expected email=newuser@example.com, got %v", result["email"])
+		if result["email"] != "newuser@wardseal.com" {
+			t.Errorf("Expected email=newuser@wardseal.com, got %v", result["email"])
 		}
 	})
 
@@ -213,7 +213,7 @@ func TestGroupMembership(t *testing.T) {
 
 	// Create a user
 	userResp := client.Post(t, "/api/v1/users", map[string]interface{}{
-		"email":    "member@example.com",
+		"email":    "member@wardseal.com",
 		"password": "SecurePassword123!",
 	})
 	AssertStatus(t, userResp, http.StatusCreated)
@@ -263,7 +263,7 @@ func TestCredentialVerification(t *testing.T) {
 
 	// Create a user with known credentials
 	userResp := client.Post(t, "/api/v1/users", map[string]interface{}{
-		"email":    "verify@example.com",
+		"email":    "verify@wardseal.com",
 		"password": "VerifyPass123!",
 	})
 	AssertStatus(t, userResp, http.StatusCreated)
@@ -274,7 +274,7 @@ func TestCredentialVerification(t *testing.T) {
 	// Verify correct credentials
 	t.Run("ValidCredentials", func(t *testing.T) {
 		verifyResp := client.Post(t, "/internal/verify-credentials", map[string]interface{}{
-			"email":    "verify@example.com",
+			"email":    "verify@wardseal.com",
 			"password": "VerifyPass123!",
 		})
 		AssertStatus(t, verifyResp, http.StatusOK)
@@ -283,7 +283,7 @@ func TestCredentialVerification(t *testing.T) {
 	// Verify incorrect credentials
 	t.Run("InvalidCredentials", func(t *testing.T) {
 		verifyResp := client.Post(t, "/internal/verify-credentials", map[string]interface{}{
-			"email":    "verify@example.com",
+			"email":    "verify@wardseal.com",
 			"password": "WrongPassword!",
 		})
 		AssertStatus(t, verifyResp, http.StatusUnauthorized)
