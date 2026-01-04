@@ -7,7 +7,7 @@ The Admin Console provides a web-based interface for managing WardSeal.
 **URL:** http://localhost:5173
 
 **Default Credentials:**
-- Email: `admin@example.com`
+- Email: `admin@wardseal.com`
 - Password: `password123`
 - Tenant ID: `11111111-1111-1111-1111-111111111111`
 

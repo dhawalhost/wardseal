@@ -35,7 +35,7 @@ Open [http://localhost:5173](http://localhost:5173) and login with:
 
 | Field | Value |
 |-------|-------|
-| Email | `admin@example.com` |
+| Email | `admin@wardseal.com` |
 | Password | `password123` |
 | Tenant ID | `11111111-1111-1111-1111-111111111111` |
 

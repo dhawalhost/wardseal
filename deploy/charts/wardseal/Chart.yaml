@@ -1,0 +1,22 @@
+apiVersion: v2
+name: wardseal
+description: Identity Platform - Umbrella Helm Chart
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: authsvc
+    version: "0.1.0"
+    repository: "file://../authsvc"
+    condition: authsvc.enabled
+
+  - name: dirsvc
+    version: "0.1.0"
+    repository: "file://../dirsvc"
+    condition: dirsvc.enabled
+
+  - name: govsvc
+    version: "0.1.0"
+    repository: "file://../govsvc"
+    condition: govsvc.enabled

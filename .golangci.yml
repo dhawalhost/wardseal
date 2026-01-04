@@ -1,0 +1,121 @@
+# golangci-lint configuration
+# See: https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Default linters
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    
+    # Additional recommended linters
+    - bodyclose       # Check HTTP response body is closed
+    - contextcheck    # Check context.Context usage
+    - durationcheck   # Check for two durations multiplied together
+    - errorlint       # Proper error wrapping
+    - exhaustive      # Check switch statements are exhaustive
+    - exportloopref   # Check for loop variable captures in closures
+    - gofmt           # Check code formatting
+    - goimports       # Check import order
+    - gocritic        # Opinionated linter
+    - gosec           # Security checker
+    - misspell        # Spell checker
+    - nilerr          # Check for nil error returns
+    - prealloc        # Slice preallocation suggestions
+    - revive          # Fast, configurable, extensible linter
+    - sqlclosecheck   # Check SQL rows.Close() is called
+    - unconvert       # Remove unnecessary type conversions
+    - unparam         # Check for unused function parameters
+    - whitespace      # Check for unnecessary whitespace
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - io.Copy
+      - (io.Closer).Close
+      - (*os.File).Close
+
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # Can be noisy
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam  # Can be too strict
+
+  gosec:
+    excludes:
+      - G104  # Audit errors not checked
+      - G304  # File path provided as taint input
+
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+
+  goimports:
+    local-prefixes: github.com/dhawalhost/wardseal
+
+issues:
+  exclude-rules:
+    # Exclude some linters from test files
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+        - gocritic
+        - unparam
+
+    # Exclude some checks from main.go files
+    - path: cmd/.*/main\.go
+      linters:
+        - gocyclo
+
+    # Ignore long lines in generated files
+    - path: \.pb\.go$
+      linters:
+        - all
+
+  max-issues-per-linter: 50
+  max-same-issues: 10
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

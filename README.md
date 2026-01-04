@@ -67,7 +67,7 @@ The Admin UI JavaScript bundle reads `VITE_GOVSVC_URL` at build time (Compose no
 To point the UI at a different governance endpoint, override the build arg when building the image:
 
 ```bash
-docker compose build --build-arg VITE_GOVSVC_URL=https://govsvc.example.com adminui
+docker compose build --build-arg VITE_GOVSVC_URL=https://govsvc.wardseal.com adminui
 ```
 
 ## Kubernetes deployment (Helm)
@@ -76,7 +76,7 @@ Each service ships with a standalone Helm chart under `deploy/charts`. The new g
 
 ```bash
 helm install govsvc ./deploy/charts/govsvc \
-    --set image.repository=registry.example.com/govsvc \
+    --set image.repository=registry.wardseal.com/govsvc \
     --set env.DB_HOST=postgresql.default.svc.cluster.local \
     --set env.DB_PASSWORD=super-secret
 ```
@@ -98,7 +98,7 @@ curl -H "X-Tenant-ID: 11111111-1111-1111-1111-111111111111" ...
 To keep password hashes inside the Directory service while still allowing the Auth service to authenticate users, there is an
 internal-only endpoint exposed by `dirsvc`:
 
-- `POST /internal/credentials/verify` — Accepts `{ "email": "user@example.com", "password": "…" }`, enforces the tenant
+- `POST /internal/credentials/verify` — Accepts `{ "email": "user@wardseal.com", "password": "…" }`, enforces the tenant
     header, and returns the user profile when the credentials are valid. Invalid credentials respond with `401`.
 
 Only other platform services should call this endpoint. It is not intended for direct use by external clients or the Admin UI, and it
@@ -169,7 +169,7 @@ curl -X POST http://localhost:8082/api/v1/oauth/clients \
         "client_id": "admin-portal",
         "name": "Admin Portal",
         "client_type": "confidential",
-        "redirect_uris": ["https://admin.example.com/callback"],
+        "redirect_uris": ["https://admin.wardseal.com/callback"],
         "allowed_scopes": ["openid", "profile"],
         "client_secret": "replace-me"
     }'
@@ -190,7 +190,7 @@ go run ./cmd/admincli create \
     -client-id admin-portal \
     -name "Admin Portal" \
     -type confidential \
-    -redirects https://admin.example.com/callback \
+    -redirects https://admin.wardseal.com/callback \
     -scopes openid,profile \
     -secret super-secret
 ```

@@ -45,7 +45,7 @@ func TestOAuthClientCRUD(t *testing.T) {
 			"client_id":      "integration-test-client",
 			"name":           "Integration Test Client",
 			"client_type":    "public",
-			"redirect_uris":  []string{"https://example.com/callback"},
+			"redirect_uris":  []string{"https://wardseal.com/callback"},
 			"allowed_scopes": []string{"openid", "profile"},
 		}
 		resp := client.Post(t, "/api/v1/oauth/clients", createReq)
@@ -90,7 +90,7 @@ func TestOAuthClientCRUD(t *testing.T) {
 	t.Run("Update", func(t *testing.T) {
 		updateReq := map[string]interface{}{
 			"name":          "Updated Integration Test Client",
-			"redirect_uris": []string{"https://example.com/callback", "https://example.com/callback2"},
+			"redirect_uris": []string{"https://wardseal.com/callback", "https://wardseal.com/callback2"},
 		}
 		resp := client.Put(t, "/api/v1/oauth/clients/integration-test-client", updateReq)
 		AssertStatus(t, resp, http.StatusOK)
@@ -209,7 +209,7 @@ func TestOAuthClientValidation(t *testing.T) {
 		createReq := map[string]interface{}{
 			"name":          "Missing Client ID",
 			"client_type":   "public",
-			"redirect_uris": []string{"https://example.com/callback"},
+			"redirect_uris": []string{"https://wardseal.com/callback"},
 		}
 		resp := client.Post(t, "/api/v1/oauth/clients", createReq)
 		AssertStatus(t, resp, http.StatusBadRequest)

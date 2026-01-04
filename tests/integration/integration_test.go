@@ -69,7 +69,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 		DB:            db,
 		Logger:        logger,
 		TestTenantID:  "11111111-1111-1111-1111-111111111111",
-		TestUserEmail: "test@example.com",
+		TestUserEmail: "test@wardseal.com",
 	}
 
 	env.setupTestData(t)
@@ -185,7 +185,7 @@ func (env *TestEnv) setupServers(t *testing.T) {
 				ID:            "test-client",
 				TenantID:      env.TestTenantID,
 				Name:          "Test Client",
-				RedirectURIs:  []string{"https://app.example.com/callback"},
+				RedirectURIs:  []string{"https://app.wardseal.com/callback"},
 				AllowedScopes: []string{"openid", "profile", "email"},
 			},
 		},

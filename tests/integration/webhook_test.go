@@ -22,7 +22,7 @@ func TestWebhookCRUD(t *testing.T) {
 	// 1. Create Webhook
 	t.Run("Create", func(t *testing.T) {
 		createReq := map[string]interface{}{
-			"url":    "https://webhook.example.com/events",
+			"url":    "https://webhook.wardseal.com/events",
 			"events": []string{"user.created", "user.updated", "user.deleted"},
 			"secret": "webhook-secret-key",
 		}
@@ -131,7 +131,7 @@ func TestOrganizationCRUD(t *testing.T) {
 	t.Run("Create", func(t *testing.T) {
 		createReq := map[string]interface{}{
 			"name":        "Test Organization",
-			"domain":      "testorg.example.com",
+			"domain":      "testorg.wardseal.com",
 			"description": "A test organization",
 		}
 		resp := client.Post(t, "/api/v1/organizations", createReq)

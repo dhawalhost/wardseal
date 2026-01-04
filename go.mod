@@ -24,7 +24,7 @@ require (
 	golang.org/x/crypto v0.45.0
 	golang.org/x/oauth2 v0.32.0
 	golang.org/x/time v0.14.0
-	gopkg.in/square/go-jose.v2 v2.6.0
+	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
 require (

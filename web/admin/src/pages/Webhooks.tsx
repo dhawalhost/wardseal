@@ -110,7 +110,7 @@ const Webhooks: React.FC = () => {
                             <div className="space-y-2">
                                 <Label>Endpoint URL</Label>
                                 <Input
-                                    placeholder="https://example.com/webhook"
+                                    placeholder="https://wardseal.com/webhook"
                                     value={newUrl}
                                     onChange={(e) => setNewUrl(e.target.value)}
                                 />

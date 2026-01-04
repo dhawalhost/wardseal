@@ -29,7 +29,7 @@ func TestListOAuthClientsReturnsClients(t *testing.T) {
 				ClientType:   "public",
 				Name:         "Client One",
 				Description:  sql.NullString{String: "First client", Valid: true},
-				RedirectURIs: pq.StringArray{"https://app.example.com/callback"},
+				RedirectURIs: pq.StringArray{"https://app.wardseal.com/callback"},
 				AllowedScopes: pq.StringArray{
 					"openid",
 					"profile",

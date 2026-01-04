@@ -66,7 +66,7 @@ func main() {
 
     // Authenticate
     ctx := context.Background()
-    err := c.Login(ctx, "admin@example.com", "password")
+    err := c.Login(ctx, "admin@wardseal.com", "password")
     if err != nil {
         log.Fatalf("Login failed: %v", err)
     }
