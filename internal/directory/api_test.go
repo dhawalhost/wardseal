@@ -26,7 +26,7 @@ func TestCreateUserUsesTenantHeader(t *testing.T) {
 	r := gin.New()
 	handler.RegisterRoutes(r)
 
-	body := strings.NewReader(`{"user":{"email":"user@example.com","password":"password123","status":"active"}}`)
+	body := strings.NewReader(`{"user":{"email":"user@wardseal.com","password":"password123","status":"active"}}`)
 	req := httptest.NewRequest(http.MethodPost, "/users", body)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
@@ -50,7 +50,7 @@ func TestCreateUserMissingTenantHeader(t *testing.T) {
 	r := gin.New()
 	handler.RegisterRoutes(r)
 
-	body := strings.NewReader(`{"user":{"email":"user@example.com","password":"password123","status":"active"}}`)
+	body := strings.NewReader(`{"user":{"email":"user@wardseal.com","password":"password123","status":"active"}}`)
 	req := httptest.NewRequest(http.MethodPost, "/users", body)
 	req.Header.Set("Content-Type", "application/json")
 	resp := httptest.NewRecorder()
@@ -68,13 +68,13 @@ func TestCreateUserMissingTenantHeader(t *testing.T) {
 
 func TestVerifyCredentialsUsesTenantHeader(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	user := User{ID: "user-123", Email: "user@example.com", Status: "active"}
+	user := User{ID: "user-123", Email: "user@wardseal.com", Status: "active"}
 	svc := &mockDirectoryService{verifyReturnUser: user}
 	handler := newHandler(svc)
 	r := gin.New()
 	handler.RegisterRoutes(r)
 
-	body := strings.NewReader(`{"email":"user@example.com","password":"password123"}`)
+	body := strings.NewReader(`{"email":"user@wardseal.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
@@ -111,7 +111,7 @@ func TestVerifyCredentialsMissingTenantHeader(t *testing.T) {
 	r := gin.New()
 	handler.RegisterRoutes(r)
 
-	body := strings.NewReader(`{"email":"user@example.com","password":"password123"}`)
+	body := strings.NewReader(`{"email":"user@wardseal.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
@@ -135,7 +135,7 @@ func TestVerifyCredentialsUnauthorized(t *testing.T) {
 	r := gin.New()
 	handler.RegisterRoutes(r)
 
-	body := strings.NewReader(`{"email":"user@example.com","password":"badpassword"}`)
+	body := strings.NewReader(`{"email":"user@wardseal.com","password":"badpassword"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
@@ -156,7 +156,7 @@ func TestVerifyCredentialsMissingServiceToken(t *testing.T) {
 	r := gin.New()
 	handler.RegisterRoutes(r)
 
-	body := strings.NewReader(`{"email":"user@example.com","password":"password123"}`)
+	body := strings.NewReader(`{"email":"user@wardseal.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")

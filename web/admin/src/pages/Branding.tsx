@@ -234,7 +234,7 @@ const Branding: React.FC = () => {
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700">Email address</label>
                                             <div className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 flex items-center select-none">
-                                                user@example.com
+                                                user@wardseal.com
                                             </div>
                                         </div>
                                         <div className="space-y-2">

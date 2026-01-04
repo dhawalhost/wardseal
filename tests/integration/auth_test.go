@@ -71,7 +71,7 @@ func TestOAuthAuthorizeEndpoint(t *testing.T) {
 		params := url.Values{}
 		params.Set("response_type", "code")
 		params.Set("client_id", "test-client")
-		params.Set("redirect_uri", "https://app.example.com/callback")
+		params.Set("redirect_uri", "https://app.wardseal.com/callback")
 		params.Set("scope", "openid profile")
 		params.Set("state", "xyz")
 		params.Set("code_challenge", challenge)
@@ -102,7 +102,7 @@ func TestOAuthAuthorizeEndpoint(t *testing.T) {
 		params := url.Values{}
 		params.Set("response_type", "code")
 		params.Set("client_id", "invalid-client")
-		params.Set("redirect_uri", "https://app.example.com/callback")
+		params.Set("redirect_uri", "https://app.wardseal.com/callback")
 		params.Set("scope", "openid")
 		params.Set("code_challenge", "challenge")
 		params.Set("code_challenge_method", "S256")
@@ -135,7 +135,7 @@ func TestOAuthAuthorizeEndpoint(t *testing.T) {
 		params := url.Values{}
 		params.Set("response_type", "code")
 		params.Set("client_id", "test-client")
-		params.Set("redirect_uri", "https://evil.example.com/callback")
+		params.Set("redirect_uri", "https://evil.wardseal.com/callback")
 		params.Set("scope", "openid")
 		params.Set("code_challenge", challenge)
 		params.Set("code_challenge_method", "S256")
@@ -160,7 +160,7 @@ func TestOAuthAuthorizeEndpoint(t *testing.T) {
 			if location != "" && !isValidRedirect(location) {
 				// Check it's not redirecting to the evil site
 				parsed, _ := url.Parse(location)
-				if parsed.Host == "evil.example.com" {
+				if parsed.Host == "evil.wardseal.com" {
 					t.Error("Should not redirect to invalid redirect URI")
 				}
 			}
@@ -196,7 +196,7 @@ func TestLoginEndpoint(t *testing.T) {
 	// Test login with invalid credentials
 	t.Run("InvalidCredentials", func(t *testing.T) {
 		loginReq := map[string]interface{}{
-			"email":    "nonexistent@example.com",
+			"email":    "nonexistent@wardseal.com",
 			"password": "wrongpassword",
 		}
 		resp := client.Post(t, "/auth/login", loginReq)
@@ -206,7 +206,7 @@ func TestLoginEndpoint(t *testing.T) {
 	// Test login with missing fields
 	t.Run("MissingFields", func(t *testing.T) {
 		loginReq := map[string]interface{}{
-			"email": "test@example.com",
+			"email": "test@wardseal.com",
 			// Missing password
 		}
 		resp := client.Post(t, "/auth/login", loginReq)
@@ -241,7 +241,7 @@ func TestTokenEndpoint(t *testing.T) {
 			"grant_type":    "authorization_code",
 			"code":          "invalid-code",
 			"client_id":     "test-client",
-			"redirect_uri":  "https://app.example.com/callback",
+			"redirect_uri":  "https://app.wardseal.com/callback",
 			"code_verifier": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd",
 		}
 		resp := client.Post(t, "/oauth/token", tokenReq)
@@ -315,5 +315,5 @@ func isValidRedirect(location string) bool {
 		return false
 	}
 	// Check if it's a relative redirect or to a known safe domain
-	return parsed.Host == "" || parsed.Host == "app.example.com"
+	return parsed.Host == "" || parsed.Host == "app.wardseal.com"
 }

@@ -222,7 +222,7 @@ const DeveloperApps: React.FC = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Redirect URIs</Label>
-                                        <Input placeholder="https://app.example.com/callback, http://localhost:3000" value={newApp.redirect_uris} onChange={(e) => setNewApp({ ...newApp, redirect_uris: e.target.value })} />
+                                        <Input placeholder="https://app.wardseal.com/callback, http://localhost:3000" value={newApp.redirect_uris} onChange={(e) => setNewApp({ ...newApp, redirect_uris: e.target.value })} />
                                         <div className="text-xs text-muted-foreground">Comma separated URIs</div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">

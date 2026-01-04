@@ -21,7 +21,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 		ClientType:    "public",
 		Name:          "DB Client",
 		Description:   sql.NullString{Valid: false},
-		RedirectURIs:  pq.StringArray{"https://app-db.example.com/callback"},
+		RedirectURIs:  pq.StringArray{"https://app-db.wardseal.com/callback"},
 		AllowedScopes: pq.StringArray{"openid", "profile"},
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -36,7 +36,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 	authResp, err := svc.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "db-client",
-		RedirectURI:         "https://app-db.example.com/callback",
+		RedirectURI:         "https://app-db.wardseal.com/callback",
 		Scope:               "openid profile",
 		State:               "state123",
 		CodeChallenge:       challenge,
@@ -50,7 +50,7 @@ func TestPKCEFlowWithClientStore(t *testing.T) {
 	tokenResp, err := svc.Token(ctx, TokenRequest{
 		GrantType:    "authorization_code",
 		Code:         code,
-		RedirectURI:  "https://app-db.example.com/callback",
+		RedirectURI:  "https://app-db.wardseal.com/callback",
 		ClientID:     "db-client",
 		CodeVerifier: verifier,
 	})
@@ -70,7 +70,7 @@ func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 		ClientType:    "public",
 		Name:          "DB Client",
 		Description:   sql.NullString{Valid: false},
-		RedirectURIs:  pq.StringArray{"https://app-db.example.com/callback"},
+		RedirectURIs:  pq.StringArray{"https://app-db.wardseal.com/callback"},
 		AllowedScopes: pq.StringArray{"openid"},
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -82,7 +82,7 @@ func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 	_, err := svc.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "db-client",
-		RedirectURI:         "https://app-db.example.com/callback",
+		RedirectURI:         "https://app-db.wardseal.com/callback",
 		Scope:               "openid",
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
@@ -99,7 +99,7 @@ func TestAuthorizeRejectsUnknownClientFromStore(t *testing.T) {
 	_, err := svc.Authorize(ctx, AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "no-client",
-		RedirectURI:         "https://app-db.example.com/callback",
+		RedirectURI:         "https://app-db.wardseal.com/callback",
 		Scope:               "openid",
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
@@ -112,7 +112,7 @@ func TestAuthorizeRejectsUnknownClientFromStore(t *testing.T) {
 func newServiceWithStore(t *testing.T, store oauthclient.Store) Service {
 	t.Helper()
 	svc, err := NewService(Config{
-		BaseURL:             "http://example.com",
+		BaseURL:             "http://wardseal.com",
 		DirectoryServiceURL: "http://dir-service",
 		ClientStore:         store,
 		SAMLStore:           saml.NewStore(nil),

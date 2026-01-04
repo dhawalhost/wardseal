@@ -358,7 +358,7 @@ INSERT INTO accounts (id, tenant_id, email, created_at, updated_at)
 VALUES (
   gen_random_uuid(),
   '22222222-2222-2222-2222-222222222222',
-  'admin@tenant2.example.com',
+  'admin@tenant2.wardseal.com',
   NOW(),
   NOW()
 );

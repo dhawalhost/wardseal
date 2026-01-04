@@ -48,7 +48,7 @@ VALUES ('$USER_ID', '$TENANT_ID', 'active')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO accounts (identity_id, login, password_hash, tenant_id)
-VALUES ('$USER_ID', 'admin@example.com', '$USER_HASH', '$TENANT_ID')
+VALUES ('$USER_ID', 'admin@wardseal.com', '$USER_HASH', '$TENANT_ID')
 ON CONFLICT (tenant_id, login) 
 DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
@@ -84,7 +84,7 @@ EOF
 
 echo -e "${GREEN}>>> Setup Complete!${NC}"
 echo "Tenant ID:     $TENANT_ID"
-echo "Admin Login:   admin@example.com"
+echo "Admin Login:   admin@wardseal.com"
 echo "Admin Pass:    $USER_PASS"
 echo "Client ID:     $CLIENT_ID"
 echo "Client Secret: $CLIENT_SECRET"
