@@ -253,7 +253,7 @@ func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
 
 	// Generate API key
 	keyBytes := make([]byte, 32)
-	rand.Read(keyBytes)
+	_, _ = rand.Read(keyBytes)
 	fullKey := "vv_live_" + hex.EncodeToString(keyBytes)
 	keyPrefix := fullKey[:16] + "..."
 

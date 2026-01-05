@@ -46,7 +46,7 @@ func main() {
 
 	for _, filename := range upMigrations {
 		fmt.Printf("Applying migration: %s\n", filename)
-		content, err := os.ReadFile("migrations/" + filename)
+		content, err := os.ReadFile("migrations/" + filename) //nolint:gosec // G304: controlled migration path
 		if err != nil {
 			log.Fatalf("Failed to read migration file %s: %v", filename, err)
 		}

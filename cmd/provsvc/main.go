@@ -12,7 +12,7 @@ import (
 
 func main() {
 	log := logger.New(zapcore.DebugLevel)
-	defer log.Sync()
+	defer func() { _ = log.Sync() }()
 
 	svc := provisioning.NewService()
 

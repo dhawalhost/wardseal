@@ -279,7 +279,7 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return "", ErrInvalidCredentials
@@ -427,7 +427,7 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 		if err != nil {
 			return LookupResult{}, fmt.Errorf("failed to discover tenant: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusNotFound {
 			return LookupResult{}, errors.New("user not found (or tenant could not be discovered)")
@@ -464,7 +464,7 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 	if err != nil {
 		return LookupResult{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return LookupResult{}, errors.New("user not found")

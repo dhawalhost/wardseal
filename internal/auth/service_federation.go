@@ -82,7 +82,7 @@ func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (
 	if err != nil {
 		return TokenResponse{}, &Error{"invalid_request", "failed to fetch user profile"}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var idTokenClaims struct {
 		Email string `json:"email"`
@@ -214,7 +214,7 @@ func (s *authService) findUserByEmail(ctx context.Context, tenantID, email strin
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		// Log or return error
@@ -289,7 +289,7 @@ func (s *authService) provisionUser(ctx context.Context, tenantID, email, name s
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("failed to provision user, status: %d", resp.StatusCode)

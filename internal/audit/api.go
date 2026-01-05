@@ -164,10 +164,10 @@ func (h *HTTPHandler) exportLogs(c *gin.Context) {
 	writer := csv.NewWriter(c.Writer)
 
 	// Header
-	writer.Write([]string{"Time", "Actor ID", "Actor Type", "Action", "Resource Type", "Resource Name", "Outcome", "IP Address"})
+	_ = writer.Write([]string{"Time", "Actor ID", "Actor Type", "Action", "Resource Type", "Resource Name", "Outcome", "IP Address"})
 
 	for _, e := range events {
-		writer.Write([]string{
+		_ = writer.Write([]string{
 			e.Timestamp.Format(time.RFC3339),
 			strVal(e.ActorID),
 			e.ActorType,
