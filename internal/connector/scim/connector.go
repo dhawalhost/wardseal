@@ -48,7 +48,7 @@ func (c *Connector) HealthCheck(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("health check failed: %d", resp.StatusCode)
 	}
@@ -72,7 +72,7 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -97,7 +97,7 @@ func (c *Connector) GetUser(ctx context.Context, id string) (connector.User, err
 	if err != nil {
 		return connector.User{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return connector.User{}, fmt.Errorf("get user failed: %d", resp.StatusCode)
@@ -124,7 +124,7 @@ func (c *Connector) UpdateUser(ctx context.Context, id string, user connector.Us
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -144,7 +144,7 @@ func (c *Connector) DeleteUser(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("delete user failed: %d", resp.StatusCode)
@@ -168,7 +168,7 @@ func (c *Connector) ListUsers(ctx context.Context, filter string, limit, offset 
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result scimListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -197,14 +197,14 @@ func (c *Connector) CreateGroup(ctx context.Context, group connector.Group) (str
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		return "", fmt.Errorf("create group failed: %d", resp.StatusCode)
 	}
 
 	var result scimGroupResource
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 
@@ -219,10 +219,10 @@ func (c *Connector) GetGroup(ctx context.Context, id string) (connector.Group, e
 	if err != nil {
 		return connector.Group{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result scimGroupResource
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return connector.Group{ExternalID: result.ID, Name: result.DisplayName}, nil
 }
 
@@ -240,7 +240,7 @@ func (c *Connector) UpdateGroup(ctx context.Context, id string, group connector.
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil
 }
 
@@ -255,7 +255,7 @@ func (c *Connector) DeleteGroup(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil
 }
 
@@ -271,13 +271,13 @@ func (c *Connector) ListGroups(ctx context.Context, filter string, limit, offset
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		TotalResults int                 `json:"totalResults"`
 		Resources    []scimGroupResource `json:"Resources"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	groups := make([]connector.Group, len(result.Resources))
 	for i, r := range result.Resources {
@@ -311,7 +311,7 @@ func (c *Connector) AddUserToGroup(ctx context.Context, userID, groupID string) 
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil
 }
 
@@ -337,7 +337,7 @@ func (c *Connector) RemoveUserFromGroup(ctx context.Context, userID, groupID str
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil
 }
 

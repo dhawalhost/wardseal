@@ -108,10 +108,12 @@ func (s *ProvisioningService) ProcessTask(ctx context.Context, taskID string) er
 		// Handle retry
 		if task.RetryCount < task.MaxRetries {
 			backoff := time.Duration(1<<task.RetryCount) * time.Minute // Exponential backoff
-			_, err = s.db.ExecContext(ctx,
+			if _, err := s.db.ExecContext(ctx,
 				`UPDATE provisioning_tasks SET status = 'pending', retry_count = retry_count + 1, 
 				 scheduled_at = NOW() + $1, error_message = $2 WHERE id = $3`,
-				backoff, execErr.Error(), taskID)
+				backoff, execErr.Error(), taskID); err != nil {
+				return err
+			}
 			return nil
 		}
 		return s.failTask(ctx, taskID, execErr.Error())

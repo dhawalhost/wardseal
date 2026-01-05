@@ -3,6 +3,7 @@ package oauthclient
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -42,7 +43,7 @@ func (r *Repository) GetClient(ctx context.Context, tenantID, clientID string) (
         redirect_uris, allowed_scopes, client_secret_hash, created_at, updated_at
         FROM oauth_clients WHERE tenant_id = $1 AND client_id = $2`, tenantID, clientID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return Client{}, ErrNotFound
 		}
 		return Client{}, err

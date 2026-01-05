@@ -27,7 +27,7 @@ TEST_DB_URL = postgres://user:password@localhost:5432/identity_platform_test?ssl
 BUILD_IMAGE_PREFIX?=ghcr.io/dhawalhost
 
 # Lint parameters
-GOLANGCI_LINT_VERSION = v1.55.2
+GOLANGCI_LINT_VERSION = v2.7.2
 
 .PHONY: all build clean deps test lint test-coverage test-integration \
         docker-up docker-down install-migrate migrate-create migrate-up migrate-down \

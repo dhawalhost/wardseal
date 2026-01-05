@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -96,7 +97,7 @@ func TestAuthorizeRejectsUnknownClient(t *testing.T) {
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err != ErrInvalidClient {
+	if !errors.Is(err, ErrInvalidClient) {
 		t.Fatalf("expected ErrInvalidClient, got %v", err)
 	}
 }
@@ -112,7 +113,7 @@ func TestAuthorizeRejectsInvalidRedirect(t *testing.T) {
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err != ErrInvalidRedirectURI {
+	if !errors.Is(err, ErrInvalidRedirectURI) {
 		t.Fatalf("expected ErrInvalidRedirectURI, got %v", err)
 	}
 }
@@ -128,7 +129,11 @@ func TestAuthorizeRejectsInvalidScope(t *testing.T) {
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err == nil || err.(*Error).Code != "invalid_scope" {
+	if err == nil || func() *Error {
+		target := &Error{}
+		_ = errors.As(err, &target)
+		return target
+	}().Code != "invalid_scope" {
 		t.Fatalf("expected invalid_scope error, got %v", err)
 	}
 }

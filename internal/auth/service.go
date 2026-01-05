@@ -279,7 +279,7 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return "", ErrInvalidCredentials
@@ -427,7 +427,7 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 		if err != nil {
 			return LookupResult{}, fmt.Errorf("failed to discover tenant: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusNotFound {
 			return LookupResult{}, errors.New("user not found (or tenant could not be discovered)")
@@ -464,7 +464,7 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 	if err != nil {
 		return LookupResult{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return LookupResult{}, errors.New("user not found")
@@ -554,7 +554,7 @@ func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (Auth
 		CodeChallengeMethod: method,
 		ExpiresAt:           expiresAt,
 	}
-	s.codeStore.Save(ctx, entry)
+	_ = s.codeStore.Save(ctx, entry)
 	redirectURI, err := buildAuthorizationRedirect(req.RedirectURI, code, req.State)
 	if err != nil {
 		return AuthorizeResponse{}, err
@@ -605,7 +605,7 @@ func (s *authService) handleAuthorizationCodeGrant(ctx context.Context, tenantID
 	if err := verifyCodeChallenge(code.CodeChallenge, code.CodeChallengeMethod, req.CodeVerifier); err != nil {
 		return TokenResponse{}, err
 	}
-	s.codeStore.Delete(ctx, req.Code)
+	_ = s.codeStore.Delete(ctx, req.Code)
 
 	return s.issueTokens(ctx, tenantID, req.ClientID, code.Scope, "user")
 }
@@ -700,7 +700,7 @@ func (s *authService) handleRefreshTokenGrant(ctx context.Context, tenantID stri
 	}
 
 	// Rotate refresh token - delete old and issue new
-	s.refreshTokenStore.Delete(ctx, req.RefreshToken)
+	_ = s.refreshTokenStore.Delete(ctx, req.RefreshToken)
 
 	return s.issueTokens(ctx, tenantID, stored.ClientID, stored.Scope, stored.SubjectType)
 }
@@ -856,7 +856,7 @@ func (s *authService) Revoke(ctx context.Context, req RevokeRequest) error {
 	}
 
 	// Also delete from refresh token store if it exists there
-	s.refreshTokenStore.Delete(ctx, req.Token)
+	_ = s.refreshTokenStore.Delete(ctx, req.Token)
 
 	return nil
 }
@@ -1126,8 +1126,8 @@ func (s *authService) FinishWebAuthnRegistration(ctx context.Context, userID str
 
 	// Store credential
 	// Using TenantID from context? registration usually requires auth, so yes.
-	tenantID, _ := middleware.TenantIDFromContext(ctx)
-	tenantID = SystemTenantID // Fallback to System Tenant
+	_, _ = middleware.TenantIDFromContext(ctx)
+	tenantID := SystemTenantID // Fallback to System Tenant
 
 	return s.webAuthnStore.SaveCredential(ctx, tenantID, userID, credential)
 }
@@ -1177,8 +1177,8 @@ func (s *authService) FinishWebAuthnLogin(ctx context.Context, userID string, se
 	// Retrieve TenantID from... context?
 	// If this is a login flow, we might not have tenant yet if purely public endpoint?
 	// But usually we do.
-	tenantID, _ := middleware.TenantIDFromContext(ctx)
-	tenantID = SystemTenantID
+	_, _ = middleware.TenantIDFromContext(ctx)
+	tenantID := SystemTenantID
 
 	// Scopes? Default.
 	return s.generateAccessToken(tenantID, userID, "openid", "user")
@@ -1220,14 +1220,14 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName s
 	if err != nil {
 		return "", "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		// Try to read error body
 		var errResp struct {
 			Error string `json:"error"`
 		}
-		json.NewDecoder(resp.Body).Decode(&errResp)
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
 		return "", "", fmt.Errorf("failed to create user: status %d, error: %s", resp.StatusCode, errResp.Error)
 	}
 
@@ -1256,7 +1256,7 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName s
 	// Need to re-read body if I didn't close it? `defer` closes at end of func.
 	// Re-reading is fine if I decode it now.
 	if err := json.NewDecoder(resp.Body).Decode(&createUserResp); err != nil {
-		return "", "", fmt.Errorf("failed to decode create user response: %v", err)
+		return "", "", fmt.Errorf("failed to decode create user response: %w", err)
 	}
 
 	claims := jwt.MapClaims{

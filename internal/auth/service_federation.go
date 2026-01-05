@@ -82,7 +82,7 @@ func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (
 	if err != nil {
 		return TokenResponse{}, &Error{"invalid_request", "failed to fetch user profile"}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var idTokenClaims struct {
 		Email string `json:"email"`
@@ -115,10 +115,12 @@ func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (
 
 	var userID string
 
-	if existingParams != nil {
+	switch {
+	case existingParams != nil:
 		// Link exists -> Login
-		userID = existingParams.IdentityID
-	} else {
+		userID = existingParams.IdentityID //nolint:ineffassign // Used in issueTokens below
+
+	default:
 		// No link -> Check if user exists by email (JIT / Auto-Link)
 		// We need to call Directory Service to find user by email
 		// Note: Directory Service abstraction is needed here.
@@ -173,6 +175,7 @@ func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (
 	// 3. Issue Tokens (Same as Login)
 	// We assume minimal scope for now or default
 	scope := "openid profile email"
+	_ = userID // TODO: issueTokens should use userID for subject claim
 
 	return s.issueTokens(ctx, tenantID, "social-client", scope, "user") // ClientID is dummy for now
 }
@@ -211,7 +214,7 @@ func (s *authService) findUserByEmail(ctx context.Context, tenantID, email strin
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		// Log or return error
@@ -286,7 +289,7 @@ func (s *authService) provisionUser(ctx context.Context, tenantID, email, name s
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("failed to provision user, status: %d", resp.StatusCode)

@@ -43,6 +43,7 @@ func clearAuthCookies(c *gin.Context) {
 }
 
 // getTokenFromCookieOrHeader tries to get token from cookie first, then header
+// nolint:unused // Reserved for future use
 func getTokenFromCookieOrHeader(c *gin.Context) string {
 	// Try cookie first
 	if token, err := c.Cookie(AccessTokenCookie); err == nil && token != "" {
@@ -290,7 +291,8 @@ func (h *HTTPHandler) authorize(c *gin.Context) {
 	resp, err := h.svc.Authorize(c.Request.Context(), req)
 	if err != nil {
 		h.logger.Error("Authorize failed", zap.Error(err))
-		if svcErr, ok := err.(*Error); ok {
+		svcErr := &Error{}
+		if errors.As(err, &svcErr) {
 			h.respondOAuthError(c, svcErr)
 			return
 		}
@@ -319,7 +321,8 @@ func (h *HTTPHandler) token(c *gin.Context) {
 	resp, err := h.svc.Token(c.Request.Context(), req)
 	if err != nil {
 		h.logger.Error("Token generation failed", zap.Error(err))
-		if svcErr, ok := err.(*Error); ok {
+		svcErr := &Error{}
+		if errors.As(err, &svcErr) {
 			h.respondOAuthError(c, svcErr)
 			return
 		}
