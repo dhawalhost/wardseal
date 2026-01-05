@@ -31,7 +31,7 @@ import (
 
 func main() {
 	log := logger.NewFromEnv()
-	defer log.Sync()
+	defer func() { _ = log.Sync() }()
 
 	dbHost := envOr("DB_HOST", "localhost")
 	dbConfig := database.Config{
@@ -71,7 +71,7 @@ func main() {
 	if err != nil {
 		log.Error("Failed to initialize tracer", zap.Error(err))
 	}
-	defer shutdownTracer(context.Background())
+	defer func() { _ = shutdownTracer(context.Background()) }()
 
 	// Add observability middleware
 	router.Use(otelgin.Middleware("govsvc"))

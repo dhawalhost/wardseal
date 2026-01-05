@@ -20,7 +20,7 @@ import (
 
 func main() {
 	log := logger.NewFromEnv()
-	defer log.Sync()
+	defer func() { _ = log.Sync() }()
 
 	// Enterprise License Verification
 	if os.Getenv("REQUIRE_LICENSE") == "true" {
@@ -31,7 +31,7 @@ func main() {
 			pubKeyPath = "/etc/wardseal/license_public.pem"
 		}
 
-		pubKey, err := os.ReadFile(pubKeyPath)
+		pubKey, err := os.ReadFile(pubKeyPath) //nolint:gosec // G304: path is from trusted env var
 		if err != nil {
 			log.Fatal("Failed to read license public key", zap.Error(err))
 		}
@@ -64,7 +64,7 @@ func main() {
 
 	serviceToken := os.Getenv("SERVICE_AUTH_TOKEN")
 	if serviceToken == "" {
-		serviceToken = "dev-internal-token"
+		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback, not production credentials
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
 	serviceHeader := os.Getenv("SERVICE_AUTH_HEADER")
@@ -140,7 +140,7 @@ func main() {
 	if err != nil {
 		log.Error("Failed to initialize tracer", zap.Error(err))
 	}
-	defer shutdownTracer(context.Background())
+	defer func() { _ = shutdownTracer(context.Background()) }()
 
 	// Initialize and apply observability middleware
 	metrics := observability.NewMetrics()

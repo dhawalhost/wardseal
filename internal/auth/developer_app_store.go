@@ -58,13 +58,13 @@ func NewDeveloperAppStore(db *sqlx.DB) DeveloperAppStore {
 
 func generateClientID() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return "vv_" + hex.EncodeToString(b)
 }
 
 func generateClientSecret() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return "vvs_" + hex.EncodeToString(b)
 }
 

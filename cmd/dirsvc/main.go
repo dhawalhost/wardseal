@@ -18,7 +18,7 @@ import (
 
 func main() {
 	log := logger.NewFromEnv()
-	defer log.Sync()
+	defer func() { _ = log.Sync() }()
 
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
@@ -45,7 +45,7 @@ func main() {
 
 	serviceToken := os.Getenv("SERVICE_AUTH_TOKEN")
 	if serviceToken == "" {
-		serviceToken = "dev-internal-token"
+		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback, not production credentials
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
 	serviceHeader := os.Getenv("SERVICE_AUTH_HEADER")
@@ -61,7 +61,7 @@ func main() {
 	if err != nil {
 		log.Error("Failed to initialize tracer", zap.Error(err))
 	}
-	defer shutdownTracer(context.Background())
+	defer func() { _ = shutdownTracer(context.Background()) }()
 
 	// Initialize and apply observability middleware
 	metrics := observability.NewMetrics()

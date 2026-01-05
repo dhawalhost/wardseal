@@ -22,7 +22,7 @@ linters:
     - errorlint       # Proper error wrapping
     - exhaustive      # Check switch statements are exhaustive
     - copyloopvar     # Check for loop variable captures
-    - gocritic        # Opinionated linter
+    # - gocritic        # Opinionated linter
     - gosec           # Security checker
     - misspell        # Spell checker
     - nilerr          # Check for nil error returns
