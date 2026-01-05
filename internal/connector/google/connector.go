@@ -79,10 +79,11 @@ func (c *Connector) HealthCheck(ctx context.Context) error {
 		fmt.Sprintf("%s/users?domain=%s&maxResults=1", adminAPIBase, c.domain), nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("health check failed: %d", resp.StatusCode)
 	}
@@ -108,10 +109,11 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -119,7 +121,7 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	}
 
 	var result googleUserResponse
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 
@@ -127,17 +129,18 @@ func (c *Connector) GetUser(ctx context.Context, id string) (connector.User, err
 	req, _ := http.NewRequestWithContext(ctx, "GET", adminAPIBase+"/users/"+id, nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return connector.User{}, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return connector.User{}, fmt.Errorf("user not found")
 	}
 
 	var result googleUserResponse
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return fromGoogleUser(result), nil
 }
 
@@ -156,10 +159,11 @@ func (c *Connector) UpdateUser(ctx context.Context, id string, user connector.Us
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("update user failed: %d", resp.StatusCode)
@@ -171,10 +175,11 @@ func (c *Connector) DeleteUser(ctx context.Context, id string) error {
 	req, _ := http.NewRequestWithContext(ctx, "DELETE", adminAPIBase+"/users/"+id, nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -187,15 +192,15 @@ func (c *Connector) ListUsers(ctx context.Context, filter string, limit, offset 
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		Users []googleUserResponse `json:"users"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	users := make([]connector.User, len(result.Users))
 	for i, u := range result.Users {
@@ -220,12 +225,12 @@ func (c *Connector) CreateGroup(ctx context.Context, group connector.Group) (str
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		ID string `json:"id"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 
@@ -236,14 +241,14 @@ func (c *Connector) GetGroup(ctx context.Context, id string) (connector.Group, e
 	if err != nil {
 		return connector.Group{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		ID          string `json:"id"`
 		Name        string `json:"name"`
 		Description string `json:"description"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return connector.Group{
 		ExternalID:  result.ID,
 		Name:        result.Name,
@@ -262,10 +267,10 @@ func (c *Connector) UpdateGroup(ctx context.Context, id string, group connector.
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -273,10 +278,10 @@ func (c *Connector) DeleteGroup(ctx context.Context, id string) error {
 	req, _ := http.NewRequestWithContext(ctx, "DELETE", adminAPIBase+"/groups/"+id, nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -289,7 +294,7 @@ func (c *Connector) ListGroups(ctx context.Context, filter string, limit, offset
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		Groups []struct {
@@ -298,7 +303,7 @@ func (c *Connector) ListGroups(ctx context.Context, filter string, limit, offset
 			Description string `json:"description"`
 		} `json:"groups"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	groups := make([]connector.Group, len(result.Groups))
 	for i, g := range result.Groups {
@@ -324,10 +329,11 @@ func (c *Connector) AddUserToGroup(ctx context.Context, userID, groupID string) 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -336,10 +342,11 @@ func (c *Connector) RemoveUserFromGroup(ctx context.Context, userID, groupID str
 		fmt.Sprintf("%s/groups/%s/members/%s", adminAPIBase, groupID, userID), nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -348,10 +355,10 @@ func (c *Connector) GetGroupMembers(ctx context.Context, groupID string) ([]conn
 		fmt.Sprintf("%s/groups/%s/members", adminAPIBase, groupID), nil)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		Members []struct {
@@ -359,7 +366,7 @@ func (c *Connector) GetGroupMembers(ctx context.Context, groupID string) ([]conn
 			Email string `json:"email"`
 		} `json:"members"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	users := make([]connector.User, len(result.Members))
 	for i, m := range result.Members {

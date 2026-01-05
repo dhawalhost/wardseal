@@ -78,7 +78,7 @@ func (s *sqlStore) ListRequests(ctx context.Context, tenantID, status string) ([
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var requests []AccessRequest
 	for rows.Next() {

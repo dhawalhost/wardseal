@@ -58,13 +58,13 @@ func NewDeveloperAppStore(db *sqlx.DB) DeveloperAppStore {
 
 func generateClientID() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return "vv_" + hex.EncodeToString(b)
 }
 
 func generateClientSecret() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return "vvs_" + hex.EncodeToString(b)
 }
 
@@ -174,11 +174,14 @@ func (r *developerAppRepo) RotateSecret(ctx context.Context, tenantID, appID str
 
 func (r *developerAppRepo) ValidateCredentials(ctx context.Context, clientID, clientSecret string) (*DeveloperApp, error) {
 	app, err := r.GetByClientID(ctx, clientID)
-	if err != nil || app == nil {
+	if err != nil {
 		return nil, err
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(app.ClientSecretHash), []byte(clientSecret)); err != nil {
+	if app == nil {
 		return nil, nil
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(app.ClientSecretHash), []byte(clientSecret)); err != nil {
+		return nil, nil //nolint:nilerr // Intentionally return nil for invalid credentials
 	}
 	return app, nil
 }

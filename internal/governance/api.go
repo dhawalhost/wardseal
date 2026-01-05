@@ -97,15 +97,7 @@ func (h *HTTPHandler) createOAuthClient(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	client, err := h.svc.CreateOAuthClient(c.Request.Context(), tenantID, CreateOAuthClientInput{
-		ClientID:      req.ClientID,
-		Name:          req.Name,
-		Description:   req.Description,
-		ClientType:    req.ClientType,
-		RedirectURIs:  req.RedirectURIs,
-		AllowedScopes: req.AllowedScopes,
-		ClientSecret:  req.ClientSecret,
-	})
+	client, err := h.svc.CreateOAuthClient(c.Request.Context(), tenantID, CreateOAuthClientInput(req))
 	if err != nil {
 		h.handleServiceError(c, err)
 		return
@@ -125,14 +117,7 @@ func (h *HTTPHandler) updateOAuthClient(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	client, err := h.svc.UpdateOAuthClient(c.Request.Context(), tenantID, clientID, UpdateOAuthClientInput{
-		Name:          req.Name,
-		Description:   req.Description,
-		ClientType:    req.ClientType,
-		RedirectURIs:  req.RedirectURIs,
-		AllowedScopes: req.AllowedScopes,
-		ClientSecret:  req.ClientSecret,
-	})
+	client, err := h.svc.UpdateOAuthClient(c.Request.Context(), tenantID, clientID, UpdateOAuthClientInput(req))
 	if err != nil {
 		h.handleServiceError(c, err)
 		return
@@ -194,9 +179,7 @@ func (h *HTTPHandler) approveAccessRequest(c *gin.Context) {
 	}
 	requestID := c.Param("accessRequestID")
 	var body ApprovalDecision
-	if err := c.ShouldBindJSON(&body); err != nil {
-		// Optional body
-	}
+	_ = c.ShouldBindJSON(&body) // Optional body - ignore error
 	// TODO: Get approver ID from context (authenticated user)
 	approverID := "todo-admin-id"
 
@@ -214,9 +197,7 @@ func (h *HTTPHandler) rejectAccessRequest(c *gin.Context) {
 	}
 	requestID := c.Param("accessRequestID")
 	var body ApprovalDecision
-	if err := c.ShouldBindJSON(&body); err != nil {
-		// Optional body
-	}
+	_ = c.ShouldBindJSON(&body) // Optional body - ignore error
 	approverID := "todo-admin-id"
 
 	if err := h.svc.RejectAccessRequest(c.Request.Context(), tenantID, requestID, approverID, body.Comment); err != nil {

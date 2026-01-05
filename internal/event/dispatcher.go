@@ -94,7 +94,7 @@ func (d *Dispatcher) sendWebhook(ctx context.Context, hook webhook.Webhook, payl
 		// simplistic retry logic could go here
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 300 {
 		d.logger.Warn("Webhook received non-2xx response",

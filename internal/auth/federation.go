@@ -61,7 +61,7 @@ func (s *sqlFederationStore) Create(ctx context.Context, identity FederatedIdent
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if rows.Next() {
 		return rows.Scan(&identity.ID)
 	}

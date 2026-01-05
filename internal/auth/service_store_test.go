@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"testing"
 	"time"
 
@@ -87,7 +88,7 @@ func TestAuthorizeRejectsCrossTenantClientFromStore(t *testing.T) {
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err != ErrInvalidClient {
+	if !errors.Is(err, ErrInvalidClient) {
 		t.Fatalf("expected ErrInvalidClient for cross-tenant access, got %v", err)
 	}
 }
@@ -104,7 +105,7 @@ func TestAuthorizeRejectsUnknownClientFromStore(t *testing.T) {
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err != ErrInvalidClient {
+	if !errors.Is(err, ErrInvalidClient) {
 		t.Fatalf("expected ErrInvalidClient when store is missing client, got %v", err)
 	}
 }

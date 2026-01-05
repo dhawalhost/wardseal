@@ -63,10 +63,11 @@ func (c *Connector) authenticate(ctx context.Context) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -100,10 +101,11 @@ func (c *Connector) HealthCheck(ctx context.Context) error {
 	req, _ := http.NewRequestWithContext(ctx, "GET", graphBaseURL+"/organization", nil)
 	c.setHeaders(req)
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("health check failed: %d", resp.StatusCode)
 	}
@@ -136,10 +138,11 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -147,7 +150,7 @@ func (c *Connector) CreateUser(ctx context.Context, user connector.User) (string
 	}
 
 	var result graphUserResponse
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 
@@ -160,17 +163,18 @@ func (c *Connector) GetUser(ctx context.Context, id string) (connector.User, err
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return connector.User{}, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return connector.User{}, fmt.Errorf("user not found")
 	}
 
 	var result graphUserResponse
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return fromGraphUser(result), nil
 }
 
@@ -196,10 +200,11 @@ func (c *Connector) UpdateUser(ctx context.Context, id string, user connector.Us
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("update user failed: %d", resp.StatusCode)
@@ -216,10 +221,11 @@ func (c *Connector) DeleteUser(ctx context.Context, id string) error {
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -237,15 +243,16 @@ func (c *Connector) ListUsers(ctx context.Context, filter string, limit, offset 
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		Value []graphUserResponse `json:"value"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	users := make([]connector.User, len(result.Value))
 	for i, u := range result.Value {
@@ -273,15 +280,16 @@ func (c *Connector) CreateGroup(ctx context.Context, group connector.Group) (str
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		ID string `json:"id"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return result.ID, nil
 }
 
@@ -294,17 +302,18 @@ func (c *Connector) GetGroup(ctx context.Context, id string) (connector.Group, e
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return connector.Group{}, err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		ID          string `json:"id"`
 		DisplayName string `json:"displayName"`
 		Description string `json:"description"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 	return connector.Group{
 		ExternalID:  result.ID,
 		Name:        result.DisplayName,
@@ -327,10 +336,11 @@ func (c *Connector) UpdateGroup(ctx context.Context, id string, group connector.
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -343,10 +353,11 @@ func (c *Connector) DeleteGroup(ctx context.Context, id string) error {
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -360,10 +371,11 @@ func (c *Connector) ListGroups(ctx context.Context, filter string, limit, offset
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		Value []struct {
@@ -372,7 +384,7 @@ func (c *Connector) ListGroups(ctx context.Context, filter string, limit, offset
 			Description string `json:"description"`
 		} `json:"value"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	groups := make([]connector.Group, len(result.Value))
 	for i, g := range result.Value {
@@ -401,10 +413,11 @@ func (c *Connector) AddUserToGroup(ctx context.Context, userID, groupID string) 
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -418,10 +431,11 @@ func (c *Connector) RemoveUserFromGroup(ctx context.Context, userID, groupID str
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -435,15 +449,16 @@ func (c *Connector) GetGroupMembers(ctx context.Context, groupID string) ([]conn
 	c.setHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	var result struct {
 		Value []graphUserResponse `json:"value"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result)
 
 	users := make([]connector.User, len(result.Value))
 	for i, u := range result.Value {

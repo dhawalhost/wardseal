@@ -76,7 +76,7 @@ func main() {
 	}
 
 	fmt.Printf("\nLicense Key for %s:\n\n%s\n\n", *customer, tokenString)
-	fmt.Printf("Expires: %s\n", claims.ExpiresAt.Time.Format(time.RFC822))
+	fmt.Printf("Expires: %s\n", claims.ExpiresAt.Format(time.RFC822))
 }
 
 func generateKeys() {
@@ -104,7 +104,7 @@ func generateKeys() {
 		Type:  "PUBLIC KEY",
 		Bytes: pubBytes,
 	})
-	if err := os.WriteFile("public.pem", pubPEM, 0644); err != nil {
+	if err := os.WriteFile("public.pem", pubPEM, 0600); err != nil {
 		log.Fatalf("Failed to write public.pem: %v", err)
 	}
 
