@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // TOTPSecret represents a stored TOTP secret for a user.
@@ -29,11 +29,11 @@ type TOTPRepository interface {
 }
 
 type sqlTOTPRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewTOTPRepository creates a new TOTP repository.
-func NewTOTPRepository(db *sqlx.DB) TOTPRepository {
+func NewTOTPRepository(db *gorm.DB) TOTPRepository {
 	return &sqlTOTPRepository{db: db}
 }
 
@@ -45,7 +45,7 @@ func (r *sqlTOTPRepository) Create(ctx context.Context, secret *TOTPSecret) erro
 		DO UPDATE SET secret = EXCLUDED.secret, verified = FALSE, verified_at = NULL
 		RETURNING id, created_at
 	`
-	return r.db.QueryRowxContext(ctx, query,
+	return r.db.WithContext(ctx).Raw(query,
 		secret.IdentityID,
 		secret.TenantID,
 		secret.Secret,
@@ -56,9 +56,9 @@ func (r *sqlTOTPRepository) Create(ctx context.Context, secret *TOTPSecret) erro
 func (r *sqlTOTPRepository) GetByIdentity(ctx context.Context, tenantID, identityID string) (*TOTPSecret, error) {
 	var secret TOTPSecret
 	query := `SELECT id, identity_id, tenant_id, secret, verified, created_at, verified_at FROM totp_secrets WHERE tenant_id = $1 AND identity_id = $2`
-	err := r.db.GetContext(ctx, &secret, query, tenantID, identityID)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, identityID).Scan(&secret)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -68,12 +68,12 @@ func (r *sqlTOTPRepository) GetByIdentity(ctx context.Context, tenantID, identit
 
 func (r *sqlTOTPRepository) MarkVerified(ctx context.Context, id string) error {
 	query := `UPDATE totp_secrets SET verified = TRUE, verified_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
+	_, err := r.db.WithContext(ctx).Exec(query, id)
 	return err
 }
 
 func (r *sqlTOTPRepository) Delete(ctx context.Context, tenantID, identityID string) error {
 	query := `DELETE FROM totp_secrets WHERE tenant_id = $1 AND identity_id = $2`
-	_, err := r.db.ExecContext(ctx, query, tenantID, identityID)
+	_, err := r.db.WithContext(ctx).Exec(query, tenantID, identityID)
 	return err
 }

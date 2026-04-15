@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // TenantRepository defines the interface for tenant-related database operations.
@@ -16,20 +16,20 @@ type TenantRepository interface {
 
 // sqlTenantRepository implements TenantRepository using sqlx.
 type sqlTenantRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewTenantRepository creates a new TenantRepository.
-func NewTenantRepository(db *sqlx.DB) TenantRepository {
+func NewTenantRepository(db *gorm.DB) TenantRepository {
 	return &sqlTenantRepository{db: db}
 }
 
 func (r *sqlTenantRepository) GetIDBySlug(ctx context.Context, slug string) (string, error) {
 	var id string
 	query := `SELECT id FROM tenants WHERE slug = $1`
-	err := r.db.GetContext(ctx, &id, query, slug)
+	err := r.db.WithContext(ctx).Raw(query, slug).Scan(&id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil
 		}
 		return "", err
@@ -40,9 +40,9 @@ func (r *sqlTenantRepository) GetIDBySlug(ctx context.Context, slug string) (str
 func (r *sqlTenantRepository) GetSlugByID(ctx context.Context, id string) (string, error) {
 	var slug string
 	query := `SELECT slug FROM tenants WHERE id = $1`
-	err := r.db.GetContext(ctx, &slug, query, id)
+	err := r.db.WithContext(ctx).Raw(query, id).Scan(&slug)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil
 		}
 		return "", err

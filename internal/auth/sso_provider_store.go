@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // SSOProvider represents a configuration for an external Identity Provider (OIDC/SAML).
@@ -31,11 +31,11 @@ type SSOProviderRepository interface {
 }
 
 type sqlSSOProviderRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewSSOProviderRepository creates a new SSO provider repository.
-func NewSSOProviderRepository(db *sqlx.DB) SSOProviderRepository {
+func NewSSOProviderRepository(db *gorm.DB) SSOProviderRepository {
 	return &sqlSSOProviderRepository{db: db}
 }
 
@@ -48,9 +48,9 @@ func (s *sqlSSOProviderRepository) GetByName(ctx context.Context, tenantID, name
 		FROM sso_providers 
 		WHERE tenant_id = $1 AND name = $2 AND enabled = true
 	`
-	err := s.db.GetContext(ctx, &p, query, tenantID, name)
+	err := s.db.WithContext(ctx).Raw(query, tenantID, name).Scan(&p)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil // Not found
 		}
 		return nil, err

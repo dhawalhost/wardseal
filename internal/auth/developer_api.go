@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,12 +15,12 @@ import (
 // DeveloperAPIHandler handles developer portal API requests.
 type DeveloperAPIHandler struct {
 	appStore DeveloperAppRepository
-	db       *sqlx.DB
+	db       *gorm.DB
 	logger   *zap.Logger
 }
 
 // NewDeveloperAPIHandler creates a new developer API handler.
-func NewDeveloperAPIHandler(db *sqlx.DB, logger *zap.Logger) *DeveloperAPIHandler {
+func NewDeveloperAPIHandler(db *gorm.DB, logger *zap.Logger) *DeveloperAPIHandler {
 	return &DeveloperAPIHandler{
 		appStore: NewDeveloperAppRepository(db),
 		db:       db,

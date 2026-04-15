@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // FederatedIdentity represents a link between a local user and an external identity provider.
@@ -30,22 +30,22 @@ type FederationRepository interface {
 }
 
 type sqlFederationRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewFederationRepository creates a new FederationRepository.
-func NewFederationRepository(db *sqlx.DB) FederationRepository {
+func NewFederationRepository(db *gorm.DB) FederationRepository {
 	return &sqlFederationRepository{db: db}
 }
 
 func (s *sqlFederationRepository) Get(ctx context.Context, tenantID, provider, externalID string) (*FederatedIdentity, error) {
 	var f FederatedIdentity
-	err := s.db.GetContext(ctx, &f, `
+	err := s.db.WithContext(ctx).Raw(`
 		SELECT * FROM federated_identities 
 		WHERE tenant_id = $1 AND provider = $2 AND external_id = $3
-	`, tenantID, provider, externalID)
+	`, tenantID, provider, externalID).Scan(&f)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -72,11 +72,11 @@ func (s *sqlFederationRepository) Create(ctx context.Context, identity Federated
 
 func (s *sqlFederationRepository) List(ctx context.Context, identityID string) ([]FederatedIdentity, error) {
 	var identities []FederatedIdentity
-	err := s.db.SelectContext(ctx, &identities, `SELECT * FROM federated_identities WHERE identity_id = $1`, identityID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM federated_identities WHERE identity_id = $1`, identityID).Scan(&identities)
 	return identities, err
 }
 
 func (s *sqlFederationRepository) Delete(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM federated_identities WHERE id = $1`, id)
+	_, err := s.db.WithContext(ctx).Exec(`DELETE FROM federated_identities WHERE id = $1`, id)
 	return err
 }

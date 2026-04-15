@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // WebAuthnUser adapts our internal user concept to the webauthn library's User interface.
@@ -61,10 +61,10 @@ type WebAuthnRepository interface {
 }
 
 type sqlWebAuthnRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
-func NewWebAuthnRepository(db *sqlx.DB) WebAuthnRepository {
+func NewWebAuthnRepository(db *gorm.DB) WebAuthnRepository {
 	return &sqlWebAuthnRepository{db: db}
 }
 
@@ -95,7 +95,7 @@ func (r *sqlWebAuthnRepository) SaveCredential(ctx context.Context, tenantID, us
 func (r *sqlWebAuthnRepository) ListCredentials(ctx context.Context, userID string) ([]webauthn.Credential, error) {
 	var entities []WebAuthnCredentialEntity
 	query := `SELECT * FROM webauthn_credentials WHERE user_id = $1`
-	err := r.db.SelectContext(ctx, &entities, query, userID)
+	err := r.db.WithContext(ctx).Raw(query, userID).Scan(&entities)
 	if err != nil {
 		return nil, err
 	}

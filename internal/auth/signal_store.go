@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // SecurityEvent represents a critical event that may impact access.
@@ -27,11 +27,11 @@ type SignalRepository interface {
 }
 
 type sqlSignalRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewSignalRepository creates a new SignalRepository.
-func NewSignalRepository(db *sqlx.DB) SignalRepository {
+func NewSignalRepository(db *gorm.DB) SignalRepository {
 	return &sqlSignalRepository{db: db}
 }
 
@@ -63,9 +63,9 @@ func (r *sqlSignalRepository) GetLatestCriticalEvent(ctx context.Context, subjec
 		LIMIT 1
 	`
 	var event SecurityEvent
-	err := r.db.GetContext(ctx, &event, query, subjectID, since)
+	err := r.db.WithContext(ctx).Raw(query, subjectID, since).Scan(&event)
 	if err != nil {
-		return nil, err // Returns error if no rows, likely sql.ErrNoRows which caller handles
+		return nil, err // Returns error if no rows, likely gorm.ErrRecordNotFound which caller handles
 	}
 	return &event, nil
 }

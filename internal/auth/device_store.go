@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Device represents a user's device.
@@ -39,11 +39,11 @@ type DeviceRepository interface {
 
 // sqlDeviceRepository implements DeviceRepository using sqlx.
 type sqlDeviceRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewDeviceRepository creates a new DeviceRepository backed by sqlx.
-func NewDeviceRepository(db *sqlx.DB) DeviceRepository {
+func NewDeviceRepository(db *gorm.DB) DeviceRepository {
 	return &sqlDeviceRepository{db: db}
 }
 
@@ -71,9 +71,9 @@ func (r *sqlDeviceRepository) Register(ctx context.Context, device *Device) erro
 func (r *sqlDeviceRepository) GetByID(ctx context.Context, id string) (*Device, error) {
 	var device Device
 	query := `SELECT * FROM devices WHERE id = $1`
-	err := r.db.GetContext(ctx, &device, query, id)
+	err := r.db.WithContext(ctx).Raw(query, id).Scan(&device)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -84,9 +84,9 @@ func (r *sqlDeviceRepository) GetByID(ctx context.Context, id string) (*Device, 
 func (r *sqlDeviceRepository) GetByIdentifier(ctx context.Context, tenantID, identifier string) (*Device, error) {
 	var device Device
 	query := `SELECT * FROM devices WHERE tenant_id = $1 AND device_identifier = $2`
-	err := r.db.GetContext(ctx, &device, query, tenantID, identifier)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, identifier).Scan(&device)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -100,26 +100,26 @@ func (r *sqlDeviceRepository) UpdatePosture(ctx context.Context, id string, isCo
 		SET is_compliant = $1, risk_score = $2, updated_at = $3 
 		WHERE id = $4
 	`
-	_, err := r.db.ExecContext(ctx, query, isCompliant, riskScore, time.Now(), id)
+	_, err := r.db.WithContext(ctx).Exec(query, isCompliant, riskScore, time.Now(), id)
 	return err
 }
 
 func (r *sqlDeviceRepository) ListByUser(ctx context.Context, userID string) ([]Device, error) {
 	devices := []Device{}
 	query := `SELECT * FROM devices WHERE user_id = $1`
-	err := r.db.SelectContext(ctx, &devices, query, userID)
+	err := r.db.WithContext(ctx).Raw(query, userID).Scan(&devices)
 	return devices, err
 }
 
 func (r *sqlDeviceRepository) List(ctx context.Context, tenantID string) ([]Device, error) {
 	devices := []Device{}
 	query := `SELECT * FROM devices WHERE tenant_id = $1 ORDER BY last_seen_at DESC`
-	err := r.db.SelectContext(ctx, &devices, query, tenantID)
+	err := r.db.WithContext(ctx).Raw(query, tenantID).Scan(&devices)
 	return devices, err
 }
 
 func (r *sqlDeviceRepository) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM devices WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
+	_, err := r.db.WithContext(ctx).Exec(query, id)
 	return err
 }

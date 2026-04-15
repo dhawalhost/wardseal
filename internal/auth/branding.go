@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // BrandingConfig represents the visual customization for a tenant.
@@ -28,19 +28,19 @@ type BrandingRepository interface {
 }
 
 type sqlBrandingRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewBrandingRepository creates a new BrandingRepository.
-func NewBrandingRepository(db *sqlx.DB) BrandingRepository {
+func NewBrandingRepository(db *gorm.DB) BrandingRepository {
 	return &sqlBrandingRepository{db: db}
 }
 
 func (s *sqlBrandingRepository) Get(ctx context.Context, tenantID string) (BrandingConfig, error) {
 	var b BrandingConfig
-	err := s.db.GetContext(ctx, &b, `SELECT * FROM tenant_branding WHERE tenant_id = $1`, tenantID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM tenant_branding WHERE tenant_id = $1`, tenantID).Scan(&b)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// Return default config if not found
 			return BrandingConfig{TenantID: tenantID}, nil
 		}

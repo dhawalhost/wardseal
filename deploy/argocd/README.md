@@ -334,7 +334,12 @@ Create policies for WardSeal to read secrets:
 ```bash
 # Staging policy
 cat <<EOF | vault policy write wardseal-staging-policy -
-# Allow reading staging secrets
+# Allow reading the top-level staging secret (loaded directly by config.go)
+path "secret/data/wardseal/staging" {
+  capabilities = ["read"]
+}
+
+# Allow reading staging sub-secrets (loaded by External Secrets Operator)
 path "secret/data/wardseal/staging/*" {
   capabilities = ["read", "list"]
 }
@@ -342,17 +347,38 @@ path "secret/data/wardseal/staging/*" {
 path "secret/metadata/wardseal/staging/*" {
   capabilities = ["list"]
 }
+
+# Allow Transit key operations (KMS signing/verification)
+path "transit/sign/wardseal-signing-key-staging" {
+  capabilities = ["create", "update"]
+}
+path "transit/verify/wardseal-signing-key-staging" {
+  capabilities = ["create", "update"]
+}
 EOF
 
 # Production policy
 cat <<EOF | vault policy write wardseal-production-policy -
-# Allow reading production secrets
+# Allow reading the top-level production secret (loaded directly by config.go)
+path "secret/data/wardseal/production" {
+  capabilities = ["read"]
+}
+
+# Allow reading production sub-secrets (loaded by External Secrets Operator)
 path "secret/data/wardseal/production/*" {
   capabilities = ["read", "list"]
 }
 
 path "secret/metadata/wardseal/production/*" {
   capabilities = ["list"]
+}
+
+# Allow Transit key operations (KMS signing/verification)
+path "transit/sign/wardseal-signing-key-production" {
+  capabilities = ["create", "update"]
+}
+path "transit/verify/wardseal-signing-key-production" {
+  capabilities = ["create", "update"]
 }
 EOF
 ```

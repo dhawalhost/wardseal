@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 const (
@@ -25,17 +25,17 @@ type LoginAttemptRepository interface {
 }
 
 type sqlLoginAttemptRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewLoginAttemptRepository creates a new login attempt repository.
-func NewLoginAttemptRepository(db *sqlx.DB) LoginAttemptRepository {
+func NewLoginAttemptRepository(db *gorm.DB) LoginAttemptRepository {
 	return &sqlLoginAttemptRepository{db: db}
 }
 
 func (r *sqlLoginAttemptRepository) RecordAttempt(ctx context.Context, tenantID, username, ip string, success bool) error {
 	query := `INSERT INTO login_attempts (tenant_id, username, ip_address, success) VALUES ($1, $2, $3, $4)`
-	_, err := r.db.ExecContext(ctx, query, tenantID, username, ip, success)
+	_, err := r.db.WithContext(ctx).Exec(query, tenantID, username, ip, success)
 	return err
 }
 
@@ -46,16 +46,16 @@ func (r *sqlLoginAttemptRepository) GetRecentFailures(ctx context.Context, tenan
 		WHERE tenant_id = $1 AND username = $2 AND success = FALSE 
 		AND attempted_at > NOW() - INTERVAL '15 minutes'
 	`
-	err := r.db.GetContext(ctx, &count, query, tenantID, username)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, username).Scan(&count)
 	return count, err
 }
 
 func (r *sqlLoginAttemptRepository) IsLocked(ctx context.Context, tenantID, username string) (bool, time.Time, error) {
 	var lockedUntil time.Time
 	query := `SELECT locked_until FROM account_lockouts WHERE tenant_id = $1 AND username = $2`
-	err := r.db.GetContext(ctx, &lockedUntil, query, tenantID, username)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, username).Scan(&lockedUntil)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, time.Time{}, nil
 		}
 		return false, time.Time{}, err
@@ -78,12 +78,12 @@ func (r *sqlLoginAttemptRepository) LockAccount(ctx context.Context, tenantID, u
 		ON CONFLICT (tenant_id, username) 
 		DO UPDATE SET locked_at = NOW(), locked_until = EXCLUDED.locked_until
 	`
-	_, err := r.db.ExecContext(ctx, query, tenantID, username, lockedUntil)
+	_, err := r.db.WithContext(ctx).Exec(query, tenantID, username, lockedUntil)
 	return err
 }
 
 func (r *sqlLoginAttemptRepository) UnlockAccount(ctx context.Context, tenantID, username string) error {
 	query := `DELETE FROM account_lockouts WHERE tenant_id = $1 AND username = $2`
-	_, err := r.db.ExecContext(ctx, query, tenantID, username)
+	_, err := r.db.WithContext(ctx).Exec(query, tenantID, username)
 	return err
 }

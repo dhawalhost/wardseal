@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -75,7 +75,7 @@ func (s *directoryService) CreateUser(ctx context.Context, tenantID string, user
 	}
 
 	var userID string
-	err = s.repo.WithTransaction(ctx, func(tx *sqlx.Tx) error {
+	err = s.repo.WithTransaction(ctx, func(tx *gorm.DB) error {
 		var err error
 		userID, err = s.repo.CreateIdentity(ctx, tx, tenantID)
 		if err != nil {
@@ -108,7 +108,7 @@ func (s *directoryService) ListUsers(ctx context.Context, tenantID string, limit
 }
 
 func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, user User) error {
-	return s.repo.WithTransaction(ctx, func(tx *sqlx.Tx) error {
+	return s.repo.WithTransaction(ctx, func(tx *gorm.DB) error {
 		var passwordHash string
 		if user.Password != "" {
 			hp, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)

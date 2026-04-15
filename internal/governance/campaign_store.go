@@ -4,36 +4,44 @@ import (
 	"context"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Campaign represents a certification campaign.
 type Campaign struct {
-	ID          string     `json:"id" db:"id"`
-	TenantID    string     `json:"tenant_id" db:"tenant_id"`
-	Name        string     `json:"name" db:"name"`
-	Description string     `json:"description,omitempty" db:"description"`
-	Status      string     `json:"status" db:"status"` // draft, active, completed, cancelled
-	ReviewerID  string     `json:"reviewer_id" db:"reviewer_id"`
-	StartDate   *time.Time `json:"start_date,omitempty" db:"start_date"`
-	EndDate     *time.Time `json:"end_date,omitempty" db:"end_date"`
-	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+	ID          string     `gorm:"primaryKey;column:id" json:"id"`
+	TenantID    string     `gorm:"column:tenant_id" json:"tenant_id"`
+	Name        string     `gorm:"column:name" json:"name"`
+	Description string     `gorm:"column:description" json:"description,omitempty"`
+	Status      string     `gorm:"column:status" json:"status"` // draft, active, completed, cancelled
+	ReviewerID  string     `gorm:"column:reviewer_id" json:"reviewer_id"`
+	StartDate   *time.Time `gorm:"column:start_date" json:"start_date,omitempty"`
+	EndDate     *time.Time `gorm:"column:end_date" json:"end_date,omitempty"`
+	CreatedAt   time.Time  `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"column:updated_at" json:"updated_at"`
+}
+
+func (Campaign) TableName() string {
+	return "certification_campaigns"
 }
 
 // CertificationItem represents an item to be reviewed in a campaign.
 type CertificationItem struct {
-	ID              string     `json:"id" db:"id"`
-	CampaignID      string     `json:"campaign_id" db:"campaign_id"`
-	TenantID        string     `json:"tenant_id" db:"tenant_id"`
-	UserID          string     `json:"user_id" db:"user_id"`
-	ResourceType    string     `json:"resource_type" db:"resource_type"`
-	ResourceID      string     `json:"resource_id" db:"resource_id"`
-	ResourceName    string     `json:"resource_name,omitempty" db:"resource_name"`
-	Decision        *string    `json:"decision,omitempty" db:"decision"` // approve, revoke, nil
-	DecisionAt      *time.Time `json:"decision_at,omitempty" db:"decision_at"`
-	DecisionComment *string    `json:"decision_comment,omitempty" db:"decision_comment"`
-	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	ID              string     `gorm:"primaryKey;column:id" json:"id"`
+	CampaignID      string     `gorm:"column:campaign_id" json:"campaign_id"`
+	TenantID        string     `gorm:"column:tenant_id" json:"tenant_id"`
+	UserID          string     `gorm:"column:user_id" json:"user_id"`
+	ResourceType    string     `gorm:"column:resource_type" json:"resource_type"`
+	ResourceID      string     `gorm:"column:resource_id" json:"resource_id"`
+	ResourceName    string     `gorm:"column:resource_name" json:"resource_name,omitempty"`
+	Decision        *string    `gorm:"column:decision" json:"decision,omitempty"` // approve, revoke, nil
+	DecisionAt      *time.Time `gorm:"column:decision_at" json:"decision_at,omitempty"`
+	DecisionComment *string    `gorm:"column:decision_comment" json:"decision_comment,omitempty"`
+	CreatedAt       time.Time  `gorm:"column:created_at" json:"created_at"`
+}
+
+func (CertificationItem) TableName() string {
+	return "certification_items"
 }
 
 // CreateCampaignInput holds input for creating a campaign.
@@ -68,104 +76,101 @@ type CampaignRepository interface {
 }
 
 type sqlCampaignRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewCampaignRepository creates a new campaign repository.
-func NewCampaignRepository(db *sqlx.DB) CampaignRepository {
+func NewCampaignRepository(db *gorm.DB) CampaignRepository {
 	return &sqlCampaignRepository{db: db}
 }
 
 func (s *sqlCampaignRepository) CreateCampaign(ctx context.Context, c Campaign) (string, error) {
-	var id string
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO certification_campaigns (tenant_id, name, description, status, reviewer_id, start_date, end_date)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-		c.TenantID, c.Name, c.Description, "draft", c.ReviewerID, c.StartDate, c.EndDate,
-	).Scan(&id)
-	return id, err
+	c.Status = "draft"
+	if err := s.db.WithContext(ctx).Omit("ID").Create(&c).Error; err != nil {
+		return "", err
+	}
+	return c.ID, nil
 }
 
 func (s *sqlCampaignRepository) GetCampaign(ctx context.Context, tenantID, id string) (Campaign, error) {
 	var c Campaign
-	err := s.db.GetContext(ctx, &c,
-		`SELECT * FROM certification_campaigns WHERE id = $1 AND tenant_id = $2`, id, tenantID)
-	return c, err
+	if err := s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", id, tenantID).First(&c).Error; err != nil {
+		return Campaign{}, err
+	}
+	return c, nil
 }
 
 func (s *sqlCampaignRepository) ListCampaigns(ctx context.Context, tenantID, status string) ([]Campaign, error) {
 	var campaigns []Campaign
-	query := `SELECT * FROM certification_campaigns WHERE tenant_id = $1`
-	args := []interface{}{tenantID}
+	query := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID).Order("created_at DESC")
 	if status != "" {
-		query += ` AND status = $2`
-		args = append(args, status)
+		query = query.Where("status = ?", status)
 	}
-	query += ` ORDER BY created_at DESC`
-	err := s.db.SelectContext(ctx, &campaigns, query, args...)
-	return campaigns, err
+	if err := query.Find(&campaigns).Error; err != nil {
+		return nil, err
+	}
+	return campaigns, nil
 }
 
 func (s *sqlCampaignRepository) UpdateCampaignStatus(ctx context.Context, id, status string) error {
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE certification_campaigns SET status = $1, updated_at = NOW() WHERE id = $2`,
-		status, id)
-	return err
+	return s.db.WithContext(ctx).Model(&Campaign{}).Where("id = ?", id).
+		Updates(map[string]interface{}{"status": status, "updated_at": gorm.Expr("NOW()")}).Error
 }
 
 func (s *sqlCampaignRepository) DeleteCampaign(ctx context.Context, tenantID, id string) error {
-	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM certification_campaigns WHERE id = $1 AND tenant_id = $2`, id, tenantID)
-	return err
+	return s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", id, tenantID).Delete(&Campaign{}).Error
 }
 
 func (s *sqlCampaignRepository) CreateItem(ctx context.Context, item CertificationItem) (string, error) {
-	var id string
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO certification_items (campaign_id, tenant_id, user_id, resource_type, resource_id, resource_name)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		item.CampaignID, item.TenantID, item.UserID, item.ResourceType, item.ResourceID, item.ResourceName,
-	).Scan(&id)
-	return id, err
+	if err := s.db.WithContext(ctx).Omit("ID").Create(&item).Error; err != nil {
+		return "", err
+	}
+	return item.ID, nil
 }
 
 func (s *sqlCampaignRepository) GetItem(ctx context.Context, itemID string) (CertificationItem, error) {
 	var item CertificationItem
-	err := s.db.GetContext(ctx, &item, `SELECT * FROM certification_items WHERE id = $1`, itemID)
-	return item, err
+	if err := s.db.WithContext(ctx).Where("id = ?", itemID).First(&item).Error; err != nil {
+		return CertificationItem{}, err
+	}
+	return item, nil
 }
 
 func (s *sqlCampaignRepository) ListItems(ctx context.Context, campaignID, decision string) ([]CertificationItem, error) {
 	var items []CertificationItem
-	query := `SELECT * FROM certification_items WHERE campaign_id = $1`
-	args := []interface{}{campaignID}
+	query := s.db.WithContext(ctx).Where("campaign_id = ?", campaignID).Order("created_at ASC")
 	if decision != "" {
-		query += ` AND decision = $2`
-		args = append(args, decision)
+		query = query.Where("decision = ?", decision)
 	} else {
-		query += ` AND decision IS NULL` // Pending items
+		query = query.Where("decision IS NULL")
 	}
-	query += ` ORDER BY created_at`
-	err := s.db.SelectContext(ctx, &items, query, args...)
-	return items, err
+	if err := query.Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 func (s *sqlCampaignRepository) ListItemsByReviewer(ctx context.Context, tenantID, reviewerID string) ([]CertificationItem, error) {
 	var items []CertificationItem
+	// GORM raw query for joins
 	query := `
 		SELECT i.* 
 		FROM certification_items i
 		JOIN certification_campaigns c ON i.campaign_id = c.id
-		WHERE c.tenant_id = $1 AND c.reviewer_id = $2 AND c.status = 'active' AND i.decision IS NULL
-		ORDER BY c.created_at, i.user_id
+		WHERE c.tenant_id = ? AND c.reviewer_id = ? AND c.status = 'active' AND i.decision IS NULL
+		ORDER BY c.created_at ASC, i.user_id ASC
 	`
-	err := s.db.SelectContext(ctx, &items, query, tenantID, reviewerID)
-	return items, err
+	if err := s.db.WithContext(ctx).Raw(query, tenantID, reviewerID).Scan(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 func (s *sqlCampaignRepository) UpdateItemDecision(ctx context.Context, itemID, decision, comment string) error {
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE certification_items SET decision = $1, decision_comment = $2, decision_at = NOW() WHERE id = $3`,
-		decision, comment, itemID)
-	return err
+	updates := map[string]interface{}{
+		"decision":         decision,
+		"decision_comment": comment,
+		"decision_at":      gorm.Expr("NOW()"),
+	}
+	return s.db.WithContext(ctx).Model(&CertificationItem{}).Where("id = ?", itemID).Updates(updates).Error
 }

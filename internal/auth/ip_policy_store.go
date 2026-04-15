@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // IPPolicyType defines whether a policy is an ALLOW or BLOCK rule.
@@ -57,11 +57,11 @@ func EvaluateIP(ip string, policies []IPPolicy) (blocked bool, policy *IPPolicy)
 
 // sqlIPPolicyRepository implements IPPolicyRepository backed by PostgreSQL.
 type sqlIPPolicyRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewIPPolicyRepository creates a SQL-backed IPPolicyRepository.
-func NewIPPolicyRepository(db *sqlx.DB) IPPolicyRepository {
+func NewIPPolicyRepository(db *gorm.DB) IPPolicyRepository {
 	return &sqlIPPolicyRepository{db: db}
 }
 
@@ -79,20 +79,17 @@ func (r *sqlIPPolicyRepository) Create(ctx context.Context, p IPPolicy) (string,
 
 func (r *sqlIPPolicyRepository) List(ctx context.Context, tenantID string) ([]IPPolicy, error) {
 	var policies []IPPolicy
-	err := r.db.SelectContext(ctx, &policies,
-		`SELECT * FROM ip_policy WHERE tenant_id = $1 ORDER BY created_at DESC`, tenantID)
+	err := r.db.WithContext(ctx).Raw(`SELECT * FROM ip_policy WHERE tenant_id = $1 ORDER BY created_at DESC`, tenantID).Scan(&policies)
 	return policies, err
 }
 
 func (r *sqlIPPolicyRepository) Delete(ctx context.Context, tenantID, id string) error {
-	_, err := r.db.ExecContext(ctx,
-		`DELETE FROM ip_policy WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	_, err := r.db.WithContext(ctx).Exec(`DELETE FROM ip_policy WHERE id = $1 AND tenant_id = $2`, id, tenantID)
 	return err
 }
 
 func (r *sqlIPPolicyRepository) ListBlocked(ctx context.Context, tenantID string) ([]IPPolicy, error) {
 	var policies []IPPolicy
-	err := r.db.SelectContext(ctx, &policies,
-		`SELECT * FROM ip_policy WHERE tenant_id = $1 AND type = 'BLOCK' ORDER BY created_at DESC`, tenantID)
+	err := r.db.WithContext(ctx).Raw(`SELECT * FROM ip_policy WHERE tenant_id = $1 AND type = 'BLOCK' ORDER BY created_at DESC`, tenantID).Scan(&policies)
 	return policies, err
 }
