@@ -6,19 +6,19 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // ProvisioningService manages async provisioning tasks.
 type ProvisioningService struct {
-	db       *sqlx.DB
+	db       *gorm.DB
 	registry Registry
 	logger   *zap.Logger
 }
 
 // NewProvisioningService creates a new provisioning service.
-func NewProvisioningService(db *sqlx.DB, registry Registry, logger *zap.Logger) *ProvisioningService {
+func NewProvisioningService(db *gorm.DB, registry Registry, logger *zap.Logger) *ProvisioningService {
 	return &ProvisioningService{
 		db:       db,
 		registry: registry,
@@ -33,42 +33,50 @@ func (s *ProvisioningService) EnqueueTask(ctx context.Context, task Provisioning
 		return "", fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	var id string
-	err = s.db.QueryRowxContext(ctx,
-		`INSERT INTO provisioning_tasks (tenant_id, connector_id, operation, resource_type, resource_id, payload, max_retries)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-		task.TenantID, task.ConnectorID, task.Operation, task.ResourceType, task.ResourceID, payloadBytes, task.MaxRetries,
-	).Scan(&id)
-	if err != nil {
+	row := taskRow{
+		TenantID:     task.TenantID,
+		ConnectorID:  task.ConnectorID,
+		Operation:    task.Operation,
+		ResourceType: task.ResourceType,
+		ResourceID:   &task.ResourceID,
+		Payload:      payloadBytes,
+		MaxRetries:   task.MaxRetries,
+		Status:       "pending",
+		ScheduledAt:  time.Now(),
+	}
+
+	if err := s.db.WithContext(ctx).Table("provisioning_tasks").Create(&row).Error; err != nil {
 		return "", fmt.Errorf("failed to enqueue task: %w", err)
 	}
 
 	s.logger.Info("Provisioning task enqueued",
-		zap.String("task_id", id),
+		zap.String("task_id", row.ID),
 		zap.String("operation", task.Operation),
 		zap.String("connector_id", task.ConnectorID),
 	)
-	return id, nil
+	return row.ID, nil
 }
 
 // GetTask retrieves a task by ID.
 func (s *ProvisioningService) GetTask(ctx context.Context, tenantID, taskID string) (ProvisioningTask, error) {
-	var t taskRow
-	err := s.db.GetContext(ctx, &t,
-		`SELECT * FROM provisioning_tasks WHERE id = $1 AND tenant_id = $2`, taskID, tenantID)
+	var r taskRow
+	err := s.db.WithContext(ctx).Table("provisioning_tasks").
+		Where("id = ? AND tenant_id = ?", taskID, tenantID).
+		First(&r).Error
 	if err != nil {
 		return ProvisioningTask{}, err
 	}
-	return t.toTask(), nil
+	return r.toTask(), nil
 }
 
 // ListPendingTasks returns tasks that are ready to be processed.
 func (s *ProvisioningService) ListPendingTasks(ctx context.Context, limit int) ([]ProvisioningTask, error) {
 	var rows []taskRow
-	err := s.db.SelectContext(ctx, &rows,
-		`SELECT * FROM provisioning_tasks 
-		 WHERE status = 'pending' AND scheduled_at <= NOW()
-		 ORDER BY scheduled_at LIMIT $1`, limit)
+	err := s.db.WithContext(ctx).Table("provisioning_tasks").
+		Where("status = ? AND scheduled_at <= ?", "pending", time.Now()).
+		Order("scheduled_at").
+		Limit(limit).
+		Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
@@ -83,18 +91,19 @@ func (s *ProvisioningService) ListPendingTasks(ctx context.Context, limit int) (
 // ProcessTask executes a single provisioning task.
 func (s *ProvisioningService) ProcessTask(ctx context.Context, taskID string) error {
 	// Mark as processing
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE provisioning_tasks SET status = 'processing' WHERE id = $1`, taskID)
+	err := s.db.WithContext(ctx).Table("provisioning_tasks").
+		Where("id = ?", taskID).
+		Update("status", "processing").Error
 	if err != nil {
 		return err
 	}
 
 	// Get task
-	var t taskRow
-	if err := s.db.GetContext(ctx, &t, `SELECT * FROM provisioning_tasks WHERE id = $1`, taskID); err != nil {
+	var r taskRow
+	if err := s.db.WithContext(ctx).Table("provisioning_tasks").Where("id = ?", taskID).First(&r).Error; err != nil {
 		return err
 	}
-	task := t.toTask()
+	task := r.toTask()
 
 	// Get connector
 	conn, ok := s.registry.Get(task.ConnectorID)
@@ -108,10 +117,13 @@ func (s *ProvisioningService) ProcessTask(ctx context.Context, taskID string) er
 		// Handle retry
 		if task.RetryCount < task.MaxRetries {
 			backoff := time.Duration(1<<task.RetryCount) * time.Minute // Exponential backoff
-			if _, err := s.db.ExecContext(ctx,
-				`UPDATE provisioning_tasks SET status = 'pending', retry_count = retry_count + 1, 
-				 scheduled_at = NOW() + $1, error_message = $2 WHERE id = $3`,
-				backoff, execErr.Error(), taskID); err != nil {
+			update := map[string]interface{}{
+				"status":        "pending",
+				"retry_count":   gorm.Expr("retry_count + 1"),
+				"scheduled_at":  time.Now().Add(backoff),
+				"error_message": execErr.Error(),
+			}
+			if err := s.db.WithContext(ctx).Table("provisioning_tasks").Where("id = ?", taskID).Updates(update).Error; err != nil {
 				return err
 			}
 			return nil
@@ -120,15 +132,23 @@ func (s *ProvisioningService) ProcessTask(ctx context.Context, taskID string) er
 	}
 
 	// Mark as completed
-	_, err = s.db.ExecContext(ctx,
-		`UPDATE provisioning_tasks SET status = 'completed', processed_at = NOW() WHERE id = $1`, taskID)
+	err = s.db.WithContext(ctx).Table("provisioning_tasks").
+		Where("id = ?", taskID).
+		Updates(map[string]interface{}{
+			"status":       "completed",
+			"processed_at": time.Now(),
+		}).Error
 	return err
 }
 
 func (s *ProvisioningService) failTask(ctx context.Context, taskID, errMsg string) error {
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE provisioning_tasks SET status = 'failed', error_message = $1, processed_at = NOW() WHERE id = $2`,
-		errMsg, taskID)
+	err := s.db.WithContext(ctx).Table("provisioning_tasks").
+		Where("id = ?", taskID).
+		Updates(map[string]interface{}{
+			"status":        "failed",
+			"error_message": errMsg,
+			"processed_at":  time.Now(),
+		}).Error
 	return err
 }
 
@@ -187,20 +207,20 @@ func (s *ProvisioningService) executeOperation(ctx context.Context, conn Connect
 
 // taskRow represents a DB row.
 type taskRow struct {
-	ID           string     `db:"id"`
-	TenantID     string     `db:"tenant_id"`
-	ConnectorID  string     `db:"connector_id"`
-	Operation    string     `db:"operation"`
-	ResourceType string     `db:"resource_type"`
-	ResourceID   *string    `db:"resource_id"`
-	Payload      []byte     `db:"payload"`
-	Status       string     `db:"status"`
-	ErrorMessage *string    `db:"error_message"`
-	RetryCount   int        `db:"retry_count"`
-	MaxRetries   int        `db:"max_retries"`
-	CreatedAt    time.Time  `db:"created_at"`
-	ProcessedAt  *time.Time `db:"processed_at"`
-	ScheduledAt  time.Time  `db:"scheduled_at"`
+	ID           string `gorm:"primaryKey;default:gen_random_uuid()"`
+	TenantID     string
+	ConnectorID  string
+	Operation    string
+	ResourceType string
+	ResourceID   *string
+	Payload      []byte
+	Status       string
+	ErrorMessage *string
+	RetryCount   int
+	MaxRetries   int
+	CreatedAt    time.Time
+	ProcessedAt  *time.Time
+	ScheduledAt  time.Time
 }
 
 func (r taskRow) toTask() ProvisioningTask {

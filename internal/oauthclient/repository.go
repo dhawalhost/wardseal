@@ -5,45 +5,45 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 // sqlRepository provides CRUD helpers for oauth_clients.
 type sqlRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewRepository creates a new Repository instance.
-func NewRepository(db *sqlx.DB) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return &sqlRepository{db: db}
 }
 
 // ListClients returns all OAuth clients across tenants.
 func (r *sqlRepository) ListClients(ctx context.Context) ([]Client, error) {
 	var clients []Client
-	err := r.db.SelectContext(ctx, &clients, `SELECT id, tenant_id, client_id, client_type, name, description,
-        redirect_uris, allowed_scopes, client_secret_hash, created_at, updated_at FROM oauth_clients`)
+	err := r.db.WithContext(ctx).Raw(`SELECT id, tenant_id, client_id, client_type, name, description,
+        redirect_uris, allowed_scopes, client_secret_hash, created_at, updated_at FROM oauth_clients`).Scan(&clients).Error
 	return clients, err
 }
 
 // ListClientsByTenant returns all clients for a tenant.
 func (r *sqlRepository) ListClientsByTenant(ctx context.Context, tenantID string) ([]Client, error) {
 	var clients []Client
-	err := r.db.SelectContext(ctx, &clients, `SELECT id, tenant_id, client_id, client_type, name, description,
+	err := r.db.WithContext(ctx).Raw(`SELECT id, tenant_id, client_id, client_type, name, description,
         redirect_uris, allowed_scopes, client_secret_hash, created_at, updated_at
-        FROM oauth_clients WHERE tenant_id = $1`, tenantID)
+        FROM oauth_clients WHERE tenant_id = ?`, tenantID).Scan(&clients).Error
 	return clients, err
 }
 
 // GetClient fetches a client by tenant and client_id.
 func (r *sqlRepository) GetClient(ctx context.Context, tenantID, clientID string) (Client, error) {
 	var client Client
-	err := r.db.GetContext(ctx, &client, `SELECT id, tenant_id, client_id, client_type, name, description,
+	err := r.db.WithContext(ctx).Raw(`SELECT id, tenant_id, client_id, client_type, name, description,
         redirect_uris, allowed_scopes, client_secret_hash, created_at, updated_at
-        FROM oauth_clients WHERE tenant_id = $1 AND client_id = $2`, tenantID, clientID)
+        FROM oauth_clients WHERE tenant_id = ? AND client_id = ?`, tenantID, clientID).Scan(&client).Error
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return Client{}, ErrNotFound
 		}
 		return Client{}, err
@@ -54,30 +54,30 @@ func (r *sqlRepository) GetClient(ctx context.Context, tenantID, clientID string
 // CreateClient inserts a new OAuth client.
 func (r *sqlRepository) CreateClient(ctx context.Context, params CreateClientParams) (Client, error) {
 	var client Client
-	err := r.db.GetContext(ctx, &client, `INSERT INTO oauth_clients
+	err := r.db.WithContext(ctx).Raw(`INSERT INTO oauth_clients
         (tenant_id, client_id, client_type, name, description, redirect_uris, allowed_scopes, client_secret_hash)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id, tenant_id, client_id, client_type, name, description, redirect_uris,
                   allowed_scopes, client_secret_hash, created_at, updated_at`,
 		params.TenantID, params.ClientID, params.ClientType, params.Name,
 		nullableString(params.Description), pq.StringArray(params.RedirectURIs),
-		pq.StringArray(params.AllowedScopes), params.ClientSecretHash)
+		pq.StringArray(params.AllowedScopes), params.ClientSecretHash).Scan(&client).Error
 	return client, err
 }
 
 // UpdateClient updates mutable fields on an OAuth client.
 func (r *sqlRepository) UpdateClient(ctx context.Context, tenantID, clientID string, params UpdateClientParams) (Client, error) {
-	_, err := r.db.ExecContext(ctx, `UPDATE oauth_clients
-        SET name = COALESCE($1, name),
-            description = COALESCE($2, description),
-            redirect_uris = COALESCE($3::text[], redirect_uris),
-            allowed_scopes = COALESCE($4::text[], allowed_scopes),
-            client_type = COALESCE($5, client_type),
-            client_secret_hash = COALESCE($6::bytea, client_secret_hash),
+	err := r.db.WithContext(ctx).Exec(`UPDATE oauth_clients
+        SET name = COALESCE(?, name),
+            description = COALESCE(?, description),
+            redirect_uris = COALESCE(?::text[], redirect_uris),
+            allowed_scopes = COALESCE(?::text[], allowed_scopes),
+            client_type = COALESCE(?, client_type),
+            client_secret_hash = COALESCE(?::bytea, client_secret_hash),
             updated_at = NOW()
-        WHERE tenant_id = $7 AND client_id = $8`,
+        WHERE tenant_id = ? AND client_id = ?`,
 		params.Name, nullableString(params.Description), nullableStringArray(params.RedirectURIs),
-		nullableStringArray(params.AllowedScopes), params.ClientType, nullableBytea(params.ClientSecretHash), tenantID, clientID)
+		nullableStringArray(params.AllowedScopes), params.ClientType, nullableBytea(params.ClientSecretHash), tenantID, clientID).Error
 	if err != nil {
 		return Client{}, err
 	}
@@ -86,15 +86,11 @@ func (r *sqlRepository) UpdateClient(ctx context.Context, tenantID, clientID str
 
 // DeleteClient removes an OAuth client registration.
 func (r *sqlRepository) DeleteClient(ctx context.Context, tenantID, clientID string) error {
-	result, err := r.db.ExecContext(ctx, `DELETE FROM oauth_clients WHERE tenant_id = $1 AND client_id = $2`, tenantID, clientID)
-	if err != nil {
-		return err
+	res := r.db.WithContext(ctx).Exec(`DELETE FROM oauth_clients WHERE tenant_id = ? AND client_id = ?`, tenantID, clientID)
+	if res.Error != nil {
+		return res.Error
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
+	if res.RowsAffected == 0 {
 		return ErrNotFound
 	}
 	return nil

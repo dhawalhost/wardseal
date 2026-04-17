@@ -7,25 +7,30 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/dhawalhost/wardseal/pkg/config"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
-	dbHost := os.Getenv("DB_HOST")
-	if dbHost == "" {
-		dbHost = "localhost"
+	// Use centralized config if available, otherwise fallback to env
+	cfg, err := config.Load()
+	var dsn string
+	if err == nil && cfg.Database.DSN != "" {
+		dsn = cfg.Database.DSN
+	} else {
+		dbHost := envOr("DB_HOST", "localhost")
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=%s",
+			envOr("DB_USER", "user"),
+			envOr("DB_PASSWORD", "password"),
+			dbHost,
+			envOr("DB_NAME", "identity_platform"),
+			envOr("DB_SSLMODE", "disable"),
+		)
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=%s",
-		envOr("DB_USER", "user"),
-		envOr("DB_PASSWORD", "password"),
-		dbHost,
-		envOr("DB_NAME", "identity_platform"),
-		envOr("DB_SSLMODE", "disable"),
-	)
 
-	fmt.Printf("Connecting to %s...\n", connStr)
-	db, err := sqlx.Connect("postgres", connStr)
+	fmt.Printf("Connecting to database...\n")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -51,7 +56,7 @@ func main() {
 			log.Fatalf("Failed to read migration file %s: %v", filename, err)
 		}
 
-		if _, err := db.Exec(string(content)); err != nil {
+		if err := db.Exec(string(content)).Error; err != nil {
 			// Basic error handling - in a real tool we'd track versions in a schema_migrations table
 			// and skip already applied ones. For now, we rely on "IF NOT EXISTS" or errors being acceptable/idempotent
 			// OR we assume a fresh DB. The most common error on re-run is "already exists", which we can log but warn.

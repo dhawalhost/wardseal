@@ -104,10 +104,7 @@ test-coverage: ## Run tests with coverage report
 
 test-integration: ## Run integration tests (requires PostgreSQL)
 	@echo "Running integration tests..."
-	TEST_DB_HOST=127.0.0.1 \
-	TEST_DB_USER=user \
-	TEST_DB_PASSWORD=password \
-	TEST_DB_NAME=identity_platform_test \
+	APP_DATABASE_DSN=postgres://user:password@localhost:5432/identity_platform_test?sslmode=disable \
 	$(GOTEST) -v -tags=integration ./tests/integration/...
 
 test-integration-setup: docker-up ## Setup database for integration tests
@@ -124,16 +121,16 @@ test-all: test test-integration ## Run all tests
 # ==================
 
 run-authsvc: ## Run auth service locally
-	DB_HOST=localhost \
+	APP_DATABASE_DSN=postgres://user:password@localhost:5432/identity_platform?sslmode=disable \
 	DIRECTORY_SERVICE_URL=http://localhost:8081 \
 	$(GOCMD) run ./cmd/authsvc
 
 run-dirsvc: ## Run directory service locally
-	DB_HOST=localhost \
+	APP_DATABASE_DSN=postgres://user:password@localhost:5432/identity_platform?sslmode=disable \
 	$(GOCMD) run ./cmd/dirsvc
 
 run-govsvc: ## Run governance service locally
-	DB_HOST=localhost \
+	APP_DATABASE_DSN=postgres://user:password@localhost:5432/identity_platform?sslmode=disable \
 	DIRECTORY_SERVICE_URL=http://localhost:8081 \
 	$(GOCMD) run ./cmd/govsvc
 
@@ -145,13 +142,17 @@ run-all: docker-up ## Run all services (requires docker-compose)
 # ==================
 
 docker-up: ## Start Docker containers
-	docker-compose up -d
+	docker compose up -d
 
 docker-down: ## Stop Docker containers
-	docker-compose down
+	docker compose down
 
 docker-logs: ## View Docker logs
-	docker-compose logs -f
+	docker compose logs -f
+
+docker-rebuild: docker-down ## Rebuild all Docker containers
+	docker compose build --no-cache
+	docker compose up -d
 
 build-images: ## Build all Docker images
 	@for svc in $(SERVICES); do \

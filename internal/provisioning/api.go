@@ -3,7 +3,8 @@ package provisioning
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/dhawalhost/gokit/response"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -18,17 +19,19 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 	return &HTTPHandler{svc: svc, logger: logger}
 }
 
-// RegisterRoutes registers the provisioning routes.
-func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
-	router.GET("/health", h.healthCheck)
+// Router returns a chi.Router for provisioning routes.
+func (h *HTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+	r.Get("/health", h.healthCheck)
+	return r
 }
 
-func (h *HTTPHandler) healthCheck(c *gin.Context) {
-	ok, err := h.svc.HealthCheck(c.Request.Context())
+func (h *HTTPHandler) healthCheck(w http.ResponseWriter, r *http.Request) {
+	ok, err := h.svc.HealthCheck(r.Context())
 	if err != nil {
 		h.logger.Error("Health check failed", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, HealthCheckResponse{Healthy: ok})
+	response.Ok(w, r, HealthCheckResponse{Healthy: ok})
 }

@@ -2,168 +2,99 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
-	"strings"
+	"time"
 
+	"github.com/dhawalhost/gokit/database"
+	"github.com/dhawalhost/gokit/logger"
+	"github.com/dhawalhost/gokit/observability"
 	"github.com/dhawalhost/wardseal/internal/directory"
 	"github.com/dhawalhost/wardseal/internal/scim"
 	"github.com/dhawalhost/wardseal/pkg/config"
-	"github.com/dhawalhost/wardseal/pkg/database"
-	"github.com/dhawalhost/wardseal/pkg/logger"
-	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/dhawalhost/wardseal/pkg/observability"
-	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 )
 
 func main() {
-	log := logger.NewFromEnv()
-	defer func() { _ = log.Sync() }()
-
 	// Load centralized configuration
 	cfg := config.MustLoad()
 
-	// Database connection
-	dbConfig := database.Config{
-		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password, // Securely injected by Vault if configured
-		DBName:   cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-	}
-
-	db, err := database.NewConnection(dbConfig)
+	isDev := cfg.Environment == config.Development
+	log, err := logger.New(cfg.Log.Level, isDev)
 	if err != nil {
-		log.Error("Failed to connect to database", zap.Error(err))
-		os.Exit(1)
+		panic(err)
 	}
+	defer func() { _ = log.Sync() }()
 
-	repo := directory.NewRepository(db)
+	db, err := database.New(context.Background(), cfg.Database)
+	if err != nil {
+		log.Fatal("Failed to connect to database", zap.Error(err))
+	}
+	defer func() { _ = db.Close() }()
+
+	repo := directory.NewRepository(db.GORM)
 	svc := directory.NewService(repo)
 
 	serviceToken := cfg.Directory.ServiceAuthToken
-	if serviceToken == "" {
-		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback, not production credentials
+	if serviceToken.IsEmpty() {
+		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
 	serviceHeader := cfg.Directory.ServiceAuthHeader
 
-	router := gin.Default()
+	r := chi.NewRouter()
+
+	// Global Middleware
+	r.Use(chimiddleware.RequestID)
+	r.Use(chimiddleware.RealIP)
+	r.Use(chimiddleware.Recoverer)
+	r.Use(chimiddleware.Timeout(60 * time.Second))
 
 	// CORS configuration
 	if len(cfg.Governance.CORSAllowedOrigins) > 0 {
-		origins := cfg.Governance.CORSAllowedOrigins
-		router.Use(func(c *gin.Context) {
-			origin := c.Request.Header.Get("Origin")
-			for _, allowed := range origins {
-				if strings.TrimSpace(allowed) == origin {
-					c.Header("Access-Control-Allow-Origin", origin)
-					c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-					c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, X-Tenant-ID, X-User-ID, X-Device-ID, X-OS-Version")
-					c.Header("Access-Control-Allow-Credentials", "true")
-					break
-				}
-			}
-			if c.Request.Method == "OPTIONS" {
-				c.AbortWithStatus(204)
-				return
-			}
-			c.Next()
-		})
+		r.Use(cors.Handler(cors.Options{
+			AllowedOrigins:   cfg.Governance.CORSAllowedOrigins,
+			AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Origin", "Content-Type", "Authorization", "X-Tenant-ID", "X-User-ID", "X-Device-ID", "X-OS-Version"},
+			AllowCredentials: true,
+			MaxAge:           300,
+		}))
 	}
 
-	// Initialize OpenTelemetry tracing
-	shutdownTracer, err := observability.InitTracer(context.Background(), observability.TracerConfig{
-		ServiceName:    cfg.Observability.ServiceName,
-		ServiceVersion: cfg.Observability.ServiceVersion,
-		Environment:    string(cfg.Environment),
-	}, log)
+	// Observability
+	observability.InitMetrics("dirsvc")
+	shutdownTracer, err := observability.InitTracer(context.Background(), cfg.Telemetry)
 	if err != nil {
 		log.Error("Failed to initialize tracer", zap.Error(err))
-	}
-	defer func() { _ = shutdownTracer(context.Background()) }()
-
-	// Initialize and apply observability middleware
-	metrics := observability.NewMetrics()
-	router.Use(otelgin.Middleware("dirsvc"))
-	router.Use(observability.PrometheusMiddleware(metrics))
-	router.Use(observability.PrometheusMiddleware(metrics))
-	router.Use(logger.RequestLogger(log))
-
-	// Security Middleware
-	router.Use(middleware.SecurityHeadersMiddleware())
-
-	var rateLimitRedisClient *redis.Client
-	if cfg.Auth.RedisAddr != "" {
-		rateLimitRedisClient = redis.NewClient(&redis.Options{
-			Addr:     cfg.Auth.RedisAddr,
-			Password: cfg.Auth.RedisPassword,
-			DB:       cfg.Auth.RedisDB,
-		})
-		if err := rateLimitRedisClient.Ping(context.Background()).Err(); err != nil {
-			log.Warn("Distributed limiter Redis unavailable; will use strict degraded fallback",
-				zap.Error(err),
-				zap.String("redis_addr", cfg.Auth.RedisAddr))
-			rateLimitRedisClient = nil
-		}
+	} else {
+		defer func() { _ = shutdownTracer(context.Background()) }()
 	}
 
-	router.Use(middleware.DistributedRateLimitMiddleware(middleware.DistributedRateLimitConfig{
-		RedisClient: rateLimitRedisClient,
-		KeyPrefix:   cfg.Auth.RateLimitKeyPrefix + ":dirsvc",
-		UseTenant:   cfg.Auth.RateLimitUseTenant,
-		DefaultProfile: middleware.RateLimitWindowProfile{
-			Requests: cfg.Auth.RateLimitDefault.Requests,
-			Window:   cfg.Auth.RateLimitDefault.Window,
-		},
-		EndpointProfiles: map[string]middleware.RateLimitWindowProfile{
-			"login": {
-				Requests: cfg.Auth.RateLimitLogin.Requests,
-				Window:   cfg.Auth.RateLimitLogin.Window,
-			},
-			"token": {
-				Requests: cfg.Auth.RateLimitToken.Requests,
-				Window:   cfg.Auth.RateLimitToken.Window,
-			},
-			"setup": {
-				Requests: cfg.Auth.RateLimitSetup.Requests,
-				Window:   cfg.Auth.RateLimitSetup.Window,
-			},
-			"webhook": {
-				Requests: cfg.Auth.RateLimitWebhook.Requests,
-				Window:   cfg.Auth.RateLimitWebhook.Window,
-			},
-		},
-		DegradedProfile: middleware.RateLimitWindowProfile{
-			Requests: cfg.Auth.RateLimitDegraded.Requests,
-			Window:   cfg.Auth.RateLimitDegraded.Window,
-		},
-	}))
+	r.Handle("/metrics", observability.MetricsHandler())
 
-	// API Logger Middleware
-	router.Use(middleware.APILogger(db, log))
-
-	// Register Prometheus metrics handler
-	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
-
-	// Register service routes
-	api := directory.NewHTTPHandler(svc, log, directory.HTTPHandlerConfig{
+	// Domain Handlers
+	dirHandlers := directory.NewHTTPHandler(svc, log, directory.HTTPHandlerConfig{
 		ServiceAuthToken:  serviceToken,
 		ServiceAuthHeader: serviceHeader,
 	})
-	api.RegisterRoutes(router)
+	r.Mount("/", dirHandlers.Router())
 
-	// Register SCIM routes
 	scimSvc := scim.NewService(svc)
 	scimHandlers := scim.NewHTTPHandler(scimSvc, repo, serviceToken, log)
-	scimHandlers.RegisterRoutes(router)
+	r.Mount("/scim/v2", scimHandlers.Router())
 
-	log.Info("HTTP server starting", zap.String("addr", ":8081"))
-	if err := router.Run(":8081"); err != nil {
-		log.Error("HTTP server failed", zap.Error(err))
+	log.Info("Directory service starting", zap.String("addr", ":8081"))
+	srv := &http.Server{
+		Addr:         ":8081",
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
+		log.Error("Directory service failed", zap.Error(err))
 		os.Exit(1)
 	}
 }

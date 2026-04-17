@@ -10,29 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
+	"github.com/dhawalhost/gokit/response"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
-
-// DomainVerificationHandler handles domain verification API requests.
-type DomainVerificationHandler struct {
-	db     *sqlx.DB
-	store  OrganizationRepository
-	logger *zap.Logger
-}
-
-// NewDomainVerificationHandler creates a new domain verification handler.
-func NewDomainVerificationHandler(db *sqlx.DB, store OrganizationRepository, logger *zap.Logger) *DomainVerificationHandler {
-	return &DomainVerificationHandler{db: db, store: store, logger: logger}
-}
-
-// RegisterRoutes registers domain verification routes.
-func (h *DomainVerificationHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/organizations/:id/domain-verification", h.getDomainVerification)
-	rg.POST("/organizations/:id/domain-verification/generate", h.generateVerificationToken)
-	rg.POST("/organizations/:id/domain-verification/verify", h.verifyDomain)
-}
 
 // DomainVerificationResponse contains verification details.
 type DomainVerificationResponse struct {
@@ -44,22 +27,56 @@ type DomainVerificationResponse struct {
 	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
 }
 
-func (h *DomainVerificationHandler) getDomainVerification(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header required"})
+// DomainVerificationHandler handles domain verification API requests.
+type DomainVerificationHandler struct {
+	db     *gorm.DB
+	store  OrganizationRepository
+	logger *zap.Logger
+}
+
+// NewDomainVerificationHandler creates a new domain verification handler.
+func NewDomainVerificationHandler(db *gorm.DB, store OrganizationRepository, logger *zap.Logger) *DomainVerificationHandler {
+	return &DomainVerificationHandler{db: db, store: store, logger: logger}
+}
+
+// Register registers domain verification routes on the provided router.
+func (h *DomainVerificationHandler) Register(r chi.Router) {
+	r.Get("/{id}/domain-verification", h.getDomainVerification)
+	r.Post("/{id}/domain-verification/generate", h.generateVerificationToken)
+	r.Post("/{id}/domain-verification/verify", h.verifyDomain)
+}
+
+// Router registers domain verification routes and returns a new router.
+func (h *DomainVerificationHandler) Router() http.Handler {
+	r := chi.NewRouter()
+	h.Register(r)
+	return r
+}
+
+func (h *DomainVerificationHandler) tenantID(r *http.Request) (string, bool) {
+	tenantID, ok := middleware.TenantIDFromContext(r.Context())
+	if !ok {
+		return "", false
+	}
+	return tenantID, true
+}
+
+func (h *DomainVerificationHandler) getDomainVerification(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	orgID := c.Param("id")
-	org, err := h.store.Get(c.Request.Context(), tenantID, orgID)
+	orgID := chi.URLParam(r, "id")
+	org, err := h.store.Get(r.Context(), tenantID, orgID)
 	if err != nil || org == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "organization not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "organization not found"})
 		return
 	}
 
 	if org.Domain == nil || *org.Domain == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "organization has no domain configured"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "organization has no domain configured"})
 		return
 	}
 
@@ -67,8 +84,7 @@ func (h *DomainVerificationHandler) getDomainVerification(c *gin.Context) {
 	var token *string
 	var expiresAt *time.Time
 	query := `SELECT domain_verification_token, domain_verification_expires_at FROM organizations WHERE id = $1`
-	row := h.db.QueryRowContext(c.Request.Context(), query, orgID)
-	_ = row.Scan(&token, &expiresAt)
+	err = h.db.WithContext(r.Context()).Raw(query, orgID).Row().Scan(&token, &expiresAt)
 
 	resp := DomainVerificationResponse{
 		Domain:       *org.Domain,
@@ -82,32 +98,32 @@ func (h *DomainVerificationHandler) getDomainVerification(c *gin.Context) {
 		resp.ExpiresAt = expiresAt
 	}
 
-	c.JSON(http.StatusOK, resp)
+	response.Ok(w, r, resp)
 }
 
-func (h *DomainVerificationHandler) generateVerificationToken(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header required"})
+func (h *DomainVerificationHandler) generateVerificationToken(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	orgID := c.Param("id")
-	org, err := h.store.Get(c.Request.Context(), tenantID, orgID)
+	orgID := chi.URLParam(r, "id")
+	org, err := h.store.Get(r.Context(), tenantID, orgID)
 	if err != nil || org == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "organization not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "organization not found"})
 		return
 	}
 
 	if org.Domain == nil || *org.Domain == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "organization has no domain configured"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "organization has no domain configured"})
 		return
 	}
 
 	// Generate random token
 	tokenBytes := make([]byte, 16)
 	if _, err := rand.Read(tokenBytes); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to generate token"})
 		return
 	}
 	token := "wardseal-verify=" + hex.EncodeToString(tokenBytes)
@@ -115,12 +131,12 @@ func (h *DomainVerificationHandler) generateVerificationToken(c *gin.Context) {
 
 	// Store token
 	query := `UPDATE organizations SET domain_verification_token = $1, domain_verification_expires_at = $2, domain_verified = FALSE WHERE id = $3`
-	if _, err := h.db.ExecContext(c.Request.Context(), query, token, expiresAt, orgID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save token"})
+	if err := h.db.WithContext(r.Context()).Exec(query, token, expiresAt, orgID).Error; err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to save token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, DomainVerificationResponse{
+	response.Ok(w, r, DomainVerificationResponse{
 		Domain:       *org.Domain,
 		Token:        token,
 		TxtRecord:    fmt.Sprintf("_wardseal.%s", *org.Domain),
@@ -130,22 +146,22 @@ func (h *DomainVerificationHandler) generateVerificationToken(c *gin.Context) {
 	})
 }
 
-func (h *DomainVerificationHandler) verifyDomain(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header required"})
+func (h *DomainVerificationHandler) verifyDomain(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	orgID := c.Param("id")
-	org, err := h.store.Get(c.Request.Context(), tenantID, orgID)
+	orgID := chi.URLParam(r, "id")
+	org, err := h.store.Get(r.Context(), tenantID, orgID)
 	if err != nil || org == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "organization not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "organization not found"})
 		return
 	}
 
 	if org.Domain == nil || *org.Domain == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "organization has no domain configured"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "organization has no domain configured"})
 		return
 	}
 
@@ -153,43 +169,43 @@ func (h *DomainVerificationHandler) verifyDomain(c *gin.Context) {
 	var token *string
 	var expiresAt *time.Time
 	query := `SELECT domain_verification_token, domain_verification_expires_at FROM organizations WHERE id = $1`
-	if err := h.db.QueryRowContext(c.Request.Context(), query, orgID).Scan(&token, &expiresAt); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no verification token generated"})
+	if err := h.db.WithContext(r.Context()).Raw(query, orgID).Row().Scan(&token, &expiresAt); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "no verification token generated"})
 		return
 	}
 
 	if token == nil || *token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no verification token generated"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "no verification token generated"})
 		return
 	}
 
 	if expiresAt != nil && time.Now().After(*expiresAt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "verification token expired, please generate a new one"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "verification token expired, please generate a new one"})
 		return
 	}
 
 	// Perform DNS TXT lookup
 	txtRecordName := fmt.Sprintf("_wardseal.%s", *org.Domain)
-	verified := verifyDNSTxtRecord(c.Request.Context(), txtRecordName, *token)
+	verified := h.verifyDNSTxtRecord(r.Context(), txtRecordName, *token)
 
 	if verified {
 		// Mark domain as verified
 		updateQuery := `UPDATE organizations SET domain_verified = TRUE WHERE id = $1`
-		_, _ = h.db.ExecContext(c.Request.Context(), updateQuery, orgID)
+		_ = h.db.WithContext(r.Context()).Exec(updateQuery, orgID).Error
 
-		c.JSON(http.StatusOK, gin.H{
+		response.Ok(w, r, map[string]interface{}{
 			"verified": true,
 			"message":  "Domain successfully verified!",
 		})
 	} else {
-		c.JSON(http.StatusOK, gin.H{
+		response.Ok(w, r, map[string]interface{}{
 			"verified": false,
 			"message":  fmt.Sprintf("TXT record not found or doesn't match. Expected: %s at %s", *token, txtRecordName),
 		})
 	}
 }
 
-func verifyDNSTxtRecord(ctx context.Context, hostname, expectedValue string) bool {
+func (h *DomainVerificationHandler) verifyDNSTxtRecord(ctx context.Context, hostname, expectedValue string) bool {
 	records, err := net.LookupTXT(hostname)
 	if err != nil {
 		return false

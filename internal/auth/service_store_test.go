@@ -9,12 +9,10 @@ import (
 
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/saml"
-	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
 
 func TestPKCEFlowWithClientStore(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	store := newStubClientStore()
 	store.addClient(oauthclient.Client{
 		TenantID:      "11111111-1111-1111-1111-111111111111",

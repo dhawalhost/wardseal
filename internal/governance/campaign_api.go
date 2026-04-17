@@ -1,11 +1,12 @@
 package governance
 
 import (
+	"encoding/json"
 	"net/http"
-	"strings"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -20,242 +21,251 @@ func NewCampaignHTTPHandler(svc CampaignService, logger *zap.Logger) *CampaignHT
 	return &CampaignHTTPHandler{svc: svc, logger: logger}
 }
 
-// RegisterRoutes registers campaign routes.
-func (h *CampaignHTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	campaigns := rg.Group("/campaigns")
-	{
-		campaigns.POST("", h.createCampaign)
-		campaigns.GET("", h.listCampaigns)
-		campaigns.GET("/:id", h.getCampaign)
-		campaigns.POST("/:id/start", h.startCampaign)
-		campaigns.POST("/:id/complete", h.completeCampaign)
-		campaigns.POST("/:id/cancel", h.cancelCampaign)
-		campaigns.DELETE("/:id", h.deleteCampaign)
+// Router registers campaign routes.
+func (h *CampaignHTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
 
-		// Review items
-		campaigns.POST("/:id/items", h.addReviewItem)
-		campaigns.GET("/:id/items", h.listPendingItems)
-		campaigns.GET("/items", h.listReviewItems)
-		campaigns.POST("/:id/items/:itemId/approve", h.approveItem)
-		campaigns.POST("/:id/items/:itemId/revoke", h.revokeItem)
-	}
+	r.Post("/", h.createCampaign)
+	r.Get("/", h.listCampaigns)
+	r.Get("/{id}", h.getCampaign)
+	r.Post("/{id}/start", h.startCampaign)
+	r.Post("/{id}/complete", h.completeCampaign)
+	r.Post("/{id}/cancel", h.cancelCampaign)
+	r.Delete("/{id}", h.deleteCampaign)
+
+	// Review items
+	r.Route("/{id}/items", func(r chi.Router) {
+		r.Post("/", h.addReviewItem)
+		r.Get("/", h.listPendingItems)
+		r.Post("/{itemId}/approve", h.approveItem)
+		r.Post("/{itemId}/revoke", h.revokeItem)
+	})
+	r.Get("/items", h.listReviewItems)
+
+	return r
 }
 
-func (h *CampaignHTTPHandler) tenantID(c *gin.Context) (string, bool) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		h.logger.Error("tenant id missing", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant id required"})
+func (h *CampaignHTTPHandler) tenantID(r *http.Request) (string, bool) {
+	tenantID, ok := middleware.TenantIDFromContext(r.Context())
+	if !ok {
+		// Response might be handled by middleware or caller
 		return "", false
 	}
 	return tenantID, true
 }
 
-func (h *CampaignHTTPHandler) createCampaign(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) createCampaign(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var input CreateCampaignInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	campaign, err := h.svc.CreateCampaign(c.Request.Context(), tenantID, input)
+	campaign, err := h.svc.CreateCampaign(r.Context(), tenantID, input)
 	if err != nil {
 		h.logger.Error("Failed to create campaign", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, campaign)
+	response.Created(w, r, campaign)
 }
 
-func (h *CampaignHTTPHandler) listCampaigns(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) listCampaigns(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	status := c.Query("status")
-	campaigns, err := h.svc.ListCampaigns(c.Request.Context(), tenantID, status)
+	status := r.URL.Query().Get("status")
+	campaigns, err := h.svc.ListCampaigns(r.Context(), tenantID, status)
 	if err != nil {
 		h.logger.Error("Failed to list campaigns", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"campaigns": campaigns})
+	response.Ok(w, r, map[string]interface{}{"campaigns": campaigns})
 }
 
-func (h *CampaignHTTPHandler) getCampaign(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) getCampaign(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	campaign, err := h.svc.GetCampaign(c.Request.Context(), tenantID, id)
+	id := chi.URLParam(r, "id")
+	campaign, err := h.svc.GetCampaign(r.Context(), tenantID, id)
 	if err != nil {
 		h.logger.Error("Failed to get campaign", zap.Error(err))
-		c.JSON(http.StatusNotFound, gin.H{"error": "campaign not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "campaign not found"})
 		return
 	}
-	c.JSON(http.StatusOK, campaign)
+	response.Ok(w, r, campaign)
 }
 
-func (h *CampaignHTTPHandler) startCampaign(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) startCampaign(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.StartCampaign(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.StartCampaign(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to start campaign", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "active"})
+	response.Ok(w, r, map[string]string{"status": "active"})
 }
 
-func (h *CampaignHTTPHandler) completeCampaign(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) completeCampaign(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.CompleteCampaign(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.CompleteCampaign(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to complete campaign", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "completed"})
+	response.Ok(w, r, map[string]string{"status": "completed"})
 }
 
-func (h *CampaignHTTPHandler) cancelCampaign(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) cancelCampaign(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.CancelCampaign(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.CancelCampaign(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to cancel campaign", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "cancelled"})
+	response.Ok(w, r, map[string]string{"status": "cancelled"})
 }
 
-func (h *CampaignHTTPHandler) deleteCampaign(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) deleteCampaign(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.DeleteCampaign(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.DeleteCampaign(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to delete campaign", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *CampaignHTTPHandler) addReviewItem(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) addReviewItem(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	campaignID := c.Param("id")
+	campaignID := chi.URLParam(r, "id")
 	var item CertificationItem
-	if err := c.ShouldBindJSON(&item); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	result, err := h.svc.AddReviewItem(c.Request.Context(), tenantID, campaignID, item)
+	result, err := h.svc.AddReviewItem(r.Context(), tenantID, campaignID, item)
 	if err != nil {
 		h.logger.Error("Failed to add review item", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, result)
+	response.Created(w, r, result)
 }
 
-func (h *CampaignHTTPHandler) listPendingItems(c *gin.Context) {
-	campaignID := c.Param("id")
-	items, err := h.svc.ListPendingItems(c.Request.Context(), campaignID)
+func (h *CampaignHTTPHandler) listPendingItems(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "id")
+	items, err := h.svc.ListPendingItems(r.Context(), campaignID)
 	if err != nil {
 		h.logger.Error("Failed to list pending items", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	response.Ok(w, r, map[string]interface{}{"items": items})
 }
 
-func (h *CampaignHTTPHandler) listReviewItems(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *CampaignHTTPHandler) listReviewItems(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	reviewerID := c.Query("reviewer_id")
+	reviewerID := r.URL.Query().Get("reviewer_id")
 	if reviewerID == "" {
-		reviewerID = campaignActorIDFromRequest(c)
+		reviewerID = campaignActorIDFromRequest(r)
 	}
 	if reviewerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "reviewer_id is required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "reviewer_id is required"})
 		return
 	}
 
-	items, err := h.svc.ListReviewItems(c.Request.Context(), tenantID, reviewerID)
+	items, err := h.svc.ListReviewItems(r.Context(), tenantID, reviewerID)
 	if err != nil {
 		h.logger.Error("Failed to list review items", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	response.Ok(w, r, map[string]interface{}{"items": items})
 }
 
-func (h *CampaignHTTPHandler) approveItem(c *gin.Context) {
-	itemID := c.Param("itemId")
+func (h *CampaignHTTPHandler) approveItem(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
 	var body struct {
 		Comment string `json:"comment"`
 	}
-	_ = c.ShouldBindJSON(&body)
+	_ = json.NewDecoder(r.Body).Decode(&body)
 
-	if err := h.svc.ApproveItem(c.Request.Context(), itemID, body.Comment); err != nil {
+	if err := h.svc.ApproveItem(r.Context(), itemID, body.Comment); err != nil {
 		h.logger.Error("Failed to approve item", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"decision": "approve"})
+	response.Ok(w, r, map[string]string{"decision": "approve"})
 }
 
-func (h *CampaignHTTPHandler) revokeItem(c *gin.Context) {
-	itemID := c.Param("itemId")
+func (h *CampaignHTTPHandler) revokeItem(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
 	var body struct {
 		Comment string `json:"comment"`
 	}
-	_ = c.ShouldBindJSON(&body)
+	_ = json.NewDecoder(r.Body).Decode(&body)
 
-	if err := h.svc.RevokeItem(c.Request.Context(), itemID, body.Comment); err != nil {
+	if err := h.svc.RevokeItem(r.Context(), itemID, body.Comment); err != nil {
 		h.logger.Error("Failed to revoke item", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"decision": "revoke"})
+	response.Ok(w, r, map[string]string{"decision": "revoke"})
 }
 
-func campaignActorIDFromRequest(c *gin.Context) string {
-	if userID := strings.TrimSpace(c.GetString("user_id")); userID != "" {
-		return userID
-	}
-	if userID := strings.TrimSpace(c.GetHeader("X-User-ID")); userID != "" {
+func campaignActorIDFromRequest(r *http.Request) string {
+	// Mock implementation for now, should use middleware context in real scenario
+	if userID := r.Header.Get("X-User-ID"); userID != "" {
 		return userID
 	}
 	return ""

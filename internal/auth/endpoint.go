@@ -64,6 +64,8 @@ type TokenResponse struct {
 type IntrospectRequest struct {
 	Token         string `form:"token" json:"token" validate:"required"`
 	TokenTypeHint string `form:"token_type_hint" json:"token_type_hint"`
+	ClientID      string `form:"client_id" json:"client_id"`
+	ClientSecret  string `form:"client_secret" json:"client_secret"`
 }
 
 // IntrospectResponse holds the response values for the Introspect endpoint.
@@ -85,6 +87,8 @@ type IntrospectResponse struct {
 type RevokeRequest struct {
 	Token         string `form:"token" json:"token" validate:"required"`
 	TokenTypeHint string `form:"token_type_hint" json:"token_type_hint"`
+	ClientID      string `form:"client_id" json:"client_id"`
+	ClientSecret  string `form:"client_secret" json:"client_secret"`
 }
 
 // OpenIDConfiguration holds the OIDC discovery metadata.

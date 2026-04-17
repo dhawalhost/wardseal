@@ -1,0 +1,45 @@
+# Wardseal Migration Tasks
+
+- `[x]` Phase 0: Add gokit dependency
+  - `[x]` Update go.mod (add gokit, chi, pgx, gorm, etc.)
+  - `[x]` Clean up unused dependencies (gin, sqlx, go-redis v8)
+- `[x]` Phase 1: Replace pkg/ infrastructure
+  - `[x]` Delete pkg/logger, switch to gokit/logger
+  - `[x]` Delete pkg/database, switch to gokit/database
+  - `[x]` Delete pkg/observability tracing/metrics, use gokit
+  - `[x]` Replace pkg/middleware with gokit equivalents (ratelimit, cors, auth, tenant)
+  - `[x]` Update pkg/config/config.go to embed gokit/config.Config
+- `[x]` Phase 2: Rewrite stores (sqlx → GORM) (Domain by domain)
+  - `[x]` _Domain: governance_ (stores)
+  - `[x]` _Domain: directory_ (stores)
+  - `[x]` _Domain: auth_ (stores)
+  - `[x]` _Domain: policy_
+  - `[x]` _Domain: connector_
+  - `[x]` _Domain: audit_
+  - `[x]` _Domain: rbac_
+  - `[x]` _Domain: saml_
+  - `[x]` _Domain: sso_
+- `[x]` Phase 3: Rewrite HTTP handlers (Gin → net/http + chi)
+  - `[x]` _Domain: governance_ (api)
+  - `[x]` _Domain: auth_ (api)
+  - `[x]` _Domain: directory_ (api)
+  - `[x]` _Domain: remaining domains (policy, provisioning, rbac, audit, sso, connector, scim)_
+- `[x]` Phase 4: Rewrite cmd/ entrypoints
+  - `[x]` authsvc
+  - `[x]` dirsvc
+  - `[x]` govsvc
+  - `[x]` policysvc
+  - `[x]` provsvc
+  - `[x]` tools
+- `[x]` Phase 5: Config updates
+  - `[x]` Adjust `config/` YAML/env files naming (`DB_HOST` -> `APP_DATABASE_DSN`)
+- `[x]` Phase 6: Update integration tests
+  - `[x]` Rewrite Gin test servers to httptest
+  - `[x]` Update redis v8 -> v9 references in tests
+  - `[x]` Migrate remaining internal/ tests away from Gin
+- `[/]` Phase 7: Infrastructure & Live Validation
+  - `[x]` Update `docker-compose.yml` to use standardized `APP_` environment variables
+  - `[x]` Update `Makefile` for new service entrypoints
+  - `[x]` Resolve Chi `Mount("/")` routing conflicts in `govsvc` and `authsvc`
+  - `[ ]` Perform a full `docker-compose up --build` and verify service health
+  - `[ ]` Final E2E manual validation of a key flow (e.g., Login)

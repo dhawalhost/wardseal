@@ -3,14 +3,13 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"time"
 
-	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // DeveloperApp represents a self-registered OAuth application.
@@ -31,8 +30,12 @@ type DeveloperApp struct {
 	PrivacyURL       *string         `db:"privacy_url" json:"privacy_url,omitempty"`
 	TosURL           *string         `db:"tos_url" json:"tos_url,omitempty"`
 	Status           string          `db:"status" json:"status"`
-	CreatedAt        time.Time       `db:"created_at" json:"created_at"`
-	UpdatedAt        time.Time       `db:"updated_at" json:"updated_at"`
+	CreatedAt        time.Time       `db:"created_at" json:"created_at" gorm:"column:created_at"`
+	UpdatedAt        time.Time       `db:"updated_at" json:"updated_at" gorm:"column:updated_at"`
+}
+
+func (DeveloperApp) TableName() string {
+	return "developer_apps"
 }
 
 // DeveloperAppRepository defines the interface for developer app management.
@@ -99,23 +102,13 @@ func (r *sqlDeveloperAppRepository) Create(ctx context.Context, app *DeveloperAp
 		app.Status = "active"
 	}
 
-	query := `
-		INSERT INTO developer_apps (tenant_id, owner_id, name, description, client_id, client_secret_hash, 
-		redirect_uris, grant_types, scopes, app_type, logo_url, homepage_url, privacy_url, tos_url, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-		RETURNING id, created_at, updated_at
-	`
-	return r.db.WithContext(ctx).Raw(query,
-		app.TenantID, app.OwnerID, app.Name, app.Description, app.ClientID, app.ClientSecretHash,
-		app.RedirectURIs, app.GrantTypes, app.Scopes, app.AppType, app.LogoURL, app.HomepageURL,
-		app.PrivacyURL, app.TosURL, app.Status,
-	).Scan(&app.ID, &app.CreatedAt, &app.UpdatedAt)
+	return r.db.WithContext(ctx).Omit("ID").Create(app).Error
 }
 
 func (r *sqlDeveloperAppRepository) Get(ctx context.Context, tenantID, appID string) (*DeveloperApp, error) {
 	var app DeveloperApp
 	query := `SELECT * FROM developer_apps WHERE tenant_id = $1 AND id = $2 AND status != 'deleted'`
-	err := r.db.WithContext(ctx).Raw(query, tenantID, appID).Scan(&app)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, appID).Scan(&app).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -128,7 +121,7 @@ func (r *sqlDeveloperAppRepository) Get(ctx context.Context, tenantID, appID str
 func (r *sqlDeveloperAppRepository) GetByClientID(ctx context.Context, clientID string) (*DeveloperApp, error) {
 	var app DeveloperApp
 	query := `SELECT * FROM developer_apps WHERE client_id = $1 AND status = 'active'`
-	err := r.db.WithContext(ctx).Raw(query, clientID).Scan(&app)
+	err := r.db.WithContext(ctx).Raw(query, clientID).Scan(&app).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -141,7 +134,7 @@ func (r *sqlDeveloperAppRepository) GetByClientID(ctx context.Context, clientID 
 func (r *sqlDeveloperAppRepository) ListByOwner(ctx context.Context, tenantID, ownerID string) ([]DeveloperApp, error) {
 	var apps []DeveloperApp
 	query := `SELECT * FROM developer_apps WHERE tenant_id = $1 AND owner_id = $2 AND status != 'deleted' ORDER BY created_at DESC`
-	err := r.db.WithContext(ctx).Raw(query, tenantID, ownerID).Scan(&apps)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, ownerID).Scan(&apps).Error
 	return apps, err
 }
 
@@ -152,16 +145,16 @@ func (r *sqlDeveloperAppRepository) Update(ctx context.Context, app *DeveloperAp
 		    homepage_url = $5, privacy_url = $6, tos_url = $7, updated_at = NOW()
 		WHERE tenant_id = $8 AND id = $9
 	`
-	_, err := r.db.WithContext(ctx).Exec(query,
+	err := r.db.WithContext(ctx).Exec(query,
 		app.Name, app.Description, app.RedirectURIs, app.LogoURL,
 		app.HomepageURL, app.PrivacyURL, app.TosURL, app.TenantID, app.ID,
-	)
+	).Error
 	return err
 }
 
 func (r *sqlDeveloperAppRepository) Delete(ctx context.Context, tenantID, appID string) error {
 	query := `UPDATE developer_apps SET status = 'deleted', updated_at = NOW() WHERE tenant_id = $1 AND id = $2`
-	_, err := r.db.WithContext(ctx).Exec(query, tenantID, appID)
+	err := r.db.WithContext(ctx).Exec(query, tenantID, appID).Error
 	return err
 }
 
@@ -172,7 +165,7 @@ func (r *sqlDeveloperAppRepository) RotateSecret(ctx context.Context, tenantID, 
 		return "", err
 	}
 	query := `UPDATE developer_apps SET client_secret_hash = $1, updated_at = NOW() WHERE tenant_id = $2 AND id = $3`
-	_, err = r.db.WithContext(ctx).Exec(query, string(hash), tenantID, appID)
+	err = r.db.WithContext(ctx).Exec(query, string(hash), tenantID, appID).Error
 	if err != nil {
 		return "", err
 	}
@@ -199,7 +192,7 @@ func (r *sqlDeveloperAppRepository) AssignUserToApp(ctx context.Context, tenantI
 		VALUES ($1, $2, $3)
 		ON CONFLICT (tenant_id, app_id, user_id) DO NOTHING
 	`
-	_, err := r.db.WithContext(ctx).Exec(query, tenantID, appID, userID)
+	err := r.db.WithContext(ctx).Exec(query, tenantID, appID, userID).Error
 	return err
 }
 
@@ -211,7 +204,7 @@ func (r *sqlDeveloperAppRepository) CheckAssignment(ctx context.Context, tenantI
 		)
 	`
 	var exists bool
-	err := r.db.WithContext(ctx).Raw(query, tenantID, appID, userID).Scan(&exists)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, appID, userID).Scan(&exists).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -223,7 +216,7 @@ func (r *sqlDeveloperAppRepository) UnassignUserFromApp(ctx context.Context, ten
 		DELETE FROM developer_app_assignments
 		WHERE tenant_id = $1 AND app_id = $2 AND user_id = $3
 	`
-	_, err := r.db.WithContext(ctx).Exec(query, tenantID, appID, userID)
+	err := r.db.WithContext(ctx).Exec(query, tenantID, appID, userID).Error
 	return err
 }
 
@@ -233,7 +226,7 @@ func (r *sqlDeveloperAppRepository) ListAssignedUsers(ctx context.Context, tenan
 		WHERE tenant_id = $1 AND app_id = $2
 	`
 	var users []string
-	err := r.db.WithContext(ctx).Raw(query, tenantID, appID).Scan(&users)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, appID).Scan(&users).Error
 	return users, err
 }
 
@@ -245,6 +238,6 @@ func (r *sqlDeveloperAppRepository) ListAssignedApps(ctx context.Context, tenant
 		ORDER BY a.name ASC
 	`
 	var apps []DeveloperApp
-	err := r.db.WithContext(ctx).Raw(query, tenantID, userID).Scan(&apps)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, userID).Scan(&apps).Error
 	return apps, err
 }

@@ -1,14 +1,15 @@
 package governance
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/webhook"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -32,289 +33,305 @@ func NewHTTPHandler(svc Service, campaignSvc CampaignService, webhookSvc webhook
 	}
 }
 
-// RegisterRoutes registers the governance routes.
-func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
-	router.GET("/health", h.healthCheck)
-
-	tenantGroup := router.Group("/api/v1")
-	tenantGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
-		SlugResolver: h.svc.ResolveTenantSlug,
-	}))
-	clients := tenantGroup.Group("/oauth/clients")
-	{
-		clients.GET("", h.listOAuthClients)
-		clients.POST("", h.createOAuthClient)
-		clients.GET("/:clientID", h.getOAuthClient)
-		clients.PUT("/:clientID", h.updateOAuthClient)
-		clients.DELETE("/:clientID", h.deleteOAuthClient)
-	}
-
-	requests := tenantGroup.Group("/governance/requests")
-	{
-		requests.POST("", h.createAccessRequest)
-		requests.GET("", h.listAccessRequests)
-		requests.POST("/:accessRequestID/approve", h.approveAccessRequest)
-		requests.POST("/:accessRequestID/reject", h.rejectAccessRequest)
-	}
-
-	ipPolicies := tenantGroup.Group("/governance/ip-policies")
-	{
-		ipPolicies.GET("", h.listIPPolicies)
-		ipPolicies.POST("", h.createIPPolicy)
-		ipPolicies.DELETE("/:ipPolicyID", h.deleteIPPolicy)
-	}
-
-	// Registered combined routes
-	h.orgHandler.RegisterRoutes(tenantGroup)
-	h.campaignHandler.RegisterRoutes(tenantGroup)
-	h.webhookHandler.RegisterRoutes(tenantGroup)
+func (h *HTTPHandler) Pattern() string {
+	return "/api/v1"
 }
 
-func (h *HTTPHandler) healthCheck(c *gin.Context) {
-	ok, err := h.svc.HealthCheck(c.Request.Context())
+// Register registers the governance routes on the provided router.
+func (h *HTTPHandler) Register(r chi.Router) {
+	r.Get("/health", h.healthCheck)
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.TenantExtractor(middleware.TenantConfig{
+			SlugResolver: h.svc.ResolveTenantSlug,
+		}))
+
+		r.Route("/oauth/clients", func(r chi.Router) {
+			r.Get("/", h.listOAuthClients)
+			r.Post("/", h.createOAuthClient)
+			r.Get("/{clientID}", h.getOAuthClient)
+			r.Put("/{clientID}", h.updateOAuthClient)
+			r.Delete("/{clientID}", h.deleteOAuthClient)
+		})
+
+		r.Route("/requests", func(r chi.Router) {
+			r.Post("/", h.createAccessRequest)
+			r.Get("/", h.listAccessRequests)
+			r.Post("/{accessRequestID}/approve", h.approveAccessRequest)
+			r.Post("/{accessRequestID}/reject", h.rejectAccessRequest)
+		})
+
+		r.Route("/ip-policies", func(r chi.Router) {
+			r.Get("/", h.listIPPolicies)
+			r.Post("/", h.createIPPolicy)
+			r.Delete("/{ipPolicyID}", h.deleteIPPolicy)
+		})
+
+		// Mount sub-routers
+		r.Mount("/organizations", h.orgHandler.Router())
+		r.Mount("/campaigns", h.campaignHandler.Router())
+		r.Mount("/webhooks", h.webhookHandler.Router())
+	})
+}
+
+// Router registers the governance routes and returns a new router.
+func (h *HTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+	h.Register(r)
+	return r
+}
+
+func (h *HTTPHandler) healthCheck(w http.ResponseWriter, r *http.Request) {
+	ok, err := h.svc.HealthCheck(r.Context())
 	if err != nil {
 		h.logger.Error("Health check failed", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, HealthCheckResponse{Healthy: ok})
+	response.Ok(w, r, HealthCheckResponse{Healthy: ok})
 }
 
-func (h *HTTPHandler) listOAuthClients(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) listOAuthClients(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	clients, err := h.svc.ListOAuthClients(c.Request.Context(), tenantID)
+	clients, err := h.svc.ListOAuthClients(r.Context(), tenantID)
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
 	responses := make([]OAuthClientResponse, 0, len(clients))
 	for _, client := range clients {
 		responses = append(responses, newOAuthClientResponse(client))
 	}
-	c.JSON(http.StatusOK, gin.H{"clients": responses})
+	response.Ok(w, r, map[string]interface{}{"clients": responses})
 }
 
-func (h *HTTPHandler) getOAuthClient(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) getOAuthClient(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	clientID := c.Param("clientID")
-	client, err := h.svc.GetOAuthClient(c.Request.Context(), tenantID, clientID)
+	clientID := chi.URLParam(r, "clientID")
+	client, err := h.svc.GetOAuthClient(r.Context(), tenantID, clientID)
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusOK, newOAuthClientResponse(client))
+	response.Ok(w, r, newOAuthClientResponse(client))
 }
 
-func (h *HTTPHandler) createOAuthClient(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) createOAuthClient(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 	var req createOAuthClientRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind create oauth client request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("Failed to decode create oauth client request", zap.Error(err))
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	client, err := h.svc.CreateOAuthClient(c.Request.Context(), tenantID, CreateOAuthClientInput(req))
+	client, err := h.svc.CreateOAuthClient(r.Context(), tenantID, CreateOAuthClientInput(req))
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusCreated, newOAuthClientResponse(client))
+	response.Created(w, r, newOAuthClientResponse(client))
 }
 
-func (h *HTTPHandler) updateOAuthClient(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) updateOAuthClient(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	clientID := c.Param("clientID")
+	clientID := chi.URLParam(r, "clientID")
 	var req updateOAuthClientRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind update oauth client request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("Failed to decode update oauth client request", zap.Error(err))
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	client, err := h.svc.UpdateOAuthClient(c.Request.Context(), tenantID, clientID, UpdateOAuthClientInput(req))
+	client, err := h.svc.UpdateOAuthClient(r.Context(), tenantID, clientID, UpdateOAuthClientInput(req))
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusOK, newOAuthClientResponse(client))
+	response.Ok(w, r, newOAuthClientResponse(client))
 }
 
-func (h *HTTPHandler) deleteOAuthClient(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) deleteOAuthClient(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	clientID := c.Param("clientID")
-	if err := h.svc.DeleteOAuthClient(c.Request.Context(), tenantID, clientID); err != nil {
-		h.handleServiceError(c, err)
+	clientID := chi.URLParam(r, "clientID")
+	if err := h.svc.DeleteOAuthClient(r.Context(), tenantID, clientID); err != nil {
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.Status(http.StatusNoContent)
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *HTTPHandler) createAccessRequest(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) createAccessRequest(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 	var req CreateAccessRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind create access request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("Failed to decode create access request", zap.Error(err))
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 	if req.RequesterID == "" {
-		req.RequesterID = actorIDFromRequest(c)
+		req.RequesterID = h.actorIDFromRequest(r)
 	}
-	resp, err := h.svc.CreateAccessRequest(c.Request.Context(), tenantID, req)
+	resp, err := h.svc.CreateAccessRequest(r.Context(), tenantID, req)
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusCreated, resp)
+	response.Created(w, r, resp)
 }
 
-func (h *HTTPHandler) listAccessRequests(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) listAccessRequests(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	status := c.Query("status")
-	requests, err := h.svc.ListAccessRequests(c.Request.Context(), tenantID, status)
+	status := r.URL.Query().Get("status")
+	requests, err := h.svc.ListAccessRequests(r.Context(), tenantID, status)
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusOK, AccessRequestList{Requests: requests})
+	response.Ok(w, r, AccessRequestList{Requests: requests})
 }
 
-func (h *HTTPHandler) approveAccessRequest(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) approveAccessRequest(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	requestID := c.Param("accessRequestID")
+	requestID := chi.URLParam(r, "accessRequestID")
 	var body ApprovalDecision
-	_ = c.ShouldBindJSON(&body) // Optional body - ignore error
-	approverID := actorIDFromRequest(c)
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	approverID := h.actorIDFromRequest(r)
 	if approverID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "approver user id required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "approver user id required"})
 		return
 	}
 
-	if err := h.svc.ApproveAccessRequest(c.Request.Context(), tenantID, requestID, approverID, body.Comment); err != nil {
-		h.handleServiceError(c, err)
+	if err := h.svc.ApproveAccessRequest(r.Context(), tenantID, requestID, approverID, body.Comment); err != nil {
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "approved"})
+	response.Ok(w, r, map[string]string{"status": "approved"})
 }
 
-func (h *HTTPHandler) rejectAccessRequest(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) rejectAccessRequest(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	requestID := c.Param("accessRequestID")
+	requestID := chi.URLParam(r, "accessRequestID")
 	var body ApprovalDecision
-	_ = c.ShouldBindJSON(&body) // Optional body - ignore error
-	approverID := actorIDFromRequest(c)
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	approverID := h.actorIDFromRequest(r)
 	if approverID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "approver user id required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "approver user id required"})
 		return
 	}
 
-	if err := h.svc.RejectAccessRequest(c.Request.Context(), tenantID, requestID, approverID, body.Comment); err != nil {
-		h.handleServiceError(c, err)
+	if err := h.svc.RejectAccessRequest(r.Context(), tenantID, requestID, approverID, body.Comment); err != nil {
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "rejected"})
+	response.Ok(w, r, map[string]string{"status": "rejected"})
 }
 
-func (h *HTTPHandler) listIPPolicies(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) listIPPolicies(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	policies, err := h.svc.ListIPPolicies(c.Request.Context(), tenantID)
+	policies, err := h.svc.ListIPPolicies(r.Context(), tenantID)
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"policies": policies})
+	response.Ok(w, r, map[string]interface{}{"policies": policies})
 }
 
-func (h *HTTPHandler) createIPPolicy(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) createIPPolicy(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 	var req CreateIPPolicyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind create ip policy request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("Failed to decode create ip policy request", zap.Error(err))
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	policy, err := h.svc.CreateIPPolicy(c.Request.Context(), tenantID, req)
+	policy, err := h.svc.CreateIPPolicy(r.Context(), tenantID, req)
 	if err != nil {
-		h.handleServiceError(c, err)
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.JSON(http.StatusCreated, policy)
+	response.Created(w, r, policy)
 }
 
-func (h *HTTPHandler) deleteIPPolicy(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) deleteIPPolicy(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
-	id := c.Param("ipPolicyID")
-	if err := h.svc.DeleteIPPolicy(c.Request.Context(), tenantID, id); err != nil {
-		h.handleServiceError(c, err)
+	id := chi.URLParam(r, "ipPolicyID")
+	if err := h.svc.DeleteIPPolicy(r.Context(), tenantID, id); err != nil {
+		h.handleServiceError(w, r, err)
 		return
 	}
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		h.logger.Error("tenant id missing", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant id required"})
+func (h *HTTPHandler) tenantID(r *http.Request) (string, bool) {
+	tenantID, ok := middleware.TenantIDFromContext(r.Context())
+	if !ok {
 		return "", false
 	}
 	return tenantID, true
 }
 
-func (h *HTTPHandler) handleServiceError(c *gin.Context, err error) {
+func (h *HTTPHandler) handleServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	if IsValidationError(err) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 	if errors.Is(err, oauthclient.ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": err.Error()})
 		return
 	}
 	h.logger.Error("governance service error", zap.Error(err))
-	c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+	response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 }
 
-func actorIDFromRequest(c *gin.Context) string {
-	if userID := strings.TrimSpace(c.GetString("user_id")); userID != "" {
-		return userID
-	}
-	if userID := strings.TrimSpace(c.GetHeader("X-User-ID")); userID != "" {
+func (h *HTTPHandler) actorIDFromRequest(r *http.Request) string {
+	if userID := r.Header.Get("X-User-ID"); userID != "" {
 		return userID
 	}
 	return ""

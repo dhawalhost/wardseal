@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -43,7 +42,7 @@ func (s *sqlFederationRepository) Get(ctx context.Context, tenantID, provider, e
 	err := s.db.WithContext(ctx).Raw(`
 		SELECT * FROM federated_identities 
 		WHERE tenant_id = $1 AND provider = $2 AND external_id = $3
-	`, tenantID, provider, externalID).Scan(&f)
+	`, tenantID, provider, externalID).Scan(&f).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -56,27 +55,20 @@ func (s *sqlFederationRepository) Get(ctx context.Context, tenantID, provider, e
 func (s *sqlFederationRepository) Create(ctx context.Context, identity FederatedIdentity) error {
 	query := `
 		INSERT INTO federated_identities (tenant_id, identity_id, provider, external_id, profile_data, created_at, updated_at)
-		VALUES (:tenant_id, :identity_id, :provider, :external_id, :profile_data, NOW(), NOW())
+		VALUES (?, ?, ?, ?, ?::jsonb, NOW(), NOW())
 		RETURNING id
 	`
-	rows, err := s.db.NamedQueryContext(ctx, query, identity)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = rows.Close() }()
-	if rows.Next() {
-		return rows.Scan(&identity.ID)
-	}
-	return nil
+	err := s.db.WithContext(ctx).Raw(query, identity.TenantID, identity.IdentityID, identity.Provider, identity.ExternalID, identity.ProfileData).Scan(&identity.ID).Error
+	return err
 }
 
 func (s *sqlFederationRepository) List(ctx context.Context, identityID string) ([]FederatedIdentity, error) {
 	var identities []FederatedIdentity
-	err := s.db.WithContext(ctx).Raw(`SELECT * FROM federated_identities WHERE identity_id = $1`, identityID).Scan(&identities)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM federated_identities WHERE identity_id = $1`, identityID).Scan(&identities).Error
 	return identities, err
 }
 
 func (s *sqlFederationRepository) Delete(ctx context.Context, id string) error {
-	_, err := s.db.WithContext(ctx).Exec(`DELETE FROM federated_identities WHERE id = $1`, id)
+	err := s.db.WithContext(ctx).Exec(`DELETE FROM federated_identities WHERE id = ?`, id).Error
 	return err
 }

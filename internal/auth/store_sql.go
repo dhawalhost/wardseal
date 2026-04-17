@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"time"
@@ -28,7 +27,7 @@ func (s *sqlAuthorizationCodeRepository) Save(ctx context.Context, code authoriz
 		INSERT INTO authorization_codes (code, client_id, redirect_uri, scope, tenant_id, nonce, code_challenge, code_challenge_method, expires_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
-	_, err := s.db.WithContext(ctx).Exec(query,
+	err := s.db.WithContext(ctx).Exec(query,
 		code.Code,
 		code.ClientID,
 		code.RedirectURI,
@@ -38,14 +37,14 @@ func (s *sqlAuthorizationCodeRepository) Save(ctx context.Context, code authoriz
 		code.CodeChallenge,
 		code.CodeChallengeMethod,
 		code.ExpiresAt,
-	)
+	).Error
 	return err
 }
 
 func (s *sqlAuthorizationCodeRepository) Get(ctx context.Context, code string) (authorizationCode, bool, error) {
 	var entry authorizationCode
 	query := `SELECT code, client_id, redirect_uri, scope, tenant_id, nonce, code_challenge, code_challenge_method, expires_at FROM authorization_codes WHERE code = $1`
-	err := s.db.WithContext(ctx).Raw(query, code).Scan(&entry)
+	err := s.db.WithContext(ctx).Raw(query, code).Scan(&entry).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return authorizationCode{}, false, nil
@@ -57,14 +56,14 @@ func (s *sqlAuthorizationCodeRepository) Get(ctx context.Context, code string) (
 
 func (s *sqlAuthorizationCodeRepository) Delete(ctx context.Context, code string) error {
 	query := `DELETE FROM authorization_codes WHERE code = $1`
-	_, err := s.db.WithContext(ctx).Exec(query, code)
+	err := s.db.WithContext(ctx).Exec(query, code).Error
 	return err
 }
 
 // CleanupExpired removes expired codes (can be run periodically).
 func (s *sqlAuthorizationCodeRepository) CleanupExpired(ctx context.Context) error {
 	query := `DELETE FROM authorization_codes WHERE expires_at < $1`
-	_, err := s.db.WithContext(ctx).Exec(query, time.Now())
+	err := s.db.WithContext(ctx).Exec(query, time.Now()).Error
 	return err
 }
 
@@ -85,21 +84,21 @@ func (s *sqlRefreshTokenRepository) Save(ctx context.Context, entry refreshToken
 		INSERT INTO refresh_tokens (token, client_id, tenant_id, scope, subject_type, expires_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	_, err := s.db.WithContext(ctx).Exec(query,
+	err := s.db.WithContext(ctx).Exec(query,
 		entry.Token,
 		entry.ClientID,
 		entry.TenantID,
 		entry.Scope,
 		entry.SubjectType,
 		entry.ExpiresAt,
-	)
+	).Error
 	return err
 }
 
 func (s *sqlRefreshTokenRepository) Get(ctx context.Context, token string) (refreshTokenEntry, bool, error) {
 	var entry refreshTokenEntry
 	query := `SELECT token, client_id, tenant_id, scope, subject_type, expires_at FROM refresh_tokens WHERE token = $1`
-	err := s.db.WithContext(ctx).Raw(query, token).Scan(&entry)
+	err := s.db.WithContext(ctx).Raw(query, token).Scan(&entry).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return refreshTokenEntry{}, false, nil
@@ -111,14 +110,14 @@ func (s *sqlRefreshTokenRepository) Get(ctx context.Context, token string) (refr
 
 func (s *sqlRefreshTokenRepository) Delete(ctx context.Context, token string) error {
 	query := `DELETE FROM refresh_tokens WHERE token = $1`
-	_, err := s.db.WithContext(ctx).Exec(query, token)
+	err := s.db.WithContext(ctx).Exec(query, token).Error
 	return err
 }
 
 // CleanupExpired removes expired tokens.
 func (s *sqlRefreshTokenRepository) CleanupExpired(ctx context.Context) error {
 	query := `DELETE FROM refresh_tokens WHERE expires_at < $1`
-	_, err := s.db.WithContext(ctx).Exec(query, time.Now())
+	err := s.db.WithContext(ctx).Exec(query, time.Now()).Error
 	return err
 }
 
@@ -142,7 +141,7 @@ func hashToken(token string) string {
 func (s *sqlRevocationRepository) Revoke(ctx context.Context, token string) error {
 	hash := hashToken(token)
 	query := `INSERT INTO revoked_tokens (token_hash) VALUES ($1) ON CONFLICT DO NOTHING`
-	_, err := s.db.WithContext(ctx).Exec(query, hash)
+	err := s.db.WithContext(ctx).Exec(query, hash).Error
 	return err
 }
 
@@ -150,7 +149,7 @@ func (s *sqlRevocationRepository) IsRevoked(ctx context.Context, token string) (
 	hash := hashToken(token)
 	var exists int
 	query := `SELECT 1 FROM revoked_tokens WHERE token_hash = $1 LIMIT 1`
-	err := s.db.WithContext(ctx).Raw(query, hash).Scan(&exists)
+	err := s.db.WithContext(ctx).Raw(query, hash).Scan(&exists).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -164,6 +163,6 @@ func (s *sqlRevocationRepository) IsRevoked(ctx context.Context, token string) (
 func (s *sqlRevocationRepository) CleanupOld(ctx context.Context, olderThan time.Duration) error {
 	cutoff := time.Now().Add(-olderThan)
 	query := `DELETE FROM revoked_tokens WHERE revoked_at < $1`
-	_, err := s.db.WithContext(ctx).Exec(query, cutoff)
+	err := s.db.WithContext(ctx).Exec(query, cutoff).Error
 	return err
 }

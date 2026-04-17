@@ -70,26 +70,26 @@ func (r *sqlIPPolicyRepository) Create(ctx context.Context, p IPPolicy) (string,
 		p.ID = uuid.New().String()
 	}
 	p.CreatedAt = time.Now()
-	_, err := r.db.NamedExecContext(ctx, `
+	err := r.db.WithContext(ctx).Exec(`
 		INSERT INTO ip_policy (id, tenant_id, type, cidr, country, reason, created_at)
-		VALUES (:id, :tenant_id, :type, :cidr, :country, :reason, :created_at)
-	`, p)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, p.ID, p.TenantID, p.Type, p.CIDR, p.Country, p.Reason, p.CreatedAt).Error
 	return p.ID, err
 }
 
 func (r *sqlIPPolicyRepository) List(ctx context.Context, tenantID string) ([]IPPolicy, error) {
 	var policies []IPPolicy
-	err := r.db.WithContext(ctx).Raw(`SELECT * FROM ip_policy WHERE tenant_id = $1 ORDER BY created_at DESC`, tenantID).Scan(&policies)
+	err := r.db.WithContext(ctx).Raw(`SELECT * FROM ip_policy WHERE tenant_id = $1 ORDER BY created_at DESC`, tenantID).Scan(&policies).Error
 	return policies, err
 }
 
 func (r *sqlIPPolicyRepository) Delete(ctx context.Context, tenantID, id string) error {
-	_, err := r.db.WithContext(ctx).Exec(`DELETE FROM ip_policy WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := r.db.WithContext(ctx).Exec(`DELETE FROM ip_policy WHERE id = ? AND tenant_id = ?`, id, tenantID).Error
 	return err
 }
 
 func (r *sqlIPPolicyRepository) ListBlocked(ctx context.Context, tenantID string) ([]IPPolicy, error) {
 	var policies []IPPolicy
-	err := r.db.WithContext(ctx).Raw(`SELECT * FROM ip_policy WHERE tenant_id = $1 AND type = 'BLOCK' ORDER BY created_at DESC`, tenantID).Scan(&policies)
+	err := r.db.WithContext(ctx).Raw(`SELECT * FROM ip_policy WHERE tenant_id = $1 AND type = 'BLOCK' ORDER BY created_at DESC`, tenantID).Scan(&policies).Error
 	return policies, err
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // ProviderType represents the SSO protocol type.
@@ -58,18 +58,17 @@ type Repository interface {
 }
 
 type sqlRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewRepository creates a new SSO provider repository.
-func NewRepository(db *sqlx.DB) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return &sqlRepository{db: db}
 }
 
 func (s *sqlRepository) Create(ctx context.Context, p Provider) (string, error) {
 	var id string
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO sso_providers (tenant_id, name, type, enabled, 
+	err := s.db.WithContext(ctx).Raw(`INSERT INTO sso_providers (tenant_id, name, type, enabled, 
 			oidc_issuer_url, oidc_client_id, oidc_client_secret, oidc_scopes,
 			saml_entity_id, saml_sso_url, saml_slo_url, saml_certificate, saml_sign_requests, saml_sign_assertions,
 			auto_create_users, default_role_id, attribute_mappings)
@@ -78,21 +77,19 @@ func (s *sqlRepository) Create(ctx context.Context, p Provider) (string, error) 
 		p.OIDCIssuerURL, p.OIDCClientID, p.OIDCClientSecret, p.OIDCScopes,
 		p.SAMLEntityID, p.SAMLSSOURL, p.SAMLSLOURL, p.SAMLCertificate, p.SAMLSignRequests, p.SAMLSignAssertions,
 		p.AutoCreateUsers, p.DefaultRoleID, p.AttributeMappings,
-	).Scan(&id)
+	).Scan(&id).Error
 	return id, err
 }
 
 func (s *sqlRepository) Get(ctx context.Context, tenantID, id string) (Provider, error) {
 	var p Provider
-	err := s.db.GetContext(ctx, &p,
-		`SELECT * FROM sso_providers WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM sso_providers WHERE id = $1 AND tenant_id = $2`, id, tenantID).Scan(&p).Error
 	return p, err
 }
 
 func (s *sqlRepository) GetByName(ctx context.Context, tenantID, name string) (Provider, error) {
 	var p Provider
-	err := s.db.GetContext(ctx, &p,
-		`SELECT * FROM sso_providers WHERE name = $1 AND tenant_id = $2`, name, tenantID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM sso_providers WHERE name = $1 AND tenant_id = $2`, name, tenantID).Scan(&p).Error
 	return p, err
 }
 
@@ -107,13 +104,12 @@ func (s *sqlRepository) List(ctx context.Context, tenantID string, providerType 
 	}
 	query += ` ORDER BY name`
 
-	err := s.db.SelectContext(ctx, &providers, query, args...)
+	err := s.db.WithContext(ctx).Raw(query, args...).Scan(&providers).Error
 	return providers, err
 }
 
 func (s *sqlRepository) Update(ctx context.Context, p Provider) error {
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE sso_providers SET 
+	err := s.db.WithContext(ctx).Exec(`UPDATE sso_providers SET
 			name = $1, enabled = $2,
 			oidc_issuer_url = $3, oidc_client_id = $4, oidc_client_secret = $5, oidc_scopes = $6,
 			saml_entity_id = $7, saml_sso_url = $8, saml_slo_url = $9, saml_certificate = $10, 
@@ -125,12 +121,11 @@ func (s *sqlRepository) Update(ctx context.Context, p Provider) error {
 		p.OIDCIssuerURL, p.OIDCClientID, p.OIDCClientSecret, p.OIDCScopes,
 		p.SAMLEntityID, p.SAMLSSOURL, p.SAMLSLOURL, p.SAMLCertificate, p.SAMLSignRequests, p.SAMLSignAssertions,
 		p.AutoCreateUsers, p.DefaultRoleID, p.AttributeMappings,
-		p.ID, p.TenantID)
+		p.ID, p.TenantID).Error
 	return err
 }
 
 func (s *sqlRepository) Delete(ctx context.Context, tenantID, id string) error {
-	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM sso_providers WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := s.db.WithContext(ctx).Exec(`DELETE FROM sso_providers WHERE id = $1 AND tenant_id = $2`, id, tenantID).Error
 	return err
 }

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"gorm.io/gorm"
@@ -48,7 +47,7 @@ func (s *sqlSSOProviderRepository) GetByName(ctx context.Context, tenantID, name
 		FROM sso_providers 
 		WHERE tenant_id = $1 AND name = $2 AND enabled = true
 	`
-	err := s.db.WithContext(ctx).Raw(query, tenantID, name).Scan(&p)
+	err := s.db.WithContext(ctx).Raw(query, tenantID, name).Scan(&p).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil // Not found

@@ -1,10 +1,12 @@
 package rbac
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -19,50 +21,50 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 	return &HTTPHandler{svc: svc, logger: logger}
 }
 
-// RegisterRoutes registers RBAC routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+// Register adds RBAC routes to the provided router.
+func (h *HTTPHandler) Register(r chi.Router) {
 	// Roles
-	roles := rg.Group("/roles")
-	{
-		roles.POST("", h.createRole)
-		roles.GET("", h.listRoles)
-		roles.GET("/:id", h.getRole)
-		roles.PUT("/:id", h.updateRole)
-		roles.DELETE("/:id", h.deleteRole)
-		roles.GET("/:id/permissions", h.getRolePermissions)
-		roles.POST("/:id/permissions/:permId", h.assignPermissionToRole)
-		roles.DELETE("/:id/permissions/:permId", h.removePermissionFromRole)
-	}
+	r.Route("/roles", func(r chi.Router) {
+		r.Post("/", h.createRole)
+		r.Get("/", h.listRoles)
+		r.Get("/{id}", h.getRole)
+		r.Put("/{id}", h.updateRole)
+		r.Delete("/{id}", h.deleteRole)
+		r.Get("/{id}/permissions", h.getRolePermissions)
+		r.Post("/{id}/permissions/{permId}", h.assignPermissionToRole)
+		r.Delete("/{id}/permissions/{permId}", h.removePermissionFromRole)
+	})
 
 	// Permissions
-	perms := rg.Group("/permissions")
-	{
-		perms.POST("", h.createPermission)
-		perms.GET("", h.listPermissions)
-	}
+	r.Route("/permissions", func(r chi.Router) {
+		r.Post("/", h.createPermission)
+		r.Get("/", h.listPermissions)
+	})
 
 	// User roles
-	users := rg.Group("/users")
-	{
-		users.GET("/:userId/roles", h.getUserRoles)
-		users.POST("/:userId/roles/:roleId", h.assignRoleToUser)
-		users.DELETE("/:userId/roles/:roleId", h.removeRoleFromUser)
-		users.GET("/:userId/permissions", h.getUserPermissions)
-	}
+	r.Route("/users", func(r chi.Router) {
+		r.Get("/{userId}/roles", h.getUserRoles)
+		r.Post("/{userId}/roles/{roleId}", h.assignRoleToUser)
+		r.Delete("/{userId}/roles/{roleId}", h.removeRoleFromUser)
+		r.Get("/{userId}/permissions", h.getUserPermissions)
+	})
 }
 
-func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant id required"})
-		return "", false
-	}
-	return tenantID, true
+// Router registers RBAC routes and returns a new router.
+func (h *HTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+	h.Register(r)
+	return r
 }
 
-func (h *HTTPHandler) createRole(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) tenantID(r *http.Request) (string, bool) {
+	return middleware.TenantIDFromContext(r.Context())
+}
+
+func (h *HTTPHandler) createRole(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
@@ -70,128 +72,133 @@ func (h *HTTPHandler) createRole(c *gin.Context) {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	role, err := h.svc.CreateRole(c.Request.Context(), tenantID, body.Name, body.Description)
+	role, err := h.svc.CreateRole(r.Context(), tenantID, body.Name, body.Description)
 	if err != nil {
 		h.logger.Error("Failed to create role", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, role)
+	response.Created(w, r, role)
 }
 
-func (h *HTTPHandler) listRoles(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) listRoles(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	roles, err := h.svc.ListRoles(c.Request.Context(), tenantID)
+	roles, err := h.svc.ListRoles(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to list roles", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"roles": roles})
+	response.Ok(w, r, map[string]interface{}{"roles": roles})
 }
 
-func (h *HTTPHandler) getRole(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) getRole(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	role, err := h.svc.GetRole(c.Request.Context(), tenantID, id)
+	id := chi.URLParam(r, "id")
+	role, err := h.svc.GetRole(r.Context(), tenantID, id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "role not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "role not found"})
 		return
 	}
-	c.JSON(http.StatusOK, role)
+	response.Ok(w, r, role)
 }
 
-func (h *HTTPHandler) updateRole(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) updateRole(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
+	id := chi.URLParam(r, "id")
 	var body struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	role, err := h.svc.UpdateRole(c.Request.Context(), tenantID, id, body.Name, body.Description)
+	role, err := h.svc.UpdateRole(r.Context(), tenantID, id, body.Name, body.Description)
 	if err != nil {
 		h.logger.Error("Failed to update role", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, role)
+	response.Ok(w, r, role)
 }
 
-func (h *HTTPHandler) deleteRole(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) deleteRole(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.DeleteRole(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.DeleteRole(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to delete role", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *HTTPHandler) getRolePermissions(c *gin.Context) {
-	id := c.Param("id")
-	perms, err := h.svc.GetRolePermissions(c.Request.Context(), id)
+func (h *HTTPHandler) getRolePermissions(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	perms, err := h.svc.GetRolePermissions(r.Context(), id)
 	if err != nil {
 		h.logger.Error("Failed to get role permissions", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"permissions": perms})
+	response.Ok(w, r, map[string]interface{}{"permissions": perms})
 }
 
-func (h *HTTPHandler) assignPermissionToRole(c *gin.Context) {
-	roleID := c.Param("id")
-	permID := c.Param("permId")
+func (h *HTTPHandler) assignPermissionToRole(w http.ResponseWriter, r *http.Request) {
+	roleID := chi.URLParam(r, "id")
+	permID := chi.URLParam(r, "permId")
 
-	if err := h.svc.AssignPermissionToRole(c.Request.Context(), roleID, permID); err != nil {
+	if err := h.svc.AssignPermissionToRole(r.Context(), roleID, permID); err != nil {
 		h.logger.Error("Failed to assign permission", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "assigned"})
+	response.Ok(w, r, map[string]string{"status": "assigned"})
 }
 
-func (h *HTTPHandler) removePermissionFromRole(c *gin.Context) {
-	roleID := c.Param("id")
-	permID := c.Param("permId")
+func (h *HTTPHandler) removePermissionFromRole(w http.ResponseWriter, r *http.Request) {
+	roleID := chi.URLParam(r, "id")
+	permID := chi.URLParam(r, "permId")
 
-	if err := h.svc.RemovePermissionFromRole(c.Request.Context(), roleID, permID); err != nil {
+	if err := h.svc.RemovePermissionFromRole(r.Context(), roleID, permID); err != nil {
 		h.logger.Error("Failed to remove permission", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *HTTPHandler) createPermission(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) createPermission(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
@@ -200,92 +207,96 @@ func (h *HTTPHandler) createPermission(c *gin.Context) {
 		Action      string `json:"action"`
 		Description string `json:"description"`
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	perm, err := h.svc.CreatePermission(c.Request.Context(), tenantID, body.Resource, body.Action, body.Description)
+	perm, err := h.svc.CreatePermission(r.Context(), tenantID, body.Resource, body.Action, body.Description)
 	if err != nil {
 		h.logger.Error("Failed to create permission", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, perm)
+	response.Created(w, r, perm)
 }
 
-func (h *HTTPHandler) listPermissions(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) listPermissions(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	perms, err := h.svc.ListPermissions(c.Request.Context(), tenantID)
+	perms, err := h.svc.ListPermissions(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to list permissions", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"permissions": perms})
+	response.Ok(w, r, map[string]interface{}{"permissions": perms})
 }
 
-func (h *HTTPHandler) getUserRoles(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) getUserRoles(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	userID := c.Param("userId")
-	roles, err := h.svc.GetUserRoles(c.Request.Context(), tenantID, userID)
+	userID := chi.URLParam(r, "userId")
+	roles, err := h.svc.GetUserRoles(r.Context(), tenantID, userID)
 	if err != nil {
 		h.logger.Error("Failed to get user roles", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"roles": roles})
+	response.Ok(w, r, map[string]interface{}{"roles": roles})
 }
 
-func (h *HTTPHandler) assignRoleToUser(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) assignRoleToUser(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	userID := c.Param("userId")
-	roleID := c.Param("roleId")
+	userID := chi.URLParam(r, "userId")
+	roleID := chi.URLParam(r, "roleId")
 
-	if err := h.svc.AssignRoleToUser(c.Request.Context(), tenantID, userID, roleID, nil); err != nil {
+	if err := h.svc.AssignRoleToUser(r.Context(), tenantID, userID, roleID, nil); err != nil {
 		h.logger.Error("Failed to assign role", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "assigned"})
+	response.Ok(w, r, map[string]string{"status": "assigned"})
 }
 
-func (h *HTTPHandler) removeRoleFromUser(c *gin.Context) {
-	userID := c.Param("userId")
-	roleID := c.Param("roleId")
+func (h *HTTPHandler) removeRoleFromUser(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "userId")
+	roleID := chi.URLParam(r, "roleId")
 
-	if err := h.svc.RemoveRoleFromUser(c.Request.Context(), userID, roleID); err != nil {
+	if err := h.svc.RemoveRoleFromUser(r.Context(), userID, roleID); err != nil {
 		h.logger.Error("Failed to remove role", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *HTTPHandler) getUserPermissions(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) getUserPermissions(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	userID := c.Param("userId")
-	perms, err := h.svc.GetUserPermissions(c.Request.Context(), tenantID, userID)
+	userID := chi.URLParam(r, "userId")
+	perms, err := h.svc.GetUserPermissions(r.Context(), tenantID, userID)
 	if err != nil {
 		h.logger.Error("Failed to get user permissions", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"permissions": perms})
+	response.Ok(w, r, map[string]interface{}{"permissions": perms})
 }

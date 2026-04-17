@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -20,11 +19,9 @@ func newHandler(svc Service) *HTTPHandler {
 }
 
 func TestCreateUserUsesTenantHeader(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	svc := &mockDirectoryService{createUserID: "user-123"}
 	handler := newHandler(svc)
-	r := gin.New()
-	handler.RegisterRoutes(r)
+	router := handler.Router()
 
 	body := strings.NewReader(`{"user":{"email":"user@wardseal.com","password":"password123","status":"active"}}`)
 	req := httptest.NewRequest(http.MethodPost, "/users", body)
@@ -32,7 +29,7 @@ func TestCreateUserUsesTenantHeader(t *testing.T) {
 	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
 	resp := httptest.NewRecorder()
 
-	r.ServeHTTP(resp, req)
+	router.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d", resp.Code)
@@ -44,18 +41,16 @@ func TestCreateUserUsesTenantHeader(t *testing.T) {
 }
 
 func TestCreateUserMissingTenantHeader(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	svc := &mockDirectoryService{createUserID: "user-123"}
 	handler := newHandler(svc)
-	r := gin.New()
-	handler.RegisterRoutes(r)
+	router := handler.Router()
 
 	body := strings.NewReader(`{"user":{"email":"user@wardseal.com","password":"password123","status":"active"}}`)
 	req := httptest.NewRequest(http.MethodPost, "/users", body)
 	req.Header.Set("Content-Type", "application/json")
 	resp := httptest.NewRecorder()
 
-	r.ServeHTTP(resp, req)
+	router.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.Code)
@@ -67,12 +62,10 @@ func TestCreateUserMissingTenantHeader(t *testing.T) {
 }
 
 func TestVerifyCredentialsUsesTenantHeader(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	user := User{ID: "user-123", Email: "user@wardseal.com", Status: "active"}
 	svc := &mockDirectoryService{verifyReturnUser: user}
 	handler := newHandler(svc)
-	r := gin.New()
-	handler.RegisterRoutes(r)
+	router := handler.Router()
 
 	body := strings.NewReader(`{"email":"user@wardseal.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
@@ -81,7 +74,7 @@ func TestVerifyCredentialsUsesTenantHeader(t *testing.T) {
 	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
 	resp := httptest.NewRecorder()
 
-	r.ServeHTTP(resp, req)
+	router.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", resp.Code)
@@ -105,11 +98,9 @@ func TestVerifyCredentialsUsesTenantHeader(t *testing.T) {
 }
 
 func TestVerifyCredentialsMissingTenantHeader(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	svc := &mockDirectoryService{}
 	handler := newHandler(svc)
-	r := gin.New()
-	handler.RegisterRoutes(r)
+	router := handler.Router()
 
 	body := strings.NewReader(`{"email":"user@wardseal.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
@@ -117,7 +108,7 @@ func TestVerifyCredentialsMissingTenantHeader(t *testing.T) {
 	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
 	resp := httptest.NewRecorder()
 
-	r.ServeHTTP(resp, req)
+	router.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", resp.Code)
@@ -129,11 +120,9 @@ func TestVerifyCredentialsMissingTenantHeader(t *testing.T) {
 }
 
 func TestVerifyCredentialsUnauthorized(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	svc := &mockDirectoryService{verifyErr: ErrInvalidCredentials}
 	handler := newHandler(svc)
-	r := gin.New()
-	handler.RegisterRoutes(r)
+	router := handler.Router()
 
 	body := strings.NewReader(`{"email":"user@wardseal.com","password":"badpassword"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
@@ -142,7 +131,7 @@ func TestVerifyCredentialsUnauthorized(t *testing.T) {
 	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
 	resp := httptest.NewRecorder()
 
-	r.ServeHTTP(resp, req)
+	router.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", resp.Code)
@@ -150,11 +139,9 @@ func TestVerifyCredentialsUnauthorized(t *testing.T) {
 }
 
 func TestVerifyCredentialsMissingServiceToken(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	svc := &mockDirectoryService{}
 	handler := newHandler(svc)
-	r := gin.New()
-	handler.RegisterRoutes(r)
+	router := handler.Router()
 
 	body := strings.NewReader(`{"email":"user@wardseal.com","password":"password123"}`)
 	req := httptest.NewRequest(http.MethodPost, "/internal/credentials/verify", body)
@@ -162,7 +149,7 @@ func TestVerifyCredentialsMissingServiceToken(t *testing.T) {
 	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
 	resp := httptest.NewRecorder()
 
-	r.ServeHTTP(resp, req)
+	router.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", resp.Code)

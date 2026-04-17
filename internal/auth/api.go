@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,8 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
@@ -27,39 +28,50 @@ const (
 )
 
 // setAuthCookies sets httpOnly secure cookies for authentication tokens
-func setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
+func (h *HTTPHandler) setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	secure := os.Getenv("ENVIRONMENT") == "production"
-	sameSite := http.SameSiteLaxMode
 
 	// Access token cookie (1 hour)
-	c.SetSameSite(sameSite)
-	c.SetCookie(AccessTokenCookie, accessToken, CookieMaxAge, "/", "", secure, true)
+	http.SetCookie(w, &http.Cookie{
+		Name:     AccessTokenCookie,
+		Value:    accessToken,
+		MaxAge:   CookieMaxAge,
+		Path:     "/",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
 
 	// Refresh token cookie (7 days) - if provided
 	if refreshToken != "" {
-		c.SetCookie(RefreshTokenCookie, refreshToken, RefreshCookieMaxAge, "/oauth2/token", "", secure, true)
+		http.SetCookie(w, &http.Cookie{
+			Name:     RefreshTokenCookie,
+			Value:    refreshToken,
+			MaxAge:   RefreshCookieMaxAge,
+			Path:     "/oauth2/token",
+			Secure:   secure,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
 	}
 }
 
 // clearAuthCookies removes authentication cookies
-func clearAuthCookies(c *gin.Context) {
-	c.SetCookie(AccessTokenCookie, "", -1, "/", "", false, true)
-	c.SetCookie(RefreshTokenCookie, "", -1, "/oauth2/token", "", false, true)
-}
-
-// getTokenFromCookieOrHeader tries to get token from cookie first, then header
-// nolint:unused // Reserved for future use
-func getTokenFromCookieOrHeader(c *gin.Context) string {
-	// Try cookie first
-	if token, err := c.Cookie(AccessTokenCookie); err == nil && token != "" {
-		return token
-	}
-	// Fall back to Authorization header
-	authHeader := c.GetHeader("Authorization")
-	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-		return authHeader[7:]
-	}
-	return ""
+func (h *HTTPHandler) clearAuthCookies(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     AccessTokenCookie,
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     RefreshTokenCookie,
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/oauth2/token",
+		HttpOnly: true,
+	})
 }
 
 // HTTPHandler represents the HTTP API handlers for the auth service.
@@ -84,163 +96,174 @@ func NewHTTPHandler(svc Service, logger *zap.Logger, loginAttemptStore LoginAtte
 	}
 }
 
-// SetWebAuthnSessionRepository allows overriding the default in-memory session repository.
-func (h *HTTPHandler) SetWebAuthnSessionRepository(store WebAuthnSessionRepository) {
-	if store == nil {
-		return
-	}
-	h.webAuthnSessions = store
+// SetWebAuthnSessionRepository sets the WebAuthn session repository.
+func (h *HTTPHandler) SetWebAuthnSessionRepository(repo WebAuthnSessionRepository) {
+	h.webAuthnSessions = repo
 }
 
-// RegisterRoutes registers the authentication routes.
-func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
+// Register registers the authentication routes on the provided router.
+func (h *HTTPHandler) Register(r chi.Router) {
 	// Health check
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"healthy": true})
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		response.Ok(w, r, map[string]bool{"healthy": true})
 	})
 
-	// Public routes (but still tenant-aware if slug provided)
-	router.GET("/api/v1/setup/status", h.getSetupStatus)
-	router.GET("/api/v1/oidc/resolve", h.oidcResolve)
-	router.GET("/.well-known/webfinger", h.webfinger)
-	router.POST("/api/v1/signup", h.signup)
-	router.POST("/api/v1/setup", h.performSetup)
-	router.POST("/api/v1/setup/password", h.completePasswordSetup)
-	router.POST("/login/lookup", h.lookupUser) // Public lookup for tenant discovery
+	// Public routes
+	r.Get("/api/v1/setup/status", h.getSetupStatus)
+	r.Get("/api/v1/oidc/resolve", h.oidcResolve)
+	r.Get("/.well-known/webfinger", h.webfinger)
+	r.Post("/api/v1/signup", h.signup)
+	r.Post("/api/v1/setup", h.performSetup)
+	r.Post("/api/v1/setup/password", h.completePasswordSetup)
+	r.Post("/login/lookup", h.lookupUser)
 
-	// Path-based multi-tenancy group
-	tenantGroup := router.Group("/t/:tenant")
-	tenantGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
-		HeaderName: "X-Tenant-ID", // Still check header
-		SlugResolver: func(ctx context.Context, slug string) (string, error) {
-			return h.svc.ResolveTenantSlug(ctx, slug)
-		},
-	}))
+	// Path-based multi-tenancy
+	r.Route("/t/{tenant}", func(r chi.Router) {
+		r.Use(middleware.TenantExtractor(middleware.TenantConfig{
+			HeaderName: "X-Tenant-ID",
+			SlugResolver: func(ctx context.Context, slug string) (string, error) {
+				return h.svc.ResolveTenantSlug(ctx, slug)
+			},
+		}))
 
-	// OIDC Discovery SHOULD NOT require a tenant ID in the request context specifically if it's based on the path,
-	// but our TenantExtractor will provide it if we hit /t/:tenant/.well-known/openid-configuration.
-	// We should also support the legacy global discovery if needed, but for now we focus on the path.
+		r.Post("/login", h.login)
+		r.Post("/login/mfa", h.completeMFALogin)
+		r.Post("/auth/mfa/complete", h.completeMFALogin)
+		r.Post("/auth/mfa/step-up", h.completeMFALogin)
+		r.Handle("/logout", http.HandlerFunc(h.logout))
 
-	tenantGroup.POST("/login", h.login)
-	tenantGroup.POST("/login/mfa", h.completeMFALogin)
-	tenantGroup.POST("/auth/mfa/complete", h.completeMFALogin) // Alias for completion
-	tenantGroup.POST("/auth/mfa/step-up", h.completeMFALogin)  // Alias for step-up
-	tenantGroup.GET("/logout", h.logout)
-	tenantGroup.POST("/logout", h.logout) // Also allow POST for logout
+		// OAuth2/OIDC
+		r.Get("/.well-known/openid-configuration", h.oidcConfig)
+		r.Get("/.well-known/jwks.json", h.jwks)
+		r.Get("/oauth2/authorize", h.authorize)
+		r.Post("/oauth2/token", h.token)
+		r.Post("/oauth2/introspect", h.introspect)
+		r.Post("/oauth2/revoke", h.revoke)
+	})
 
-	// OAuth2/OIDC endpoints
-	tenantGroup.GET("/.well-known/openid-configuration", h.oidcConfig)
-	tenantGroup.GET("/.well-known/jwks.json", h.jwks)
-	tenantGroup.GET("/oauth2/authorize", h.authorize)
-	tenantGroup.POST("/oauth2/token", h.token)
-	tenantGroup.POST("/oauth2/introspect", h.introspect)
-	tenantGroup.POST("/oauth2/revoke", h.revoke)
+	// Global aliases (header-based)
+	r.Route("/auth", func(r chi.Router) {
+		r.Use(middleware.TenantExtractor(middleware.TenantConfig{
+			HeaderName:    "X-Tenant-ID",
+			AllowFallback: true,
+			SlugResolver: func(ctx context.Context, slug string) (string, error) {
+				return h.svc.ResolveTenantSlug(ctx, slug)
+			},
+		}))
 
-	// Legacy/Global aliases for tests (relying on X-Tenant-ID header)
-	authGroup := router.Group("/auth")
-	authGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
-		HeaderName:    "X-Tenant-ID",
-		AllowFallback: true, // Allow fallback for tests/legacy clients
-		SlugResolver: func(ctx context.Context, slug string) (string, error) {
-			return h.svc.ResolveTenantSlug(ctx, slug)
-		},
-	}))
-	{
-		authGroup.POST("/login", h.login)
-		authGroup.GET("/oauth/authorize", h.authorize)
-		authGroup.POST("/oauth/token", h.token)
-		authGroup.POST("/oauth/introspect", h.introspect)
-		authGroup.POST("/oauth/revoke", h.revoke)
-		authGroup.GET("/.well-known/jwks.json", h.jwks)
-	}
+		r.Post("/login", h.login)
+		r.Get("/oauth/authorize", h.authorize)
+		r.Post("/oauth/token", h.token)
+		r.Post("/oauth/introspect", h.introspect)
+		r.Post("/oauth/revoke", h.revoke)
+		r.Get("/.well-known/jwks.json", h.jwks)
+	})
 
-	// Also support the root level aliases for some of these if strictly needed for tests
-	// but wrap them in a similar middleware or ensure they use header.
-	// For simplicity, we'll keep them in authGroup for now and update tests if needed.
-	// Actually, the tests use env.AuthServer.URL + "/oauth/authorize", so they hit root.
+	r.Route("/oauth", func(r chi.Router) {
+		r.Use(middleware.TenantExtractor(middleware.TenantConfig{
+			HeaderName:    "X-Tenant-ID",
+			AllowFallback: true,
+			SlugResolver: func(ctx context.Context, slug string) (string, error) {
+				return h.svc.ResolveTenantSlug(ctx, slug)
+			},
+		}))
 
-	oauthGroup := router.Group("/oauth")
-	oauthGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
-		HeaderName:    "X-Tenant-ID",
-		AllowFallback: true,
-		SlugResolver: func(ctx context.Context, slug string) (string, error) {
-			return h.svc.ResolveTenantSlug(ctx, slug)
-		},
-	}))
-	{
-		oauthGroup.GET("/authorize", h.authorize)
-		oauthGroup.POST("/token", h.token)
-		oauthGroup.POST("/introspect", h.introspect)
-		oauthGroup.POST("/revoke", h.revoke)
-	}
-	router.GET("/.well-known/jwks.json", h.jwks)
-	tenantProtected := router.Group("/")
-	tenantProtected.Use(middleware.TenantExtractor(middleware.TenantConfig{
-		HeaderName:    "X-Tenant-ID",
-		AllowFallback: false, // Disallow fallback for security in SaaS
-		SlugResolver: func(ctx context.Context, slug string) (string, error) {
-			return h.svc.ResolveTenantSlug(ctx, slug)
-		},
-	}))
+		r.Get("/authorize", h.authorize)
+		r.Post("/token", h.token)
+		r.Post("/introspect", h.introspect)
+		r.Post("/revoke", h.revoke)
+	})
 
-	// Device routes
-	deviceGroup := tenantProtected.Group("/api/v1/devices")
-	{
-		deviceGroup.POST("/register", h.registerDevice)
-		deviceGroup.POST("/:id/posture", h.updatePosture)
-		deviceGroup.GET("", h.listDevices)
-		deviceGroup.DELETE("/:id", h.deleteDevice)
-	}
+	r.Get("/.well-known/jwks.json", h.jwks)
 
-	// Signal routes (CAE)
-	signalGroup := tenantProtected.Group("/api/v1/signals")
-	{
-		signalGroup.POST("/ingest", h.ingestSignal)
-	}
+	// Protected routes (Tenant Required)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.TenantExtractor(middleware.TenantConfig{
+			HeaderName: "X-Tenant-ID",
+			SlugResolver: func(ctx context.Context, slug string) (string, error) {
+				return h.svc.ResolveTenantSlug(ctx, slug)
+			},
+		}))
 
-	// Social Login
-	tenantProtected.POST("/social/login", h.socialLogin)
+		// Device routes
+		r.Route("/api/v1/devices", func(r chi.Router) {
+			r.Post("/register", h.registerDevice)
+			r.Post("/{id}/posture", h.updatePosture)
+			r.Get("/", h.listDevices)
+			r.Delete("/{id}", h.deleteDevice)
+		})
 
-	// API v1 group
-	apiV1 := tenantProtected.Group("/api/v1")
+		// Signal routes
+		r.Post("/api/v1/signals/ingest", h.ingestSignal)
+		r.Post("/social/login", h.socialLogin)
 
-	// MFA WebAuthn
-	h.RegisterWebAuthnRoutes(apiV1)
-	h.RegisterTOTPRoutes(apiV1)
+		// API v1 (MFA)
+		r.Route("/api/v1", func(r chi.Router) {
+			r.Post("/mfa/webauthn/register/begin", h.beginWebAuthnRegistration)
+			r.Post("/mfa/webauthn/register/finish", h.finishWebAuthnRegistration)
+			r.Post("/mfa/webauthn/login/begin", h.beginWebAuthnLogin)
+			r.Post("/mfa/webauthn/login/finish", h.finishWebAuthnLogin)
 
-	// MFA Completion Aliases for apiV1
-	apiV1.POST("/auth/mfa/complete", h.completeMFALogin)
-	apiV1.POST("/auth/mfa/step-up", h.completeMFALogin)
+			r.Route("/mfa/totp", func(r chi.Router) {
+				r.Post("/enroll", h.enrollTOTP)
+				r.Post("/verify", h.verifyTOTP)
+				r.Delete("/", h.deleteTOTP)
+				r.Get("/status", h.getTOTPStatus)
+			})
 
+			r.Post("/auth/mfa/complete", h.completeMFALogin)
+			r.Post("/auth/mfa/step-up", h.completeMFALogin)
+		})
+
+		// User Portal (User Auth Required)
+		r.Route("/api/v1/user", func(r chi.Router) {
+			r.Use(middleware.RequireUserAuth(h.svc.ValidateToken))
+			r.Get("/apps", h.getUserApps)
+			r.Get("/profile", h.getUserProfile)
+			r.Post("/profile", h.updateUserProfile)
+		})
+
+		r.Route("/api/v1/setup", func(r chi.Router) {
+			r.Use(middleware.RequireUserAuth(h.svc.ValidateToken))
+			r.Post("/password-link", h.createPasswordSetupLink)
+		})
+	})
+
+	// SAML
 	if samlProvider := h.svc.SAML(); samlProvider != nil {
-		samlHandler := gin.WrapH(samlProvider)
-		router.GET("/saml/metadata", samlHandler)
-		router.POST("/saml/sso", samlHandler)
-		router.GET("/saml/idp-init", samlHandler) // IdP Initiated endpoint
+		r.Mount("/saml", samlProvider)
 	}
-
-	// User Portal API (Protected)
-	userAPI := tenantProtected.Group("/api/v1/user")
-	// Use the same signing secret as the service (signer)
-	// Use the service's ValidateToken method
-	userAPI.Use(middleware.RequireUserAuth(h.svc.ValidateToken))
-	userAPI.GET("/apps", h.getUserApps)
-	userAPI.GET("/profile", h.getUserProfile)
-	userAPI.POST("/profile", h.updateUserProfile)
-
-	setupAPI := tenantProtected.Group("/api/v1/setup")
-	setupAPI.Use(middleware.RequireUserAuth(h.svc.ValidateToken))
-	setupAPI.POST("/password-link", h.createPasswordSetupLink)
 }
 
-func (h *HTTPHandler) getSetupStatus(c *gin.Context) {
-	required, err := h.svc.GetSystemSetupStatus(c.Request.Context())
+// Router registers the authentication routes and returns a new router.
+func (h *HTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+	h.Register(r)
+	return r
+}
+
+// BrandingRouter registers the branding routes.
+func (h *HTTPHandler) BrandingRouter() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/", h.getBranding)
+	r.Put("/", h.updateBranding)
+
+	return r
+}
+
+func (h *HTTPHandler) tenantID(r *http.Request) (string, bool) {
+	return middleware.TenantIDFromContext(r.Context())
+}
+
+func (h *HTTPHandler) getSetupStatus(w http.ResponseWriter, r *http.Request) {
+	required, err := h.svc.GetSystemSetupStatus(r.Context())
 	if err != nil {
 		h.logger.Error("Failed to check setup status", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"setup_required": required})
+	response.Ok(w, r, map[string]bool{"setup_required": required})
 }
 
 func (h *HTTPHandler) tenantSlugForID(ctx context.Context, tenantID string) string {
@@ -261,43 +284,42 @@ func (h *HTTPHandler) tenantSlugForID(ctx context.Context, tenantID string) stri
 
 // SetupRequest holds credentials for system owner setup.
 type SetupRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
 }
 
 type PasswordSetupLinkRequest struct {
-	UserID       string `json:"user_id" binding:"required"`
-	Mode         string `json:"mode" binding:"required,oneof=invite reset"`
+	UserID       string `json:"user_id" validate:"required"`
+	Mode         string `json:"mode" validate:"required,oneof=invite reset"`
 	ExpiresHours int    `json:"expires_hours"`
 }
 
 type CompletePasswordSetupRequest struct {
-	Token    string `json:"token" binding:"required"`
-	Password string `json:"password" binding:"required,min=8"`
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required,min=8"`
 }
 
-func (h *HTTPHandler) performSetup(c *gin.Context) {
+func (h *HTTPHandler) performSetup(w http.ResponseWriter, r *http.Request) {
 	var req SetupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	token, err := h.svc.PerformSystemSetup(c.Request.Context(), req.Email, req.Password)
+	token, err := h.svc.PerformSystemSetup(r.Context(), req.Email, req.Password)
 	if err != nil {
 		h.logger.Error("Setup failed", zap.Error(err))
 		if strings.Contains(err.Error(), "not required") {
-			c.JSON(http.StatusForbidden, gin.H{"error": "System setup is not available"})
+			response.JSON(w, r, http.StatusForbidden, map[string]string{"error": "System setup is not available"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Setup failed"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "Setup failed"})
 		return
 	}
 
-	// Set auth cookies for immediate login
-	setAuthCookies(c, token, "")
+	h.setAuthCookies(w, token, "")
 
-	c.JSON(http.StatusOK, gin.H{
+	response.Ok(w, r, map[string]interface{}{
 		"token":       token,
 		"tenant_id":   "admin-system",
 		"tenant_slug": "admin",
@@ -305,36 +327,36 @@ func (h *HTTPHandler) performSetup(c *gin.Context) {
 	})
 }
 
-func (h *HTTPHandler) createPasswordSetupLink(c *gin.Context) {
-	tenantID, err := middleware.TenantIDFromContext(c.Request.Context())
-	if err != nil || tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+func (h *HTTPHandler) createPasswordSetupLink(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant context required"})
 		return
 	}
 
 	var req PasswordSetupLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	impl, ok := h.svc.(*authService)
 	if !ok {
 		h.logger.Error("service type assertion failed for password setup link")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal service error"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "internal service error"})
 		return
 	}
 
 	token, expiresAt, err := impl.generatePasswordSetupToken(tenantID, req.UserID, req.Mode, req.ExpiresHours)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	baseUIURL := strings.TrimRight(h.svc.UIURL(), "/")
 	setupURL := fmt.Sprintf("%s/set-password?token=%s&mode=%s", baseUIURL, url.QueryEscape(token), url.QueryEscape(req.Mode))
 
-	c.JSON(http.StatusOK, gin.H{
+	response.Ok(w, r, map[string]interface{}{
 		"mode":       req.Mode,
 		"token":      token,
 		"url":        setupURL,
@@ -342,60 +364,58 @@ func (h *HTTPHandler) createPasswordSetupLink(c *gin.Context) {
 	})
 }
 
-func (h *HTTPHandler) completePasswordSetup(c *gin.Context) {
+func (h *HTTPHandler) completePasswordSetup(w http.ResponseWriter, r *http.Request) {
 	var req CompletePasswordSetupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	impl, ok := h.svc.(*authService)
 	if !ok {
 		h.logger.Error("service type assertion failed for complete password setup")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal service error"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "internal service error"})
 		return
 	}
 
-	if err := impl.setPasswordWithSetupToken(c.Request.Context(), req.Token, req.Password); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := impl.setPasswordWithSetupToken(r.Context(), req.Token, req.Password); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "password set successfully"})
+	response.Ok(w, r, map[string]string{"message": "password set successfully"})
 }
 
-func tenantIDFromRequest(c *gin.Context) string {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err == nil && tenantID != "" {
-		return tenantID
-	}
-	return c.GetHeader("X-Tenant-ID")
-}
-
-func (h *HTTPHandler) login(c *gin.Context) {
+func (h *HTTPHandler) login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("Failed to bind login request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
 		h.logger.Error("Login request validation failed", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	deviceID := c.Request.Header.Get("X-Device-ID")
-	ip := c.ClientIP()
-	tenantID := tenantIDFromRequest(c)
+	deviceID := r.Header.Get("X-Device-ID")
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
+	tenantID, _ := h.tenantID(r)
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
 
 	// Check account lockout
 	if h.loginAttemptStore != nil && tenantID != "" {
-		locked, lockedUntil, _ := h.loginAttemptStore.IsLocked(c.Request.Context(), tenantID, req.Username)
+		locked, lockedUntil, _ := h.loginAttemptStore.IsLocked(r.Context(), tenantID, req.Username)
 		if locked {
 			h.logger.Warn("Login attempt for locked account", zap.String("username", req.Username))
-			c.JSON(http.StatusTooManyRequests, gin.H{
+			response.JSON(w, r, http.StatusTooManyRequests, map[string]interface{}{
 				"error":             "account_locked",
 				"error_description": "Too many failed login attempts. Please try again later.",
 				"locked_until":      lockedUntil.Format("2006-01-02T15:04:05Z07:00"),
@@ -404,49 +424,48 @@ func (h *HTTPHandler) login(c *gin.Context) {
 		}
 	}
 
-	userAgent := c.Request.UserAgent()
-	clientOSVersion := c.GetHeader("X-OS-Version")
-	token, err := h.svc.Login(c.Request.Context(), req.Username, req.Password, deviceID, userAgent, ip, clientOSVersion)
+	userAgent := r.UserAgent()
+	clientOSVersion := r.Header.Get("X-OS-Version")
+	token, err := h.svc.Login(r.Context(), req.Username, req.Password, deviceID, userAgent, ip, clientOSVersion)
 	if err != nil {
 		h.logger.Error("Login failed", zap.Error(err))
 
 		// Record failed attempt
 		if h.loginAttemptStore != nil && tenantID != "" {
-			_ = h.loginAttemptStore.RecordAttempt(c.Request.Context(), tenantID, req.Username, ip, false)
-			failures, _ := h.loginAttemptStore.GetRecentFailures(c.Request.Context(), tenantID, req.Username)
+			_ = h.loginAttemptStore.RecordAttempt(r.Context(), tenantID, req.Username, ip, false)
+			failures, _ := h.loginAttemptStore.GetRecentFailures(r.Context(), tenantID, req.Username)
 			if failures >= MaxFailedAttempts {
-				_ = h.loginAttemptStore.LockAccount(c.Request.Context(), tenantID, req.Username)
+				_ = h.loginAttemptStore.LockAccount(r.Context(), tenantID, req.Username)
 				h.logger.Warn("Account locked due to too many failed attempts", zap.String("username", req.Username))
 			}
 		}
 
 		if errors.Is(err, ErrInvalidCredentials) {
-			h.respondOAuthError(c, ErrInvalidCredentials)
+			h.respondOAuthError(w, r, ErrInvalidCredentials)
 		} else if errors.Is(err, ErrMFARequired) {
-			c.JSON(http.StatusAccepted, gin.H{
+			response.JSON(w, r, http.StatusAccepted, map[string]interface{}{
 				"mfa_required":  true,
 				"step_up_token": token,
 				"error":         "mfa_required",
 				"message":       "Additional authentication required due to risk assessment",
 			})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 		return
 	}
 
 	// Record successful attempt and clear any lockout
 	if h.loginAttemptStore != nil && tenantID != "" {
-		_ = h.loginAttemptStore.RecordAttempt(c.Request.Context(), tenantID, req.Username, ip, true)
-		_ = h.loginAttemptStore.UnlockAccount(c.Request.Context(), tenantID, req.Username)
+		_ = h.loginAttemptStore.RecordAttempt(r.Context(), tenantID, req.Username, ip, true)
+		_ = h.loginAttemptStore.UnlockAccount(r.Context(), tenantID, req.Username)
 	}
 
 	// Check if user has TOTP enabled
 	if h.svc.TOTP() != nil && tenantID != "" {
-		totpSecret, _ := h.svc.TOTP().GetByIdentity(c.Request.Context(), tenantID, req.Username)
+		totpSecret, _ := h.svc.TOTP().GetByIdentity(r.Context(), tenantID, req.Username)
 		if totpSecret != nil && totpSecret.Verified {
-			// MFA required - return pending token and mfa_required flag
-			c.JSON(http.StatusOK, gin.H{
+			response.Ok(w, r, map[string]interface{}{
 				"mfa_required":  true,
 				"pending_token": token,
 				"user_id":       req.Username,
@@ -455,83 +474,75 @@ func (h *HTTPHandler) login(c *gin.Context) {
 		}
 	}
 
-	// Set httpOnly cookies for session security
-	setAuthCookies(c, token, "")
+	h.setAuthCookies(w, token, "")
 
-	// Extract roles for the response
 	claims, _ := h.svc.ValidateToken(token)
 	roles := []string{}
 	if claims != nil {
 		roles = claims.Roles
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{
+	response.Ok(w, r, LoginResponse{
 		Token:      token,
 		Roles:      roles,
 		TenantID:   tenantID,
-		TenantSlug: h.tenantSlugForID(c.Request.Context(), tenantID),
+		TenantSlug: h.tenantSlugForID(r.Context(), tenantID),
 	})
 }
 
-type LookupRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
-func (h *HTTPHandler) lookupUser(c *gin.Context) {
-	var req LookupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (h *HTTPHandler) lookupUser(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email" validate:"required,email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	tenantID := c.GetHeader("X-Tenant-ID")
-	// Tenant ID is optional for lookup now (discovery supported)
+	tenantID := r.Header.Get("X-Tenant-ID")
 
-	result, err := h.svc.LookupUser(c.Request.Context(), tenantID, req.Email)
+	result, err := h.svc.LookupUser(r.Context(), tenantID, req.Email)
 	if err != nil {
-		// Avoid enumerating users aggressively if preferred, but for enterprise login, exact errors are often helpful.
-		// For security, we might want generic "not found" or similar if we want to hide existence.
-		// But here we return 404 if not found.
 		h.logger.Warn("Lookup failed", zap.Error(err))
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "user not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	response.Ok(w, r, result)
 }
 
-func (h *HTTPHandler) oidcResolve(c *gin.Context) {
-	email := strings.TrimSpace(c.Query("email"))
+func (h *HTTPHandler) oidcResolve(w http.ResponseWriter, r *http.Request) {
+	email := strings.TrimSpace(r.URL.Query().Get("email"))
 	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email query param is required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "email query param is required"})
 		return
 	}
 
 	if _, err := mail.ParseAddress(email); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "invalid email"})
 		return
 	}
 
-	result, err := h.svc.LookupUser(c.Request.Context(), "", email)
+	result, err := h.svc.LookupUser(r.Context(), "", email)
 	if err != nil {
 		h.logger.Warn("OIDC resolve failed", zap.String("email", email), zap.Error(err))
-		c.JSON(http.StatusNotFound, gin.H{"error": "tenant not found for user"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "tenant not found for user"})
 		return
 	}
 
 	tenantSlug := result.TenantSlug
 	if tenantSlug == "" {
-		tenantSlug = h.tenantSlugForID(c.Request.Context(), result.TenantID)
+		tenantSlug = h.tenantSlugForID(r.Context(), result.TenantID)
 	}
 	if tenantSlug == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tenant slug not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "tenant slug not found"})
 		return
 	}
 
 	baseIssuer := strings.TrimRight(h.svc.GetOIDCConfiguration().Issuer, "/")
 	issuer := fmt.Sprintf("%s/t/%s", baseIssuer, tenantSlug)
 
-	c.JSON(http.StatusOK, gin.H{
+	response.Ok(w, r, map[string]interface{}{
 		"tenant_id":      result.TenantID,
 		"tenant_slug":    tenantSlug,
 		"issuer":         issuer,
@@ -542,46 +553,42 @@ func (h *HTTPHandler) oidcResolve(c *gin.Context) {
 	})
 }
 
-func (h *HTTPHandler) webfinger(c *gin.Context) {
-	resource := strings.TrimSpace(c.Query("resource"))
+func (h *HTTPHandler) webfinger(w http.ResponseWriter, r *http.Request) {
+	resource := strings.TrimSpace(r.URL.Query().Get("resource"))
 	if resource == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "resource query param is required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "resource query param is required"})
 		return
 	}
 
 	const acctPrefix = "acct:"
 	if !strings.HasPrefix(strings.ToLower(resource), acctPrefix) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "resource must be in acct:user@example.com format"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "resource must be in acct:user@example.com format"})
 		return
 	}
 
 	email := strings.TrimSpace(resource[len(acctPrefix):])
 	if _, err := mail.ParseAddress(email); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid acct resource email"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "invalid acct resource email"})
 		return
 	}
 
-	result, err := h.svc.LookupUser(c.Request.Context(), "", email)
+	result, err := h.svc.LookupUser(r.Context(), "", email)
 	if err != nil {
 		h.logger.Warn("WebFinger resolve failed", zap.String("resource", resource), zap.Error(err))
-		c.JSON(http.StatusNotFound, gin.H{"error": "resource not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "resource not found"})
 		return
 	}
 
 	tenantSlug := result.TenantSlug
 	if tenantSlug == "" {
-		tenantSlug = h.tenantSlugForID(c.Request.Context(), result.TenantID)
-	}
-	if tenantSlug == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tenant slug not found"})
-		return
+		tenantSlug = h.tenantSlugForID(r.Context(), result.TenantID)
 	}
 
 	issuer := fmt.Sprintf("%s/t/%s", strings.TrimRight(h.svc.GetOIDCConfiguration().Issuer, "/"), tenantSlug)
 
-	c.JSON(http.StatusOK, gin.H{
+	response.Ok(w, r, map[string]interface{}{
 		"subject": resource,
-		"links": []gin.H{
+		"links": []map[string]string{
 			{
 				"rel":  "http://openid.net/specs/connect/1.0/issuer",
 				"href": issuer,
@@ -592,340 +599,253 @@ func (h *HTTPHandler) webfinger(c *gin.Context) {
 
 // MFALoginRequest is the request to complete MFA login.
 type MFALoginRequest struct {
-	PendingToken string `json:"pending_token" binding:"required"`
-	TOTPCode     string `json:"totp_code" binding:"required"`
-	UserID       string `json:"user_id" binding:"required"`
+	PendingToken string `json:"pending_token" validate:"required"`
+	TOTPCode     string `json:"totp_code" validate:"required"`
+	UserID       string `json:"user_id" validate:"required"`
 }
 
-func (h *HTTPHandler) completeMFALogin(c *gin.Context) {
+func (h *HTTPHandler) completeMFALogin(w http.ResponseWriter, r *http.Request) {
 	var req MFALoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	tenantID := tenantIDFromRequest(c)
+	tenantID, _ := h.tenantID(r)
 	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
-		return
+		tenantID = r.Header.Get("X-Tenant-ID")
 	}
 
-	// Use the service to complete MFA login
-	finalToken, err := h.svc.LoginWithMFAStepUp(c.Request.Context(), req.PendingToken, req.TOTPCode)
+	finalToken, err := h.svc.LoginWithMFAStepUp(r.Context(), req.PendingToken, req.TOTPCode)
 	if err != nil {
 		h.logger.Error("MFA completion failed", zap.Error(err))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": err.Error()})
 		return
 	}
 
-	// Set httpOnly cookies for session security
-	setAuthCookies(c, finalToken, "")
+	h.setAuthCookies(w, finalToken, "")
 
-	// Extract roles for the response
 	claims, _ := h.svc.ValidateToken(finalToken)
 	roles := []string{}
 	if claims != nil {
 		roles = claims.Roles
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{
+	response.Ok(w, r, LoginResponse{
 		Token:      finalToken,
 		Roles:      roles,
 		TenantID:   tenantID,
-		TenantSlug: h.tenantSlugForID(c.Request.Context(), tenantID),
+		TenantSlug: h.tenantSlugForID(r.Context(), tenantID),
 	})
 }
 
-func (h *HTTPHandler) logout(c *gin.Context) {
-	// Clear httpOnly cookies
-	clearAuthCookies(c)
-	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
+func (h *HTTPHandler) logout(w http.ResponseWriter, r *http.Request) {
+	h.clearAuthCookies(w)
+	response.Ok(w, r, map[string]string{"message": "logged out successfully"})
 }
 
-func (h *HTTPHandler) authorize(c *gin.Context) {
-	var req AuthorizeRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		h.logger.Error("Failed to bind authorize request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func (h *HTTPHandler) authorize(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	req := AuthorizeRequest{
+		ClientID:     q.Get("client_id"),
+		RedirectURI:  q.Get("redirect_uri"),
+		ResponseType: q.Get("response_type"),
+		Scope:        q.Get("scope"),
+		State:        q.Get("state"),
+		Nonce:        q.Get("nonce"),
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		h.logger.Error("Authorize request validation failed", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	// 1. Require User Session (Session Cookie)
-	cookie, err := c.Cookie(AccessTokenCookie)
+	cookie, err := r.Cookie(AccessTokenCookie)
 	if err != nil {
-		// Not logged in -> Redirect to Wardseal login page
-		// We pass the current authorize URL as the redirect_uri so they come back after logging in
-		loginURL := fmt.Sprintf("%s/login?redirect_uri=%s", h.svc.UIURL(), url.QueryEscape(c.Request.URL.String()))
-		c.Redirect(http.StatusFound, loginURL)
+		loginURL := fmt.Sprintf("%s/login?redirect_uri=%s", h.svc.UIURL(), url.QueryEscape(r.URL.String()))
+		http.Redirect(w, r, loginURL, http.StatusFound)
 		return
 	}
 
-	// 2. Validate the token to extract the UserID
 	var userID string
-	// Check for proper token
-	claims, err := h.svc.ValidateToken(cookie)
+	claims, err := h.svc.ValidateToken(cookie.Value)
 	if err == nil {
 		userID = claims.Subject
 	}
 
 	if userID == "" {
-		h.logger.Warn("Unauthorized access attempt to OIDC endpoint")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 		return
 	}
 
-	// 3. Verify Application Assignment
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		h.logger.Error("Failed to extract tenant ID", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing tenant identifier"})
-		return
+	tenantID, _ := h.tenantID(r)
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
 	}
 
 	if tenantID != "" && h.appStore != nil {
-		app, err := h.appStore.GetByClientID(c.Request.Context(), req.ClientID)
+		app, err := h.appStore.GetByClientID(r.Context(), req.ClientID)
 		if err != nil {
-			h.logger.Error("Failed to load application by client ID", zap.Error(err), zap.String("clientID", req.ClientID), zap.String("tenantID", tenantID), zap.String("userID", userID))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify app assignment"})
+			response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to verify app assignment"})
 			return
 		}
 		if app != nil {
 			if app.TenantID != tenantID {
-				h.logger.Warn("Application tenant mismatch", zap.String("clientID", req.ClientID), zap.String("tenantID", tenantID), zap.String("appTenantID", app.TenantID), zap.String("userID", userID), zap.String("appID", app.ID))
-				c.JSON(http.StatusForbidden, gin.H{
+				response.JSON(w, r, http.StatusForbidden, map[string]string{
 					"error":             "access_denied",
-					"error_description": "This application belongs to a different tenant. Sign in to the correct tenant or use an application client from this tenant.",
+					"error_description": "This application belongs to a different tenant.",
 				})
 				return
 			}
 
-			assigned, err := h.appStore.CheckAssignment(c.Request.Context(), tenantID, app.ID, userID)
-			if err != nil {
-				h.logger.Error("Failed to check app assignment", zap.Error(err), zap.String("clientID", req.ClientID), zap.String("tenantID", tenantID), zap.String("userID", userID), zap.String("appID", app.ID))
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify app assignment"})
-				return
-			}
-			if !assigned && app.OwnerID == userID {
-				assigned = true
-				h.logger.Info("Allowing app owner without explicit assignment", zap.String("clientID", req.ClientID), zap.String("tenantID", tenantID), zap.String("userID", userID), zap.String("appID", app.ID))
-			}
-			if !assigned {
-				h.logger.Warn("User not assigned to application", zap.String("clientID", req.ClientID), zap.String("tenantID", tenantID), zap.String("userID", userID), zap.String("appID", app.ID))
-				c.JSON(http.StatusForbidden, gin.H{
+			assigned, _ := h.appStore.CheckAssignment(r.Context(), tenantID, app.ID, userID)
+			if !assigned && app.OwnerID != userID {
+				response.JSON(w, r, http.StatusForbidden, map[string]string{
 					"error":             "access_denied",
-					"error_description": "You are not assigned to this application. Please contact your administrator.",
+					"error_description": "You are not assigned to this application.",
 				})
 				return
 			}
 		}
 	}
 
-	resp, err := h.svc.Authorize(c.Request.Context(), userID, req)
+	resp, err := h.svc.Authorize(r.Context(), userID, req)
 	if err != nil {
-		h.logger.Error("Authorize failed", zap.Error(err))
 		svcErr := &Error{}
 		if errors.As(err, &svcErr) {
-			h.respondOAuthError(c, svcErr)
+			h.respondOAuthError(w, r, svcErr)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.Redirect(http.StatusFound, resp.RedirectURI)
+	http.Redirect(w, r, resp.RedirectURI, http.StatusFound)
 }
 
-func (h *HTTPHandler) token(c *gin.Context) {
+func (h *HTTPHandler) token(w http.ResponseWriter, r *http.Request) {
 	var req TokenRequest
-	// Gin's ShouldBind handles different content types
-	if err := c.ShouldBind(&req); err != nil {
-		h.logger.Error("Failed to bind token request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	populateClientCredentialsFromBasicAuth(c, &req)
-
-	if err := h.validate.Struct(req); err != nil {
-		h.logger.Error("Token request validation failed", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	resp, err := h.svc.Token(c.Request.Context(), req)
-	if err != nil {
-		h.logger.Error("Token generation failed", zap.Error(err))
-		svcErr := &Error{}
-		if errors.As(err, &svcErr) {
-			h.respondOAuthError(c, svcErr)
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
-func populateClientCredentialsFromBasicAuth(c *gin.Context, req *TokenRequest) {
-	if req == nil || req.ClientID != "" {
-		return
-	}
-
-	authHeader := c.GetHeader("Authorization")
-	if !strings.HasPrefix(authHeader, "Basic ") {
-		return
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(authHeader, "Basic "))
-	if err != nil {
-		return
-	}
-
-	parts := strings.SplitN(string(decoded), ":", 2)
-	if len(parts) != 2 {
-		return
+	if err := r.ParseForm(); err == nil {
+		req.GrantType = r.FormValue("grant_type")
+		req.Code = r.FormValue("code")
+		req.RedirectURI = r.FormValue("redirect_uri")
+		req.RefreshToken = r.FormValue("refresh_token")
+		req.ClientID = r.FormValue("client_id")
+		req.ClientSecret = r.FormValue("client_secret")
+	} else {
+		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
 	if req.ClientID == "" {
-		req.ClientID = parts[0]
-	}
-	if req.ClientSecret == "" {
-		req.ClientSecret = parts[1]
-	}
-}
-
-func (h *HTTPHandler) jwks(c *gin.Context) {
-	// Assuming JWKS() method is available on the service
-	jwks := h.svc.JWKS()
-	c.JSON(http.StatusOK, jwks)
-}
-
-func (h *HTTPHandler) oidcConfig(c *gin.Context) {
-	config := h.svc.GetOIDCConfiguration()
-
-	// Update endpoints based on extracted tenant (if any) to reflect the multi-tenancy path
-	tenant, err := middleware.TenantIDFromGinContext(c)
-	if err == nil && tenant != "" {
-		// If we are in a /t/:tenant context, the issuer should actually be the tenant-specific one?
-		// Most OIDC providers (like Google/Microsoft) use the tenant-specific URL as the issuer.
-
-		tenantParam := c.Param("tenant")
-		if tenantParam != "" {
-			tenantPath := fmt.Sprintf("/t/%s", tenantParam)
-			config.Issuer = fmt.Sprintf("%s%s", config.Issuer, tenantPath)
-			config.AuthorizationEndpoint = strings.Replace(config.AuthorizationEndpoint, "/oauth2", tenantPath+"/oauth2", 1)
-			config.TokenEndpoint = strings.Replace(config.TokenEndpoint, "/oauth2", tenantPath+"/oauth2", 1)
-			config.JwksURI = strings.Replace(config.JwksURI, "/.well-known", tenantPath+"/.well-known", 1)
-			config.UserinfoEndpoint = strings.Replace(config.UserinfoEndpoint, "/api", tenantPath+"/api", 1)
+		user, pass, ok := r.BasicAuth()
+		if ok {
+			req.ClientID = user
+			req.ClientSecret = pass
 		}
 	}
 
-	c.JSON(http.StatusOK, config)
-}
-
-func (h *HTTPHandler) introspect(c *gin.Context) {
-	var req IntrospectRequest
-	if err := c.ShouldBind(&req); err != nil {
-		h.logger.Error("Failed to bind introspect request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := h.validate.Struct(req); err != nil {
-		h.logger.Error("Introspect request validation failed", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	resp, err := h.svc.Introspect(c.Request.Context(), req)
+	resp, err := h.svc.Token(r.Context(), req)
 	if err != nil {
-		h.logger.Error("Token introspection failed", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		svcErr := &Error{}
+		if errors.As(err, &svcErr) {
+			h.respondOAuthError(w, r, svcErr)
+			return
+		}
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	response.Ok(w, r, resp)
 }
 
-func (h *HTTPHandler) revoke(c *gin.Context) {
+func (h *HTTPHandler) jwks(w http.ResponseWriter, r *http.Request) {
+	response.Ok(w, r, h.svc.JWKS())
+}
+
+func (h *HTTPHandler) oidcConfig(w http.ResponseWriter, r *http.Request) {
+	config := h.svc.GetOIDCConfiguration()
+	tenantParam := chi.URLParam(r, "tenant")
+	if tenantParam != "" {
+		tenantPath := fmt.Sprintf("/t/%s", tenantParam)
+		config.Issuer = fmt.Sprintf("%s%s", config.Issuer, tenantPath)
+		config.AuthorizationEndpoint = strings.Replace(config.AuthorizationEndpoint, "/oauth2", tenantPath+"/oauth2", 1)
+		config.TokenEndpoint = strings.Replace(config.TokenEndpoint, "/oauth2", tenantPath+"/oauth2", 1)
+		config.JwksURI = strings.Replace(config.JwksURI, "/.well-known", tenantPath+"/.well-known", 1)
+		config.UserinfoEndpoint = strings.Replace(config.UserinfoEndpoint, "/api", tenantPath+"/api", 1)
+	}
+	response.Ok(w, r, config)
+}
+
+func (h *HTTPHandler) introspect(w http.ResponseWriter, r *http.Request) {
+	var req IntrospectRequest
+	_ = r.ParseForm()
+	req.Token = r.FormValue("token")
+	req.TokenTypeHint = r.FormValue("token_type_hint")
+	req.ClientID = r.FormValue("client_id")
+	req.ClientSecret = r.FormValue("client_secret")
+
+	resp, err := h.svc.Introspect(r.Context(), req)
+	if err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	response.Ok(w, r, resp)
+}
+
+func (h *HTTPHandler) revoke(w http.ResponseWriter, r *http.Request) {
 	var req RevokeRequest
-	if err := c.ShouldBind(&req); err != nil {
-		h.logger.Error("Failed to bind revoke request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	_ = r.ParseForm()
+	req.Token = r.FormValue("token")
+	req.TokenTypeHint = r.FormValue("token_type_hint")
+	req.ClientID = r.FormValue("client_id")
+	req.ClientSecret = r.FormValue("client_secret")
+
+	if err := h.svc.Revoke(r.Context(), req); err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-
-	if err := h.validate.Struct(req); err != nil {
-		h.logger.Error("Revoke request validation failed", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := h.svc.Revoke(c.Request.Context(), req); err != nil {
-		h.logger.Error("Token revocation failed", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// RFC 7009: The authorization server responds with HTTP status code 200 for success
-	c.Status(http.StatusOK)
-}
-
-func (h *HTTPHandler) respondOAuthError(c *gin.Context, err *Error) {
-	status := http.StatusBadRequest
-	if err.Code == ErrInvalidCredentials.Code {
-		status = http.StatusUnauthorized
-	}
-	c.JSON(status, gin.H{
-		"error":             err.Code,
-		"error_description": err.Message,
-	})
+	w.WriteHeader(http.StatusOK)
 }
 
 // SignupRequest is the request to create a new tenant and admin user.
 type SignupRequest struct {
-	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
-	CompanyName string `json:"company_name" binding:"required"`
+	Email       string `json:"email" validate:"required,email"`
+	Password    string `json:"password" validate:"required,min=8"`
+	CompanyName string `json:"company_name" validate:"required"`
 	Plan        string `json:"plan"` // Optional, defaults to "free" in service
 }
 
-func (h *HTTPHandler) signup(c *gin.Context) {
+func (h *HTTPHandler) signup(w http.ResponseWriter, r *http.Request) {
 	var req SignupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	// Call Service Signup
-	token, tenantID, tenantSlug, err := h.svc.SignUp(c.Request.Context(), req.Email, req.Password, req.CompanyName, req.Plan)
+	token, tenantID, tenantSlug, err := h.svc.SignUp(r.Context(), req.Email, req.Password, req.CompanyName, req.Plan)
 	if err != nil {
 		h.logger.Error("Signup failed", zap.Error(err))
-		if strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "exists") {
-			// If user/tenant exists (unlikely given UUID, but maybe email collision in global sense?)
-			// Currently our logic creates new tenant always. Directory service `CreateUser` might fail if email exists in that tenant?
-			// But tenant is new. So only if `directory` service enforces unique email globally (unlikely for multi-tenant).
-			c.JSON(http.StatusConflict, gin.H{"error": "Signup failed, possibly duplicate data"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Signup failed"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "Signup failed"})
 		return
 	}
 
-	// Set cookies for session
-	setAuthCookies(c, token, "")
+	h.setAuthCookies(w, token, "")
 
-	c.JSON(http.StatusCreated, gin.H{
+	response.JSON(w, r, http.StatusCreated, map[string]interface{}{
 		"token":       token,
 		"tenant_id":   tenantID,
 		"tenant_slug": tenantSlug,
 		"message":     "Signup successful",
+	})
+}
+
+func (h *HTTPHandler) respondOAuthError(w http.ResponseWriter, r *http.Request, err *Error) {
+	status := http.StatusBadRequest
+	if err.Code == ErrInvalidCredentials.Code {
+		status = http.StatusUnauthorized
+	}
+	response.JSON(w, r, status, map[string]string{
+		"error":             err.Code,
+		"error_description": err.Message,
 	})
 }

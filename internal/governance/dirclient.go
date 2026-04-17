@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // DirectoryClient provides methods to interact with the Directory Service.
@@ -25,11 +27,11 @@ type directoryHTTPClient struct {
 	baseURL    string
 	httpClient *http.Client
 	authHeader string
-	authToken  string
+	authToken  types.Secret
 }
 
 // NewDirectoryClient creates a new client for the Directory Service.
-func NewDirectoryClient(baseURL, authHeader, authToken string) DirectoryClient {
+func NewDirectoryClient(baseURL, authHeader string, authToken types.Secret) DirectoryClient {
 	return &directoryHTTPClient{
 		baseURL:    baseURL,
 		httpClient: &http.Client{Timeout: 5 * time.Second},
@@ -49,8 +51,8 @@ func (c *directoryHTTPClient) AddUserToGroup(ctx context.Context, tenantID, user
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", tenantID)
-	if c.authToken != "" {
-		req.Header.Set(c.authHeader, c.authToken)
+	if !c.authToken.IsEmpty() {
+		req.Header.Set(c.authHeader, c.authToken.Raw())
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -75,8 +77,8 @@ func (c *directoryHTTPClient) RemoveUserFromGroup(ctx context.Context, tenantID,
 	}
 
 	req.Header.Set("X-Tenant-ID", tenantID)
-	if c.authToken != "" {
-		req.Header.Set(c.authHeader, c.authToken)
+	if !c.authToken.IsEmpty() {
+		req.Header.Set(c.authHeader, c.authToken.Raw())
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -100,8 +102,8 @@ func (c *directoryHTTPClient) ResolveTenantSlug(ctx context.Context, slug string
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if c.authToken != "" {
-		req.Header.Set(c.authHeader, c.authToken)
+	if !c.authToken.IsEmpty() {
+		req.Header.Set(c.authHeader, c.authToken.Raw())
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -137,8 +139,8 @@ func (c *directoryHTTPClient) AddUserToOrganization(ctx context.Context, tenantI
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", tenantID)
-	if c.authToken != "" {
-		req.Header.Set(c.authHeader, c.authToken)
+	if !c.authToken.IsEmpty() {
+		req.Header.Set(c.authHeader, c.authToken.Raw())
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -158,8 +160,8 @@ func (c *directoryHTTPClient) RemoveUserFromOrganization(ctx context.Context, te
 		return err
 	}
 	req.Header.Set("X-Tenant-ID", tenantID)
-	if c.authToken != "" {
-		req.Header.Set(c.authHeader, c.authToken)
+	if !c.authToken.IsEmpty() {
+		req.Header.Set(c.authHeader, c.authToken.Raw())
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -179,8 +181,8 @@ func (c *directoryHTTPClient) ListUserOrganizations(ctx context.Context, tenantI
 		return nil, err
 	}
 	req.Header.Set("X-Tenant-ID", tenantID)
-	if c.authToken != "" {
-		req.Header.Set(c.authHeader, c.authToken)
+	if !c.authToken.IsEmpty() {
+		req.Header.Set(c.authHeader, c.authToken.Raw())
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

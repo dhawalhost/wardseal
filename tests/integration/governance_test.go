@@ -20,7 +20,7 @@ func TestGovernanceHealthCheck(t *testing.T) {
 	defer env.Teardown(t)
 
 	client := NewHTTPClient(env.GovServer.URL, env.TestTenantID)
-	resp := client.Get(t, "/health")
+	resp := client.Get(t, "/api/v1/governance/health")
 	AssertStatus(t, resp, http.StatusOK)
 
 	var result map[string]interface{}
@@ -50,7 +50,7 @@ func TestOAuthClientCRUD(t *testing.T) {
 			"redirect_uris":  []string{"https://wardseal.com/callback"},
 			"allowed_scopes": []string{"openid", "profile"},
 		}
-		resp := client.Post(t, "/api/v1/oauth/clients", createReq)
+		resp := client.Post(t, "/api/v1/governance/oauth/clients", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -62,7 +62,7 @@ func TestOAuthClientCRUD(t *testing.T) {
 
 	// 2. List OAuth Clients
 	t.Run("List", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/oauth/clients")
+		resp := client.Get(t, "/api/v1/governance/oauth/clients")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -78,7 +78,7 @@ func TestOAuthClientCRUD(t *testing.T) {
 
 	// 3. Get OAuth Client
 	t.Run("Get", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/oauth/clients/integration-test-client")
+		resp := client.Get(t, "/api/v1/governance/oauth/clients/integration-test-client")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -94,7 +94,7 @@ func TestOAuthClientCRUD(t *testing.T) {
 			"name":          "Updated Integration Test Client",
 			"redirect_uris": []string{"https://wardseal.com/callback", "https://wardseal.com/callback2"},
 		}
-		resp := client.Put(t, "/api/v1/oauth/clients/integration-test-client", updateReq)
+		resp := client.Put(t, "/api/v1/governance/oauth/clients/integration-test-client", updateReq)
 		AssertStatus(t, resp, http.StatusOK)
 
 		var updated map[string]interface{}
@@ -106,11 +106,11 @@ func TestOAuthClientCRUD(t *testing.T) {
 
 	// 5. Delete OAuth Client
 	t.Run("Delete", func(t *testing.T) {
-		resp := client.Delete(t, "/api/v1/oauth/clients/integration-test-client")
+		resp := client.Delete(t, "/api/v1/governance/oauth/clients/integration-test-client")
 		AssertStatus(t, resp, http.StatusNoContent)
 
 		// Verify deletion
-		getResp := client.Get(t, "/api/v1/oauth/clients/integration-test-client")
+		getResp := client.Get(t, "/api/v1/governance/oauth/clients/integration-test-client")
 		AssertStatus(t, getResp, http.StatusNotFound)
 	})
 }
@@ -225,7 +225,7 @@ func TestOAuthClientValidation(t *testing.T) {
 			"client_type":   "public",
 			"redirect_uris": []string{"https://wardseal.com/callback"},
 		}
-		resp := client.Post(t, "/api/v1/oauth/clients", createReq)
+		resp := client.Post(t, "/api/v1/governance/oauth/clients", createReq)
 		AssertStatus(t, resp, http.StatusBadRequest)
 	})
 
@@ -237,7 +237,7 @@ func TestOAuthClientValidation(t *testing.T) {
 			"client_type":   "public",
 			"redirect_uris": []string{"not-a-valid-uri"},
 		}
-		resp := client.Post(t, "/api/v1/oauth/clients", createReq)
+		resp := client.Post(t, "/api/v1/governance/oauth/clients", createReq)
 		AssertStatus(t, resp, http.StatusBadRequest)
 	})
 }

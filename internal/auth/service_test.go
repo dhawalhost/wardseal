@@ -12,11 +12,9 @@ import (
 
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 func TestAuthorizationCodePkceFlow(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	as := newTestService(t)
 
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
@@ -54,7 +52,6 @@ func TestAuthorizationCodePkceFlow(t *testing.T) {
 }
 
 func TestTokenFailsWithInvalidVerifier(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	as := newTestService(t)
 
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
@@ -158,16 +155,20 @@ func extractCode(t *testing.T, redirect string) string {
 
 func contextWithTenant(t *testing.T, tenant string) context.Context {
 	t.Helper()
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set(middleware.DefaultTenantHeader, tenant)
-	c.Request = req
-	middleware.TenantExtractor(middleware.TenantConfig{})(c)
-	if c.IsAborted() {
-		t.Fatalf("tenant extractor aborted request")
+
+	// Use the actual middleware to inject the tenant ID
+	var ctx context.Context
+	mw := middleware.TenantExtractor(middleware.TenantConfig{})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx = r.Context()
+	}))
+
+	mw.ServeHTTP(httptest.NewRecorder(), req)
+	if ctx == nil {
+		t.Fatalf("tenant extractor failed to inject tenant ID")
 	}
-	return c.Request.Context()
+	return ctx
 }
 
 func newTestService(t *testing.T) *authService {

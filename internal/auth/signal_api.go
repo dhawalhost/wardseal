@@ -1,33 +1,32 @@
 package auth
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
-	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/dhawalhost/gokit/response"
 	"go.uber.org/zap"
 )
 
 // IngestSignalRequest defines the payload for ingestion.
 type IngestSignalRequest struct {
-	SubjectID string `json:"subject_id" binding:"required"`
-	EventType string `json:"event_type" binding:"required"`
+	SubjectID string `json:"subject_id"`
+	EventType string `json:"event_type"`
 	Reason    string `json:"reason"`
 }
 
 // ingestSignal handles the POST /api/v1/signals/ingest
-func (h *HTTPHandler) ingestSignal(c *gin.Context) {
+func (h *HTTPHandler) ingestSignal(w http.ResponseWriter, r *http.Request) {
 	var req IngestSignalRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		h.logger.Error("Failed to extract tenant ID", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing tenant context"})
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
@@ -39,11 +38,11 @@ func (h *HTTPHandler) ingestSignal(c *gin.Context) {
 		EventTime: time.Now(),
 	}
 
-	if err := h.svc.Signal().Ingest(c.Request.Context(), event); err != nil {
+	if err := h.svc.Signal().Ingest(r.Context(), event); err != nil {
 		h.logger.Error("Failed to ingest signal", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to ingest signal"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to ingest signal"})
 		return
 	}
 
-	c.Status(http.StatusAccepted)
+	response.JSON(w, r, http.StatusAccepted, map[string]string{"message": "signal ingested"})
 }

@@ -73,29 +73,28 @@ func (r *sqlWebAuthnRepository) SaveCredential(ctx context.Context, tenantID, us
 		INSERT INTO webauthn_credentials (
 			id, tenant_id, user_id, credential_id, public_key, attestation_type, aaguid, sign_count, clone_warning, updated_at
 		) VALUES (
-			:id, :tenant_id, :user_id, :credential_id, :public_key, :attestation_type, :aaguid, :sign_count, :clone_warning, :updated_at
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
 	`
-	entity := map[string]interface{}{
-		"id":               uuid.New().String(),
-		"tenant_id":        tenantID,
-		"user_id":          userID,
-		"credential_id":    cred.ID,
-		"public_key":       cred.PublicKey,
-		"attestation_type": cred.AttestationType,
-		"aaguid":           cred.Authenticator.AAGUID,
-		"sign_count":       cred.Authenticator.SignCount,
-		"clone_warning":    cred.Authenticator.CloneWarning,
-		"updated_at":       time.Now(),
-	}
-	_, err := r.db.NamedExecContext(ctx, query, entity)
+	err := r.db.WithContext(ctx).Exec(query,
+		uuid.New().String(),
+		tenantID,
+		userID,
+		cred.ID,
+		cred.PublicKey,
+		cred.AttestationType,
+		cred.Authenticator.AAGUID,
+		cred.Authenticator.SignCount,
+		cred.Authenticator.CloneWarning,
+		time.Now(),
+	).Error
 	return err
 }
 
 func (r *sqlWebAuthnRepository) ListCredentials(ctx context.Context, userID string) ([]webauthn.Credential, error) {
 	var entities []WebAuthnCredentialEntity
 	query := `SELECT * FROM webauthn_credentials WHERE user_id = $1`
-	err := r.db.WithContext(ctx).Raw(query, userID).Scan(&entities)
+	err := r.db.WithContext(ctx).Raw(query, userID).Scan(&entities).Error
 	if err != nil {
 		return nil, err
 	}
@@ -119,15 +118,9 @@ func (r *sqlWebAuthnRepository) ListCredentials(ctx context.Context, userID stri
 func (r *sqlWebAuthnRepository) UpdateCredential(ctx context.Context, cred *webauthn.Credential) error {
 	query := `
 		UPDATE webauthn_credentials 
-		SET sign_count = :sign_count, clone_warning = :clone_warning, updated_at = :updated_at
-		WHERE credential_id = :credential_id
+		SET sign_count = ?, clone_warning = ?, updated_at = ?
+		WHERE credential_id = ?
 	`
-	params := map[string]interface{}{
-		"sign_count":    cred.Authenticator.SignCount,
-		"clone_warning": cred.Authenticator.CloneWarning,
-		"updated_at":    time.Now(),
-		"credential_id": cred.ID,
-	}
-	_, err := r.db.NamedExecContext(ctx, query, params)
+	err := r.db.WithContext(ctx).Exec(query, cred.Authenticator.SignCount, cred.Authenticator.CloneWarning, time.Now(), cred.ID).Error
 	return err
 }

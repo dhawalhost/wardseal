@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Event represents an audit log entry.
@@ -63,21 +63,20 @@ type Repository interface {
 }
 
 type sqlRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewRepository creates a new audit repository.
-func NewRepository(db *sqlx.DB) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return &sqlRepository{db: db}
 }
 
 func (s *sqlRepository) Log(ctx context.Context, e Event) (string, error) {
 	var id string
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO audit_logs (tenant_id, actor_id, actor_type, action, resource_type, resource_id, resource_name, details, ip_address, user_agent, outcome)
+	err := s.db.WithContext(ctx).Raw(`INSERT INTO audit_logs (tenant_id, actor_id, actor_type, action, resource_type, resource_id, resource_name, details, ip_address, user_agent, outcome)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
 		e.TenantID, e.ActorID, e.ActorType, e.Action, e.ResourceType, e.ResourceID, e.ResourceName, e.Details, e.IPAddress, e.UserAgent, e.Outcome,
-	).Scan(&id)
+	).Scan(&id).Error
 	return id, err
 }
 
@@ -133,7 +132,7 @@ func (s *sqlRepository) Query(ctx context.Context, params QueryParams) ([]Event,
 
 	// Get total count
 	var total int
-	if err := s.db.GetContext(ctx, &total, countQuery, args...); err != nil {
+	if err := s.db.WithContext(ctx).Raw(countQuery, args...).Scan(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -150,7 +149,7 @@ func (s *sqlRepository) Query(ctx context.Context, params QueryParams) ([]Event,
 	}
 
 	var events []Event
-	if err := s.db.SelectContext(ctx, &events, query, args...); err != nil {
+	if err := s.db.WithContext(ctx).Raw(query, args...).Scan(&events).Error; err != nil {
 		return nil, 0, err
 	}
 	return events, total, nil
@@ -158,7 +157,7 @@ func (s *sqlRepository) Query(ctx context.Context, params QueryParams) ([]Event,
 
 func (s *sqlRepository) GetEvent(ctx context.Context, tenantID, id string) (Event, error) {
 	var e Event
-	err := s.db.GetContext(ctx, &e, `SELECT * FROM audit_logs WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM audit_logs WHERE id = $1 AND tenant_id = $2`, id, tenantID).Scan(&e).Error
 	return e, err
 }
 

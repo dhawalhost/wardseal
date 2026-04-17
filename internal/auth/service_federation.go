@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,9 +18,9 @@ import (
 
 // SocialLogin handles the login/registration via an external provider.
 func (s *authService) SocialLogin(ctx context.Context, req SocialLoginRequest) (TokenResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
-	if err != nil {
-		return TokenResponse{}, err
+	tenantID, ok := middleware.TenantIDFromContext(ctx)
+	if !ok {
+		return TokenResponse{}, errors.New("tenant context required")
 	}
 
 	// 1. Validate Provider & Exchange Token
@@ -220,7 +221,7 @@ func (s *authService) findUserByEmail(ctx context.Context, tenantID, email strin
 	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
 	// Internal Auth for SCIM requires Bearer Token format
 	if s.serviceAuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken)
+		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken.Raw())
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -296,7 +297,7 @@ func (s *authService) provisionUser(ctx context.Context, tenantID, email, name s
 	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
 	// Internal Auth for SCIM requires Bearer Token format
 	if s.serviceAuthToken != "" {
-		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken)
+		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken.Raw())
 	}
 
 	resp, err := s.httpClient.Do(req)

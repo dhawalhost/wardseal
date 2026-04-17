@@ -2,9 +2,8 @@ package connector
 
 import (
 	"context"
-	"encoding/json"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Repository defines connector storage operations.
@@ -17,92 +16,42 @@ type Repository interface {
 	Toggle(ctx context.Context, tenantID, id string, enabled bool) error
 }
 
-type sqlRepository struct {
-	db *sqlx.DB
+type gormRepository struct {
+	db *gorm.DB
 }
 
 // NewRepository creates a new connector repository.
-func NewRepository(db *sqlx.DB) Repository {
-	return &sqlRepository{db: db}
+func NewRepository(db *gorm.DB) Repository {
+	return &gormRepository{db: db}
 }
 
-func (s *sqlRepository) Create(ctx context.Context, config Config) (string, error) {
-	var id string
-	credentials, _ := json.Marshal(config.Credentials) // Should be encrypted in real app
-	settings, _ := json.Marshal(config.Settings)
-
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO connectors (tenant_id, name, type, enabled, endpoint, credentials, settings)
-		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-		config.TenantID, config.Name, config.Type, config.Enabled, config.Endpoint, credentials, settings,
-	).Scan(&id)
-	return id, err
+func (s *gormRepository) Create(ctx context.Context, config Config) (string, error) {
+	err := s.db.WithContext(ctx).Create(&config).Error
+	return config.ID, err
 }
 
-func (s *sqlRepository) Get(ctx context.Context, tenantID, id string) (Config, error) {
-	var c struct {
-		Config
-		CredentialsRaw []byte `db:"credentials"`
-		SettingsRaw    []byte `db:"settings"`
-	}
-	err := s.db.GetContext(ctx, &c,
-		`SELECT * FROM connectors WHERE id = $1 AND tenant_id = $2`, id, tenantID)
-	if err != nil {
-		return Config{}, err
-	}
-
-	c.Credentials = make(map[string]string)
-	c.Settings = make(map[string]string)
-	_ = json.Unmarshal(c.CredentialsRaw, &c.Credentials)
-	_ = json.Unmarshal(c.SettingsRaw, &c.Settings)
-
-	return c.Config, nil
+func (s *gormRepository) Get(ctx context.Context, tenantID, id string) (Config, error) {
+	var c Config
+	err := s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", id, tenantID).First(&c).Error
+	return c, err
 }
 
-func (s *sqlRepository) List(ctx context.Context, tenantID string) ([]Config, error) {
-	var rows []struct {
-		Config
-		CredentialsRaw []byte `db:"credentials"`
-		SettingsRaw    []byte `db:"settings"`
-	}
-	err := s.db.SelectContext(ctx, &rows,
-		`SELECT * FROM connectors WHERE tenant_id = $1 ORDER BY name`, tenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	configs := make([]Config, len(rows))
-	for i, r := range rows {
-		r.Credentials = make(map[string]string)
-		r.Settings = make(map[string]string)
-		_ = json.Unmarshal(r.CredentialsRaw, &r.Credentials)
-		_ = json.Unmarshal(r.SettingsRaw, &r.Settings)
-		configs[i] = r.Config
-	}
-	return configs, nil
+func (s *gormRepository) List(ctx context.Context, tenantID string) ([]Config, error) {
+	var configs []Config
+	err := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID).Order("name").Find(&configs).Error
+	return configs, err
 }
 
-func (s *sqlRepository) Update(ctx context.Context, config Config) error {
-	credentials, _ := json.Marshal(config.Credentials)
-	settings, _ := json.Marshal(config.Settings)
-
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE connectors SET 
-			name = $1, enabled = $2, endpoint = $3, credentials = $4, settings = $5, updated_at = NOW()
-		WHERE id = $6 AND tenant_id = $7`,
-		config.Name, config.Enabled, config.Endpoint, credentials, settings, config.ID, config.TenantID)
-	return err
+func (s *gormRepository) Update(ctx context.Context, config Config) error {
+	return s.db.WithContext(ctx).Save(&config).Error
 }
 
-func (s *sqlRepository) Delete(ctx context.Context, tenantID, id string) error {
-	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM connectors WHERE id = $1 AND tenant_id = $2`, id, tenantID)
-	return err
+func (s *gormRepository) Delete(ctx context.Context, tenantID, id string) error {
+	return s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", id, tenantID).Delete(&Config{}).Error
 }
 
-func (s *sqlRepository) Toggle(ctx context.Context, tenantID, id string, enabled bool) error {
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE connectors SET enabled = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3`,
-		enabled, id, tenantID)
-	return err
+func (s *gormRepository) Toggle(ctx context.Context, tenantID, id string, enabled bool) error {
+	return s.db.WithContext(ctx).Model(&Config{}).
+		Where("id = ? AND tenant_id = ?", id, tenantID).
+		Update("enabled", enabled).Error
 }

@@ -1,10 +1,12 @@
 package connector
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -19,162 +21,165 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 	return &HTTPHandler{svc: svc, logger: logger}
 }
 
-// RegisterRoutes registers connector routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	g := rg.Group("/connectors")
-	{
-		g.GET("", h.listConnectors)
-		g.POST("", h.createConnector)
-		g.GET("/:id", h.getConnector)
-		g.PUT("/:id", h.updateConnector)
-		g.DELETE("/:id", h.deleteConnector)
-		g.POST("/:id/toggle", h.toggleConnector)
-		g.POST("/test", h.testConnection)
-	}
+// Router registers connector routes.
+func (h *HTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/", h.listConnectors)
+	r.Post("/", h.createConnector)
+	r.Get("/{id}", h.getConnector)
+	r.Put("/{id}", h.updateConnector)
+	r.Delete("/{id}", h.deleteConnector)
+	r.Post("/{id}/toggle", h.toggleConnector)
+	r.Post("/test", h.testConnection)
+
+	return r
 }
 
-func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant id required"})
-		return "", false
-	}
-	return tenantID, true
+func (h *HTTPHandler) tenantID(r *http.Request) (string, bool) {
+	return middleware.TenantIDFromContext(r.Context())
 }
 
-func (h *HTTPHandler) listConnectors(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) listConnectors(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	connectors, err := h.svc.ListConnectors(c.Request.Context(), tenantID)
+	connectors, err := h.svc.ListConnectors(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to list connectors", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"connectors": connectors})
+	response.Ok(w, r, map[string]interface{}{"connectors": connectors})
 }
 
-func (h *HTTPHandler) createConnector(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) createConnector(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var config Config
-	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	id, err := h.svc.CreateConnector(c.Request.Context(), tenantID, config)
+	id, err := h.svc.CreateConnector(r.Context(), tenantID, config)
 	if err != nil {
 		h.logger.Error("Failed to create connector", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"id": id})
+	response.JSON(w, r, http.StatusCreated, map[string]string{"id": id})
 }
 
-func (h *HTTPHandler) getConnector(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) getConnector(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	config, err := h.svc.GetConnector(c.Request.Context(), tenantID, id)
+	id := chi.URLParam(r, "id")
+	config, err := h.svc.GetConnector(r.Context(), tenantID, id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "connector not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "connector not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, config)
+	response.Ok(w, r, config)
 }
 
-func (h *HTTPHandler) updateConnector(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) updateConnector(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var config Config
-	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	config.ID = c.Param("id")
+	config.ID = chi.URLParam(r, "id")
 
-	if err := h.svc.UpdateConnector(c.Request.Context(), tenantID, config); err != nil {
+	if err := h.svc.UpdateConnector(r.Context(), tenantID, config); err != nil {
 		h.logger.Error("Failed to update connector", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "updated"})
+	response.Ok(w, r, map[string]string{"message": "updated"})
 }
 
-func (h *HTTPHandler) deleteConnector(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) deleteConnector(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.DeleteConnector(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.DeleteConnector(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to delete connector", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }
 
-func (h *HTTPHandler) toggleConnector(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) toggleConnector(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var req struct {
 		Enabled bool `json:"enabled"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.ToggleConnector(c.Request.Context(), tenantID, id, req.Enabled); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.ToggleConnector(r.Context(), tenantID, id, req.Enabled); err != nil {
 		h.logger.Error("Failed to toggle connector", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"enabled": req.Enabled})
+	response.Ok(w, r, map[string]bool{"enabled": req.Enabled})
 }
 
-func (h *HTTPHandler) testConnection(c *gin.Context) {
+func (h *HTTPHandler) testConnection(w http.ResponseWriter, r *http.Request) {
 	// For testing, tenant ID isn't strictly necessary but good practice
-	_, ok := h.tenantID(c)
+	_, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var config Config
-	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	if err := h.svc.TestConnection(c.Request.Context(), config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "status": "failed"})
+	if err := h.svc.TestConnection(r.Context(), config); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]interface{}{"error": err.Error(), "status": "failed"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	response.Ok(w, r, map[string]string{"status": "success"})
 }

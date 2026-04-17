@@ -12,7 +12,7 @@ import (
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +52,6 @@ func (m *MockService) Introspect(ctx context.Context, req auth.IntrospectRequest
 }
 func (m *MockService) Revoke(ctx context.Context, req auth.RevokeRequest) error { return nil }
 func (m *MockService) SAML() *saml.Provider                                     { return nil }
-func (m *MockService) JWKS() jose.JSONWebKeySet                                 { return jose.JSONWebKeySet{} }
 func (m *MockService) Device() auth.DeviceRepository                            { return nil }
 func (m *MockService) Signal() auth.SignalRepository                            { return nil }
 func (m *MockService) WebAuthn() *webauthn.WebAuthn                             { return nil }
@@ -106,16 +105,20 @@ func (m *MockService) LoginWithMFAStepUp(ctx context.Context, stepUpToken, totpC
 	return "", nil
 }
 
+func (m *MockService) JWKS() jose.JSONWebKeySet {
+	args := m.Called()
+	return args.Get(0).(jose.JSONWebKeySet)
+}
+
 // Simple test to verify the HTTP wiring for Setup and Login
 func TestSystemSetupAndLoginFlow(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	mockSvc := new(MockService)
 	// LoginAttemptStore and DeveloperAppStore can be nil for this test
 	h := auth.NewHTTPHandler(mockSvc, nil, nil, nil)
 
-	router := gin.New()
-	h.RegisterRoutes(router)
+	router := chi.NewRouter()
+	router.Mount("/api/v1", h.Router())
+	router.Mount("/t/{tenantID}", h.Router()) // Mock the tenant-prefixed routes if needed
 
 	t.Run("Check Setup Status", func(t *testing.T) {
 		mockSvc.On("GetSystemSetupStatus", mock.Anything).Return(true, nil).Once()
@@ -156,8 +159,6 @@ func TestSystemSetupAndLoginFlow(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/t/11111111-1111-1111-1111-111111111111/login", bytes.NewReader(jsonBody))
-		// Mock Tenant ID as if we are on the login page (setup usually assumes system tenant or no tenant initially/discovery)
-		// UI might send a header.
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Tenant-ID", "11111111-1111-1111-1111-111111111111")
 		router.ServeHTTP(w, req)

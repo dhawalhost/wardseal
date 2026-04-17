@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -38,7 +37,7 @@ func NewBrandingRepository(db *gorm.DB) BrandingRepository {
 
 func (s *sqlBrandingRepository) Get(ctx context.Context, tenantID string) (BrandingConfig, error) {
 	var b BrandingConfig
-	err := s.db.WithContext(ctx).Raw(`SELECT * FROM tenant_branding WHERE tenant_id = $1`, tenantID).Scan(&b)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM tenant_branding WHERE tenant_id = $1`, tenantID).Scan(&b).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// Return default config if not found
@@ -52,7 +51,7 @@ func (s *sqlBrandingRepository) Get(ctx context.Context, tenantID string) (Brand
 func (s *sqlBrandingRepository) Upsert(ctx context.Context, config BrandingConfig) error {
 	query := `
 		INSERT INTO tenant_branding (tenant_id, logo_url, primary_color, background_color, css_override, config, updated_at)
-		VALUES (:tenant_id, :logo_url, :primary_color, :background_color, :css_override, :config::jsonb, NOW())
+		VALUES (?, ?, ?, ?, ?, ?::jsonb, NOW())
 		ON CONFLICT (tenant_id) DO UPDATE SET
 			logo_url = EXCLUDED.logo_url,
 			primary_color = EXCLUDED.primary_color,
@@ -61,6 +60,8 @@ func (s *sqlBrandingRepository) Upsert(ctx context.Context, config BrandingConfi
 			config = EXCLUDED.config,
 			updated_at = NOW()
 	`
-	_, err := s.db.NamedExecContext(ctx, query, config)
+	err := s.db.WithContext(ctx).Exec(query,
+		config.TenantID, config.LogoURL, config.PrimaryColor,
+		config.BackgroundColor, config.CSSOverride, config.Config).Error
 	return err
 }

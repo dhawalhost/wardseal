@@ -2,29 +2,27 @@ package webhook
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 type service struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
 // NewService creates a new webhooks service.
-func NewService(db *sqlx.DB) Service {
+func NewService(db *gorm.DB) Service {
 	return &service{db: db}
 }
 
 func (s *service) CreateWebhook(ctx context.Context, tenantID, url, secret string, events []string) (string, error) {
 	var id string
-	err := s.db.QueryRowContext(ctx,
-		`INSERT INTO webhooks (tenant_id, url, secret, events, active) 
+	err := s.db.WithContext(ctx).Raw(`INSERT INTO webhooks (tenant_id, url, secret, events, active) 
 		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		tenantID, url, secret, pq.Array(events), true).Scan(&id)
+		tenantID, url, secret, pq.Array(events), true).Scan(&id).Error
 	if err != nil {
 		return "", fmt.Errorf("create webhook: %w", err)
 	}
@@ -33,9 +31,9 @@ func (s *service) CreateWebhook(ctx context.Context, tenantID, url, secret strin
 
 func (s *service) GetWebhook(ctx context.Context, tenantID, id string) (*Webhook, error) {
 	var w Webhook
-	err := s.db.GetContext(ctx, &w, `SELECT * FROM webhooks WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM webhooks WHERE id = $1 AND tenant_id = $2`, id, tenantID).Scan(&w).Error
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get webhook: %w", err)
@@ -45,7 +43,7 @@ func (s *service) GetWebhook(ctx context.Context, tenantID, id string) (*Webhook
 
 func (s *service) ListWebhooks(ctx context.Context, tenantID string) ([]Webhook, error) {
 	var webhooks []Webhook
-	err := s.db.SelectContext(ctx, &webhooks, `SELECT * FROM webhooks WHERE tenant_id = $1 ORDER BY created_at DESC`, tenantID)
+	err := s.db.WithContext(ctx).Raw(`SELECT * FROM webhooks WHERE tenant_id = $1 ORDER BY created_at DESC`, tenantID).Scan(&webhooks).Error
 	if err != nil {
 		return nil, fmt.Errorf("list webhooks: %w", err)
 	}
@@ -53,7 +51,7 @@ func (s *service) ListWebhooks(ctx context.Context, tenantID string) ([]Webhook,
 }
 
 func (s *service) DeleteWebhook(ctx context.Context, tenantID, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM webhooks WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := s.db.WithContext(ctx).Exec(`DELETE FROM webhooks WHERE id = $1 AND tenant_id = $2`, id, tenantID).Error
 	if err != nil {
 		return fmt.Errorf("delete webhook: %w", err)
 	}
@@ -62,11 +60,9 @@ func (s *service) DeleteWebhook(ctx context.Context, tenantID, id string) error 
 
 func (s *service) GetWebhooksForEvent(ctx context.Context, tenantID, event string) ([]Webhook, error) {
 	var webhooks []Webhook
-	// Postgres array containment operator @> or explicit check
-	// Using ANY operator for better compatibility with pq.Array
-	err := s.db.SelectContext(ctx, &webhooks,
+	err := s.db.WithContext(ctx).Raw(
 		`SELECT * FROM webhooks WHERE tenant_id = $1 AND active = true AND $2 = ANY(events)`,
-		tenantID, event)
+		tenantID, event).Scan(&webhooks).Error
 	if err != nil {
 		return nil, fmt.Errorf("get webhooks for event: %w", err)
 	}

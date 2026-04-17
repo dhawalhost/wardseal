@@ -65,10 +65,7 @@ func (s *service) ListRoles(ctx context.Context, tenantID string) ([]Role, error
 
 func (s *service) UpdateRole(ctx context.Context, tenantID, id, name, description string) (Role, error) {
 	r := Role{Name: name, Description: description}
-	if err := s.store.UpdateRole(ctx, id, r); err != nil {
-		return Role{}, fmt.Errorf("failed to update role: %w", err)
-	}
-	return s.store.GetRole(ctx, tenantID, id)
+	return s.store.UpdateRole(ctx, id, r)
 }
 
 func (s *service) DeleteRole(ctx context.Context, tenantID, id string) error {

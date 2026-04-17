@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"gorm.io/gorm"
@@ -27,7 +26,7 @@ func NewTenantRepository(db *gorm.DB) TenantRepository {
 func (r *sqlTenantRepository) GetIDBySlug(ctx context.Context, slug string) (string, error) {
 	var id string
 	query := `SELECT id FROM tenants WHERE slug = $1`
-	err := r.db.WithContext(ctx).Raw(query, slug).Scan(&id)
+	err := r.db.WithContext(ctx).Raw(query, slug).Scan(&id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil
@@ -40,7 +39,7 @@ func (r *sqlTenantRepository) GetIDBySlug(ctx context.Context, slug string) (str
 func (r *sqlTenantRepository) GetSlugByID(ctx context.Context, id string) (string, error) {
 	var slug string
 	query := `SELECT slug FROM tenants WHERE id = $1`
-	err := r.db.WithContext(ctx).Raw(query, id).Scan(&slug)
+	err := r.db.WithContext(ctx).Raw(query, id).Scan(&slug).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil

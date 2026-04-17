@@ -26,7 +26,7 @@ func TestWebhookCRUD(t *testing.T) {
 			"events": []string{"user.created", "user.updated", "user.deleted"},
 			"secret": "webhook-secret-key",
 		}
-		resp := client.Post(t, "/api/v1/webhooks", createReq)
+		resp := client.Post(t, "/api/v1/governance/webhooks", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -40,7 +40,7 @@ func TestWebhookCRUD(t *testing.T) {
 
 	// 2. List Webhooks
 	t.Run("List", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/webhooks")
+		resp := client.Get(t, "/api/v1/governance/webhooks")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -59,7 +59,7 @@ func TestWebhookCRUD(t *testing.T) {
 		if createdWebhookID == "" {
 			t.Skip("No webhook ID from create step")
 		}
-		resp := client.Get(t, "/api/v1/webhooks/"+createdWebhookID)
+		resp := client.Get(t, "/api/v1/governance/webhooks/"+createdWebhookID)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -68,11 +68,11 @@ func TestWebhookCRUD(t *testing.T) {
 		if createdWebhookID == "" {
 			t.Skip("No webhook ID from create step")
 		}
-		resp := client.Delete(t, "/api/v1/webhooks/"+createdWebhookID)
+		resp := client.Delete(t, "/api/v1/governance/webhooks/"+createdWebhookID)
 		AssertStatus(t, resp, http.StatusNoContent)
 
 		// Verify deletion
-		getResp := client.Get(t, "/api/v1/webhooks/"+createdWebhookID)
+		getResp := client.Get(t, "/api/v1/governance/webhooks/"+createdWebhookID)
 		if getResp.StatusCode != http.StatusNotFound {
 			t.Errorf("Expected 404 after deletion, got %d", getResp.StatusCode)
 		}
@@ -96,7 +96,7 @@ func TestWebhookValidation(t *testing.T) {
 			"events": []string{"user.created"},
 			"secret": "secret",
 		}
-		resp := client.Post(t, "/api/v1/webhooks", createReq)
+		resp := client.Post(t, "/api/v1/governance/webhooks", createReq)
 		AssertStatus(t, resp, http.StatusBadRequest)
 	})
 
@@ -107,7 +107,7 @@ func TestWebhookValidation(t *testing.T) {
 			"events": []string{"user.created"},
 			"secret": "secret",
 		}
-		resp := client.Post(t, "/api/v1/webhooks", createReq)
+		resp := client.Post(t, "/api/v1/governance/webhooks", createReq)
 		// Should fail validation
 		if resp.StatusCode == http.StatusCreated {
 			t.Error("Expected error for invalid URL")
@@ -134,7 +134,7 @@ func TestOrganizationCRUD(t *testing.T) {
 			"domain":      "testorg.wardseal.com",
 			"description": "A test organization",
 		}
-		resp := client.Post(t, "/api/v1/organizations", createReq)
+		resp := client.Post(t, "/api/v1/governance/organizations", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -148,7 +148,7 @@ func TestOrganizationCRUD(t *testing.T) {
 
 	// 2. List Organizations
 	t.Run("List", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/organizations")
+		resp := client.Get(t, "/api/v1/governance/organizations")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -163,7 +163,7 @@ func TestOrganizationCRUD(t *testing.T) {
 		if createdOrgID == "" {
 			t.Skip("No organization ID from create step")
 		}
-		resp := client.Get(t, "/api/v1/organizations/"+createdOrgID)
+		resp := client.Get(t, "/api/v1/governance/organizations/"+createdOrgID)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -176,7 +176,7 @@ func TestOrganizationCRUD(t *testing.T) {
 			"name":        "Updated Test Organization",
 			"description": "Updated description",
 		}
-		resp := client.Put(t, "/api/v1/organizations/"+createdOrgID, updateReq)
+		resp := client.Put(t, "/api/v1/governance/organizations/"+createdOrgID, updateReq)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -185,7 +185,7 @@ func TestOrganizationCRUD(t *testing.T) {
 		if createdOrgID == "" {
 			t.Skip("No organization ID from create step")
 		}
-		resp := client.Delete(t, "/api/v1/organizations/"+createdOrgID)
+		resp := client.Delete(t, "/api/v1/governance/organizations/"+createdOrgID)
 		AssertStatus(t, resp, http.StatusNoContent)
 	})
 }

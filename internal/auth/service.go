@@ -28,6 +28,7 @@ import (
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/kms"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/types"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/golang-jwt/jwt/v5"
@@ -97,7 +98,7 @@ type authService struct {
 	httpClient          *http.Client
 	signer              kms.Signer
 	serviceAuthHeader   string
-	serviceAuthToken    string
+	serviceAuthToken    types.Secret
 	codeStore           AuthorizationCodeRepository
 	refreshTokenStore   RefreshTokenRepository
 	revokedTokens       RevocationRepository
@@ -145,7 +146,7 @@ type RevocationRepository interface {
 // Config captures the settings for the auth service.
 type Config struct {
 	DirectoryServiceURL string
-	ServiceAuthToken    string
+	ServiceAuthToken    types.Secret
 	ServiceAuthHeader   string
 	Clients             []ClientConfig
 	ClientStore         oauthclient.Repository
@@ -315,9 +316,9 @@ func NewService(cfg Config) (Service, error) {
 }
 
 func (s *authService) Login(ctx context.Context, username, password, deviceID, userAgent, ip, clientOSVersion string) (string, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
-	if err != nil {
-		return "", err
+	tenantID, ok := middleware.TenantIDFromContext(ctx)
+	if !ok {
+		return "", errors.New("tenant context required")
 	}
 	payload := map[string]string{
 		"email":    username,
@@ -334,8 +335,8 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
-	if s.serviceAuthToken != "" {
-		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	if !s.serviceAuthToken.IsEmpty() {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 	}
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -525,8 +526,8 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 		q.Add("email", email)
 		req.URL.RawQuery = q.Encode()
 
-		if s.serviceAuthToken != "" {
-			req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+		if !s.serviceAuthToken.IsEmpty() {
+			req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 		}
 
 		resp, err := s.httpClient.Do(req)
@@ -562,8 +563,8 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
-	if s.serviceAuthToken != "" {
-		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	if !s.serviceAuthToken.IsEmpty() {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -654,9 +655,9 @@ func (s *authService) ResolveTenantSlug(ctx context.Context, slug string) (strin
 }
 
 func (s *authService) Authorize(ctx context.Context, userID string, req AuthorizeRequest) (AuthorizeResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
-	if err != nil {
-		return AuthorizeResponse{}, err
+	tenantID, ok := middleware.TenantIDFromContext(ctx)
+	if !ok {
+		return AuthorizeResponse{}, errors.New("tenant context required")
 	}
 	client, err := s.resolveClient(ctx, tenantID, req.ClientID)
 	if err != nil {
@@ -707,9 +708,9 @@ func (s *authService) Authorize(ctx context.Context, userID string, req Authoriz
 }
 
 func (s *authService) Token(ctx context.Context, req TokenRequest) (TokenResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
-	if err != nil {
-		return TokenResponse{}, err
+	tenantID, ok := middleware.TenantIDFromContext(ctx)
+	if !ok {
+		return TokenResponse{}, errors.New("tenant context required")
 	}
 
 	switch req.GrantType {
@@ -1542,8 +1543,8 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName, 
 			return "", "", "", err
 		}
 		reqTenant.Header.Set("Content-Type", "application/json")
-		if s.serviceAuthToken != "" {
-			reqTenant.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+		if !s.serviceAuthToken.IsEmpty() {
+			reqTenant.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 		}
 
 		respTenant, err := s.httpClient.Do(reqTenant)
@@ -1680,8 +1681,8 @@ func (s *authService) GetSystemSetupStatus(ctx context.Context) (bool, error) {
 	req.Header.Set("Content-Type", "application/json")
 	// Use system tenant ID to check THAT tenant
 	req.Header.Set(middleware.DefaultTenantHeader, systemTenantID)
-	if s.serviceAuthToken != "" {
-		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	if !s.serviceAuthToken.IsEmpty() {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -1753,8 +1754,8 @@ func (s *authService) PerformSystemSetup(ctx context.Context, email, password st
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, systemTenantID)
-	if s.serviceAuthToken != "" {
-		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	if !s.serviceAuthToken.IsEmpty() {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -1855,8 +1856,8 @@ func (s *authService) UpdateUserSelf(ctx context.Context, tenantID, userID strin
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
-	if s.serviceAuthToken != "" {
-		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	if !s.serviceAuthToken.IsEmpty() {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken.Raw())
 	}
 
 	resp, err := s.httpClient.Do(req)

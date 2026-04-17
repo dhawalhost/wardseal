@@ -27,7 +27,7 @@ func TestCampaignCRUD(t *testing.T) {
 			"reviewer_id": env.TestUserID,
 			"type":        "user_access",
 		}
-		resp := client.Post(t, "/api/v1/campaigns", createReq)
+		resp := client.Post(t, "/api/v1/governance/campaigns", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -41,7 +41,7 @@ func TestCampaignCRUD(t *testing.T) {
 
 	// 2. List Campaigns
 	t.Run("List", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/campaigns")
+		resp := client.Get(t, "/api/v1/governance/campaigns")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -60,7 +60,7 @@ func TestCampaignCRUD(t *testing.T) {
 		if createdCampaignID == "" {
 			t.Skip("No campaign ID from create step")
 		}
-		resp := client.Get(t, "/api/v1/campaigns/"+createdCampaignID)
+		resp := client.Get(t, "/api/v1/governance/campaigns/"+createdCampaignID)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -69,7 +69,7 @@ func TestCampaignCRUD(t *testing.T) {
 		if createdCampaignID == "" {
 			t.Skip("No campaign ID from create step")
 		}
-		resp := client.Post(t, "/api/v1/campaigns/"+createdCampaignID+"/start", nil)
+		resp := client.Post(t, "/api/v1/governance/campaigns/"+createdCampaignID+"/start", nil)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -78,7 +78,7 @@ func TestCampaignCRUD(t *testing.T) {
 		if createdCampaignID == "" {
 			t.Skip("No campaign ID from create step")
 		}
-		resp := client.Post(t, "/api/v1/campaigns/"+createdCampaignID+"/complete", nil)
+		resp := client.Post(t, "/api/v1/governance/campaigns/"+createdCampaignID+"/complete", nil)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -91,14 +91,14 @@ func TestCampaignCRUD(t *testing.T) {
 			"reviewer_id": env.TestUserID,
 			"type":        "user_access",
 		}
-		createResp := client.Post(t, "/api/v1/campaigns", createReq)
+		createResp := client.Post(t, "/api/v1/governance/campaigns", createReq)
 		AssertStatus(t, createResp, http.StatusCreated)
 
 		var created map[string]interface{}
 		ReadJSON(t, createResp, &created)
 		deleteID := created["id"].(string)
 
-		resp := client.Delete(t, "/api/v1/campaigns/"+deleteID)
+		resp := client.Delete(t, "/api/v1/governance/campaigns/"+deleteID)
 		AssertStatus(t, resp, http.StatusNoContent)
 	})
 }
@@ -115,7 +115,7 @@ func TestCampaignReviewItems(t *testing.T) {
 	client := NewHTTPClient(env.GovServer.URL, env.TestTenantID)
 
 	// Create a campaign
-	createResp := client.Post(t, "/api/v1/campaigns", map[string]interface{}{
+	createResp := client.Post(t, "/api/v1/governance/campaigns", map[string]interface{}{
 		"name":        "Review Items Test Campaign",
 		"description": "Campaign for review item testing",
 		"reviewer_id": env.TestUserID,
@@ -136,13 +136,13 @@ func TestCampaignReviewItems(t *testing.T) {
 			"resource_name": "Test Application",
 			"reviewer_id":   env.TestUserID,
 		}
-		resp := client.Post(t, "/api/v1/campaigns/"+campaignID+"/items", itemReq)
+		resp := client.Post(t, "/api/v1/governance/campaigns/"+campaignID+"/items", itemReq)
 		AssertStatus(t, resp, http.StatusCreated)
 	})
 
 	// List pending items
 	t.Run("ListPendingItems", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/campaigns/"+campaignID+"/items")
+		resp := client.Get(t, "/api/v1/governance/campaigns/"+campaignID+"/items")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -154,7 +154,7 @@ func TestCampaignReviewItems(t *testing.T) {
 
 	// List review items for reviewer
 	t.Run("ListReviewItems", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/campaigns/items?reviewer_id="+env.TestUserID)
+		resp := client.Get(t, "/api/v1/governance/campaigns/items?reviewer_id="+env.TestUserID)
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -165,7 +165,7 @@ func TestCampaignReviewItems(t *testing.T) {
 	})
 
 	// Cleanup
-	client.Delete(t, "/api/v1/campaigns/"+campaignID)
+	client.Delete(t, "/api/v1/governance/campaigns/"+campaignID)
 }
 
 // TestCampaignCancel tests cancelling a campaign.
@@ -180,7 +180,7 @@ func TestCampaignCancel(t *testing.T) {
 	client := NewHTTPClient(env.GovServer.URL, env.TestTenantID)
 
 	// Create a campaign
-	createResp := client.Post(t, "/api/v1/campaigns", map[string]interface{}{
+	createResp := client.Post(t, "/api/v1/governance/campaigns", map[string]interface{}{
 		"name":        "Cancel Test Campaign",
 		"description": "Campaign for cancel testing",
 		"reviewer_id": env.TestUserID,
@@ -193,13 +193,13 @@ func TestCampaignCancel(t *testing.T) {
 	campaignID := campaign["id"].(string)
 
 	// Start and then cancel
-	client.Post(t, "/api/v1/campaigns/"+campaignID+"/start", nil)
+	client.Post(t, "/api/v1/governance/campaigns/"+campaignID+"/start", nil)
 
 	t.Run("Cancel", func(t *testing.T) {
-		resp := client.Post(t, "/api/v1/campaigns/"+campaignID+"/cancel", nil)
+		resp := client.Post(t, "/api/v1/governance/campaigns/"+campaignID+"/cancel", nil)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
 	// Cleanup
-	client.Delete(t, "/api/v1/campaigns/"+campaignID)
+	client.Delete(t, "/api/v1/governance/campaigns/"+campaignID)
 }

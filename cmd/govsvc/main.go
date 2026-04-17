@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/dhawalhost/gokit/database"
+	"github.com/dhawalhost/gokit/logger"
+	"github.com/dhawalhost/gokit/observability"
 	"github.com/dhawalhost/wardseal/internal/audit"
 	"github.com/dhawalhost/wardseal/internal/connector"
 	"github.com/dhawalhost/wardseal/internal/connector/azuread"
@@ -18,41 +22,35 @@ import (
 	"github.com/dhawalhost/wardseal/internal/sso"
 	"github.com/dhawalhost/wardseal/internal/webhook"
 	"github.com/dhawalhost/wardseal/pkg/config"
-	"github.com/dhawalhost/wardseal/pkg/database"
-	"github.com/dhawalhost/wardseal/pkg/logger"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/dhawalhost/wardseal/pkg/observability"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 )
 
 func main() {
-	log := logger.NewFromEnv()
-	defer func() { _ = log.Sync() }()
-
 	// Load centralized configuration
 	cfg := config.MustLoad()
 
-	dbConfig := database.Config{
-		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password, // Securely injected by Vault if configured
-		DBName:   cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-	}
-
-	db, err := database.NewConnection(dbConfig)
+	isDev := cfg.Environment == config.Development
+	log, err := logger.New(cfg.Log.Level, isDev)
 	if err != nil {
-		log.Error("Failed to connect to database", zap.Error(err))
-		os.Exit(1)
+		panic(err)
 	}
-	clientRepo := oauthclient.NewRepository(db)
-	reqRepo := governance.NewRepository(db)
-	orgRepo := governance.NewOrganizationRepository(db)
+	defer func() { _ = log.Sync() }()
+
+	db, err := database.New(context.Background(), cfg.Database)
+	if err != nil {
+		log.Fatal("Failed to connect to database", zap.Error(err))
+	}
+	defer func() { _ = db.Close() }()
+
+	gormDB := db.GORM
+
+	clientRepo := oauthclient.NewRepository(gormDB)
+	reqRepo := governance.NewRepository(gormDB)
+	orgRepo := governance.NewOrganizationRepository(gormDB)
 
 	dirSvcURL := cfg.Governance.DirectoryServiceURL
 	dirClient := governance.NewDirectoryClient(dirSvcURL, cfg.Directory.ServiceAuthHeader, cfg.Directory.ServiceAuthToken)
@@ -60,168 +58,99 @@ func main() {
 	policyEngine := policy.NewSimpleEngine()
 	svc := governance.NewService(clientRepo, reqRepo, orgRepo, dirClient, policyEngine)
 
-	// Initialize metrics
-	metrics := observability.NewMetrics()
+	r := chi.NewRouter()
 
-	router := gin.Default()
+	// Global Middleware
+	r.Use(chimiddleware.RequestID)
+	r.Use(chimiddleware.RealIP)
+	r.Use(chimiddleware.Recoverer)
+	r.Use(chimiddleware.Timeout(60 * time.Second))
 
-	// Initialize OpenTelemetry tracing
-	shutdownTracer, err := observability.InitTracer(context.Background(), observability.TracerConfig{
-		ServiceName:    cfg.Observability.ServiceName,
-		ServiceVersion: cfg.Observability.ServiceVersion,
-		Environment:    string(cfg.Environment),
-	}, log)
+	// CORS configuration
+	if len(cfg.Governance.CORSAllowedOrigins) > 0 {
+		r.Use(cors.Handler(cors.Options{
+			AllowedOrigins:   cfg.Governance.CORSAllowedOrigins,
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Origin", "Content-Type", "Authorization", "X-Tenant-ID", "X-User-ID", "X-Device-ID", "X-OS-Version"},
+			AllowCredentials: true,
+			MaxAge:           300,
+		}))
+	}
+
+	// Observability
+	observability.InitMetrics("govsvc")
+	shutdownTracer, err := observability.InitTracer(context.Background(), cfg.Telemetry)
 	if err != nil {
 		log.Error("Failed to initialize tracer", zap.Error(err))
-	}
-	defer func() { _ = shutdownTracer(context.Background()) }()
-
-	// Add observability middleware
-	router.Use(otelgin.Middleware("govsvc"))
-	router.Use(observability.PrometheusMiddleware(metrics))
-	router.Use(logger.RequestLogger(log))
-
-	// Security Middleware
-	router.Use(middleware.SecurityHeadersMiddleware())
-
-	var rateLimitRedisClient *redis.Client
-	if cfg.Auth.RedisAddr != "" {
-		rateLimitRedisClient = redis.NewClient(&redis.Options{
-			Addr:     cfg.Auth.RedisAddr,
-			Password: cfg.Auth.RedisPassword,
-			DB:       cfg.Auth.RedisDB,
-		})
-		if err := rateLimitRedisClient.Ping(context.Background()).Err(); err != nil {
-			log.Warn("Distributed limiter Redis unavailable; will use strict degraded fallback",
-				zap.Error(err),
-				zap.String("redis_addr", cfg.Auth.RedisAddr))
-			rateLimitRedisClient = nil
-		}
-	}
-
-	router.Use(middleware.DistributedRateLimitMiddleware(middleware.DistributedRateLimitConfig{
-		RedisClient: rateLimitRedisClient,
-		KeyPrefix:   cfg.Auth.RateLimitKeyPrefix + ":govsvc",
-		UseTenant:   cfg.Auth.RateLimitUseTenant,
-		DefaultProfile: middleware.RateLimitWindowProfile{
-			Requests: cfg.Auth.RateLimitDefault.Requests,
-			Window:   cfg.Auth.RateLimitDefault.Window,
-		},
-		EndpointProfiles: map[string]middleware.RateLimitWindowProfile{
-			"login": {
-				Requests: cfg.Auth.RateLimitLogin.Requests,
-				Window:   cfg.Auth.RateLimitLogin.Window,
-			},
-			"token": {
-				Requests: cfg.Auth.RateLimitToken.Requests,
-				Window:   cfg.Auth.RateLimitToken.Window,
-			},
-			"setup": {
-				Requests: cfg.Auth.RateLimitSetup.Requests,
-				Window:   cfg.Auth.RateLimitSetup.Window,
-			},
-			"webhook": {
-				Requests: cfg.Auth.RateLimitWebhook.Requests,
-				Window:   cfg.Auth.RateLimitWebhook.Window,
-			},
-		},
-		DegradedProfile: middleware.RateLimitWindowProfile{
-			Requests: cfg.Auth.RateLimitDegraded.Requests,
-			Window:   cfg.Auth.RateLimitDegraded.Window,
-		},
-	}))
-
-	// API Logger Middleware
-	router.Use(middleware.APILogger(db, log))
-
-	corsConfig := cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "X-Tenant-ID", "X-User-ID", "X-Device-ID", "X-OS-Version", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}
-
-	origins := cfg.Governance.CORSAllowedOrigins
-	if len(origins) == 0 {
-		origins = []string{"http://localhost:5173", "http://127.0.0.1:5173"}
-	}
-
-	if allowsAllOrigins(origins) {
-		corsConfig.AllowAllOrigins = true
 	} else {
-		corsConfig.AllowOrigins = origins
+		defer func() { _ = shutdownTracer(context.Background()) }()
 	}
-	router.Use(cors.New(corsConfig))
 
-	// Add metrics endpoint
-	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
+	r.Handle("/metrics", observability.MetricsHandler())
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	})
 
-	campaignRepo := governance.NewCampaignRepository(db)
+	campaignRepo := governance.NewCampaignRepository(gormDB)
 	campaignSvc := governance.NewCampaignService(campaignRepo, dirClient)
-	webhookSvc := webhook.NewService(db)
+	webhookSvc := webhook.NewService(gormDB)
 
 	govHandlers := governance.NewHTTPHandler(svc, campaignSvc, webhookSvc, log)
-	govHandlers.RegisterRoutes(router)
 
-	apiGroup := router.Group("/api/v1")
-	apiGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
-		SlugResolver: dirClient.ResolveTenantSlug,
-	}))
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(middleware.TenantExtractor(middleware.TenantConfig{
+			HeaderName:   "X-Tenant-ID",
+			SlugResolver: dirClient.ResolveTenantSlug,
+		}))
 
-	// RBAC handlers
-	rbacRepo := rbac.NewRepository(db)
-	rbacSvc := rbac.NewService(rbacRepo)
-	rbacHandlers := rbac.NewHTTPHandler(rbacSvc, log)
-	rbacHandlers.RegisterRoutes(apiGroup)
+		// Governance Core
+		govHandlers.Register(r)
 
-	// Audit handlers
-	auditRepo := audit.NewRepository(db)
-	auditSvc := audit.NewService(auditRepo)
-	auditHandlers := audit.NewHTTPHandler(auditSvc, log)
-	auditHandlers.RegisterRoutes(apiGroup)
+		// RBAC handlers
+		rbacRepo := rbac.NewRepository(gormDB)
+		rbacSvc := rbac.NewService(rbacRepo)
+		rbacHandlers := rbac.NewHTTPHandler(rbacSvc, log)
+		rbacHandlers.Register(r)
 
-	// Domain verification handlers
-	domainVerifyHandler := governance.NewDomainVerificationHandler(db, orgRepo, log)
-	domainVerifyHandler.RegisterRoutes(apiGroup)
+		// Audit handlers
+		auditRepo := audit.NewRepository(gormDB)
+		auditSvc := audit.NewService(auditRepo)
+		auditHandlers := audit.NewHTTPHandler(auditSvc, log)
+		r.Mount("/audit", auditHandlers.Router())
 
-	// SSO handlers
-	ssoRepo := sso.NewRepository(db)
-	ssoSvc := sso.NewService(ssoRepo)
-	ssoHandlers := sso.NewHTTPHandler(ssoSvc, log)
-	ssoHandlers.RegisterRoutes(apiGroup)
+		// Domain verification handlers
+		domainVerifyHandler := governance.NewDomainVerificationHandler(gormDB, orgRepo, log)
+		domainVerifyHandler.Register(r)
 
-	// Connector Framework
-	connRegistry := connector.NewRegistry()
-	connRegistry.Register("scim", scim.New)
-	connRegistry.Register("ldap", ldap.New)
-	connRegistry.Register("azure-ad", azuread.New)
-	connRegistry.Register("google", google.New)
+		// SSO handlers
+		ssoRepo := sso.NewRepository(gormDB)
+		ssoSvc := sso.NewService(ssoRepo)
+		ssoHandlers := sso.NewHTTPHandler(ssoSvc, log)
+		r.Mount("/sso", ssoHandlers.Router())
 
-	connRepo := connector.NewRepository(db)
-	connSvc := connector.NewService(connRepo, connRegistry)
-	connHandlers := connector.NewHTTPHandler(connSvc, log)
-	connHandlers.RegisterRoutes(apiGroup)
+		// Connector Framework
+		connRegistry := connector.NewRegistry()
+		connRegistry.Register("scim", scim.New)
+		connRegistry.Register("ldap", ldap.New)
+		connRegistry.Register("azure-ad", azuread.New)
+		connRegistry.Register("google", google.New)
 
-	// Initialize active connectors from DB
-	// In a real app, this should be done more robustly
-	// ctx := context.Background()
-	// configs, _ := connStore.List(ctx, "") // Empty tenant ID for all? No, we need per tenant.
-	// For now, let's skip auto-loading on startup as we don't have multi-tenant iteration logic here easily.
-	// We rely on "lazy" loading or manual toggle in UI for this MVP.
+		connRepo := connector.NewRepository(gormDB)
+		connSvc := connector.NewService(connRepo, connRegistry)
+		connHandlers := connector.NewHTTPHandler(connSvc, log)
+		r.Mount("/connectors", connHandlers.Router())
+	})
 
 	log.Info("Governance service starting", zap.String("addr", ":8082"))
-	if err := router.Run(":8082"); err != nil {
+	srv := &http.Server{
+		Addr:         ":8082",
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Error("Governance service failed", zap.Error(err))
 		os.Exit(1)
 	}
-}
-
-func allowsAllOrigins(origins []string) bool {
-	for _, origin := range origins {
-		if origin == "*" {
-			return true
-		}
-	}
-	return false
 }

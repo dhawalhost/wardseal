@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 
+	"github.com/dhawalhost/wardseal/pkg/types"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -39,14 +40,14 @@ type Config struct {
 
 	// Vault configuration
 	VaultAddr      string
-	VaultToken     string
+	VaultToken     types.Secret
 	VaultKeyName   string
 	VaultKeyPath   string // Transit engine mount path (default: "transit")
 	VaultNamespace string // Vault namespace (Enterprise only)
 
 	// AppRole authentication (alternative to token)
 	VaultRoleID   string
-	VaultSecretID string
+	VaultSecretID types.Secret
 }
 
 // NewSigner creates a new Signer based on the configuration.

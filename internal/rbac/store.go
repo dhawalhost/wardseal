@@ -4,36 +4,44 @@ import (
 	"context"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Role represents an RBAC role.
 type Role struct {
-	ID          string    `json:"id" db:"id"`
-	TenantID    string    `json:"tenant_id" db:"tenant_id"`
-	Name        string    `json:"name" db:"name"`
-	Description string    `json:"description,omitempty" db:"description"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	TenantID    string         `gorm:"index;not null" json:"tenant_id"`
+	Name        string         `gorm:"not null" json:"name"`
+	Description string         `json:"description,omitempty"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // Permission represents an RBAC permission.
 type Permission struct {
-	ID          string    `json:"id" db:"id"`
-	TenantID    string    `json:"tenant_id" db:"tenant_id"`
-	Resource    string    `json:"resource" db:"resource"`
-	Action      string    `json:"action" db:"action"`
-	Description string    `json:"description,omitempty" db:"description"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	ID          string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	TenantID    string         `gorm:"index;not null" json:"tenant_id"`
+	Resource    string         `gorm:"not null" json:"resource"`
+	Action      string         `gorm:"not null" json:"action"`
+	Description string         `json:"description,omitempty"`
+	CreatedAt   time.Time      `json:"created_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // UserRole represents a user's role assignment.
 type UserRole struct {
-	UserID     string    `json:"user_id" db:"user_id"`
-	RoleID     string    `json:"role_id" db:"role_id"`
-	TenantID   string    `json:"tenant_id" db:"tenant_id"`
-	AssignedAt time.Time `json:"assigned_at" db:"assigned_at"`
-	AssignedBy *string   `json:"assigned_by,omitempty" db:"assigned_by"`
+	UserID     string    `gorm:"primaryKey" json:"user_id"`
+	RoleID     string    `gorm:"primaryKey;type:uuid" json:"role_id"`
+	TenantID   string    `gorm:"index;not null" json:"tenant_id"`
+	AssignedAt time.Time `gorm:"autoCreateTime" json:"assigned_at"`
+	AssignedBy *string   `json:"assigned_by,omitempty"`
+}
+
+// RolePermission represents the many-to-many relationship between roles and permissions.
+type RolePermission struct {
+	RoleID       string `gorm:"primaryKey;type:uuid"`
+	PermissionID string `gorm:"primaryKey;type:uuid"`
 }
 
 // Repository defines RBAC storage operations.
@@ -43,7 +51,7 @@ type Repository interface {
 	GetRole(ctx context.Context, tenantID, id string) (Role, error)
 	GetRoleByName(ctx context.Context, tenantID, name string) (Role, error)
 	ListRoles(ctx context.Context, tenantID string) ([]Role, error)
-	UpdateRole(ctx context.Context, id string, r Role) error
+	UpdateRole(ctx context.Context, id string, r Role) (Role, error)
 	DeleteRole(ctx context.Context, tenantID, id string) error
 
 	// Permissions
@@ -62,124 +70,111 @@ type Repository interface {
 	GetUserPermissions(ctx context.Context, tenantID, userID string) ([]Permission, error)
 }
 
-type sqlRepository struct {
-	db *sqlx.DB
+type gormRepository struct {
+	db *gorm.DB
 }
 
 // NewRepository creates a new RBAC repository.
-func NewRepository(db *sqlx.DB) Repository {
-	return &sqlRepository{db: db}
+func NewRepository(db *gorm.DB) Repository {
+	return &gormRepository{db: db}
 }
 
-func (s *sqlRepository) CreateRole(ctx context.Context, r Role) (string, error) {
-	var id string
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO roles (tenant_id, name, description) VALUES ($1, $2, $3) RETURNING id`,
-		r.TenantID, r.Name, r.Description,
-	).Scan(&id)
-	return id, err
+func (s *gormRepository) CreateRole(ctx context.Context, r Role) (string, error) {
+	err := s.db.WithContext(ctx).Create(&r).Error
+	return r.ID, err
 }
 
-func (s *sqlRepository) GetRole(ctx context.Context, tenantID, id string) (Role, error) {
+func (s *gormRepository) GetRole(ctx context.Context, tenantID, id string) (Role, error) {
 	var r Role
-	err := s.db.GetContext(ctx, &r, `SELECT * FROM roles WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", id, tenantID).First(&r).Error
 	return r, err
 }
 
-func (s *sqlRepository) GetRoleByName(ctx context.Context, tenantID, name string) (Role, error) {
+func (s *gormRepository) GetRoleByName(ctx context.Context, tenantID, name string) (Role, error) {
 	var r Role
-	err := s.db.GetContext(ctx, &r, `SELECT * FROM roles WHERE name = $1 AND tenant_id = $2`, name, tenantID)
+	err := s.db.WithContext(ctx).Where("name = ? AND tenant_id = ?", name, tenantID).First(&r).Error
 	return r, err
 }
 
-func (s *sqlRepository) ListRoles(ctx context.Context, tenantID string) ([]Role, error) {
+func (s *gormRepository) ListRoles(ctx context.Context, tenantID string) ([]Role, error) {
 	var roles []Role
-	err := s.db.SelectContext(ctx, &roles, `SELECT * FROM roles WHERE tenant_id = $1 ORDER BY name`, tenantID)
+	err := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID).Order("name").Find(&roles).Error
 	return roles, err
 }
 
-func (s *sqlRepository) UpdateRole(ctx context.Context, id string, r Role) error {
-	_, err := s.db.ExecContext(ctx,
-		`UPDATE roles SET name = $1, description = $2, updated_at = NOW() WHERE id = $3`,
-		r.Name, r.Description, id)
-	return err
+func (s *gormRepository) UpdateRole(ctx context.Context, id string, r Role) (Role, error) {
+	var existing Role
+	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&existing).Error; err != nil {
+		return r, err
+	}
+	existing.Name = r.Name
+	existing.Description = r.Description
+	err := s.db.WithContext(ctx).Save(&existing).Error
+	return existing, err
 }
 
-func (s *sqlRepository) DeleteRole(ctx context.Context, tenantID, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM roles WHERE id = $1 AND tenant_id = $2`, id, tenantID)
-	return err
+func (s *gormRepository) DeleteRole(ctx context.Context, tenantID, id string) error {
+	return s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", id, tenantID).Delete(&Role{}).Error
 }
 
-func (s *sqlRepository) CreatePermission(ctx context.Context, p Permission) (string, error) {
-	var id string
-	err := s.db.QueryRowxContext(ctx,
-		`INSERT INTO permissions (tenant_id, resource, action, description) 
-		 VALUES ($1, $2, $3, $4) RETURNING id`,
-		p.TenantID, p.Resource, p.Action, p.Description,
-	).Scan(&id)
-	return id, err
+func (s *gormRepository) CreatePermission(ctx context.Context, p Permission) (string, error) {
+	err := s.db.WithContext(ctx).Create(&p).Error
+	return p.ID, err
 }
 
-func (s *sqlRepository) ListPermissions(ctx context.Context, tenantID string) ([]Permission, error) {
+func (s *gormRepository) ListPermissions(ctx context.Context, tenantID string) ([]Permission, error) {
 	var perms []Permission
-	err := s.db.SelectContext(ctx, &perms,
-		`SELECT * FROM permissions WHERE tenant_id = $1 ORDER BY resource, action`, tenantID)
+	err := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID).Order("resource, action").Find(&perms).Error
 	return perms, err
 }
 
-func (s *sqlRepository) GetPermissionsByRole(ctx context.Context, roleID string) ([]Permission, error) {
+func (s *gormRepository) GetPermissionsByRole(ctx context.Context, roleID string) ([]Permission, error) {
 	var perms []Permission
-	err := s.db.SelectContext(ctx, &perms,
-		`SELECT p.* FROM permissions p 
-		 JOIN role_permissions rp ON p.id = rp.permission_id 
-		 WHERE rp.role_id = $1`, roleID)
+	err := s.db.WithContext(ctx).
+		Joins("JOIN role_permissions rp ON permissions.id = rp.permission_id").
+		Where("rp.role_id = ?", roleID).
+		Find(&perms).Error
 	return perms, err
 }
 
-func (s *sqlRepository) AssignPermissionToRole(ctx context.Context, roleID, permissionID string) error {
-	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-		roleID, permissionID)
-	return err
+func (s *gormRepository) AssignPermissionToRole(ctx context.Context, roleID, permissionID string) error {
+	return s.db.WithContext(ctx).Exec("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?) ON CONFLICT DO NOTHING", roleID, permissionID).Error
 }
 
-func (s *sqlRepository) RemovePermissionFromRole(ctx context.Context, roleID, permissionID string) error {
-	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM role_permissions WHERE role_id = $1 AND permission_id = $2`,
-		roleID, permissionID)
-	return err
+func (s *gormRepository) RemovePermissionFromRole(ctx context.Context, roleID, permissionID string) error {
+	return s.db.WithContext(ctx).Exec("DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?", roleID, permissionID).Error
 }
 
-func (s *sqlRepository) AssignRoleToUser(ctx context.Context, tenantID, userID, roleID string, assignedBy *string) error {
-	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO user_roles (user_id, role_id, tenant_id, assigned_by) 
-		 VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
-		userID, roleID, tenantID, assignedBy)
-	return err
+func (s *gormRepository) AssignRoleToUser(ctx context.Context, tenantID, userID, roleID string, assignedBy *string) error {
+	ur := UserRole{
+		UserID:     userID,
+		RoleID:     roleID,
+		TenantID:   tenantID,
+		AssignedBy: assignedBy,
+	}
+	return s.db.WithContext(ctx).Clauses(nil).Create(&ur).Error
 }
 
-func (s *sqlRepository) RemoveRoleFromUser(ctx context.Context, userID, roleID string) error {
-	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM user_roles WHERE user_id = $1 AND role_id = $2`,
-		userID, roleID)
-	return err
+func (s *gormRepository) RemoveRoleFromUser(ctx context.Context, userID, roleID string) error {
+	return s.db.WithContext(ctx).Where("user_id = ? AND role_id = ?", userID, roleID).Delete(&UserRole{}).Error
 }
 
-func (s *sqlRepository) GetUserRoles(ctx context.Context, tenantID, userID string) ([]Role, error) {
+func (s *gormRepository) GetUserRoles(ctx context.Context, tenantID, userID string) ([]Role, error) {
 	var roles []Role
-	err := s.db.SelectContext(ctx, &roles,
-		`SELECT r.* FROM roles r 
-		 JOIN user_roles ur ON r.id = ur.role_id 
-		 WHERE ur.user_id = $1 AND ur.tenant_id = $2`, userID, tenantID)
+	err := s.db.WithContext(ctx).
+		Joins("JOIN user_roles ur ON roles.id = ur.role_id").
+		Where("ur.user_id = ? AND ur.tenant_id = ?", userID, tenantID).
+		Find(&roles).Error
 	return roles, err
 }
 
-func (s *sqlRepository) GetUserPermissions(ctx context.Context, tenantID, userID string) ([]Permission, error) {
+func (s *gormRepository) GetUserPermissions(ctx context.Context, tenantID, userID string) ([]Permission, error) {
 	var perms []Permission
-	err := s.db.SelectContext(ctx, &perms,
-		`SELECT DISTINCT p.* FROM permissions p
-		 JOIN role_permissions rp ON p.id = rp.permission_id
-		 JOIN user_roles ur ON rp.role_id = ur.role_id
-		 WHERE ur.user_id = $1 AND ur.tenant_id = $2`, userID, tenantID)
+	err := s.db.WithContext(ctx).
+		Raw(`SELECT DISTINCT p.* FROM permissions p
+			 JOIN role_permissions rp ON p.id = rp.permission_id
+			 JOIN user_roles ur ON rp.role_id = ur.role_id
+			 WHERE ur.user_id = ? AND ur.tenant_id = ?`, userID, tenantID).
+		Scan(&perms).Error
 	return perms, err
 }

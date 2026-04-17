@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/crewjam/saml/samlidp"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -73,20 +73,21 @@ func (p *Provider) ServeIDPInitiated(w http.ResponseWriter, r *http.Request) {
 	p.idp.HandleIDPInitiated(w, r)
 }
 
-// RegisterRoutes registers SAML IdP routes.
-func (p *Provider) RegisterRoutes(rg *gin.RouterGroup) {
-	// The underlying samlidp.Server handles /metadata and /sso based on its internal routing
-	// when ServeHTTP is called. However, since we are using Gin, we might want to register specific paths
-	// to avoid conflicts or strict matching issues.
-	// But samlidp.Server expects to handle the requests itself.
-	// For now, let's mount specific paths that we know samlidp handles.
+// Router returns a chi.Router for the SAML IdP.
+func (p *Provider) Router() chi.Router {
+	r := chi.NewRouter()
 
-	rg.GET("/saml/metadata", gin.WrapH(p.idp))
-	rg.POST("/saml/sso", gin.WrapH(p.idp))
-	rg.GET("/saml/sso", gin.WrapH(p.idp)) // Support Redirect binding
-	rg.GET("/saml/idp-init", func(c *gin.Context) {
-		p.ServeIDPInitiated(c.Writer, c.Request)
+	// The underlying samlidp.Server handles /metadata and /sso based on its internal routing
+	// when ServeHTTP is called.
+	r.Get("/metadata", func(w http.ResponseWriter, r *http.Request) {
+		p.idp.ServeHTTP(w, r)
 	})
+	r.Handle("/sso", p.idp)
+	r.Get("/idp-init", func(w http.ResponseWriter, r *http.Request) {
+		p.ServeIDPInitiated(w, r)
+	})
+
+	return r
 }
 
 // Handler returns the HTTP handler for the IdP.

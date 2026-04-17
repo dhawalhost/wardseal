@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	kitconfig "github.com/dhawalhost/gokit/config"
-	"gopkg.in/yaml.v3"
+	"github.com/dhawalhost/wardseal/pkg/types"
+	"github.com/go-playground/validator/v10"
+	"github.com/spf13/viper"
 )
 
 // Environment represents the deployment environment.
@@ -24,25 +25,25 @@ const (
 // Config embeds gokit base config and adds wardseal-specific fields.
 type Config struct {
 	kitconfig.Config `mapstructure:",squash"`
-	Environment      Environment      `mapstructure:"environment"`
-	Auth             AuthConfig       `mapstructure:"auth"`
-	Directory        DirectoryConfig  `mapstructure:"directory"`
-	Governance       GovernanceConfig `mapstructure:"governance"`
-	KMS              KMSConfig        `mapstructure:"kms"`
+	Environment      Environment      `mapstructure:"environment" validate:"required"`
+	Auth             AuthConfig       `mapstructure:"auth" validate:"required"`
+	Directory        DirectoryConfig  `mapstructure:"directory" validate:"required"`
+	Governance       GovernanceConfig `mapstructure:"governance" validate:"required"`
+	KMS              KMSConfig        `mapstructure:"kms" validate:"required"`
 	License          LicenseConfig    `mapstructure:"license"`
 }
 
 // AuthConfig holds auth service settings.
 type AuthConfig struct {
-	BaseURL             string           `mapstructure:"base_url"`
-	DirectoryServiceURL string           `mapstructure:"directory_service_url"`
-	ServiceAuthToken    string           `mapstructure:"service_auth_token"`
+	BaseURL             string           `mapstructure:"base_url" validate:"required,url"`
+	DirectoryServiceURL string           `mapstructure:"directory_service_url" validate:"required,url"`
+	ServiceAuthToken    types.Secret     `mapstructure:"service_auth_token"`
 	ServiceAuthHeader   string           `mapstructure:"service_auth_header"`
 	JWTPrivateKeyPath   string           `mapstructure:"jwt_private_key_path"`
 	JWTPublicKeyPath    string           `mapstructure:"jwt_public_key_path"`
-	DeploymentMode      string           `mapstructure:"deployment_mode"`
-	UIURL               string           `mapstructure:"ui_url"`
-	WebAuthnSessionTTL  time.Duration    `mapstructure:"webauthn_session_ttl"`
+	DeploymentMode      string           `mapstructure:"deployment_mode" validate:"oneof=saas selfhost"`
+	UIURL               string           `mapstructure:"ui_url" validate:"required,url"`
+	WebAuthnSessionTTL  time.Duration    `mapstructure:"webauthn_session_ttl" validate:"required"`
 	RateLimitUseTenant  bool             `mapstructure:"rate_limit_use_tenant"`
 	RateLimitKeyPrefix  string           `mapstructure:"rate_limit_key_prefix"`
 	RateLimitDefault    RateLimitProfile `mapstructure:"rate_limit_default"`
@@ -61,109 +62,107 @@ type RateLimitProfile struct {
 
 // DirectoryConfig holds directory service settings.
 type DirectoryConfig struct {
-	ServiceAuthToken  string `mapstructure:"service_auth_token"`
-	ServiceAuthHeader string `mapstructure:"service_auth_header"`
+	ServiceAuthToken  types.Secret `mapstructure:"service_auth_token"`
+	ServiceAuthHeader string       `mapstructure:"service_auth_header"`
 }
 
 // GovernanceConfig holds governance service settings.
 type GovernanceConfig struct {
-	DirectoryServiceURL string   `mapstructure:"directory_service_url"`
-	WebhookSecret       string   `mapstructure:"webhook_secret"`
-	CORSAllowedOrigins  []string `mapstructure:"cors_allowed_origins"`
+	DirectoryServiceURL string       `mapstructure:"directory_service_url" validate:"required,url"`
+	WebhookSecret       types.Secret `mapstructure:"webhook_secret"`
+	CORSAllowedOrigins  []string     `mapstructure:"cors_allowed_origins" validate:"dive,url"`
 }
 
 // LicenseConfig holds enterprise license settings.
 type LicenseConfig struct {
-	Required      bool   `mapstructure:"required"`
-	Key           string `mapstructure:"key"`
-	PublicKeyPath string `mapstructure:"public_key_path"`
+	Required      bool         `mapstructure:"required"`
+	Key           types.Secret `mapstructure:"key"`
+	PublicKeyPath string       `mapstructure:"public_key_path"`
 }
 
 // KMSConfig holds settings for Key Management Service (Vault or Local).
 type KMSConfig struct {
-	Provider       string `mapstructure:"provider"`
-	PrivateKeyPath string `mapstructure:"private_key_path"`
-	PublicKeyPath  string `mapstructure:"public_key_path"`
-	VaultAddr      string `mapstructure:"vault_addr"`
-	VaultToken     string `mapstructure:"vault_token"`
-	VaultKeyName   string `mapstructure:"vault_key_name"`
-	VaultKeyPath   string `mapstructure:"vault_key_path"`
-	VaultNamespace string `mapstructure:"vault_namespace"`
-	VaultRoleID    string `mapstructure:"vault_role_id"`
-	VaultSecretID  string `mapstructure:"vault_secret_id"`
+	Provider       string       `mapstructure:"provider" validate:"oneof=local vault"`
+	PrivateKeyPath string       `mapstructure:"private_key_path"`
+	PublicKeyPath  string       `mapstructure:"public_key_path"`
+	VaultAddr      string       `mapstructure:"vault_addr" validate:"required_if=Provider vault"`
+	VaultToken     types.Secret `mapstructure:"vault_token" validate:"required_if=Provider vault"`
+	VaultKeyName   string       `mapstructure:"vault_key_name"`
+	VaultKeyPath   string       `mapstructure:"vault_key_path"`
+	VaultNamespace string       `mapstructure:"vault_namespace"`
+	VaultRoleID    string       `mapstructure:"vault_role_id"`
+	VaultSecretID  types.Secret `mapstructure:"vault_secret_id"`
 }
 
+var validate = validator.New()
+
 func Load() (*Config, error) {
-	cfgFile := os.Getenv("APP_CONFIG_FILE")
-	base, err := kitconfig.Load(cfgFile)
-	if err != nil {
-		return nil, err
+	v := viper.New()
+	v.SetEnvPrefix("APP")
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	// 1. Load Defaults from .env.defaults
+	v.SetConfigType("env")
+	v.SetConfigName(".env.defaults")
+	v.AddConfigPath("config")
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("config: read .env.defaults: %w", err)
 	}
+
+	// 2. Merge Environment-specific/Local .env if it exists
+	v.SetConfigFile(".env")
+	_ = v.MergeInConfig()
+
+	// 3. Fallback to Primary Config File if set
+	if cfgFile := os.Getenv("APP_CONFIG_FILE"); cfgFile != "" {
+		v.SetConfigFile(cfgFile)
+		_ = v.MergeInConfig()
+	}
+
+	// 4. Extract base kitconfig (maintaining compatibility with gokit logic)
+	// kitconfig.Load internally uses its own viper, so we use it for pure infra
+	base, err := kitconfig.Load(os.Getenv("APP_CONFIG_FILE"))
+	if err != nil {
+		return nil, fmt.Errorf("config: load base: %w", err)
+	}
+
 	cfg := &Config{Config: *base}
 
-	// Environment defaults to development
-	if cfg.Environment == "" {
-		cfg.Environment = Environment(os.Getenv("ENVIRONMENT"))
-		if cfg.Environment == "" {
-			cfg.Environment = Development
-		}
+	// 5. Unmarshal everything into the full Config struct
+	if err := v.Unmarshal(cfg); err != nil {
+		return nil, fmt.Errorf("config: unmarshal: %w", err)
 	}
 
-	if strings.TrimSpace(cfgFile) != "" {
-		origins, err := loadCORSOriginsFromYAML(cfgFile)
-		if err != nil {
+	// 6. Post-processing & Enforcement
+	if cfg.Environment == "" {
+		cfg.Environment = Development
+	}
+
+	// 7. Declarative Validation
+	if err := validate.Struct(cfg); err != nil {
+		return nil, fmt.Errorf("config: validation failed: %w", err)
+	}
+
+	// 8. Security Guardrails
+	if cfg.Environment == Production {
+		if err := enforceProductionStandards(cfg); err != nil {
 			return nil, err
 		}
-		cfg.Governance.CORSAllowedOrigins = origins
-	}
-
-	if raw, ok := os.LookupEnv("APP_CORS_ALLOWED_ORIGINS"); ok {
-		cfg.Governance.CORSAllowedOrigins = parseCSV(raw)
-	}
-
-	// Vault integration remains specific to Wardseal
-	if vaultAddr := os.Getenv("VAULT_ADDR"); vaultAddr != "" {
-		cfg.KMS.VaultAddr = vaultAddr
-		// Ideally a vault client loads remaining secrets into config here...
-		// For now we keep the same manual env injection for compatibility if needed.
-	}
-
-	if err := cfg.Validate(); err != nil {
-		return nil, err
 	}
 
 	return cfg, nil
 }
 
-type yamlConfig struct {
-	Governance GovernanceConfig `yaml:"governance"`
-}
-
-func loadCORSOriginsFromYAML(path string) ([]string, error) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("config: read APP_CONFIG_FILE: %w", err)
-	}
-
-	var cfg yamlConfig
-	if err := yaml.Unmarshal(content, &cfg); err != nil {
-		return nil, fmt.Errorf("config: parse APP_CONFIG_FILE: %w", err)
-	}
-
-	return cfg.Governance.CORSAllowedOrigins, nil
-}
-
-func parseCSV(value string) []string {
-	parts := strings.Split(value, ",")
-	origins := make([]string, 0, len(parts))
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			continue
+func enforceProductionStandards(cfg *Config) error {
+	urls := []string{cfg.Auth.BaseURL, cfg.Auth.DirectoryServiceURL, cfg.Governance.DirectoryServiceURL}
+	for _, raw := range urls {
+		u, _ := url.Parse(raw)
+		if u.Scheme != "https" {
+			return fmt.Errorf("production standard violation: insecure scheme in URL %q", raw)
 		}
-		origins = append(origins, part)
 	}
-	return origins
+	return nil
 }
 
 func MustLoad() *Config {
@@ -175,62 +174,5 @@ func MustLoad() *Config {
 }
 
 func (c *Config) Validate() error {
-	var problems []string
-
-	if c.Auth.BaseURL != "" {
-		if err := validateAbsoluteURL(c.Auth.BaseURL, c.Environment == Production); err != nil {
-			problems = append(problems, fmt.Sprintf("AUTH_BASE_URL invalid: %v", err))
-		}
-	}
-
-	for _, origin := range c.Governance.CORSAllowedOrigins {
-		if err := validateCORSOrigin(origin); err != nil {
-			problems = append(problems, fmt.Sprintf("CORS_ALLOWED_ORIGINS invalid origin %q: %v", origin, err))
-		}
-	}
-
-	if len(problems) > 0 {
-		return fmt.Errorf("configuration validation failed: %s", strings.Join(problems, "; "))
-	}
-
-	return nil
-}
-
-func validateAbsoluteURL(raw string, requireHTTPS bool) error {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return fmt.Errorf("value is empty")
-	}
-
-	u, err := url.Parse(raw)
-	if err != nil {
-		return err
-	}
-	if !u.IsAbs() || u.Host == "" {
-		return fmt.Errorf("must be an absolute URL with host")
-	}
-
-	scheme := strings.ToLower(u.Scheme)
-	if scheme != "http" && scheme != "https" {
-		return fmt.Errorf("unsupported scheme %q", u.Scheme)
-	}
-	if requireHTTPS && scheme != "https" {
-		return fmt.Errorf("scheme must be https")
-	}
-	return nil
-}
-
-func validateCORSOrigin(raw string) error {
-	u, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil {
-		return err
-	}
-	if !u.IsAbs() || u.Host == "" {
-		return fmt.Errorf("must be an absolute URL origin")
-	}
-	scheme := strings.ToLower(u.Scheme)
-	if scheme != "http" && scheme != "https" {
-		return fmt.Errorf("unsupported scheme %q", u.Scheme)
-	}
-	return nil
+	return validate.Struct(c)
 }

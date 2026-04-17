@@ -43,7 +43,9 @@ func (m *mockRBACRepo) GetRoleByName(ctx context.Context, tenantID, name string)
 func (m *mockRBACRepo) ListRoles(ctx context.Context, tenantID string) ([]rbac.Role, error) {
 	return nil, nil
 }
-func (m *mockRBACRepo) UpdateRole(ctx context.Context, id string, r rbac.Role) error { return nil }
+func (m *mockRBACRepo) UpdateRole(ctx context.Context, id string, r rbac.Role) (rbac.Role, error) {
+	return r, nil
+}
 func (m *mockRBACRepo) DeleteRole(ctx context.Context, tenantID, id string) error    { return nil }
 func (m *mockRBACRepo) CreatePermission(ctx context.Context, p rbac.Permission) (string, error) {
 	return "", nil

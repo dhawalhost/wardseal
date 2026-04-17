@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -50,13 +49,13 @@ func (r *sqlTOTPRepository) Create(ctx context.Context, secret *TOTPSecret) erro
 		secret.TenantID,
 		secret.Secret,
 		false,
-	).Scan(&secret.ID, &secret.CreatedAt)
+	).Scan(secret).Error
 }
 
 func (r *sqlTOTPRepository) GetByIdentity(ctx context.Context, tenantID, identityID string) (*TOTPSecret, error) {
 	var secret TOTPSecret
 	query := `SELECT id, identity_id, tenant_id, secret, verified, created_at, verified_at FROM totp_secrets WHERE tenant_id = $1 AND identity_id = $2`
-	err := r.db.WithContext(ctx).Raw(query, tenantID, identityID).Scan(&secret)
+	err := r.db.WithContext(ctx).Raw(query, tenantID, identityID).Scan(&secret).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -68,12 +67,12 @@ func (r *sqlTOTPRepository) GetByIdentity(ctx context.Context, tenantID, identit
 
 func (r *sqlTOTPRepository) MarkVerified(ctx context.Context, id string) error {
 	query := `UPDATE totp_secrets SET verified = TRUE, verified_at = NOW() WHERE id = $1`
-	_, err := r.db.WithContext(ctx).Exec(query, id)
+	err := r.db.WithContext(ctx).Exec(query, id).Error
 	return err
 }
 
 func (r *sqlTOTPRepository) Delete(ctx context.Context, tenantID, identityID string) error {
 	query := `DELETE FROM totp_secrets WHERE tenant_id = $1 AND identity_id = $2`
-	_, err := r.db.WithContext(ctx).Exec(query, tenantID, identityID)
+	err := r.db.WithContext(ctx).Exec(query, tenantID, identityID).Error
 	return err
 }

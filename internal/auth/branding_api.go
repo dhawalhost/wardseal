@@ -1,79 +1,67 @@
 package auth
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/dhawalhost/gokit/response"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
-// RegisterBrandingRoutes registers branding routes on the router.
-func (h *HTTPHandler) RegisterBrandingRoutes(router *gin.RouterGroup) {
-	// Public endpoint (no auth required, just tenant ID context or param)
-	// We allow fetching public branding by tenant ID
-	router.GET("/branding/public/:tenantID", h.getPublicBranding)
-
-	// Protected management endpoints
-	mgmt := router.Group("/api/v1/branding")
-	mgmt.Use(middleware.TenantExtractor(middleware.TenantConfig{}))
-	mgmt.GET("", h.getBranding)
-	mgmt.PUT("", h.updateBranding)
-}
-
-func (h *HTTPHandler) getPublicBranding(c *gin.Context) {
-	tenantID := c.Param("tenantID")
+func (h *HTTPHandler) getPublicBranding(w http.ResponseWriter, r *http.Request) {
+	tenantID := chi.URLParam(r, "tenantID")
 	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant ID required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant ID required"})
 		return
 	}
 
-	config, err := h.svc.GetBranding(c.Request.Context(), tenantID)
+	config, err := h.svc.GetBranding(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to fetch branding", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch branding"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to fetch branding"})
 		return
 	}
 
-	c.JSON(http.StatusOK, config)
+	response.Ok(w, r, config)
 }
 
-func (h *HTTPHandler) getBranding(c *gin.Context) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant ID required"})
+func (h *HTTPHandler) getBranding(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	config, err := h.svc.GetBranding(c.Request.Context(), tenantID)
+	config, err := h.svc.GetBranding(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to fetch branding", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch branding"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to fetch branding"})
 		return
 	}
 
-	c.JSON(http.StatusOK, config)
+	response.Ok(w, r, config)
 }
 
-func (h *HTTPHandler) updateBranding(c *gin.Context) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant ID required"})
+func (h *HTTPHandler) updateBranding(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var req BrandingConfig
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 	req.TenantID = tenantID
 
-	if err := h.svc.UpdateBranding(c.Request.Context(), req); err != nil {
+	if err := h.svc.UpdateBranding(r.Context(), req); err != nil {
 		h.logger.Error("Failed to update branding", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update branding"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to update branding"})
 		return
 	}
 
-	c.JSON(http.StatusOK, req)
+	response.Ok(w, r, req)
 }

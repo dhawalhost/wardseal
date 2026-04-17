@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -22,78 +23,75 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 	return &HTTPHandler{svc: svc, logger: logger}
 }
 
-// RegisterRoutes registers audit routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	audit := rg.Group("/audit")
-	{
-		audit.GET("", h.queryLogs)
-		audit.GET("/export", h.exportLogs)
-		audit.GET("/:id", h.getEvent)
-	}
+// Router registers audit routes.
+func (h *HTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/", h.queryLogs)
+	r.Get("/export", h.exportLogs)
+	r.Get("/{id}", h.getEvent)
+
+	return r
 }
 
-func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant id required"})
-		return "", false
-	}
-	return tenantID, true
+func (h *HTTPHandler) tenantID(r *http.Request) (string, bool) {
+	return middleware.TenantIDFromContext(r.Context())
 }
 
-func (h *HTTPHandler) queryLogs(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) queryLogs(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	params := QueryParams{TenantID: tenantID}
 
-	// Parse query parameters
-	if v := c.Query("actor_id"); v != "" {
+	q := r.URL.Query()
+	if v := q.Get("actor_id"); v != "" {
 		params.ActorID = &v
 	}
-	if v := c.Query("action"); v != "" {
+	if v := q.Get("action"); v != "" {
 		params.Action = &v
 	}
-	if v := c.Query("resource_type"); v != "" {
+	if v := q.Get("resource_type"); v != "" {
 		params.ResourceType = &v
 	}
-	if v := c.Query("resource_id"); v != "" {
+	if v := q.Get("resource_id"); v != "" {
 		params.ResourceID = &v
 	}
-	if v := c.Query("outcome"); v != "" {
+	if v := q.Get("outcome"); v != "" {
 		params.Outcome = &v
 	}
-	if v := c.Query("start_time"); v != "" {
+	if v := q.Get("start_time"); v != "" {
 		if t, err := time.Parse(time.RFC3339, v); err == nil {
 			params.StartTime = &t
 		}
 	}
-	if v := c.Query("end_time"); v != "" {
+	if v := q.Get("end_time"); v != "" {
 		if t, err := time.Parse(time.RFC3339, v); err == nil {
 			params.EndTime = &t
 		}
 	}
-	if v := c.Query("limit"); v != "" {
+	if v := q.Get("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			params.Limit = n
 		}
 	}
-	if v := c.Query("offset"); v != "" {
+	if v := q.Get("offset"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			params.Offset = n
 		}
 	}
 
-	events, total, err := h.svc.Query(c.Request.Context(), params)
+	events, total, err := h.svc.Query(r.Context(), params)
 	if err != nil {
 		h.logger.Error("Failed to query audit logs", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	response.Ok(w, r, map[string]interface{}{
 		"events": events,
 		"total":  total,
 		"limit":  params.Limit,
@@ -101,67 +99,69 @@ func (h *HTTPHandler) queryLogs(c *gin.Context) {
 	})
 }
 
-func (h *HTTPHandler) getEvent(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) getEvent(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	event, err := h.svc.GetEvent(c.Request.Context(), tenantID, id)
+	id := chi.URLParam(r, "id")
+	event, err := h.svc.GetEvent(r.Context(), tenantID, id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "event not found"})
 		return
 	}
-	c.JSON(http.StatusOK, event)
+	response.Ok(w, r, event)
 }
 
-func (h *HTTPHandler) exportLogs(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *HTTPHandler) exportLogs(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	params := QueryParams{TenantID: tenantID}
 
-	// Parse query parameters
-	if v := c.Query("actor_id"); v != "" {
+	q := r.URL.Query()
+	if v := q.Get("actor_id"); v != "" {
 		params.ActorID = &v
 	}
-	if v := c.Query("action"); v != "" {
+	if v := q.Get("action"); v != "" {
 		params.Action = &v
 	}
-	if v := c.Query("resource_type"); v != "" {
+	if v := q.Get("resource_type"); v != "" {
 		params.ResourceType = &v
 	}
-	if v := c.Query("resource_id"); v != "" {
+	if v := q.Get("resource_id"); v != "" {
 		params.ResourceID = &v
 	}
-	if v := c.Query("outcome"); v != "" {
+	if v := q.Get("outcome"); v != "" {
 		params.Outcome = &v
 	}
-	if v := c.Query("start_time"); v != "" {
+	if v := q.Get("start_time"); v != "" {
 		if t, err := time.Parse(time.RFC3339, v); err == nil {
 			params.StartTime = &t
 		}
 	}
-	if v := c.Query("end_time"); v != "" {
+	if v := q.Get("end_time"); v != "" {
 		if t, err := time.Parse(time.RFC3339, v); err == nil {
 			params.EndTime = &t
 		}
 	}
 
-	events, err := h.svc.Export(c.Request.Context(), params)
+	events, err := h.svc.Export(r.Context(), params)
 	if err != nil {
 		h.logger.Error("Failed to export audit logs", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=audit_logs.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=audit_logs.csv")
 
-	writer := csv.NewWriter(c.Writer)
+	writer := csv.NewWriter(w)
 
 	// Header
 	_ = writer.Write([]string{"Time", "Actor ID", "Actor Type", "Action", "Resource Type", "Resource Name", "Outcome", "IP Address"})

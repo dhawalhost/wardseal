@@ -46,9 +46,9 @@ func (r *sqlSignalRepository) Ingest(ctx context.Context, event *SecurityEvent) 
 
 	query := `
 		INSERT INTO security_events (id, tenant_id, subject_id, event_type, event_time, jti, reason, created_at)
-		VALUES (:id, :tenant_id, :subject_id, :event_type, :event_time, :jti, :reason, :created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
-	_, err := r.db.NamedExecContext(ctx, query, event)
+	err := r.db.WithContext(ctx).Exec(query, event.ID, event.TenantID, event.SubjectID, event.EventType, event.EventTime, event.JTI, event.Reason, event.CreatedAt).Error
 	return err
 }
 
@@ -63,7 +63,7 @@ func (r *sqlSignalRepository) GetLatestCriticalEvent(ctx context.Context, subjec
 		LIMIT 1
 	`
 	var event SecurityEvent
-	err := r.db.WithContext(ctx).Raw(query, subjectID, since).Scan(&event)
+	err := r.db.WithContext(ctx).Raw(query, subjectID, since).Scan(&event).Error
 	if err != nil {
 		return nil, err // Returns error if no rows, likely gorm.ErrRecordNotFound which caller handles
 	}

@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"github.com/dhawalhost/gokit/response"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // DeveloperAPIHandler handles developer portal API requests.
@@ -28,41 +30,42 @@ func NewDeveloperAPIHandler(db *gorm.DB, logger *zap.Logger) *DeveloperAPIHandle
 	}
 }
 
-// RegisterRoutes registers developer API routes.
-func (h *DeveloperAPIHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	apps := rg.Group("/apps")
-	{
-		apps.GET("", h.listApps)
-		apps.POST("", h.createApp)
-		apps.GET("/:id", h.getApp)
-		apps.PUT("/:id", h.updateApp)
-		apps.DELETE("/:id", h.deleteApp)
-		apps.POST("/:id/rotate-secret", h.rotateSecret)
-		apps.GET("/:id/logs", h.getAppLogs)
+// Router registers developer API routes.
+func (h *DeveloperAPIHandler) Router() http.Handler {
+	r := chi.NewRouter()
+
+	r.Route("/apps", func(r chi.Router) {
+		r.Get("/", h.listApps)
+		r.Post("/", h.createApp)
+		r.Get("/{id}", h.getApp)
+		r.Put("/{id}", h.updateApp)
+		r.Delete("/{id}", h.deleteApp)
+		r.Post("/{id}/rotate-secret", h.rotateSecret)
+		r.Get("/{id}/logs", h.getAppLogs)
 
 		// Assignment Routes
-		apps.GET("/:id/assignments", h.listAssignedUsers)
-		apps.POST("/:id/assignments", h.assignUserToApp)
-		apps.DELETE("/:id/assignments/:user_id", h.unassignUserFromApp)
-	}
+		r.Get("/{id}/assignments", h.listAssignedUsers)
+		r.Post("/{id}/assignments", h.assignUserToApp)
+		r.Delete("/{id}/assignments/{user_id}", h.unassignUserFromApp)
+	})
 
-	keys := rg.Group("/api-keys")
-	{
-		keys.GET("", h.listAPIKeys)
-		keys.POST("", h.createAPIKey)
-		keys.DELETE("/:id", h.revokeAPIKey)
-		keys.GET("/:id/logs", h.getAPIKeyLogs)
-	}
+	r.Route("/api-keys", func(r chi.Router) {
+		r.Get("/", h.listAPIKeys)
+		r.Post("/", h.createAPIKey)
+		r.Delete("/{id}", h.revokeAPIKey)
+		r.Get("/{id}/logs", h.getAPIKeyLogs)
+	})
 
-	analytics := rg.Group("/developer")
-	{
-		analytics.GET("/analytics", h.getDeveloperAnalytics)
-	}
+	r.Route("/developer", func(r chi.Router) {
+		r.Get("/analytics", h.getDeveloperAnalytics)
+	})
+
+	return r
 }
 
 // CreateAppRequest is the request to create a developer app.
 type CreateAppRequest struct {
-	Name         string   `json:"name" binding:"required"`
+	Name         string   `json:"name" validate:"required"`
 	Description  *string  `json:"description"`
 	RedirectURIs []string `json:"redirect_uris"`
 	GrantTypes   []string `json:"grant_types"`
@@ -77,35 +80,86 @@ type AppResponse struct {
 	ClientSecret string `json:"client_secret,omitempty"`
 }
 
-func (h *DeveloperAPIHandler) listApps(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
-		return
-	}
-
-	apps, err := h.appStore.ListByOwner(c.Request.Context(), tenantID, ownerID)
-	if err != nil {
-		h.logger.Error("Failed to list apps", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list apps"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"apps": apps})
+// APIKey model
+type APIKey struct {
+	ID         string  `db:"id" json:"id"`
+	TenantID   string  `db:"tenant_id" json:"tenant_id"`
+	OwnerID    string  `db:"owner_id" json:"owner_id"`
+	Name       string  `db:"name" json:"name"`
+	KeyPrefix  string  `db:"key_prefix" json:"key_prefix"`
+	KeyHash    string  `db:"key_hash" json:"-"`
+	Status     string  `db:"status" json:"status"`
+	CreatedAt  string  `db:"created_at" json:"created_at"`
+	LastUsedAt *string `db:"last_used_at" json:"last_used_at,omitempty"`
 }
 
-func (h *DeveloperAPIHandler) createApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+type CreateAPIKeyRequest struct {
+	Name string `json:"name" validate:"required"`
+}
+
+type APILog struct {
+	ID              string `db:"id" json:"id"`
+	TenantID        string `db:"tenant_id" json:"-"`
+	ClientID        string `db:"client_id" json:"client_id"`
+	Method          string `db:"method" json:"method"`
+	Path            string `db:"path" json:"path"`
+	StatusCode      int    `db:"status_code" json:"status_code"`
+	LatencyMs       int    `db:"latency_ms" json:"latency_ms"`
+	IPAddress       string `db:"ip_address" json:"ip_address"`
+	RequestPayload  string `db:"request_payload" json:"request_payload"`
+	ResponsePayload string `db:"response_payload" json:"response_payload"`
+	CreatedAt       string `db:"created_at" json:"created_at"`
+}
+
+type AssignUserRequest struct {
+	UserID string `json:"user_id" validate:"required"`
+}
+
+func (h *DeveloperAPIHandler) tenantAndUser(r *http.Request) (string, string, bool) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	userID, _ := middleware.UserIDFromContext(r.Context())
+
+	// If not in context, try headers as fallback (some legacy tests/clients)
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	if userID == "" {
+		userID = r.Header.Get("X-User-ID")
+	}
+
+	if tenantID == "" || userID == "" {
+		return "", "", false
+	}
+	return tenantID, userID, true
+}
+
+func (h *DeveloperAPIHandler) listApps(w http.ResponseWriter, r *http.Request) {
+	tenantID, ownerID, ok := h.tenantAndUser(r)
+	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID and X-User-ID headers required"})
+		return
+	}
+
+	apps, err := h.appStore.ListByOwner(r.Context(), tenantID, ownerID)
+	if err != nil {
+		h.logger.Error("Failed to list apps", zap.Error(err))
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to list apps"})
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, map[string]interface{}{"apps": apps})
+}
+
+func (h *DeveloperAPIHandler) createApp(w http.ResponseWriter, r *http.Request) {
+	tenantID, ownerID, ok := h.tenantAndUser(r)
+	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID and X-User-ID headers required"})
 		return
 	}
 
 	var req CreateAppRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -132,56 +186,63 @@ func (h *DeveloperAPIHandler) createApp(c *gin.Context) {
 		app.Scopes = scopes
 	}
 
-	if err := h.appStore.Create(c.Request.Context(), app, clientSecret); err != nil {
+	if err := h.appStore.Create(r.Context(), app, clientSecret); err != nil {
 		h.logger.Error("Failed to create app", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create app"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to create app"})
 		return
 	}
 
-	if err := h.appStore.AssignUserToApp(c.Request.Context(), tenantID, app.ID, ownerID); err != nil {
+	if err := h.appStore.AssignUserToApp(r.Context(), tenantID, app.ID, ownerID); err != nil {
 		h.logger.Error("Failed to assign app owner", zap.Error(err), zap.String("tenantID", tenantID), zap.String("appID", app.ID), zap.String("ownerID", ownerID))
-		_ = h.appStore.Delete(c.Request.Context(), tenantID, app.ID)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to initialize app assignment"})
+		_ = h.appStore.Delete(r.Context(), tenantID, app.ID)
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to initialize app assignment"})
 		return
 	}
 
 	// Return app with secret (only shown once!)
-	c.JSON(http.StatusCreated, AppResponse{
+	response.JSON(w, r, http.StatusCreated, AppResponse{
 		DeveloperApp: *app,
 		ClientSecret: clientSecret,
 	})
 }
 
-func (h *DeveloperAPIHandler) getApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
+func (h *DeveloperAPIHandler) getApp(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
-	app, err := h.appStore.Get(c.Request.Context(), tenantID, appID)
+	app, err := h.appStore.Get(r.Context(), tenantID, appID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get app"})
+		h.logger.Error("Failed to get app", zap.Error(err))
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to get app"})
 		return
 	}
 	if app == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "app not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "app not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, app)
+	response.Ok(w, r, app)
 }
 
-func (h *DeveloperAPIHandler) updateApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
+func (h *DeveloperAPIHandler) updateApp(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
-	existing, _ := h.appStore.Get(c.Request.Context(), tenantID, appID)
+	existing, _ := h.appStore.Get(r.Context(), tenantID, appID)
 	if existing == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "app not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "app not found"})
 		return
 	}
 
 	var req CreateAppRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -201,90 +262,76 @@ func (h *DeveloperAPIHandler) updateApp(c *gin.Context) {
 		existing.Scopes = scopes
 	}
 
-	if err := h.appStore.Update(c.Request.Context(), existing); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update app"})
+	if err := h.appStore.Update(r.Context(), existing); err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to update app"})
 		return
 	}
 
-	c.JSON(http.StatusOK, existing)
+	response.Ok(w, r, existing)
 }
 
-func (h *DeveloperAPIHandler) deleteApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
+func (h *DeveloperAPIHandler) deleteApp(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
-	if err := h.appStore.Delete(c.Request.Context(), tenantID, appID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete app"})
+	if err := h.appStore.Delete(r.Context(), tenantID, appID); err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to delete app"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "app deleted"})
+	response.Ok(w, r, map[string]string{"message": "app deleted"})
 }
 
-func (h *DeveloperAPIHandler) rotateSecret(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
+func (h *DeveloperAPIHandler) rotateSecret(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
-	newSecret, err := h.appStore.RotateSecret(c.Request.Context(), tenantID, appID)
+	newSecret, err := h.appStore.RotateSecret(r.Context(), tenantID, appID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to rotate secret"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to rotate secret"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	response.Ok(w, r, map[string]string{
 		"message":       "secret rotated successfully",
 		"client_secret": newSecret,
 	})
 }
 
-// ========== API Keys ==========
-
-type APIKey struct {
-	ID         string  `db:"id" json:"id"`
-	TenantID   string  `db:"tenant_id" json:"tenant_id"`
-	OwnerID    string  `db:"owner_id" json:"owner_id"`
-	Name       string  `db:"name" json:"name"`
-	KeyPrefix  string  `db:"key_prefix" json:"key_prefix"`
-	KeyHash    string  `db:"key_hash" json:"-"`
-	Status     string  `db:"status" json:"status"`
-	CreatedAt  string  `db:"created_at" json:"created_at"`
-	LastUsedAt *string `db:"last_used_at" json:"last_used_at,omitempty"`
-}
-
-type CreateAPIKeyRequest struct {
-	Name string `json:"name" binding:"required"`
-}
-
-func (h *DeveloperAPIHandler) listAPIKeys(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+func (h *DeveloperAPIHandler) listAPIKeys(w http.ResponseWriter, r *http.Request) {
+	tenantID, ownerID, ok := h.tenantAndUser(r)
+	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID and X-User-ID headers required"})
 		return
 	}
 
 	var keys []APIKey
 	query := `SELECT id, tenant_id, owner_id, name, key_prefix, status, created_at, last_used_at 
-	          FROM api_keys WHERE tenant_id = $1 AND owner_id = $2 AND status = 'active' ORDER BY created_at DESC`
-	if err := h.db.SelectContext(c.Request.Context(), &keys, query, tenantID, ownerID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list API keys"})
+	          FROM api_keys WHERE tenant_id = ? AND owner_id = ? AND status = 'active' ORDER BY created_at DESC`
+	if err := h.db.WithContext(r.Context()).Raw(query, tenantID, ownerID).Scan(&keys).Error; err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to list API keys"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"api_keys": keys})
+	response.JSON(w, r, http.StatusOK, map[string]interface{}{"api_keys": keys})
 }
 
-func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+func (h *DeveloperAPIHandler) createAPIKey(w http.ResponseWriter, r *http.Request) {
+	tenantID, ownerID, ok := h.tenantAndUser(r)
+	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID and X-User-ID headers required"})
 		return
 	}
 
 	var req CreateAPIKeyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -296,14 +343,14 @@ func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(fullKey), bcrypt.DefaultCost)
 
-	query := `INSERT INTO api_keys (tenant_id, owner_id, name, key_prefix, key_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	query := `INSERT INTO api_keys (tenant_id, owner_id, name, key_prefix, key_hash) VALUES (?, ?, ?, ?, ?) RETURNING id`
 	var keyID string
-	if err := h.db.QueryRowContext(c.Request.Context(), query, tenantID, ownerID, req.Name, keyPrefix, string(hash)).Scan(&keyID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create API key"})
+	if err := h.db.WithContext(r.Context()).Raw(query, tenantID, ownerID, req.Name, keyPrefix, string(hash)).Scan(&keyID).Error; err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to create API key"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
+	response.JSON(w, r, http.StatusCreated, map[string]interface{}{
 		"id":         keyID,
 		"name":       req.Name,
 		"key":        fullKey, // Only shown once!
@@ -312,91 +359,87 @@ func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
 	})
 }
 
-func (h *DeveloperAPIHandler) revokeAPIKey(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	keyID := c.Param("id")
+func (h *DeveloperAPIHandler) revokeAPIKey(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	keyID := chi.URLParam(r, "id")
 
-	query := `UPDATE api_keys SET status = 'revoked' WHERE tenant_id = $1 AND id = $2`
-	if _, err := h.db.ExecContext(c.Request.Context(), query, tenantID, keyID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke API key"})
+	query := `UPDATE api_keys SET status = 'revoked' WHERE tenant_id = ? AND id = ?`
+	if err := h.db.WithContext(r.Context()).Exec(query, tenantID, keyID).Error; err != nil {
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to revoke API key"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "API key revoked"})
+	response.Ok(w, r, map[string]string{"message": "API key revoked"})
 }
 
-// ========== API Logs & Analytics ==========
+func (h *DeveloperAPIHandler) getAppLogs(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
-type APILog struct {
-	ID              string `db:"id" json:"id"`
-	TenantID        string `db:"tenant_id" json:"-"`
-	ClientID        string `db:"client_id" json:"client_id"`
-	Method          string `db:"method" json:"method"`
-	Path            string `db:"path" json:"path"`
-	StatusCode      int    `db:"status_code" json:"status_code"`
-	LatencyMs       int    `db:"latency_ms" json:"latency_ms"`
-	IPAddress       string `db:"ip_address" json:"ip_address"`
-	RequestPayload  string `db:"request_payload" json:"request_payload"`
-	ResponsePayload string `db:"response_payload" json:"response_payload"`
-	CreatedAt       string `db:"created_at" json:"created_at"`
-}
-
-func (h *DeveloperAPIHandler) getAppLogs(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
-
-	app, err := h.appStore.Get(c.Request.Context(), tenantID, appID)
+	app, err := h.appStore.Get(r.Context(), tenantID, appID)
 	if err != nil || app == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "app not found"})
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "app not found"})
 		return
 	}
 
 	var logs []APILog
 	query := `SELECT id, client_id, method, path, status_code, latency_ms, ip_address, 
 	          COALESCE(request_payload::text, '{}') as request_payload, 
-			  COALESCE(response_payload::text, '{}') as response_payload, created_at
-	          FROM api_logs WHERE tenant_id = $1 AND client_id = $2 ORDER BY created_at DESC LIMIT 50`
-	if err := h.db.SelectContext(c.Request.Context(), &logs, query, tenantID, app.ClientID); err != nil {
+	          COALESCE(response_payload::text, '{}') as response_payload, created_at
+	          FROM api_logs WHERE tenant_id = ? AND client_id = ? ORDER BY created_at DESC LIMIT 50`
+	if err := h.db.WithContext(r.Context()).Raw(query, tenantID, app.ClientID).Scan(&logs).Error; err != nil {
 		h.logger.Error("Failed to fetch app logs", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch app logs"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to fetch app logs"})
 		return
 	}
 	if logs == nil {
 		logs = make([]APILog, 0)
 	}
-	c.JSON(http.StatusOK, gin.H{"logs": logs})
+	response.JSON(w, r, http.StatusOK, map[string]interface{}{"logs": logs})
 }
 
-func (h *DeveloperAPIHandler) getAPIKeyLogs(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	keyID := c.Param("id")
+func (h *DeveloperAPIHandler) getAPIKeyLogs(w http.ResponseWriter, r *http.Request) {
+	tenantID, ownerID, ok := h.tenantAndUser(r)
+	if !ok {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID and X-User-ID headers required"})
+		return
+	}
+	keyID := chi.URLParam(r, "id")
 
 	var keyPrefix string
-	queryCheck := `SELECT key_prefix FROM api_keys WHERE id = $1 AND tenant_id = $2 AND owner_id = $3`
-	if err := h.db.GetContext(c.Request.Context(), &keyPrefix, queryCheck, keyID, tenantID, ownerID); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "api key not found"})
+	queryCheck := `SELECT key_prefix FROM api_keys WHERE id = ? AND tenant_id = ? AND owner_id = ?`
+	if err := h.db.WithContext(r.Context()).Raw(queryCheck, keyID, tenantID, ownerID).Scan(&keyPrefix).Error; err != nil {
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "api key not found"})
 		return
 	}
 
 	var logs []APILog
 	query := `SELECT id, client_id, method, path, status_code, latency_ms, ip_address, 
 	          COALESCE(request_payload::text, '{}') as request_payload, 
-			  COALESCE(response_payload::text, '{}') as response_payload, created_at
-	          FROM api_logs WHERE tenant_id = $1 AND client_id = $2 ORDER BY created_at DESC LIMIT 50`
-	if err := h.db.SelectContext(c.Request.Context(), &logs, query, tenantID, keyPrefix); err != nil {
+	          COALESCE(response_payload::text, '{}') as response_payload, created_at
+	          FROM api_logs WHERE tenant_id = ? AND client_id = ? ORDER BY created_at DESC LIMIT 50`
+	if err := h.db.WithContext(r.Context()).Raw(query, tenantID, keyPrefix).Scan(&logs).Error; err != nil {
 		h.logger.Error("Failed to fetch api key logs", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch logs"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to fetch logs"})
 		return
 	}
 	if logs == nil {
 		logs = make([]APILog, 0)
 	}
-	c.JSON(http.StatusOK, gin.H{"logs": logs})
+	response.JSON(w, r, http.StatusOK, map[string]interface{}{"logs": logs})
 }
 
-func (h *DeveloperAPIHandler) getDeveloperAnalytics(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+func (h *DeveloperAPIHandler) getDeveloperAnalytics(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
 
 	// Global tenant-level analytics (for the frontend dashboard chart)
 	type AnalyticPoint struct {
@@ -414,35 +457,38 @@ func (h *DeveloperAPIHandler) getDeveloperAnalytics(c *gin.Context) {
 			COALESCE(AVG(latency_ms), 0)::int as avg_latency,
 			SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as errors
 		FROM api_logs 
-		WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '7 days'
+		WHERE tenant_id = ? AND created_at >= NOW() - INTERVAL '7 days'
 		GROUP BY log_date
 		ORDER BY log_date ASC
 	`
-	if err := h.db.SelectContext(c.Request.Context(), &data, query, tenantID); err != nil {
+	if err := h.db.WithContext(r.Context()).Raw(query, tenantID).Scan(&data).Error; err != nil {
 		h.logger.Error("Failed to fetch analytics", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch analytics"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to fetch analytics"})
 		return
 	}
 
 	if data == nil {
 		data = make([]AnalyticPoint, 0)
 	}
-	c.JSON(http.StatusOK, gin.H{"analytics": data})
+	response.JSON(w, r, http.StatusOK, map[string]interface{}{"analytics": data})
 }
 
-func (h *DeveloperAPIHandler) listAssignedUsers(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
+func (h *DeveloperAPIHandler) listAssignedUsers(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
 	if tenantID == "" || appID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header and Application ID required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID header and Application ID required"})
 		return
 	}
 
-	users, err := h.appStore.ListAssignedUsers(c.Request.Context(), tenantID, appID)
+	users, err := h.appStore.ListAssignedUsers(r.Context(), tenantID, appID)
 	if err != nil {
 		h.logger.Error("Failed to list assigned users", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list assigned users"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to list assigned users"})
 		return
 	}
 
@@ -450,55 +496,56 @@ func (h *DeveloperAPIHandler) listAssignedUsers(c *gin.Context) {
 		users = make([]string, 0)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	response.JSON(w, r, http.StatusOK, map[string]interface{}{"users": users})
 }
 
-// AssignUserRequest represents the payload to grant a user application access.
-type AssignUserRequest struct {
-	UserID string `json:"user_id" binding:"required"`
-}
-
-func (h *DeveloperAPIHandler) assignUserToApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
+func (h *DeveloperAPIHandler) assignUserToApp(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
 
 	if tenantID == "" || appID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header and Application ID required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID header and Application ID required"})
 		return
 	}
 
 	var req AssignUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	err := h.appStore.AssignUserToApp(c.Request.Context(), tenantID, appID, req.UserID)
+	err := h.appStore.AssignUserToApp(r.Context(), tenantID, appID, req.UserID)
 	if err != nil {
 		h.logger.Error("Failed to assign user to app", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to assign user"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to assign user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User assigned to application"})
+	response.JSON(w, r, http.StatusCreated, map[string]string{"message": "User assigned to application"})
 }
 
-func (h *DeveloperAPIHandler) unassignUserFromApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	appID := c.Param("id")
-	userID := c.Param("user_id")
+func (h *DeveloperAPIHandler) unassignUserFromApp(w http.ResponseWriter, r *http.Request) {
+	tenantID, _ := middleware.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		tenantID = r.Header.Get("X-Tenant-ID")
+	}
+	appID := chi.URLParam(r, "id")
+	userID := chi.URLParam(r, "user_id")
 
 	if tenantID == "" || appID == "" || userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header, Application ID, and User ID required"})
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": "X-Tenant-ID header, Application ID, and User ID required"})
 		return
 	}
 
-	err := h.appStore.UnassignUserFromApp(c.Request.Context(), tenantID, appID, userID)
+	err := h.appStore.UnassignUserFromApp(r.Context(), tenantID, appID, userID)
 	if err != nil {
 		h.logger.Error("Failed to unassign user from app", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to unassign user"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to unassign user"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User unassigned from application"})
+	response.Ok(w, r, map[string]string{"message": "User unassigned from application"})
 }

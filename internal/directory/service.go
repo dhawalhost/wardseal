@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // Service defines the interface for the directory service.

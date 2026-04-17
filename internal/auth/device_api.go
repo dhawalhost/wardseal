@@ -1,18 +1,20 @@
 package auth
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
 // RegisterDeviceRequest defines the payload for registering a device.
 type RegisterDeviceRequest struct {
-	DeviceIdentifier string `json:"device_identifier" binding:"required"`
-	OS               string `json:"os" binding:"required"`
+	DeviceIdentifier string `json:"device_identifier"`
+	OS               string `json:"os"`
 	OSVersion        string `json:"os_version"`
 	IsManaged        bool   `json:"is_managed"`
 }
@@ -24,21 +26,23 @@ type UpdatePostureRequest struct {
 }
 
 // registerDevice handles the POST /api/v1/devices/register
-func (h *HTTPHandler) registerDevice(c *gin.Context) {
+func (h *HTTPHandler) registerDevice(w http.ResponseWriter, r *http.Request) {
 	var req RegisterDeviceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		h.logger.Error("Failed to extract tenant ID", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing tenant context"})
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	userID := c.Request.Header.Get("X-User-ID")
+	userID, _ := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		userID = r.Header.Get("X-User-ID")
+	}
 	if userID == "" {
 		userID = AnonymousUserID // Placeholder for unauthenticated device registration
 	}
@@ -54,65 +58,60 @@ func (h *HTTPHandler) registerDevice(c *gin.Context) {
 		LastSeenAt:       time.Now(),
 	}
 
-	if err := h.svc.Device().Register(c.Request.Context(), device); err != nil {
+	if err := h.svc.Device().Register(r.Context(), device); err != nil {
 		h.logger.Error("Failed to register device", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register device"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to register device"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, device)
+	response.JSON(w, r, http.StatusCreated, device)
 }
 
 // updatePosture handles POST /api/v1/devices/{id}/posture
-func (h *HTTPHandler) updatePosture(c *gin.Context) {
-	id := c.Param("id")
+func (h *HTTPHandler) updatePosture(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	var req UpdatePostureRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	if err := h.svc.Device().UpdatePosture(c.Request.Context(), id, req.IsCompliant, req.RiskScore); err != nil {
+	if err := h.svc.Device().UpdatePosture(r.Context(), id, req.IsCompliant, req.RiskScore); err != nil {
 		h.logger.Error("Failed to update posture", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update device posture"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to update device posture"})
 		return
 	}
 
-	c.Status(http.StatusOK)
+	response.Ok(w, r, map[string]string{"message": "posture updated"})
 }
 
 // listDevices handles GET /api/v1/devices
-func (h *HTTPHandler) listDevices(c *gin.Context) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil {
-		h.logger.Error("Failed to extract tenant ID", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing tenant context"})
+func (h *HTTPHandler) listDevices(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	devices, err := h.svc.Device().List(c.Request.Context(), tenantID)
+	devices, err := h.svc.Device().List(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to list devices", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list devices"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to list devices"})
 		return
 	}
 
-	c.JSON(http.StatusOK, devices)
+	response.Ok(w, r, devices)
 }
 
 // deleteDevice handles DELETE /api/v1/devices/{id}
-func (h *HTTPHandler) deleteDevice(c *gin.Context) {
-	id := c.Param("id")
+func (h *HTTPHandler) deleteDevice(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 
-	// Ideally we should check if the device belongs to the tenant, but for MVP ID is unique enough
-	// or we can implement GetByID and check tenant.
-	// For now, let's just delete.
-
-	if err := h.svc.Device().Delete(c.Request.Context(), id); err != nil {
+	if err := h.svc.Device().Delete(r.Context(), id); err != nil {
 		h.logger.Error("Failed to delete device", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete device"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to delete device"})
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }

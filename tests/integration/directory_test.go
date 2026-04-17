@@ -17,7 +17,7 @@ func TestDirectoryHealthCheck(t *testing.T) {
 	defer env.Teardown(t)
 
 	client := NewHTTPClient(env.DirServer.URL, env.TestTenantID)
-	resp := client.Get(t, "/health")
+	resp := client.Get(t, "/api/v1/directory/health")
 	AssertStatus(t, resp, http.StatusOK)
 
 	var result map[string]interface{}
@@ -48,7 +48,7 @@ func TestUserCRUD(t *testing.T) {
 				"status":   "active",
 			},
 		}
-		resp := client.Post(t, "/users", createReq)
+		resp := client.Post(t, "/api/v1/directory/users", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -67,7 +67,7 @@ func TestUserCRUD(t *testing.T) {
 		if createdUserID == "" {
 			t.Skip("No user ID from create step")
 		}
-		resp := client.Get(t, "/users/"+createdUserID)
+		resp := client.Get(t, "/api/v1/directory/users/"+createdUserID)
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -83,7 +83,7 @@ func TestUserCRUD(t *testing.T) {
 
 	// 3. Get User by Email
 	t.Run("GetByEmail", func(t *testing.T) {
-		resp := client.Get(t, "/users?email=newuser@wardseal.com")
+		resp := client.Get(t, "/api/v1/directory/users?email=newuser@wardseal.com")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -106,7 +106,7 @@ func TestUserCRUD(t *testing.T) {
 			"email":  "newuser@wardseal.com",
 			"status": "inactive",
 		}
-		resp := client.Put(t, "/users/"+createdUserID, updateReq)
+		resp := client.Put(t, "/api/v1/directory/users/"+createdUserID, updateReq)
 		AssertStatus(t, resp, http.StatusOK)
 
 	})
@@ -116,11 +116,11 @@ func TestUserCRUD(t *testing.T) {
 		if createdUserID == "" {
 			t.Skip("No user ID from create step")
 		}
-		resp := client.Delete(t, "/users/"+createdUserID)
+		resp := client.Delete(t, "/api/v1/directory/users/"+createdUserID)
 		AssertStatus(t, resp, http.StatusNoContent)
 
 		// Verify deletion
-		getResp := client.Get(t, "/users/"+createdUserID)
+		getResp := client.Get(t, "/api/v1/directory/users/"+createdUserID)
 		AssertStatus(t, getResp, http.StatusNotFound)
 	})
 }
@@ -144,7 +144,7 @@ func TestGroupCRUD(t *testing.T) {
 				"name": "Test Group Unique",
 			},
 		}
-		resp := client.Post(t, "/groups", createReq)
+		resp := client.Post(t, "/api/v1/directory/groups", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -161,7 +161,7 @@ func TestGroupCRUD(t *testing.T) {
 		if createdGroupID == "" {
 			t.Skip("No group ID from create step")
 		}
-		resp := client.Get(t, "/groups/"+createdGroupID)
+		resp := client.Get(t, "/api/v1/directory/groups/"+createdGroupID)
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -185,7 +185,7 @@ func TestGroupCRUD(t *testing.T) {
 		updateReq := map[string]interface{}{
 			"name": "Updated Test Group",
 		}
-		resp := client.Put(t, "/groups/"+createdGroupID, updateReq)
+		resp := client.Put(t, "/api/v1/directory/groups/"+createdGroupID, updateReq)
 		AssertStatus(t, resp, http.StatusOK)
 
 	})
@@ -195,11 +195,11 @@ func TestGroupCRUD(t *testing.T) {
 		if createdGroupID == "" {
 			t.Skip("No group ID from create step")
 		}
-		resp := client.Delete(t, "/groups/"+createdGroupID)
+		resp := client.Delete(t, "/api/v1/directory/groups/"+createdGroupID)
 		AssertStatus(t, resp, http.StatusNoContent)
 
 		// Verify deletion
-		getResp := client.Get(t, "/groups/"+createdGroupID)
+		getResp := client.Get(t, "/api/v1/directory/groups/"+createdGroupID)
 		AssertStatus(t, getResp, http.StatusNotFound)
 	})
 }
@@ -216,7 +216,7 @@ func TestGroupMembership(t *testing.T) {
 	client := NewHTTPClient(env.DirServer.URL, env.TestTenantID)
 
 	// Create a user
-	userResp := client.Post(t, "/users", map[string]interface{}{
+	userResp := client.Post(t, "/api/v1/directory/users", map[string]interface{}{
 		"user": map[string]interface{}{
 			"email":    "member@wardseal.com",
 			"password": "SecurePassword123!",
@@ -229,7 +229,7 @@ func TestGroupMembership(t *testing.T) {
 	userID := createdUser["user_id"].(string)
 
 	// Create a group
-	groupResp := client.Post(t, "/groups", map[string]interface{}{
+	groupResp := client.Post(t, "/api/v1/directory/groups", map[string]interface{}{
 		"group": map[string]interface{}{
 			"name":        "Membership Test Group Unique",
 			"description": "Group for membership testing",
@@ -242,7 +242,7 @@ func TestGroupMembership(t *testing.T) {
 
 	// Add user to group
 	t.Run("AddMember", func(t *testing.T) {
-		resp := client.Post(t, "/groups/"+groupID+"/users", map[string]interface{}{
+		resp := client.Post(t, "/api/v1/directory/groups/"+groupID+"/users", map[string]interface{}{
 			"user_id": userID,
 		})
 		AssertStatus(t, resp, http.StatusNoContent)
@@ -250,13 +250,13 @@ func TestGroupMembership(t *testing.T) {
 
 	// Remove user from group
 	t.Run("RemoveMember", func(t *testing.T) {
-		resp := client.Delete(t, "/groups/"+groupID+"/users/"+userID)
+		resp := client.Delete(t, "/api/v1/directory/groups/"+groupID+"/users/"+userID)
 		AssertStatus(t, resp, http.StatusNoContent)
 	})
 
 	// Cleanup
-	client.Delete(t, "/users/"+userID)
-	client.Delete(t, "/groups/"+groupID)
+	client.Delete(t, "/api/v1/directory/users/"+userID)
+	client.Delete(t, "/api/v1/directory/groups/"+groupID)
 }
 
 // TestCredentialVerification tests the credential verification endpoint.
@@ -271,7 +271,7 @@ func TestCredentialVerification(t *testing.T) {
 	client := NewHTTPClient(env.DirServer.URL, env.TestTenantID)
 
 	// Create a user with known credentials
-	userResp := client.Post(t, "/users", map[string]interface{}{
+	userResp := client.Post(t, "/api/v1/directory/users", map[string]interface{}{
 		"user": map[string]interface{}{
 			"email":    "verify@wardseal.com",
 			"password": "VerifyPass123!",
@@ -285,7 +285,7 @@ func TestCredentialVerification(t *testing.T) {
 
 	// Verify correct credentials
 	t.Run("ValidCredentials", func(t *testing.T) {
-		verifyReq, _ := http.NewRequest(http.MethodPost, env.DirServer.URL+"/internal/credentials/verify", mustJSON(map[string]interface{}{
+		verifyReq, _ := http.NewRequest(http.MethodPost, env.DirServer.URL+"/api/v1/directory/internal/credentials/verify", mustJSON(map[string]interface{}{
 			"email":    "verify@wardseal.com",
 			"password": "VerifyPass123!",
 		}))
@@ -301,7 +301,7 @@ func TestCredentialVerification(t *testing.T) {
 
 	// Verify incorrect credentials
 	t.Run("InvalidCredentials", func(t *testing.T) {
-		verifyReq, _ := http.NewRequest(http.MethodPost, env.DirServer.URL+"/internal/credentials/verify", mustJSON(map[string]interface{}{
+		verifyReq, _ := http.NewRequest(http.MethodPost, env.DirServer.URL+"/api/v1/directory/internal/credentials/verify", mustJSON(map[string]interface{}{
 			"email":    "verify@wardseal.com",
 			"password": "WrongPassword!",
 		}))
@@ -316,5 +316,5 @@ func TestCredentialVerification(t *testing.T) {
 	})
 
 	// Cleanup
-	client.Delete(t, "/users/"+userID)
+	client.Delete(t, "/api/v1/directory/users/"+userID)
 }

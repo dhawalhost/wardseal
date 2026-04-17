@@ -1,11 +1,13 @@
 package governance
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/dhawalhost/gokit/response"
 	"github.com/dhawalhost/wardseal/internal/webhook"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -19,102 +21,107 @@ func NewWebhookHTTPHandler(svc webhook.Service, logger *zap.Logger) *WebhookHTTP
 	return &WebhookHTTPHandler{svc: svc, logger: logger}
 }
 
-func (h *WebhookHTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	hooks := rg.Group("/webhooks")
-	{
-		hooks.POST("", h.createWebhook)
-		hooks.GET("", h.listWebhooks)
-		hooks.GET("/:id", h.getWebhook)
-		hooks.DELETE("/:id", h.deleteWebhook)
-	}
+// Router registers webhook routes.
+func (h *WebhookHTTPHandler) Router() http.Handler {
+	r := chi.NewRouter()
+
+	r.Post("/", h.createWebhook)
+	r.Get("/", h.listWebhooks)
+	r.Get("/{id}", h.getWebhook)
+	r.Delete("/{id}", h.deleteWebhook)
+
+	return r
 }
 
-func (h *WebhookHTTPHandler) getWebhook(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *WebhookHTTPHandler) tenantID(r *http.Request) (string, bool) {
+	tenantID, ok := middleware.TenantIDFromContext(r.Context())
 	if !ok {
-		return
-	}
-
-	id := c.Param("id")
-	hook, err := h.svc.GetWebhook(c.Request.Context(), tenantID, id)
-	if err != nil {
-		h.logger.Error("Failed to get webhook", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get webhook"})
-		return
-	}
-
-	if hook == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "webhook not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, hook)
-}
-
-func (h *WebhookHTTPHandler) tenantID(c *gin.Context) (string, bool) {
-	tenantID, err := middleware.TenantIDFromGinContext(c)
-	if err != nil || tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header required"})
 		return "", false
 	}
 	return tenantID, true
 }
 
-func (h *WebhookHTTPHandler) createWebhook(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *WebhookHTTPHandler) getWebhook(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	hook, err := h.svc.GetWebhook(r.Context(), tenantID, id)
+	if err != nil {
+		h.logger.Error("Failed to get webhook", zap.Error(err))
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to get webhook"})
+		return
+	}
+
+	if hook == nil {
+		response.JSON(w, r, http.StatusNotFound, map[string]string{"error": "webhook not found"})
+		return
+	}
+
+	response.Ok(w, r, hook)
+}
+
+func (h *WebhookHTTPHandler) createWebhook(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
+	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
 	var req struct {
-		URL    string   `json:"url" binding:"required,url"`
-		Secret string   `json:"secret" binding:"required,min=8"`
-		Events []string `json:"events" binding:"required,min=1"`
+		URL    string   `json:"url"`
+		Secret string   `json:"secret"`
+		Events []string `json:"events"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, r, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
-	id, err := h.svc.CreateWebhook(c.Request.Context(), tenantID, req.URL, req.Secret, req.Events)
+	id, err := h.svc.CreateWebhook(r.Context(), tenantID, req.URL, req.Secret, req.Events)
 	if err != nil {
 		h.logger.Error("Failed to create webhook", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create webhook"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to create webhook"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"id": id})
+	response.Created(w, r, map[string]string{"id": id})
 }
 
-func (h *WebhookHTTPHandler) listWebhooks(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *WebhookHTTPHandler) listWebhooks(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	hooks, err := h.svc.ListWebhooks(c.Request.Context(), tenantID)
+	hooks, err := h.svc.ListWebhooks(r.Context(), tenantID)
 	if err != nil {
 		h.logger.Error("Failed to list webhooks", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list webhooks"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to list webhooks"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"webhooks": hooks})
+	response.Ok(w, r, map[string]interface{}{"webhooks": hooks})
 }
 
-func (h *WebhookHTTPHandler) deleteWebhook(c *gin.Context) {
-	tenantID, ok := h.tenantID(c)
+func (h *WebhookHTTPHandler) deleteWebhook(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := h.tenantID(r)
 	if !ok {
+		response.JSON(w, r, http.StatusUnauthorized, map[string]string{"error": "tenant required"})
 		return
 	}
 
-	id := c.Param("id")
-	if err := h.svc.DeleteWebhook(c.Request.Context(), tenantID, id); err != nil {
+	id := chi.URLParam(r, "id")
+	if err := h.svc.DeleteWebhook(r.Context(), tenantID, id); err != nil {
 		h.logger.Error("Failed to delete webhook", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete webhook"})
+		response.JSON(w, r, http.StatusInternalServerError, map[string]string{"error": "failed to delete webhook"})
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	response.NoContent(w)
 }

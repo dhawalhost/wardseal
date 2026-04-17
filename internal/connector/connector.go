@@ -3,6 +3,8 @@ package connector
 import (
 	"context"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Connector defines the interface that all identity connectors must implement.
@@ -41,16 +43,17 @@ type Connector interface {
 
 // Config holds connector configuration.
 type Config struct {
-	ID          string            `json:"id" db:"id"`
-	TenantID    string            `json:"tenant_id" db:"tenant_id"`
-	Name        string            `json:"name" db:"name"`
-	Type        string            `json:"type" db:"type"` // ldap, azure-ad, google, scim
-	Enabled     bool              `json:"enabled" db:"enabled"`
-	Endpoint    string            `json:"endpoint" db:"endpoint"`
-	Credentials map[string]string `json:"credentials" db:"-"` // Encrypted at rest
-	Settings    map[string]string `json:"settings" db:"-"`
-	CreatedAt   time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at" db:"updated_at"`
+	ID          string            `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	TenantID    string            `gorm:"index;not null" json:"tenant_id"`
+	Name        string            `gorm:"not null" json:"name"`
+	Type        string            `gorm:"not null" json:"type"` // e.g., "scim", "ldap", "google", "azure-ad"
+	Enabled     bool              `gorm:"default:true" json:"enabled"`
+	Endpoint    string            `json:"endpoint,omitempty"`
+	Credentials map[string]string `gorm:"serializer:json" json:"credentials,omitempty"`
+	Settings    map[string]string `gorm:"serializer:json" json:"settings,omitempty"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt    `gorm:"index" json:"-"`
 }
 
 // User represents a user in an external system.

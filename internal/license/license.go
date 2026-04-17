@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dhawalhost/wardseal/pkg/types"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -52,8 +53,8 @@ func NewManager(publicKeyPEM []byte) (*Manager, error) {
 }
 
 // Verify parses and verifies a license key (JWT).
-func (m *Manager) Verify(tokenString string) (*License, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &LicenseClaims{}, func(token *jwt.Token) (interface{}, error) {
+func (m *Manager) Verify(tokenString types.Secret) (*License, error) {
+	token, err := jwt.ParseWithClaims(tokenString.Raw(), &LicenseClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

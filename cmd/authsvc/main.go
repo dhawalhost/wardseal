@@ -2,37 +2,41 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
-	"strings"
+	"time"
 
+	"github.com/dhawalhost/gokit/database"
+	"github.com/dhawalhost/gokit/logger"
+	"github.com/dhawalhost/gokit/observability"
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/license"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/config"
-	"github.com/dhawalhost/wardseal/pkg/database"
 	"github.com/dhawalhost/wardseal/pkg/kms"
-	"github.com/dhawalhost/wardseal/pkg/logger"
-	"github.com/dhawalhost/wardseal/pkg/middleware"
-	"github.com/dhawalhost/wardseal/pkg/observability"
-	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 )
 
 func main() {
-	log := logger.NewFromEnv()
-	defer func() { _ = log.Sync() }()
-
-	// Load centralized configuration (handles defaults, .env, OS env, and Vault)
+	// Load centralized configuration
 	cfg := config.MustLoad()
+
+	isDev := cfg.Environment == config.Development
+	log, err := logger.New(cfg.Log.Level, isDev)
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = log.Sync() }()
 
 	// Enterprise License Verification
 	if cfg.License.Required {
 		log.Info("Checking Enterprise License...")
 
-		pubKey, err := os.ReadFile(cfg.License.PublicKeyPath) //nolint:gosec // G304: path is from trusted config
+		pubKey, err := os.ReadFile(cfg.License.PublicKeyPath)
 		if err != nil {
 			log.Fatal("Failed to read license public key", zap.Error(err))
 		}
@@ -42,7 +46,7 @@ func main() {
 			log.Fatal("Failed to initialize license manager", zap.Error(err))
 		}
 
-		if cfg.License.Key == "" {
+		if cfg.License.Key.IsEmpty() {
 			log.Fatal("LICENSE_KEY environment variable/vault secret is required for enterprise edition")
 		}
 
@@ -59,44 +63,37 @@ func main() {
 
 	directoryServiceURL := cfg.Auth.DirectoryServiceURL
 	serviceToken := cfg.Auth.ServiceAuthToken
-	if serviceToken == "" {
-		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback, not production credentials
+	if serviceToken.IsEmpty() {
+		serviceToken = "dev-internal-token"
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
 	serviceHeader := cfg.Auth.ServiceAuthHeader
 
-	dbConfig := database.Config{
-		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password, // Securely injected by Vault if configured
-		DBName:   cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-	}
-
-	db, err := database.NewConnection(dbConfig)
+	db, err := database.New(context.Background(), cfg.Database)
 	if err != nil {
-		log.Error("Failed to connect to database", zap.Error(err))
-		os.Exit(1)
+		log.Fatal("Failed to connect to database", zap.Error(err))
 	}
-	clientStore := oauthclient.NewRepository(db)
-	samlStore := saml.NewStore(db)
-	deviceStore := auth.NewDeviceRepository(db)
-	signalStore := auth.NewSignalRepository(db)
-	webauthnStore := auth.NewWebAuthnRepository(db)
-	brandingStore := auth.NewBrandingRepository(db)
-	ssoProviderStore := auth.NewSSOProviderRepository(db)
-	tenantStore := auth.NewTenantRepository(db)
-	federationStore := auth.NewFederationRepository(db)
+	defer func() { _ = db.Close() }()
+
+	gormDB := db.GORM
+	clientStore := oauthclient.NewRepository(gormDB)
+	samlStore := saml.NewStore(gormDB)
+	deviceStore := auth.NewDeviceRepository(gormDB)
+	signalStore := auth.NewSignalRepository(gormDB)
+	webauthnStore := auth.NewWebAuthnRepository(gormDB)
+	brandingStore := auth.NewBrandingRepository(gormDB)
+	ssoProviderStore := auth.NewSSOProviderRepository(gormDB)
+	tenantStore := auth.NewTenantRepository(gormDB)
+	federationStore := auth.NewFederationRepository(gormDB)
 
 	authServiceURL := cfg.Auth.BaseURL
 
 	// Initialize persistent repositories for production durability
-	codeStore := auth.NewAuthorizationCodeRepository(db)
-	refreshStore := auth.NewRefreshTokenRepository(db)
-	revocationStore := auth.NewRevocationRepository(db)
-	totpStore := auth.NewTOTPRepository(db)
-	appStore := auth.NewDeveloperAppRepository(db)
+	codeStore := auth.NewAuthorizationCodeRepository(gormDB)
+	refreshStore := auth.NewRefreshTokenRepository(gormDB)
+	revocationStore := auth.NewRevocationRepository(gormDB)
+	totpStore := auth.NewTOTPRepository(gormDB)
+	appStore := auth.NewDeveloperAppRepository(gormDB)
 
 	// Initialize Key Management Service
 	kmsConfig := kms.Config{
@@ -114,8 +111,7 @@ func main() {
 
 	signer, err := kms.NewSigner(kmsConfig)
 	if err != nil {
-		log.Error("Failed to initialize KMS signer", zap.Error(err))
-		os.Exit(1)
+		log.Fatal("Failed to initialize KMS signer", zap.Error(err))
 	}
 	defer func() { _ = signer.Close() }()
 
@@ -132,169 +128,90 @@ func main() {
 		FederationStore:     federationStore,
 		BaseURL:             authServiceURL,
 		Signer:              signer,
-		// Use SQL stores for persistence
-		CodeStore:        codeStore,
-		RefreshStore:     refreshStore,
-		RevocationStore:  revocationStore,
-		TOTPStore:        totpStore,
-		SSOProviderStore: ssoProviderStore,
-		TenantStore:      tenantStore,
-		AppStore:         appStore,
-		UIURL:            cfg.Auth.UIURL,
-		DeploymentMode:   cfg.Auth.DeploymentMode,
+		CodeStore:           codeStore,
+		RefreshStore:        refreshStore,
+		RevocationStore:     revocationStore,
+		TOTPStore:           totpStore,
+		SSOProviderStore:    ssoProviderStore,
+		TenantStore:         tenantStore,
+		AppStore:            appStore,
+		UIURL:               cfg.Auth.UIURL,
+		DeploymentMode:      cfg.Auth.DeploymentMode,
 	})
 	if err != nil {
-		log.Error("Failed to create auth service", zap.Error(err))
-		os.Exit(1)
+		log.Fatal("Failed to create auth service", zap.Error(err))
 	}
 
-	router := gin.Default()
+	r := chi.NewRouter()
+
+	// Global Middleware
+	r.Use(chimiddleware.RequestID)
+	r.Use(chimiddleware.RealIP)
+	r.Use(chimiddleware.Recoverer)
+	r.Use(chimiddleware.Timeout(60 * time.Second))
 
 	// CORS configuration
 	if len(cfg.Governance.CORSAllowedOrigins) > 0 {
-		origins := cfg.Governance.CORSAllowedOrigins
-		router.Use(func(c *gin.Context) {
-			origin := c.Request.Header.Get("Origin")
-			for _, allowed := range origins {
-				if strings.TrimSpace(allowed) == origin {
-					c.Header("Access-Control-Allow-Origin", origin)
-					c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-					c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, X-Tenant-ID, X-User-ID, X-Device-ID, X-OS-Version")
-					c.Header("Access-Control-Allow-Credentials", "true")
-					break
-				}
-			}
-			if c.Request.Method == "OPTIONS" {
-				c.AbortWithStatus(204)
-				return
-			}
-			c.Next()
-		})
+		r.Use(cors.Handler(cors.Options{
+			AllowedOrigins:   cfg.Governance.CORSAllowedOrigins,
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Origin", "Content-Type", "Authorization", "X-Tenant-ID", "X-User-ID", "X-Device-ID", "X-OS-Version"},
+			AllowCredentials: true,
+			MaxAge:           300,
+		}))
 	}
 
-	// Initialize OpenTelemetry tracing
-	shutdownTracer, err := observability.InitTracer(context.Background(), observability.TracerConfig{
-		ServiceName:    cfg.Observability.ServiceName,
-		ServiceVersion: cfg.Observability.ServiceVersion,
-		Environment:    string(cfg.Environment),
-	}, log)
+	// Observability
+	observability.InitMetrics("authsvc")
+	shutdownTracer, err := observability.InitTracer(context.Background(), cfg.Telemetry)
 	if err != nil {
 		log.Error("Failed to initialize tracer", zap.Error(err))
+	} else {
+		defer func() { _ = shutdownTracer(context.Background()) }()
 	}
-	defer func() { _ = shutdownTracer(context.Background()) }()
-
-	// Initialize and apply observability middleware
-	metrics := observability.NewMetrics()
-	router.Use(otelgin.Middleware("authsvc"))
-	router.Use(observability.PrometheusMiddleware(metrics))
-	router.Use(logger.RequestLogger(log))
-
-	// Security Middleware
-	router.Use(middleware.SecurityHeadersMiddleware())
-
-	var rateLimitRedisClient *redis.Client
-	if cfg.Auth.RedisAddr != "" {
-		rateLimitRedisClient = redis.NewClient(&redis.Options{
-			Addr:     cfg.Auth.RedisAddr,
-			Password: cfg.Auth.RedisPassword,
-			DB:       cfg.Auth.RedisDB,
-		})
-		if err := rateLimitRedisClient.Ping(context.Background()).Err(); err != nil {
-			log.Warn("Distributed limiter Redis unavailable; will use strict degraded fallback",
-				zap.Error(err),
-				zap.String("redis_addr", cfg.Auth.RedisAddr))
-			rateLimitRedisClient = nil
-		}
-	}
-
-	router.Use(middleware.DistributedRateLimitMiddleware(middleware.DistributedRateLimitConfig{
-		RedisClient: rateLimitRedisClient,
-		KeyPrefix:   cfg.Auth.RateLimitKeyPrefix,
-		UseTenant:   cfg.Auth.RateLimitUseTenant,
-		DefaultProfile: middleware.RateLimitWindowProfile{
-			Requests: cfg.Auth.RateLimitDefault.Requests,
-			Window:   cfg.Auth.RateLimitDefault.Window,
-		},
-		EndpointProfiles: map[string]middleware.RateLimitWindowProfile{
-			"login": {
-				Requests: cfg.Auth.RateLimitLogin.Requests,
-				Window:   cfg.Auth.RateLimitLogin.Window,
-			},
-			"token": {
-				Requests: cfg.Auth.RateLimitToken.Requests,
-				Window:   cfg.Auth.RateLimitToken.Window,
-			},
-			"setup": {
-				Requests: cfg.Auth.RateLimitSetup.Requests,
-				Window:   cfg.Auth.RateLimitSetup.Window,
-			},
-			"webhook": {
-				Requests: cfg.Auth.RateLimitWebhook.Requests,
-				Window:   cfg.Auth.RateLimitWebhook.Window,
-			},
-		},
-		DegradedProfile: middleware.RateLimitWindowProfile{
-			Requests: cfg.Auth.RateLimitDegraded.Requests,
-			Window:   cfg.Auth.RateLimitDegraded.Window,
-		},
-	}))
-
-	// API Logger Middleware
-	router.Use(middleware.APILogger(db, log))
 
 	// Initialize login attempt repository for brute-force protection
-	loginAttemptStore := auth.NewLoginAttemptRepository(db)
+	loginAttemptStore := auth.NewLoginAttemptRepository(gormDB)
 
 	authHandlers := auth.NewHTTPHandler(svc, log, loginAttemptStore, appStore)
-	if cfg.Auth.RedisAddr != "" {
+	if cfg.Redis.Addr != "" {
 		webAuthnSessionStore, err := auth.NewRedisWebAuthnSessionRepository(auth.RedisWebAuthnSessionStoreConfig{
-			Addr:      cfg.Auth.RedisAddr,
-			Password:  cfg.Auth.RedisPassword,
-			DB:        cfg.Auth.RedisDB,
+			Addr:      cfg.Redis.Addr,
+			Password:  cfg.Redis.Password,
+			DB:        cfg.Redis.DB,
 			TTL:       cfg.Auth.WebAuthnSessionTTL,
 			KeyPrefix: "authsvc:webauthn:session:",
 		})
-		if err != nil {
-			if cfg.Environment == config.Production {
-				log.Fatal("Failed to initialize Redis WebAuthn session store in production",
-					zap.Error(err),
-					zap.String("redis_addr", cfg.Auth.RedisAddr))
-			}
-			log.Warn("Failed to initialize Redis WebAuthn session store; using in-memory fallback",
-				zap.Error(err),
-				zap.String("redis_addr", cfg.Auth.RedisAddr))
-		} else {
+		if err == nil {
 			authHandlers.SetWebAuthnSessionRepository(webAuthnSessionStore)
-			log.Info("Using Redis-backed WebAuthn session repository",
-				zap.String("redis_addr", cfg.Auth.RedisAddr),
-				zap.Duration("session_ttl", cfg.Auth.WebAuthnSessionTTL))
+			log.Info("Using Redis-backed WebAuthn session repository", zap.String("redis_addr", cfg.Redis.Addr))
 		}
-	} else {
-		if cfg.Environment == config.Production {
-			log.Fatal("REDIS_ADDR is required in production for WebAuthn session storage")
-		}
-		log.Warn("REDIS_ADDR not set; using in-memory WebAuthn session repository (not suitable for multi-replica authsvc)")
 	}
-	authHandlers.RegisterRoutes(router)
-	authHandlers.RegisterBrandingRoutes(router.Group("/"))
 
-	// Register Prometheus metrics handler
-	router.GET("/metrics", gin.WrapH(observability.PrometheusHandler()))
+	// Register Domain Routes
+	authHandlers.Register(r)
+	r.Mount("/branding", authHandlers.BrandingRouter())
 
-	// SAML Setup
+	r.Handle("/metrics", observability.MetricsHandler())
 
-	// Register SAML management API
+	// SAML Management
 	samlHandlers := saml.NewHTTPHandler(samlStore, log)
-	samlHandlers.RegisterRoutes(router.Group("/api/v1"))
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Mount("/saml", samlHandlers.Router())
 
-	// Developer Portal API (self-service app registration, API keys)
-	developerHandlers := auth.NewDeveloperAPIHandler(db, log)
-	developerHandlers.RegisterRoutes(router.Group("/api/v1"))
-
-	// Register IdP-initiated endpoint logic is handled inside authHandlers.RegisterRoutes -> svc.SAML()
+		// Developer Portal API
+		developerHandlers := auth.NewDeveloperAPIHandler(gormDB, log)
+		r.Mount("/", developerHandlers.Router())
+	})
 
 	log.Info("Auth service starting", zap.String("addr", ":8080"))
-	if err := router.Run(":8080"); err != nil {
+	srv := &http.Server{
+		Addr:         ":8080",
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Error("Auth service failed", zap.Error(err))
 		os.Exit(1)
 	}

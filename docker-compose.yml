@@ -74,22 +74,19 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - DB_HOST=postgres
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=identity_platform
-      - DB_SSLMODE=disable
-      - DIRECTORY_SERVICE_URL=http://dirsvc:8081
-      - CORS_ALLOWED_ORIGINS=http://manage.wardseal.local,http://wardseal.local
-      - AUTH_SERVICE_URL=http://auth.wardseal.local
-      - KMS_PROVIDER=local
-      - JWT_PRIVATE_KEY_PATH=/etc/wardseal/keys/private_key.pem
-      - JWT_PUBLIC_KEY_PATH=/etc/wardseal/keys/public_key.pem
-      - DEPLOYMENT_MODE=saas
-      - UI_URL=http://manage.wardseal.local
-      - REDIS_ADDR=redis:6379
-      - REDIS_DB=0
-      - WEBAUTHN_SESSION_TTL_SECONDS=600
+      - APP_DATABASE_DSN=postgres://user:password@postgres:5432/identity_platform?sslmode=disable
+      - APP_REDIS_ADDR=redis:6379
+      - APP_REDIS_DB=0
+      - APP_LOG_LEVEL=debug
+      - APP_AUTH_DIRECTORY_SERVICE_URL=http://dirsvc:8081
+      - APP_CORS_ALLOWED_ORIGINS=http://manage.wardseal.local,http://wardseal.local
+      - APP_AUTH_BASE_URL=http://auth.wardseal.local
+      - APP_KMS_PROVIDER=local
+      - APP_KMS_PRIVATE_KEY_PATH=/etc/wardseal/keys/private_key.pem
+      - APP_KMS_PUBLIC_KEY_PATH=/etc/wardseal/keys/public_key.pem
+      - APP_AUTH_DEPLOYMENT_MODE=saas
+      - APP_AUTH_UI_URL=http://manage.wardseal.local
+      - APP_AUTH_WEBAUTHN_SESSION_TTL=600s
     volumes:
       - ./deploy/dev-keys:/etc/wardseal/keys:ro
     healthcheck:
@@ -115,12 +112,9 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      - DB_HOST=postgres
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=identity_platform
-      - DB_SSLMODE=disable
-      - CORS_ALLOWED_ORIGINS=http://manage.wardseal.local,http://wardseal.local
+      - APP_DATABASE_DSN=postgres://user:password@postgres:5432/identity_platform?sslmode=disable
+      - APP_LOG_LEVEL=debug
+      - APP_CORS_ALLOWED_ORIGINS=http://manage.wardseal.local,http://wardseal.local
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 10s
@@ -146,13 +140,10 @@ services:
       dirsvc:
         condition: service_healthy
     environment:
-      - DB_HOST=postgres
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=identity_platform
-      - DB_SSLMODE=disable
-      - DIRECTORY_SERVICE_URL=http://dirsvc:8081
-      - CORS_ALLOWED_ORIGINS=http://manage.wardseal.local,http://wardseal.local,http://help.wardseal.local
+      - APP_DATABASE_DSN=postgres://user:password@postgres:5432/identity_platform?sslmode=disable
+      - APP_LOG_LEVEL=debug
+      - APP_GOVERNANCE_DIRECTORY_SERVICE_URL=http://dirsvc:8081
+      - APP_CORS_ALLOWED_ORIGINS=http://manage.wardseal.local,http://wardseal.local,http://help.wardseal.local
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8082/health"]
       interval: 10s
@@ -175,6 +166,9 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    environment:
+      - APP_DATABASE_DSN=postgres://user:password@postgres:5432/identity_platform?sslmode=disable
+      - APP_LOG_LEVEL=debug
     labels:
       - traefik.enable=true
       - traefik.http.routers.policysvc.rule=Host(`api.wardseal.local`) && PathPrefix(`/api/v1/policy`)
@@ -192,6 +186,9 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    environment:
+      - APP_DATABASE_DSN=postgres://user:password@postgres:5432/identity_platform?sslmode=disable
+      - APP_LOG_LEVEL=debug
     labels:
       - traefik.enable=true
       - traefik.http.routers.provsvc.rule=Host(`api.wardseal.local`) && PathPrefix(`/api/v1/provisioning`)
@@ -209,6 +206,8 @@ services:
         VITE_APP_MODE: saas
     depends_on:
       govsvc:
+        condition: service_healthy
+      authsvc:
         condition: service_healthy
     labels:
       - traefik.enable=true

@@ -25,7 +25,7 @@ func TestRBACRoleCRUD(t *testing.T) {
 			"name":        "Test Admin Role",
 			"description": "A test role for integration testing",
 		}
-		resp := client.Post(t, "/api/v1/roles", createReq)
+		resp := client.Post(t, "/api/v1/rbac/roles", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 
 		var created map[string]interface{}
@@ -39,7 +39,7 @@ func TestRBACRoleCRUD(t *testing.T) {
 
 	// 2. List Roles
 	t.Run("List", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/roles")
+		resp := client.Get(t, "/api/v1/rbac/roles")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -58,7 +58,7 @@ func TestRBACRoleCRUD(t *testing.T) {
 		if createdRoleID == "" {
 			t.Skip("No role ID from create step")
 		}
-		resp := client.Get(t, "/api/v1/roles/"+createdRoleID)
+		resp := client.Get(t, "/api/v1/rbac/roles/"+createdRoleID)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -71,7 +71,7 @@ func TestRBACRoleCRUD(t *testing.T) {
 			"name":        "Updated Admin Role",
 			"description": "Updated description",
 		}
-		resp := client.Put(t, "/api/v1/roles/"+createdRoleID, updateReq)
+		resp := client.Put(t, "/api/v1/rbac/roles/"+createdRoleID, updateReq)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
@@ -80,7 +80,7 @@ func TestRBACRoleCRUD(t *testing.T) {
 		if createdRoleID == "" {
 			t.Skip("No role ID from create step")
 		}
-		resp := client.Delete(t, "/api/v1/roles/"+createdRoleID)
+		resp := client.Delete(t, "/api/v1/rbac/roles/"+createdRoleID)
 		AssertStatus(t, resp, http.StatusNoContent)
 	})
 }
@@ -103,13 +103,13 @@ func TestRBACPermissionCRUD(t *testing.T) {
 			"action":      "read",
 			"description": "Read users permission",
 		}
-		resp := client.Post(t, "/api/v1/permissions", createReq)
+		resp := client.Post(t, "/api/v1/rbac/permissions", createReq)
 		AssertStatus(t, resp, http.StatusCreated)
 	})
 
 	// List Permissions
 	t.Run("List", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/permissions")
+		resp := client.Get(t, "/api/v1/rbac/permissions")
 		AssertStatus(t, resp, http.StatusOK)
 
 		var result map[string]interface{}
@@ -132,7 +132,7 @@ func TestRBACUserRoleAssignment(t *testing.T) {
 	client := NewHTTPClient(env.GovServer.URL, env.TestTenantID)
 
 	// Create a role first
-	roleResp := client.Post(t, "/api/v1/roles", map[string]interface{}{
+	roleResp := client.Post(t, "/api/v1/rbac/roles", map[string]interface{}{
 		"name":        "Assignment Test Role",
 		"description": "Role for assignment testing",
 	})
@@ -143,24 +143,24 @@ func TestRBACUserRoleAssignment(t *testing.T) {
 
 	// Get user roles
 	t.Run("GetUserRoles", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/users/"+env.TestUserID+"/roles")
+		resp := client.Get(t, "/api/v1/rbac/users/"+env.TestUserID+"/roles")
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
 	// Assign role to user
 	t.Run("AssignRole", func(t *testing.T) {
-		resp := client.Post(t, "/api/v1/users/"+env.TestUserID+"/roles/"+roleID, nil)
+		resp := client.Post(t, "/api/v1/rbac/users/"+env.TestUserID+"/roles/"+roleID, nil)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
 	// Remove role from user
 	t.Run("RemoveRole", func(t *testing.T) {
-		resp := client.Delete(t, "/api/v1/users/"+env.TestUserID+"/roles/"+roleID)
+		resp := client.Delete(t, "/api/v1/rbac/users/"+env.TestUserID+"/roles/"+roleID)
 		AssertStatus(t, resp, http.StatusNoContent)
 	})
 
 	// Cleanup
-	client.Delete(t, "/api/v1/roles/"+roleID)
+	client.Delete(t, "/api/v1/rbac/roles/"+roleID)
 }
 
 // TestRBACUserPermissions tests getting user permissions.
@@ -174,7 +174,7 @@ func TestRBACUserPermissions(t *testing.T) {
 
 	client := NewHTTPClient(env.GovServer.URL, env.TestTenantID)
 
-	resp := client.Get(t, "/api/v1/users/"+env.TestUserID+"/permissions")
+	resp := client.Get(t, "/api/v1/rbac/users/"+env.TestUserID+"/permissions")
 	AssertStatus(t, resp, http.StatusOK)
 
 	var result map[string]interface{}

@@ -11,17 +11,17 @@ import (
 
 	saml2 "github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 // Store implements samlidp.Store interface.
 type Store struct {
-	db                  *sqlx.DB
+	db                  *gorm.DB
 	samlidp.MemoryStore // We inherit this for methods we don't fully override yet, like Session
 }
 
 // NewStore creates a new SAML Store.
-func NewStore(db *sqlx.DB) *Store {
+func NewStore(db *gorm.DB) *Store {
 	return &Store{
 		db:          db,
 		MemoryStore: samlidp.MemoryStore{},
@@ -43,7 +43,7 @@ type ServiceProvider struct {
 // GetServiceProvider retrieves a service provider by EntityID.
 func (s *Store) GetServiceProvider(ctx context.Context, entityID string) (*saml2.ServiceProvider, error) {
 	var sp ServiceProvider
-	err := s.db.GetContext(ctx, &sp, "SELECT * FROM saml_providers WHERE entity_id = $1", entityID)
+	err := s.db.WithContext(ctx).Raw("SELECT * FROM saml_providers WHERE entity_id = $1", entityID).Scan(&sp).Error
 	if err != nil {
 		return nil, err
 	}
