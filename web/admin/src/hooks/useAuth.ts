@@ -1,18 +1,13 @@
-/**
- * Custom hook for authentication operations.
- * Provides logout functionality and can be extended for additional auth features.
- */
+import axios from 'axios';
+
 export function useAuth() {
-    const logout = () => {
-        // Clear authentication tokens from storage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+  const apiUrl = import.meta.env.VITE_API_URL ?? '';
+  const idUrl = import.meta.env.VITE_ID_URL ?? 'http://id.wardseal.local';
 
-        // Optional: Clear any other auth-related data
-        sessionStorage.clear();
-    };
+  const logout = async () => {
+    // Redirect to central ID logout page which will clear cookies and local state
+    window.location.href = `${idUrl}/logout`;
+  };
 
-    return {
-        logout,
-    };
+  return { logout };
 }

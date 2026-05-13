@@ -210,7 +210,12 @@ const AdminShell: React.FC = () => {
                         <div className="flex gap-3">
                             <Button
                                 variant="outline"
-                                onClick={() => navigate('/portal')}
+                                onClick={() => {
+                                    const appUrl = window.location.hostname.endsWith('.local')
+                                        ? 'http://app.wardseal.local'
+                                        : 'https://app.wardseal.com';
+                                    window.location.assign(appUrl);
+                                }}
                                 className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-all"
                             >
                                 <Activity className="mr-2 h-4 w-4 text-primary" /> User Portal
