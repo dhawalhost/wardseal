@@ -310,7 +310,7 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         if: steps.decision.outputs.should_build == 'true'
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ steps.release.outputs.image }}
           tags: |
