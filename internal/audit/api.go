@@ -2,6 +2,7 @@ package audit
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,13 +25,14 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 }
 
 // RegisterRoutes registers audit routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "audit", "read")
 	audit := rg.Group("/audit")
 	{
-		audit.GET("", h.queryLogs)
-		audit.GET("/stats", h.getStats)
-		audit.GET("/export", h.exportLogs)
-		audit.GET("/:id", h.getEvent)
+		audit.GET("", read, h.queryLogs)
+		audit.GET("/stats", read, h.getStats)
+		audit.GET("/export", read, h.exportLogs)
+		audit.GET("/:id", read, h.getEvent)
 	}
 }
 
@@ -179,31 +181,38 @@ func (h *HTTPHandler) exportLogs(c *gin.Context) {
 	events, err := h.svc.Export(c.Request.Context(), params)
 	if err != nil {
 		h.logger.Error("Failed to export audit logs", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to export audit logs"})
 		return
 	}
 
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=audit_logs.csv")
-
-	writer := csv.NewWriter(c.Writer)
-
-	// Header
-	_ = writer.Write([]string{"Time", "Actor ID", "Actor Type", "Action", "Resource Type", "Resource Name", "Outcome", "IP Address"})
-
-	for _, e := range events {
-		_ = writer.Write([]string{
-			e.Timestamp.Format(time.RFC3339),
-			strVal(e.ActorID),
-			e.ActorType,
-			e.Action,
-			e.ResourceType,
-			strVal(e.ResourceName),
-			e.Outcome,
-			strVal(e.IPAddress),
-		})
+	format := c.DefaultQuery("format", "csv")
+	switch format {
+	case "ndjson", "jsonl":
+		c.Header("Content-Type", "application/x-ndjson")
+		c.Header("Content-Disposition", "attachment; filename=audit_logs.ndjson")
+		enc := json.NewEncoder(c.Writer)
+		for _, e := range events {
+			_ = enc.Encode(e)
+		}
+	default:
+		c.Header("Content-Type", "text/csv")
+		c.Header("Content-Disposition", "attachment; filename=audit_logs.csv")
+		writer := csv.NewWriter(c.Writer)
+		_ = writer.Write([]string{"Time", "Actor ID", "Actor Type", "Action", "Resource Type", "Resource Name", "Outcome", "IP Address"})
+		for _, e := range events {
+			_ = writer.Write([]string{
+				e.Timestamp.Format(time.RFC3339),
+				strVal(e.ActorID),
+				e.ActorType,
+				e.Action,
+				e.ResourceType,
+				strVal(e.ResourceName),
+				e.Outcome,
+				strVal(e.IPAddress),
+			})
+		}
+		writer.Flush()
 	}
-	writer.Flush()
 }
 
 func strVal(s *string) string {

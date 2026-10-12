@@ -10,7 +10,36 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
+
+func (h *DeveloperAPIHandler) tenantID(c *gin.Context) (string, bool) {
+	tenantID, err := middleware.TenantIDFromGinContext(c)
+	if err != nil || tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return "", false
+	}
+	return tenantID, true
+}
+
+func (h *DeveloperAPIHandler) actor(c *gin.Context) (tenantID, ownerID string, ok bool) {
+	tenantID, ok = h.tenantID(c)
+	if !ok {
+		return "", "", false
+	}
+	uid, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return "", "", false
+	}
+	ownerID, ok = uid.(string)
+	if !ok || ownerID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return "", "", false
+	}
+	return tenantID, ownerID, true
+}
 
 // DeveloperAPIHandler handles developer portal API requests.
 type DeveloperAPIHandler struct {
@@ -78,10 +107,8 @@ type AppResponse struct {
 }
 
 func (h *DeveloperAPIHandler) listApps(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+	tenantID, ownerID, ok := h.actor(c)
+	if !ok {
 		return
 	}
 
@@ -96,10 +123,8 @@ func (h *DeveloperAPIHandler) listApps(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) createApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+	tenantID, ownerID, ok := h.actor(c)
+	if !ok {
 		return
 	}
 
@@ -153,7 +178,10 @@ func (h *DeveloperAPIHandler) createApp(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) getApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
 
 	app, err := h.appStore.Get(c.Request.Context(), tenantID, appID)
@@ -170,7 +198,10 @@ func (h *DeveloperAPIHandler) getApp(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) updateApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
 
 	existing, _ := h.appStore.Get(c.Request.Context(), tenantID, appID)
@@ -210,7 +241,10 @@ func (h *DeveloperAPIHandler) updateApp(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) deleteApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
 
 	if err := h.appStore.Delete(c.Request.Context(), tenantID, appID); err != nil {
@@ -222,7 +256,10 @@ func (h *DeveloperAPIHandler) deleteApp(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) rotateSecret(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
 
 	newSecret, err := h.appStore.RotateSecret(c.Request.Context(), tenantID, appID)
@@ -252,14 +289,13 @@ type APIKey struct {
 }
 
 type CreateAPIKeyRequest struct {
-	Name string `json:"name" binding:"required"`
+	Name   string   `json:"name" binding:"required"`
+	Scopes []string `json:"scopes"` // default: read + scim
 }
 
 func (h *DeveloperAPIHandler) listAPIKeys(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+	tenantID, ownerID, ok := h.actor(c)
+	if !ok {
 		return
 	}
 
@@ -275,10 +311,8 @@ func (h *DeveloperAPIHandler) listAPIKeys(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
-	if tenantID == "" || ownerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-User-ID headers required"})
+	tenantID, ownerID, ok := h.actor(c)
+	if !ok {
 		return
 	}
 
@@ -296,9 +330,19 @@ func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(fullKey), bcrypt.DefaultCost)
 
-	query := `INSERT INTO api_keys (tenant_id, owner_id, name, key_prefix, key_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	scopes := req.Scopes
+	if len(scopes) == 0 {
+		scopes = []string{"read", "scim"}
+	}
+	scopesJSON, err := json.Marshal(scopes)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid scopes"})
+		return
+	}
+
+	query := `INSERT INTO api_keys (tenant_id, owner_id, name, key_prefix, key_hash, scopes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 	var keyID string
-	if err := h.db.QueryRowContext(c.Request.Context(), query, tenantID, ownerID, req.Name, keyPrefix, string(hash)).Scan(&keyID); err != nil {
+	if err := h.db.QueryRowContext(c.Request.Context(), query, tenantID, ownerID, req.Name, keyPrefix, string(hash), scopesJSON).Scan(&keyID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create API key"})
 		return
 	}
@@ -308,12 +352,16 @@ func (h *DeveloperAPIHandler) createAPIKey(c *gin.Context) {
 		"name":       req.Name,
 		"key":        fullKey, // Only shown once!
 		"key_prefix": keyPrefix,
+		"scopes":     scopes,
 		"message":    "Save this key now - it won't be shown again!",
 	})
 }
 
 func (h *DeveloperAPIHandler) revokeAPIKey(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	keyID := c.Param("id")
 
 	query := `UPDATE api_keys SET status = 'revoked' WHERE tenant_id = $1 AND id = $2`
@@ -342,7 +390,10 @@ type APILog struct {
 }
 
 func (h *DeveloperAPIHandler) getAppLogs(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
 
 	app, err := h.appStore.Get(c.Request.Context(), tenantID, appID)
@@ -368,8 +419,10 @@ func (h *DeveloperAPIHandler) getAppLogs(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) getAPIKeyLogs(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	ownerID := c.GetHeader("X-User-ID")
+	tenantID, ownerID, ok := h.actor(c)
+	if !ok {
+		return
+	}
 	keyID := c.Param("id")
 
 	var keyPrefix string
@@ -396,7 +449,10 @@ func (h *DeveloperAPIHandler) getAPIKeyLogs(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) getDeveloperAnalytics(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 
 	// Global tenant-level analytics (for the frontend dashboard chart)
 	type AnalyticPoint struct {
@@ -431,11 +487,13 @@ func (h *DeveloperAPIHandler) getDeveloperAnalytics(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) listAssignedUsers(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
-
-	if tenantID == "" || appID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header and Application ID required"})
+	if appID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "application ID required"})
 		return
 	}
 
@@ -459,11 +517,13 @@ type AssignUserRequest struct {
 }
 
 func (h *DeveloperAPIHandler) assignUserToApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
-
-	if tenantID == "" || appID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header and Application ID required"})
+	if appID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "application ID required"})
 		return
 	}
 
@@ -484,12 +544,14 @@ func (h *DeveloperAPIHandler) assignUserToApp(c *gin.Context) {
 }
 
 func (h *DeveloperAPIHandler) unassignUserFromApp(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	appID := c.Param("id")
 	userID := c.Param("user_id")
-
-	if tenantID == "" || appID == "" || userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header, Application ID, and User ID required"})
+	if appID == "" || userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "application ID and user ID required"})
 		return
 	}
 

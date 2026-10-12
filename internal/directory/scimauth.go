@@ -3,6 +3,7 @@ package directory
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,92 +19,180 @@ import (
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
-	var (
-		jwtPublicKey     *rsa.PublicKey
-		jwtPublicKeyOnce sync.Once
-	)
+var (
+	jwtPublicKey     *rsa.PublicKey
+	jwtPublicKeyOnce sync.Once
+)
 
-	func loadPublicKey(log *zap.Logger) {
-		jwtPublicKeyOnce.Do(func() {
-			// Try to get public key path from env first
-			keyPath := os.Getenv("APP_AUTH_JWT_PUBLIC_KEY_PATH")
-			if keyPath == "" {
-				// Fallback to config file if path is not directly provided
-				cfgFile := os.Getenv("APP_CONFIG")
-				if cfgFile == "" {
-					cfgFile = os.Getenv("CONFIG_FILE")
-				}
-				cfg, err := config.Load(cfgFile)
-				if err == nil {
-					keyPath = cfg.Auth.JWTPublicKeyPath
-				}
-			}
+var scimAdminRoles = map[string]struct{}{
+	"super-admin":    {},
+	"security-admin": {},
+	"user-admin":     {},
+}
 
-			if keyPath == "" {
-				// Final fallback for development
-				keyPath = "/etc/wardseal/keys/jwt.pub"
-				if _, err := os.Stat(keyPath); err != nil {
-					keyPath = "deploy/dev-keys/jwt.pub"
-				}
+func loadPublicKey(log *zap.Logger) {
+	jwtPublicKeyOnce.Do(func() {
+		keyPath := os.Getenv("APP_AUTH_JWT_PUBLIC_KEY_PATH")
+		if keyPath == "" {
+			cfgFile := os.Getenv("APP_CONFIG")
+			if cfgFile == "" {
+				cfgFile = os.Getenv("CONFIG_FILE")
 			}
+			cfg, err := config.Load(cfgFile)
+			if err == nil {
+				keyPath = cfg.Auth.JWTPublicKeyPath
+			}
+		}
 
-			log.Info("SCIM loading JWT public key", zap.String("path", keyPath))
-			keyBytes, err := os.ReadFile(keyPath)
-			if err != nil {
-				log.Warn("Failed to read JWT public key file for SCIM auth", zap.String("path", keyPath), zap.Error(err))
-				return
+		if keyPath == "" {
+			keyPath = "/etc/wardseal/keys/jwt.pub"
+			if _, err := os.Stat(keyPath); err != nil {
+				keyPath = "deploy/dev-keys/jwt.pub"
 			}
-			pubKey, err := jwtlib.ParseRSAPublicKeyFromPEM(keyBytes)
-			if err != nil {
-				log.Error("Failed to parse JWT public key for SCIM auth", zap.Error(err))
-				return
-			}
-			jwtPublicKey = pubKey
-		})
+		}
+
+		log.Info("SCIM loading JWT public key", zap.String("path", keyPath))
+		keyBytes, err := os.ReadFile(keyPath) //nolint:gosec // G304: path from trusted config/env
+		if err != nil {
+			log.Warn("Failed to read JWT public key file for SCIM auth", zap.String("path", keyPath), zap.Error(err))
+			return
+		}
+		pubKey, err := jwtlib.ParseRSAPublicKeyFromPEM(keyBytes)
+		if err != nil {
+			log.Error("Failed to parse JWT public key for SCIM auth", zap.Error(err))
+			return
+		}
+		jwtPublicKey = pubKey
+	})
+}
+
+func jwtClaimString(claims jwtlib.MapClaims, keys ...string) string {
+	for _, key := range keys {
+		if tid, ok := claims[key].(string); ok && tid != "" {
+			return tid
+		}
 	}
+	return ""
+}
 
-// RequireSCIMBearerToken authenticates requests using the Authorization: Bearer header.
-// Fallback: if no Authorization header is present, reads the wardseal_access_token
-// httpOnly session cookie and validates it as a JWT bearer token. This allows
-// first-party admin UI requests to call SCIM endpoints via shared session cookies
-// without requiring an explicit API key in the browser.
+func jwtClaimRoles(claims jwtlib.MapClaims) []string {
+	raw, ok := claims["roles"]
+	if !ok {
+		return nil
+	}
+	switch v := raw.(type) {
+	case []string:
+		return v
+	case []interface{}:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			if s, ok := item.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func hasSCIMAdminRole(roles []string) bool {
+	for _, role := range roles {
+		if _, ok := scimAdminRoles[role]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func jwtClaimScopes(claims jwtlib.MapClaims) []string {
+	raw, ok := claims["scope"]
+	if !ok {
+		raw, ok = claims["scopes"]
+	}
+	if !ok {
+		return nil
+	}
+	switch v := raw.(type) {
+	case string:
+		return strings.Fields(v)
+	case []string:
+		return v
+	case []interface{}:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			if s, ok := item.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func hasSCIMScope(scopes []string) bool {
+	for _, s := range scopes {
+		switch strings.ToLower(strings.TrimSpace(s)) {
+		case "scim", "*", "admin":
+			return true
+		}
+	}
+	return false
+}
+
+func apiKeyHasSCIMScope(scopes []string) bool {
+	if len(scopes) == 0 {
+		// Legacy keys without scopes are not SCIM-capable.
+		return false
+	}
+	return hasSCIMScope(scopes)
+}
+
+func scimUnauthorized(c *gin.Context, detail string) {
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
+		"status":  "401",
+		"detail":  detail,
+	})
+	c.Abort()
+}
+
+func scimForbidden(c *gin.Context, detail string) {
+	c.JSON(http.StatusForbidden, gin.H{
+		"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
+		"status":  "403",
+		"detail":  detail,
+	})
+	c.Abort()
+}
+
+// RequireSCIMBearerToken authenticates SCIM requests via:
+//  1. Internal service token (+ X-Tenant-ID)
+//  2. RSA JWT with admin role + scim scope and tenant claim (no header tenant fallback)
+//  3. SCIM API key with scim scope (tenant from key record)
+//
+// Portal session cookies are never accepted — SCIM requires an explicit Bearer.
 func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
-		// Fallback: promote session cookie to a synthetic Bearer token so that
-		// first-party MFE portals (admin, app) can call SCIM endpoints.
 		if authHeader == "" {
-			if cookieToken, err := c.Cookie("wardseal_access_token"); err == nil && cookieToken != "" {
-				authHeader = "Bearer " + cookieToken
-			}
-		}
-
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
-				"status":  "401",
-				"detail":  "Authorization header is missing",
-			})
-			c.Abort()
+			scimUnauthorized(c, "Authorization header is missing")
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
-				"status":  "401",
-				"detail":  "Authorization header must be a Bearer token",
-			})
-			c.Abort()
+			scimUnauthorized(c, "Authorization header must be a Bearer token")
 			return
 		}
 
 		token := parts[1]
 
-		// 1. Check if it's the internal service token
-		if internalServiceToken != "" && token == internalServiceToken {
+		// 1. Internal service token (constant-time)
+		if internalServiceToken != "" &&
+			subtle.ConstantTimeCompare([]byte(token), []byte(internalServiceToken)) == 1 {
 			tenantID := c.GetHeader("X-Tenant-ID")
 			if tenantID == "" {
 				c.JSON(http.StatusBadRequest, gin.H{
@@ -120,7 +209,7 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 			return
 		}
 
-		// 2. Check if it's a JWT token
+		// 2. Admin JWT (tenant from claims only)
 		if strings.Count(token, ".") == 2 {
 			loadPublicKey(log)
 			if jwtPublicKey != nil {
@@ -133,28 +222,23 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 				})
 
 				if err == nil && parsedToken.Valid {
-					var jwtTenantID string
-					// Check common claim names for tenant ID
-					if tid, ok := claims["tenant_id"].(string); ok && tid != "" {
-						jwtTenantID = tid
-					} else if tid, ok := claims["tenant"].(string); ok && tid != "" {
-						jwtTenantID = tid
-					} else if tid, ok := claims["tid"].(string); ok && tid != "" {
-						jwtTenantID = tid
-					}
-
-					// Fallback to header if claim is missing but token is valid (e.g. platform admin)
+					jwtTenantID := jwtClaimString(claims, "tenant_id", "tenant", "tid")
 					if jwtTenantID == "" {
-						jwtTenantID = c.GetHeader("X-Tenant-ID")
-					}
-
-					if jwtTenantID != "" {
-						ctx := middleware.InjectTenantID(c.Request.Context(), jwtTenantID)
-						c.Request = c.Request.WithContext(ctx)
-						c.Next()
+						scimForbidden(c, "tenant claim required")
 						return
 					}
-					log.Warn("SCIM JWT valid but no tenant ID found in claims or headers")
+					if !hasSCIMAdminRole(jwtClaimRoles(claims)) {
+						scimForbidden(c, "insufficient privileges for SCIM")
+						return
+					}
+					if !hasSCIMScope(jwtClaimScopes(claims)) {
+						scimForbidden(c, "scim scope required")
+						return
+					}
+					ctx := middleware.InjectTenantID(c.Request.Context(), jwtTenantID)
+					c.Request = c.Request.WithContext(ctx)
+					c.Next()
+					return
 				} else if err != nil {
 					log.Warn("SCIM JWT verification failed", zap.Error(err))
 				}
@@ -163,14 +247,9 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 			}
 		}
 
-		// 3. Validate against API Keys
+		// 3. API keys
 		if len(token) < 16 {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
-				"status":  "401",
-				"detail":  "Invalid API Key format",
-			})
-			c.Abort()
+			scimUnauthorized(c, "Invalid API Key format")
 			return
 		}
 
@@ -186,6 +265,7 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 
 		var matchedTenantID string
 		var matchedKeyID string
+		var matchedScopes []string
 		isValid := false
 
 		for _, candidate := range candidates {
@@ -193,21 +273,20 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 				isValid = true
 				matchedTenantID = candidate.TenantID
 				matchedKeyID = candidate.ID
+				matchedScopes = candidate.ScopeList()
 				break
 			}
 		}
 
 		if !isValid {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:Error"},
-				"status":  "401",
-				"detail":  "Invalid or revoked API Key",
-			})
-			c.Abort()
+			scimUnauthorized(c, "Invalid or revoked API Key")
+			return
+		}
+		if !apiKeyHasSCIMScope(matchedScopes) {
+			scimForbidden(c, "API key missing scim scope")
 			return
 		}
 
-		// Update last_used_at asynchronously
 		go func(kid, tid string) {
 			_ = repo.UpdateAPIKeyLastUsed(context.Background(), kid, tid)
 		}(matchedKeyID, matchedTenantID)

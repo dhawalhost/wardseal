@@ -33,6 +33,7 @@ import (
 	"github.com/dhawalhost/wardseal/internal/connector/ldap"
 	"github.com/dhawalhost/wardseal/internal/connector/scim"
 	"github.com/dhawalhost/wardseal/internal/discovery"
+	"github.com/dhawalhost/wardseal/internal/event"
 	"github.com/dhawalhost/wardseal/internal/governance"
 	"github.com/dhawalhost/wardseal/internal/mcp"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -184,6 +185,7 @@ func main() {
 
 	// Security Middleware
 	router.Use(middleware.Wrap(gokitmiddleware.SecureHeaders()))
+	router.Use(middleware.SecurityHeadersMiddleware())
 
 	var rateLimitRedisClient redis.UniversalClient
 	if redisClient != nil {
@@ -239,6 +241,11 @@ func main() {
 	campaignSvc := governance.NewCampaignService(campaignRepo, dirClient, bus)
 	campaignSvc.SetGovernanceService(svc) // Link services
 	webhookSvc := webhook.NewService(db)
+	webhookOutbox := webhook.NewOutboxStore(db)
+	webhookDispatcher := event.NewDispatcher(webhookSvc, webhookOutbox, log)
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	defer workerCancel()
+	webhookDispatcher.StartWorker(workerCtx, 5*time.Second)
 
 	// Initialize LLM Provider for Conversational Audit
 	llmProvider, err := llm.NewProvider()
@@ -282,7 +289,7 @@ func main() {
 		return nil, fmt.Errorf("invalid token")
 	}
 
-	govHandlers := governance.NewHTTPHandler(svc, campaignSvc, webhookSvc, llmProvider, mcpManager, tokenValidator, log)
+	govHandlers := governance.NewHTTPHandler(svc, campaignSvc, webhookSvc, llmProvider, mcpManager, tokenValidator, rbacSvc, log)
 	govHandlers.RegisterRoutes(router)
 
 	apiGroup := router.Group("/api/v1")
@@ -293,13 +300,14 @@ func main() {
 
 	// apiGroup is already handled above the RBAC and Audit handlers
 	rbacHandlers := rbac.NewHTTPHandler(rbacSvc, log)
-	rbacHandlers.RegisterRoutes(apiGroup)
+	rbacHandlers.RegisterRoutes(apiGroup, rbacSvc)
+	rbacHandlers.RegisterBreakGlassRoutes(apiGroup, rbacSvc)
 
 	// Audit handlers
 	auditRepo := audit.NewRepository(db)
 	auditSvc := audit.NewService(auditRepo)
 	auditHandlers := audit.NewHTTPHandler(auditSvc, log)
-	auditHandlers.RegisterRoutes(apiGroup)
+	auditHandlers.RegisterRoutes(apiGroup, rbacSvc)
 
 	// Automatic Audit Hub: captures all EventBus activity
 	if bus != nil {
@@ -309,17 +317,22 @@ func main() {
 		} else {
 			log.Info("Audit EventBus integration active")
 		}
+		if err := event.RegisterWebhookBridge(context.Background(), bus, webhookDispatcher, log); err != nil {
+			log.Error("Failed to register webhook bridge", zap.Error(err))
+		} else {
+			log.Info("Webhook outbox EventBus bridge active")
+		}
 	}
 
 	// Domain verification handlers
 	domainVerifyHandler := governance.NewDomainVerificationHandler(db, orgRepo, log)
-	domainVerifyHandler.RegisterRoutes(apiGroup)
+	domainVerifyHandler.RegisterRoutes(apiGroup, rbacSvc)
 
 	// SSO handlers
 	ssoRepo := sso.NewRepository(db)
 	ssoSvc := sso.NewService(ssoRepo)
 	ssoHandlers := sso.NewHTTPHandler(ssoSvc, log)
-	ssoHandlers.RegisterRoutes(apiGroup)
+	ssoHandlers.RegisterRoutes(apiGroup, rbacSvc)
 
 	// Connector Framework
 	connRegistry := connector.NewRegistry()
@@ -331,7 +344,7 @@ func main() {
 	connRepo := connector.NewRepository(db, cipher)
 	connSvc := connector.NewService(connRepo, connRegistry)
 	connHandlers := connector.NewHTTPHandler(connSvc, log)
-	connHandlers.RegisterRoutes(apiGroup)
+	connHandlers.RegisterRoutes(apiGroup, rbacSvc)
 
 	// Outbound Provisioning Engine
 	provSvc := connector.NewProvisioningService(db, connRegistry, log)
@@ -351,7 +364,7 @@ func main() {
 
 	discoverySvc := discovery.NewService(discoveryRepo, discoveryJobStore, connRegistry, bus, log)
 	discoveryHandlers := discovery.NewHTTPHandler(discoverySvc, discoveryRepo, discoveryJobStore, bus, log)
-	discoveryHandlers.RegisterRoutes(apiGroup)
+	discoveryHandlers.RegisterRoutes(apiGroup, rbacSvc)
 
 	// Start Discovery Worker
 	discoverySvc.Start(context.Background())
@@ -360,7 +373,7 @@ func main() {
 	slackHandler := chatops.NewSlackHandler(svc, dirClient, chatOpsRepo, llmProvider, cfg.Auth.UIURL, string(cfg.Environment), log)
 
 	// Dashboard Management API
-	chatOpsHandlers.RegisterRoutes(apiGroup)
+	chatOpsHandlers.RegisterRoutes(apiGroup, rbacSvc)
 
 	// ChatOps Automatic safety loop
 	if bus != nil {
@@ -466,6 +479,8 @@ func main() {
 
 	<-quit
 	log.Info("Shutting down governance service...")
+	webhookDispatcher.Stop()
+	workerCancel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

@@ -43,12 +43,14 @@ func NewHTTPHandler(svc Service, repo Repository, jobs JobStore, publisher event
 }
 
 // RegisterRoutes registers the discovery routes.
-func (h *HTTPHandler) RegisterRoutes(router *gin.RouterGroup) {
+func (h *HTTPHandler) RegisterRoutes(router *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "applications", "read")
+	write := middleware.RequirePermission(checker, "applications", "write")
 	api := router.Group("/governance/discovery")
 	{
-		api.GET("/resources", h.listResources)
-		api.POST("/scan", h.triggerScan)
-		api.GET("/jobs/:id", h.getScanStatus)
+		api.GET("/resources", read, h.listResources)
+		api.POST("/scan", write, h.triggerScan)
+		api.GET("/jobs/:id", read, h.getScanStatus)
 	}
 }
 

@@ -27,10 +27,25 @@ const (
 	RefreshCookieMaxAge = 7 * 24 * 3600 // 7 days for refresh token
 )
 
+func cookieSecure() bool {
+	switch strings.ToLower(os.Getenv("COOKIE_SECURE")) {
+	case "true", "1":
+		return true
+	case "false", "0":
+		return false
+	}
+	switch strings.ToLower(os.Getenv("ENVIRONMENT")) {
+	case "production", "staging":
+		return true
+	default:
+		return false
+	}
+}
+
 // setAuthCookies sets httpOnly secure cookies for authentication tokens
 func (h *HTTPHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
-	secure := os.Getenv("ENVIRONMENT") == "production"
-	sameSite := http.SameSiteLaxMode
+	secure := cookieSecure()
+	sameSite := http.SameSiteStrictMode
 
 	// Use CookieDomain from config if set, otherwise empty string means host only
 	domain := ""
@@ -54,7 +69,8 @@ func (h *HTTPHandler) clearAuthCookies(c *gin.Context) {
 	if h.svc != nil {
 		domain = h.svc.CookieDomain()
 	}
-	secure := os.Getenv("ENVIRONMENT") == "production"
+	secure := cookieSecure()
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(AccessTokenCookie, "", -1, "/", domain, secure, true)
 	c.SetCookie(RefreshTokenCookie, "", -1, "/oauth2/token", domain, secure, true)
 }

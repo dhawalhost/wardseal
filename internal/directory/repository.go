@@ -3,6 +3,7 @@ package directory
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -56,9 +57,21 @@ type Repository interface {
 }
 
 type APIKeyCandidate struct {
-	ID       string `db:"id"`
-	TenantID string `db:"tenant_id"`
-	KeyHash  string `db:"key_hash"`
+	ID       string          `db:"id"`
+	TenantID string          `db:"tenant_id"`
+	KeyHash  string          `db:"key_hash"`
+	Scopes   json.RawMessage `db:"scopes"`
+}
+
+func (c APIKeyCandidate) ScopeList() []string {
+	if len(c.Scopes) == 0 {
+		return nil
+	}
+	var scopes []string
+	if err := json.Unmarshal(c.Scopes, &scopes); err != nil {
+		return nil
+	}
+	return scopes
 }
 
 type sqlRepository struct {
@@ -317,7 +330,7 @@ func (r *sqlRepository) GetTenantIDByEmail(ctx context.Context, email string) (s
 
 func (r *sqlRepository) GetAPIKeyByPrefix(ctx context.Context, prefix string) ([]APIKeyCandidate, error) {
 	var candidates []APIKeyCandidate
-	query := `SELECT id, tenant_id, key_hash FROM api_keys WHERE key_prefix = $1 AND status = 'active'`
+	query := `SELECT id, tenant_id, key_hash, COALESCE(scopes, '[]'::jsonb) AS scopes FROM api_keys WHERE key_prefix = $1 AND status = 'active'`
 	err := r.db.SelectContext(ctx, &candidates, query, prefix)
 	return candidates, err
 }

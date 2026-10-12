@@ -7,33 +7,38 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
 // OrganizationHandler handles organization API requests.
 type OrganizationHandler struct {
 	svc    Service
+	perms  middleware.PermissionChecker
 	logger *zap.Logger
 }
 
 // NewOrganizationHandler creates a new organization handler.
-func NewOrganizationHandler(svc Service, logger *zap.Logger) *OrganizationHandler {
-	return &OrganizationHandler{svc: svc, logger: logger}
+func NewOrganizationHandler(svc Service, logger *zap.Logger, perms middleware.PermissionChecker) *OrganizationHandler {
+	return &OrganizationHandler{svc: svc, logger: logger, perms: perms}
 }
 
 // RegisterRoutes registers organization routes.
 func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	read := middleware.RequirePermission(h.perms, "users", "read")
+	write := middleware.RequirePermission(h.perms, "users", "write")
+	del := middleware.RequirePermission(h.perms, "users", "delete")
 	orgs := rg.Group("/organizations")
 	{
-		orgs.GET("", h.listOrganizations)
-		orgs.POST("", h.createOrganization)
-		orgs.GET("/:id", h.getOrganization)
-		orgs.PUT("/:id", h.updateOrganization)
-		orgs.DELETE("/:id", h.deleteOrganization)
+		orgs.GET("", read, h.listOrganizations)
+		orgs.POST("", write, h.createOrganization)
+		orgs.GET("/:id", read, h.getOrganization)
+		orgs.PUT("/:id", write, h.updateOrganization)
+		orgs.DELETE("/:id", del, h.deleteOrganization)
 
-		// User assignments
-		orgs.POST("/:id/users", h.addUserToOrganization)
-		orgs.DELETE("/:id/users/:userID", h.removeUserFromOrganization)
-		orgs.GET("/users/:userID", h.listUserOrganizations)
+		orgs.POST("/:id/users", write, h.addUserToOrganization)
+		orgs.DELETE("/:id/users/:userID", del, h.removeUserFromOrganization)
+		orgs.GET("/users/:userID", read, h.listUserOrganizations)
 	}
 }
 

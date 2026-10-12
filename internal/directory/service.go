@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/dhawalhost/wardseal/pkg/eventbus"
+	"github.com/dhawalhost/wardseal/pkg/password"
 
 	"github.com/jmoiron/sqlx"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Service defines the interface for the directory service.
@@ -67,60 +67,6 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 var ErrAlreadyExists = errors.New("already exists")
 var ErrEmailAlreadyExistsGlobally = errors.New("email already in use globally")
 
-var commonPasswords = map[string]bool{
-	"password":     true,
-	"12345678":     true,
-	"qwertyuiop":   true,
-	"admin123":     true,
-	"welcome1":     true,
-	"wardseal123":  true,
-}
-
-func validatePasswordPolicy(password string) error {
-	if len(password) < 8 {
-		return errors.New("password must be at least 8 characters long")
-	}
-	
-	if commonPasswords[strings.ToLower(password)] {
-		return errors.New("password is too common")
-	}
-	
-	var (
-		hasUpper   bool
-		hasLower   bool
-		hasNumber  bool
-		hasSpecial bool
-	)
-	
-	for _, char := range password {
-		switch {
-		case 'a' <= char && char <= 'z':
-			hasLower = true
-		case 'A' <= char && char <= 'Z':
-			hasUpper = true
-		case '0' <= char && char <= '9':
-			hasNumber = true
-		case strings.ContainsRune(`!@#$%^&*()-_=+[]{};:'",.<>/?\|~`, char):
-			hasSpecial = true
-		}
-	}
-	
-	if !hasUpper {
-		return errors.New("password must contain at least one uppercase letter")
-	}
-	if !hasLower {
-		return errors.New("password must contain at least one lowercase letter")
-	}
-	if !hasNumber {
-		return errors.New("password must contain at least one number")
-	}
-	if !hasSpecial {
-		return errors.New("password must contain at least one special character")
-	}
-	
-	return nil
-}
-
 // NewService creates a new directory service.
 func NewService(repo Repository, bus eventbus.EventBus) Service {
 	return &directoryService{
@@ -138,11 +84,11 @@ func (s *directoryService) HealthCheck(ctx context.Context) (bool, error) {
 }
 
 func (s *directoryService) CreateUser(ctx context.Context, tenantID string, user User) (string, error) {
-	if err := validatePasswordPolicy(user.Password); err != nil {
+	if err := password.ValidatePolicy(user.Password); err != nil {
 		return "", err
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := password.Hash(user.Password)
 	if err != nil {
 		return "", err
 	}
@@ -155,7 +101,7 @@ func (s *directoryService) CreateUser(ctx context.Context, tenantID string, user
 			return err
 		}
 
-		err = s.repo.CreateAccount(ctx, tx, userID, tenantID, user.Email, string(hashedPassword))
+		err = s.repo.CreateAccount(ctx, tx, userID, tenantID, user.Email, hashedPassword)
 		if err != nil {
 			if strings.Contains(err.Error(), "unique constraint") && strings.Contains(err.Error(), "accounts_login_key") {
 				return ErrEmailAlreadyExistsGlobally
@@ -198,16 +144,16 @@ func (s *directoryService) ListPendingDeletions(ctx context.Context, olderThan t
 
 func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, user User) error {
 	if user.Password != "" {
-		if err := validatePasswordPolicy(user.Password); err != nil {
+		if err := password.ValidatePolicy(user.Password); err != nil {
 			return err
 		}
-		
+
 		s.mu.RLock()
 		history := s.passwordHistory[id]
 		s.mu.RUnlock()
-		
+
 		for _, oldHash := range history {
-			if err := bcrypt.CompareHashAndPassword([]byte(oldHash), []byte(user.Password)); err == nil {
+			if err := password.Verify(oldHash, user.Password); err == nil {
 				return errors.New("password has been used recently")
 			}
 		}
@@ -216,11 +162,11 @@ func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, 
 	err := s.repo.WithTransaction(ctx, func(tx *sqlx.Tx) error {
 		var passwordHash string
 		if user.Password != "" {
-			hp, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+			hp, err := password.Hash(user.Password)
 			if err != nil {
 				return err
 			}
-			passwordHash = string(hp)
+			passwordHash = hp
 		}
 
 		if err := s.repo.UpdateIdentity(ctx, tx, tenantID, id, user.Status, user.DisplayName, user.ExternalID, user.PhoneNumbers, user.Department, user.Title, user.Timezone, user.MFAEnforced); err != nil {
@@ -236,8 +182,10 @@ func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, 
 		if len(history) >= 5 {
 			history = history[1:]
 		}
-		hp, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-		s.passwordHistory[id] = append(history, string(hp))
+		hp, hashErr := password.Hash(user.Password)
+		if hashErr == nil {
+			s.passwordHistory[id] = append(history, hp)
+		}
 		s.mu.Unlock()
 	}
 
@@ -308,14 +256,23 @@ func (s *directoryService) ListGroupMembers(ctx context.Context, tenantID, group
 	return s.repo.ListGroupMembers(ctx, tenantID, groupID)
 }
 
-func (s *directoryService) VerifyCredentials(ctx context.Context, tenantID, email, password string) (User, error) {
+func (s *directoryService) VerifyCredentials(ctx context.Context, tenantID, email, plainPassword string) (User, error) {
 	user, hash, err := s.repo.GetPasswordHash(ctx, tenantID, email)
 	if err != nil {
 		return User{}, ErrInvalidCredentials
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+	if err := password.Verify(hash, plainPassword); err != nil {
 		return User{}, ErrInvalidCredentials
+	}
+
+	// Transparent upgrade from bcrypt (or outdated Argon2id params) on successful login.
+	if password.NeedsRehash(hash) {
+		if newHash, hashErr := password.Hash(plainPassword); hashErr == nil {
+			_ = s.repo.WithTransaction(ctx, func(tx *sqlx.Tx) error {
+				return s.repo.UpdateAccount(ctx, tx, tenantID, user.ID, user.Email, newHash)
+			})
+		}
 	}
 
 	return user, nil

@@ -660,12 +660,110 @@ paths:
         '200':
           description: List of campaigns
 
+  /internal/tenants:
+    post:
+      summary: Create tenant (service-auth only)
+      operationId: createTenantInternal
+      tags: [Tenants]
+      security:
+        - ServiceAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, name, slug]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                slug:
+                  type: string
+                plan:
+                  type: string
+      responses:
+        '201':
+          description: Tenant created
+        '401':
+          description: Missing or invalid service auth
+
+  /api/v1/break-glass/elevate:
+    post:
+      summary: Time-bound emergency privilege elevation
+      operationId: breakGlassElevate
+      tags: [Security]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 8
+                duration_hours:
+                  type: integer
+                  maximum: 8
+                  default: 1
+      responses:
+        '200':
+          description: Elevation granted
+        '403':
+          description: Insufficient permissions
+
+  /api/v1/audit/export:
+    get:
+      summary: Export audit logs (JSON or NDJSON)
+      operationId: exportAuditLogs
+      tags: [Audit]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, ndjson, jsonl]
+            default: json
+      responses:
+        '200':
+          description: Audit export body
+        '403':
+          description: Insufficient permissions
+
+  /policies:
+    post:
+      summary: Create policy
+      operationId: createPolicy
+      tags: [Policies]
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Policy created
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    ServiceAuth:
+      type: apiKey
+      in: header
+      name: X-Service-Auth
+      description: Shared service token for inter-service calls
   parameters:
     TenantHeader:
       name: X-Tenant-ID

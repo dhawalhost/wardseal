@@ -98,7 +98,7 @@ func (s *sqlRefreshTokenRepository) Save(ctx context.Context, entry refreshToken
 			VALUES ($1, $2, $3, $4, $5, $6)
 		`
 		_, err := tx.ExecContext(ctx, query,
-			entry.Token,
+			hashToken(entry.Token),
 			entry.ClientID,
 			entry.TenantID,
 			entry.Scope,
@@ -114,7 +114,7 @@ func (s *sqlRefreshTokenRepository) Get(ctx context.Context, token string) (refr
 	var found bool
 	err := database.RunInTenantTx(ctx, s.db, func(tx *sqlx.Tx) error {
 		query := `SELECT token, client_id, tenant_id, scope, subject_type, expires_at FROM refresh_tokens WHERE token = $1`
-		err := tx.GetContext(ctx, &entry, query, token)
+		err := tx.GetContext(ctx, &entry, query, hashToken(token))
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				found = false
@@ -134,7 +134,7 @@ func (s *sqlRefreshTokenRepository) Get(ctx context.Context, token string) (refr
 func (s *sqlRefreshTokenRepository) Delete(ctx context.Context, token string) error {
 	return database.RunInTenantTx(ctx, s.db, func(tx *sqlx.Tx) error {
 		query := `DELETE FROM refresh_tokens WHERE token = $1`
-		_, err := tx.ExecContext(ctx, query, token)
+		_, err := tx.ExecContext(ctx, query, hashToken(token))
 		return err
 	})
 }

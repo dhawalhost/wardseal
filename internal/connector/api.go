@@ -21,16 +21,19 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 }
 
 // RegisterRoutes registers connector routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "applications", "read")
+	write := middleware.RequirePermission(checker, "applications", "write")
+	del := middleware.RequirePermission(checker, "applications", "delete")
 	g := rg.Group("/connectors")
 	{
-		g.GET("", h.listConnectors)
-		g.POST("", h.createConnector)
-		g.GET("/:id", h.getConnector)
-		g.PUT("/:id", h.updateConnector)
-		g.DELETE("/:id", h.deleteConnector)
-		g.POST("/:id/toggle", h.toggleConnector)
-		g.POST("/test", h.testConnection)
+		g.GET("", read, h.listConnectors)
+		g.POST("", write, h.createConnector)
+		g.GET("/:id", read, h.getConnector)
+		g.PUT("/:id", write, h.updateConnector)
+		g.DELETE("/:id", del, h.deleteConnector)
+		g.POST("/:id/toggle", write, h.toggleConnector)
+		g.POST("/test", write, h.testConnection)
 	}
 }
 

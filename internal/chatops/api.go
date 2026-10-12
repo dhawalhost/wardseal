@@ -24,12 +24,15 @@ func NewHTTPHandler(repo Repository, log *zap.Logger) *HTTPHandler {
 }
 
 // RegisterRoutes registers the dashboard endpoints.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "applications", "read")
+	write := middleware.RequirePermission(checker, "applications", "write")
+	del := middleware.RequirePermission(checker, "applications", "delete")
 	group := rg.Group("/integrations/slack")
 	{
-		group.GET("", h.GetStatus)
-		group.PUT("", h.Configure)
-		group.DELETE("", h.Disconnect)
+		group.GET("", read, h.GetStatus)
+		group.PUT("", write, h.Configure)
+		group.DELETE("", del, h.Disconnect)
 	}
 }
 

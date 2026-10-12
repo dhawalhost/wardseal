@@ -21,26 +21,29 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 }
 
 // RegisterRoutes registers SSO routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "applications", "read")
+	write := middleware.RequirePermission(checker, "applications", "write")
+	del := middleware.RequirePermission(checker, "applications", "delete")
+
 	sso := rg.Group("/saml/providers")
 	{
-		sso.GET("", h.listProviders)
-		sso.POST("", h.createProvider)
-		sso.GET("/:id", h.getProvider)
-		sso.PUT("/:id", h.updateProvider)
-		sso.DELETE("/:id", h.deleteProvider)
-		sso.POST("/:id/toggle", h.toggleProvider)
+		sso.GET("", read, h.listProviders)
+		sso.POST("", write, h.createProvider)
+		sso.GET("/:id", read, h.getProvider)
+		sso.PUT("/:id", write, h.updateProvider)
+		sso.DELETE("/:id", del, h.deleteProvider)
+		sso.POST("/:id/toggle", write, h.toggleProvider)
 	}
 
-	// Alias for general SSO providers
 	unified := rg.Group("/sso/providers")
 	{
-		unified.GET("", h.listProviders)
-		unified.POST("", h.createProvider)
-		unified.GET("/:id", h.getProvider)
-		unified.PUT("/:id", h.updateProvider)
-		unified.DELETE("/:id", h.deleteProvider)
-		unified.POST("/:id/toggle", h.toggleProvider)
+		unified.GET("", read, h.listProviders)
+		unified.POST("", write, h.createProvider)
+		unified.GET("/:id", read, h.getProvider)
+		unified.PUT("/:id", write, h.updateProvider)
+		unified.DELETE("/:id", del, h.deleteProvider)
+		unified.POST("/:id/toggle", write, h.toggleProvider)
 	}
 }
 

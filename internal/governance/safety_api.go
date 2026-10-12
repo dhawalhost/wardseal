@@ -10,20 +10,23 @@ import (
 )
 
 type SafetyHandler struct {
-	svc Service
-	log *zap.Logger
+	svc   Service
+	perms middleware.PermissionChecker
+	log   *zap.Logger
 }
 
-func NewSafetyHandler(svc Service, log *zap.Logger) *SafetyHandler {
-	return &SafetyHandler{svc: svc, log: log}
+func NewSafetyHandler(svc Service, log *zap.Logger, perms middleware.PermissionChecker) *SafetyHandler {
+	return &SafetyHandler{svc: svc, log: log, perms: perms}
 }
 
 func (h *SafetyHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	read := middleware.RequirePermission(h.perms, "policies", "read")
+	write := middleware.RequirePermission(h.perms, "policies", "write")
 	safety := rg.Group("/safety")
 	{
-		safety.GET("/actions", h.ListActions)
-		safety.POST("/actions/:id/confirm", h.ConfirmAction)
-		safety.POST("/actions/:id/reject", h.RejectAction)
+		safety.GET("/actions", read, h.ListActions)
+		safety.POST("/actions/:id/confirm", write, h.ConfirmAction)
+		safety.POST("/actions/:id/reject", write, h.RejectAction)
 	}
 }
 

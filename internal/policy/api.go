@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
 // HTTPHandler represents the HTTP API handlers for the policy service.
@@ -18,11 +20,17 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 	return &HTTPHandler{svc: svc, logger: logger}
 }
 
-// RegisterRoutes registers the policy routes.
+// RegisterRoutes registers health and (optionally unauthenticated) policy routes.
+// Prefer RegisterAPIRoutes behind auth middleware in production.
 func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
-	router.GET("/health", h.healthCheck)
+	router.GET("/health", h.HealthCheck)
+	h.RegisterAPIRoutes(router.Group("/api/v1"))
+}
 
-	api := router.Group("/api/v1/policies")
+// RegisterAPIRoutes registers policy CRUD under an already-authenticated group
+// (expected prefix: /api/v1 → routes at /api/v1/policies).
+func (h *HTTPHandler) RegisterAPIRoutes(rg *gin.RouterGroup) {
+	api := rg.Group("/policies")
 	{
 		api.GET("", h.listPolicies)
 		api.POST("", h.createPolicy)
@@ -32,11 +40,21 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	}
 }
 
-func (h *HTTPHandler) healthCheck(c *gin.Context) {
+func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
+	tenantID, err := middleware.TenantIDFromGinContext(c)
+	if err != nil || tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return "", false
+	}
+	return tenantID, true
+}
+
+// HealthCheck reports service readiness.
+func (h *HTTPHandler) HealthCheck(c *gin.Context) {
 	ok, err := h.svc.HealthCheck(c.Request.Context())
 	if err != nil {
 		h.logger.Error("Health check failed", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "health check failed"})
 		return
 	}
 	c.JSON(http.StatusOK, HealthCheckResponse{Healthy: ok})
@@ -48,9 +66,8 @@ type HealthCheckResponse struct {
 }
 
 func (h *HTTPHandler) listPolicies(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header is required"})
+	tenantID, ok := h.tenantID(c)
+	if !ok {
 		return
 	}
 
@@ -65,15 +82,14 @@ func (h *HTTPHandler) listPolicies(c *gin.Context) {
 }
 
 func (h *HTTPHandler) createPolicy(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID header is required"})
+	tenantID, ok := h.tenantID(c)
+	if !ok {
 		return
 	}
 
 	var req Policy
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -90,10 +106,13 @@ func (h *HTTPHandler) createPolicy(c *gin.Context) {
 }
 
 func (h *HTTPHandler) getPolicy(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	id := c.Param("id")
-	if tenantID == "" || id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and policy ID are required"})
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "policy ID is required"})
 		return
 	}
 
@@ -108,16 +127,19 @@ func (h *HTTPHandler) getPolicy(c *gin.Context) {
 }
 
 func (h *HTTPHandler) updatePolicy(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	id := c.Param("id")
-	if tenantID == "" || id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and policy ID are required"})
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "policy ID is required"})
 		return
 	}
 
 	var req Policy
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -126,7 +148,7 @@ func (h *HTTPHandler) updatePolicy(c *gin.Context) {
 
 	if err := h.svc.UpdatePolicy(c.Request.Context(), req); err != nil {
 		h.logger.Error("Failed to update policy", zap.String("id", id), zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update policy"})
 		return
 	}
 
@@ -134,10 +156,13 @@ func (h *HTTPHandler) updatePolicy(c *gin.Context) {
 }
 
 func (h *HTTPHandler) deletePolicy(c *gin.Context) {
-	tenantID := c.GetHeader("X-Tenant-ID")
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
 	id := c.Param("id")
-	if tenantID == "" || id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and policy ID are required"})
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "policy ID is required"})
 		return
 	}
 

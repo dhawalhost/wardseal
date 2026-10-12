@@ -965,8 +965,12 @@ func (s *governanceService) GatherAuditContext(ctx context.Context, tenantID str
 			if i >= 10 {
 				break
 			}
+			reason := ""
+			if r.Reason != nil {
+				reason = *r.Reason
+			}
 			sb.WriteString(fmt.Sprintf("- [%s] %s (%s) requested access to %s (%s) for reason: %s\n",
-				r.ID, r.RequesterID, r.RequesterType, r.ResourceID, r.ResourceType, r.Reason))
+				r.ID, r.RequesterID, r.RequesterType, r.ResourceID, r.ResourceType, reason))
 		}
 		sb.WriteString("\n")
 	}

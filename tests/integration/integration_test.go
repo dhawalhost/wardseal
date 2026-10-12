@@ -32,6 +32,12 @@ import (
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
+type allowAllIntegrationPerms struct{}
+
+func (allowAllIntegrationPerms) HasPermission(context.Context, string, string, string, string) (bool, error) {
+	return true, nil
+}
+
 // TestEnv holds the test environment configuration.
 type TestEnv struct {
 	DB            *sqlx.DB
@@ -182,7 +188,7 @@ func (env *TestEnv) setupServers(t *testing.T) {
 
 	// Setup Directory Service
 	dirRepo := directory.NewRepository(env.DB)
-	dirSvc := directory.NewService(dirRepo)
+	dirSvc := directory.NewService(dirRepo, nil)
 	dirHandler := directory.NewHTTPHandler(dirSvc, env.Logger, directory.HTTPHandlerConfig{
 		ServiceAuthHeader: "X-Internal-Service-Auth",
 		ServiceAuthToken:  "test-service-token",
@@ -202,13 +208,18 @@ func (env *TestEnv) setupServers(t *testing.T) {
 	policyEngine := policy.NewSimpleEngine(policyRepo)
 
 	rbacRepo := rbac.NewRepository(env.DB)
-	rbacSvc := rbac.NewService(rbacRepo)
+	rbacSvc := rbac.NewService(rbacRepo, nil)
+	workloadRepo := auth.NewWorkloadRepository(env.DB)
 
-	govSvc := governance.NewService(clientStore, reqStore, orgRepo, endpointRepo, dirClient, policyEngine, rbacSvc, nil)
+	govSvc := governance.NewService(clientStore, reqStore, orgRepo, endpointRepo, workloadRepo, dirClient, policyEngine, rbacSvc, nil, nil)
 	campaignSvc := governance.NewCampaignService(governance.NewCampaignRepository(env.DB), dirClient, nil)
 	webhookSvc := webhook.NewService(env.DB)
 
-	govHandler := governance.NewHTTPHandler(govSvc, campaignSvc, webhookSvc, env.Logger)
+	allowAll := middleware.PermissionChecker(allowAllIntegrationPerms{})
+	dummyValidator := func(token string) (*middleware.Claims, error) {
+		return &middleware.Claims{Tenant: "admin-system"}, nil
+	}
+	govHandler := governance.NewHTTPHandler(govSvc, campaignSvc, webhookSvc, nil, nil, dummyValidator, allowAll, env.Logger)
 	govRouter := gin.New()
 	apiGroup := govRouter.Group("/api/v1")
 	apiGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
@@ -217,27 +228,24 @@ func (env *TestEnv) setupServers(t *testing.T) {
 
 	govHandler.RegisterRoutes(govRouter) // Note: New Governance API handles sub-routes properly
 
-	// Register other handlers that share the same API group
-	rbacRepo := rbac.NewRepository(env.DB)
-	rbacSvc := rbac.NewService(rbacRepo)
 	rbacHandler := rbac.NewHTTPHandler(rbacSvc, env.Logger)
-	rbacHandler.RegisterRoutes(apiGroup)
+	rbacHandler.RegisterRoutes(apiGroup, allowAll)
 
 	ssoRepo := sso.NewRepository(env.DB)
 	ssoSvc := sso.NewService(ssoRepo)
 	ssoHandler := sso.NewHTTPHandler(ssoSvc, env.Logger)
-	ssoHandler.RegisterRoutes(apiGroup)
+	ssoHandler.RegisterRoutes(apiGroup, allowAll)
 
 	auditRepo := audit.NewRepository(env.DB)
 	auditSvc := audit.NewService(auditRepo)
 	auditHandler := audit.NewHTTPHandler(auditSvc, env.Logger)
-	auditHandler.RegisterRoutes(apiGroup)
+	auditHandler.RegisterRoutes(apiGroup, allowAll)
 
-	connectorRepo := connector.NewRepository(env.DB)
+	connectorRepo := connector.NewRepository(env.DB, nil)
 	connectorRegistry := connector.NewRegistry()
 	connectorSvc := connector.NewService(connectorRepo, connectorRegistry)
 	connectorHandler := connector.NewHTTPHandler(connectorSvc, env.Logger)
-	connectorHandler.RegisterRoutes(apiGroup)
+	connectorHandler.RegisterRoutes(apiGroup, allowAll)
 
 	env.GovServer = httptest.NewServer(govRouter)
 

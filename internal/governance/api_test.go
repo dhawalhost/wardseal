@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
@@ -22,6 +23,12 @@ import (
 	"github.com/dhawalhost/wardseal/pkg/llm"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
+
+type allowAllPerms struct{}
+
+func (allowAllPerms) HasPermission(context.Context, string, string, string, string) (bool, error) {
+	return true, nil
+}
 
 func TestListOAuthClientsReturnsClients(t *testing.T) {
 	tenantID := "admin-system"
@@ -144,11 +151,12 @@ func newTestRouter(t *testing.T, svc Service) *gin.Engine {
 	router := gin.New()
 	dummyValidator := func(token string) (*middleware.Claims, error) {
 		return &middleware.Claims{
-			Tenant: "admin-system",
-			Roles:  []string{"admin"},
+			RegisteredClaims: jwt.RegisteredClaims{Subject: "test-user"},
+			Tenant:           "admin-system",
+			Roles:            []string{"super-admin"},
 		}, nil
 	}
-	handler := NewHTTPHandler(svc, &stubCampaignService{}, &stubWebhookService{}, &stubLLMProvider{}, nil, dummyValidator, zap.NewNop())
+	handler := NewHTTPHandler(svc, &stubCampaignService{}, &stubWebhookService{}, &stubLLMProvider{}, nil, dummyValidator, allowAllPerms{}, zap.NewNop())
 	handler.RegisterRoutes(router)
 	return router
 }

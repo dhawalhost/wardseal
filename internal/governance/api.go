@@ -40,6 +40,7 @@ type HTTPHandler struct {
 	llm             llm.Provider
 	tools           ToolCaller
 	validator       middleware.TokenValidator
+	perms           middleware.PermissionChecker
 	logger          *zap.Logger
 }
 
@@ -48,19 +49,24 @@ type HealthCheckResponse struct {
 }
 
 // NewHTTPHandler creates a new HTTPHandler.
-func NewHTTPHandler(svc Service, campaignSvc CampaignService, webhookSvc webhook.Service, llmProvider llm.Provider, tools ToolCaller, validator middleware.TokenValidator, logger *zap.Logger) *HTTPHandler {
+func NewHTTPHandler(svc Service, campaignSvc CampaignService, webhookSvc webhook.Service, llmProvider llm.Provider, tools ToolCaller, validator middleware.TokenValidator, perms middleware.PermissionChecker, logger *zap.Logger) *HTTPHandler {
 	return &HTTPHandler{
 		svc:             svc,
-		campaignHandler: NewCampaignHTTPHandler(campaignSvc, logger),
-		webhookHandler:  NewWebhookHTTPHandler(webhookSvc, logger),
-		orgHandler:      NewOrganizationHandler(svc, logger),
-		safetyHandler:   NewSafetyHandler(svc, logger),
-		endpointHandler: NewEndpointHandler(svc, logger),
+		campaignHandler: NewCampaignHTTPHandler(campaignSvc, logger, perms),
+		webhookHandler:  NewWebhookHTTPHandler(webhookSvc, logger, perms),
+		orgHandler:      NewOrganizationHandler(svc, logger, perms),
+		safetyHandler:   NewSafetyHandler(svc, logger, perms),
+		endpointHandler: NewEndpointHandler(svc, logger, perms),
 		llm:             llmProvider,
 		tools:           tools,
 		validator:       validator,
+		perms:           perms,
 		logger:          logger,
 	}
+}
+
+func (h *HTTPHandler) require(resource, action string) gin.HandlerFunc {
+	return middleware.RequirePermission(h.perms, resource, action)
 }
 
 // RegisterRoutes registers the governance routes.
@@ -74,46 +80,46 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	tenantGroup.Use(middleware.RequireUserAuth(h.validator))
 	clients := tenantGroup.Group("/oauth/clients")
 	{
-		clients.GET("", h.listOAuthClients)
-		clients.POST("", h.createOAuthClient)
-		clients.GET("/:clientID", h.getOAuthClient)
-		clients.PUT("/:clientID", h.updateOAuthClient)
-		clients.DELETE("/:clientID", h.deleteOAuthClient)
+		clients.GET("", h.require("applications", "read"), h.listOAuthClients)
+		clients.POST("", h.require("applications", "write"), h.createOAuthClient)
+		clients.GET("/:clientID", h.require("applications", "read"), h.getOAuthClient)
+		clients.PUT("/:clientID", h.require("applications", "write"), h.updateOAuthClient)
+		clients.DELETE("/:clientID", h.require("applications", "delete"), h.deleteOAuthClient)
 	}
-	tenantGroup.GET("/governance/stats", h.getDashboardStats)
+	tenantGroup.GET("/governance/stats", h.require("applications", "read"), h.getDashboardStats)
 
 	requests := tenantGroup.Group("/governance/requests")
 	{
-		requests.POST("", h.createAccessRequest)
-		requests.GET("", h.listAccessRequests)
-		requests.POST("/:accessRequestID/approve", h.approveAccessRequest)
-		requests.POST("/:accessRequestID/reject", h.rejectAccessRequest)
+		requests.POST("", h.require("roles", "write"), h.createAccessRequest)
+		requests.GET("", h.require("roles", "read"), h.listAccessRequests)
+		requests.POST("/:accessRequestID/approve", h.require("roles", "write"), h.approveAccessRequest)
+		requests.POST("/:accessRequestID/reject", h.require("roles", "write"), h.rejectAccessRequest)
 	}
 
 	ipPolicies := tenantGroup.Group("/governance/ip-policies")
 	{
-		ipPolicies.GET("", h.listIPPolicies)
-		ipPolicies.POST("", h.createIPPolicy)
-		ipPolicies.DELETE("/:ipPolicyID", h.deleteIPPolicy)
+		ipPolicies.GET("", h.require("policies", "read"), h.listIPPolicies)
+		ipPolicies.POST("", h.require("policies", "write"), h.createIPPolicy)
+		ipPolicies.DELETE("/:ipPolicyID", h.require("policies", "delete"), h.deleteIPPolicy)
 	}
 
 	workloads := tenantGroup.Group("/governance/workloads")
 	{
-		workloads.GET("", h.listWorkloads)
-		workloads.POST("", h.createWorkload)
+		workloads.GET("", h.require("applications", "read"), h.listWorkloads)
+		workloads.POST("", h.require("applications", "write"), h.createWorkload)
 	}
 
 	relationships := tenantGroup.Group("/governance/relationships")
 	{
-		relationships.GET("", h.listRelationships)
+		relationships.GET("", h.require("roles", "read"), h.listRelationships)
 	}
 
 	graph := tenantGroup.Group("/governance/graph")
 	{
-		graph.GET("/traverse", h.traverseGraph)
+		graph.GET("/traverse", h.require("roles", "read"), h.traverseGraph)
 	}
 
-	tenantGroup.POST("/governance/ask", h.askAI)
+	tenantGroup.POST("/governance/ask", h.require("applications", "read"), h.askAI)
 
 	// Registered combined routes
 	h.orgHandler.RegisterRoutes(tenantGroup)

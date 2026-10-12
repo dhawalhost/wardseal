@@ -136,6 +136,9 @@ func (m *MockService) LoginWithMFAStepUp(ctx context.Context, stepUpToken, totpC
 func (m *MockService) GetUserByID(ctx context.Context, tenantID, userID string) (auth.UserProfile, error) {
 	return auth.UserProfile{}, nil
 }
+func (m *MockService) GetTenantSlug(ctx context.Context, tenantID string) (string, error) {
+	return "", nil
+}
 
 // Simple test to verify the HTTP wiring for Setup and Login
 func TestSystemSetupAndLoginFlow(t *testing.T) {
