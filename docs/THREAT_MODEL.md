@@ -1,6 +1,8 @@
 # Threat Model
 
-> Implementation status aligned with WardSeal codebase as of 2026-01-03
+> Implementation status aligned with WardSeal codebase as of 2026-10-11 (Phases A–C remediation).
+
+Canonical route authz expectations: `pkg/routeauthz`. Living audit: `docs/ENTERPRISE_AUDIT_REPORT.md`.
 
 ---
 
@@ -8,48 +10,39 @@
 
 | Threat | Mitigation | Status | Implementation |
 |--------|------------|--------|----------------|
-| Credential stuffing | Rate limiting | ✅ Implemented | `middleware.RateLimitMiddleware(20, 40)` |
-| Credential stuffing | Account lockout | ✅ Implemented | `login_attempt_store.go` - 5 failures = 15min |
+| Credential stuffing | Rate limiting | ✅ Implemented | Distributed Redis limiter + login attempt store |
+| Credential stuffing | Account lockout | ✅ Implemented | `login_attempt_store.go` — 5 failures = 15min |
+| Weak / breached passwords | Policy + Argon2id | ✅ Implemented | `pkg/password` — min 12, complexity, denylist; Argon2id with bcrypt verify+upgrade |
 | MFA bypass | Policy enforcement | ✅ Implemented | Enforced for critical roles (Admin) and self-enrolled users |
 | Phishing | Passkeys (WebAuthn) | ✅ Implemented | `webauthn.go`, `webauthn_api.go` |
-| SCIM API Key Theft | Bcrypt Hashing | ✅ Implemented | `RequireSCIMBearerToken` in `scimauth.go` |
-
-
-**Missing:** Dynamic per-user MFA policy toggle (currently role-based + self-enroll)
+| SCIM API key theft | Bcrypt + scim scope | ✅ Implemented | Bearer-only; JWT needs admin+scim; API key needs scim scope |
+| Login open redirect | Allowlist | ✅ Implemented | `web/id` `safeRedirect` |
 
 ---
 
-## OAuth Threats
+## OAuth / Session Threats
 
 | Threat | Mitigation | Status | Implementation |
 |--------|------------|--------|----------------|
-| Token replay | Refresh rotation | ✅ Implemented | `handleRefreshTokenGrant` - deletes old, issues new |
-| Redirect abuse | Strict allowlists | ✅ Implemented | `oauth_clients.redirect_uris` validated |
-| Authorization code interception | PKCE | ✅ Implemented | S256 code challenge in `service.go` |
-| Spoofing IdP responses | OIDC validation | ✅ Implemented | `conf.Exchange` in `service_federation.go` |
-
+| Token replay | Refresh rotation + hashed refresh at rest | ✅ Implemented | `handleRefreshTokenGrant` + hashed store |
+| Redirect abuse | Strict allowlists | ✅ Implemented | OAuth client redirect URIs + login redirect allowlist |
+| Auth code interception | PKCE | ✅ Implemented | S256 in `service.go` |
+| CSRF | SameSite Strict cookies | ✅ Implemented | `setAuthCookies` |
+| XSS token theft | httpOnly + CSP (no script unsafe-inline) | ✅ Implemented | Cookie + `SecurityHeadersMiddleware` |
+| Session fixation | New tokens on login | ✅ Implemented | Login issues fresh access token |
 
 ---
 
-## Session Threats
+## Management / Admin Threats
 
 | Threat | Mitigation | Status | Implementation |
 |--------|------------|--------|----------------|
-| CSRF | Same-site cookies | ✅ Implemented | `SameSiteStrictMode` in `setAuthCookies` |
-| Session fixation | Regeneration on auth | ✅ Implemented | New token on each login |
-| XSS | httpOnly cookies | ✅ Implemented | `httpOnly: true` in `setAuthCookies` |
-| Logout | Cookie clearing | ✅ Implemented | `/logout` endpoint with `clearAuthCookies` |
-
-
----
-
-## Admin Threats
-
-| Threat | Mitigation | Status | Implementation |
-|--------|------------|--------|----------------|
-| Privilege escalation | Audit logs | ✅ Implemented | `audit` package, `audit_logs` table |
-| Silent config changes | Immutable audit | ✅ Implemented | Append-only audit log with export |
-| Account takeover | MFA enforced | ✅ Implemented | TOTP + WebAuthn in login flow |
+| Unauthenticated management APIs | JWT / service auth | ✅ Implemented | Phase A — developer, RBAC, policy, tenants |
+| Auth without authz | `RequirePermission` | ✅ Implemented | Governance, directory users/groups, policy |
+| Header identity spoofing | Ignore client identity headers for auth | ✅ Implemented | JWT/`RequireUserAuth` only |
+| Privilege escalation | Break-glass + audit | ✅ Implemented | Time-bound elevate + runbook; append-only audit trigger |
+| Silent config changes | Immutable audit | ✅ Implemented | DB trigger blocks UPDATE/DELETE on `audit_logs` |
+| Service token fail-open | Fatal outside local | ✅ Implemented | Startup guards on empty `SERVICE_AUTH_TOKEN` |
 
 ---
 
@@ -57,14 +50,14 @@
 
 | Threat | Mitigation | Status | Implementation |
 |--------|------------|--------|----------------|
-| Tenant data leakage | Strict isolation | ✅ Implemented | `X-Tenant-ID` header, all queries filtered |
-| Key compromise | KMS + rotation | ✅ Implemented | HashiCorp Vault Transit supported and enforced in Prod |
-| Abuse | Rate limits | ✅ Implemented | Token bucket per-IP |
+| Tenant data leakage | JWT tenant binding + RLS | ✅ Implemented | Tenant from JWT/service context; queries scoped |
+| Key compromise | KMS + rotation | ✅ Implemented | Vault Transit in prod |
+| Abuse | Rate limits | ✅ Implemented | Token bucket / Redis distributed |
 | Abuse | WAF | ❌ Not Implemented | No WAF integration |
-| Circular graph DoS | MaxDepth constraint | ✅ Implemented | `MaxDepth = 10` in `engine.go` |
-
-
-**Missing:** WAF integration
+| Webhook SSRF | Redirect deny + outbox/DLQ + DNS checks | ✅ Implemented | `CheckRedirect` deny; all resolved IPs checked; `webhook_deliveries` outbox |
+| MCP unauthenticated | API key required outside local | ✅ Implemented | `mcpsvc` + tenant binding for master token |
+| Supply chain | Vuln scan + SBOM | ✅ Implemented | `govulncheck`, Dependabot, CycloneDX SBOM artifact |
+| Circular graph DoS | MaxDepth | ✅ Implemented | `MaxDepth = 10` in ReBAC engine |
 
 ---
 
@@ -72,17 +65,16 @@
 
 | Status | Count |
 |--------|-------|
-| ✅ Fully Implemented | 16 |
+| ✅ Fully Implemented | 25 |
 | ⚠️ Partially Implemented | 0 |
 | ❌ Not Implemented | 1 |
 
 ---
 
-## Roadmap for Full Alignment
+## Remaining roadmap
 
-### Medium Priority
-1. **MFA Policy** - Admin-configurable per-user/per-org MFA requirements
-2. **WAF Integration** - Cloud WAF (Cloudflare/AWS WAF) for production
-
-### Low Priority (Production Deployment)
-3. **KMS Integration** - External secrets management for signing keys
+1. **External pen test** — follow `docs/runbooks/PEN_TEST.md`; close Critical/High with retest
+2. **WAF** — Cloudflare/AWS WAF in front of ingress
+3. **Webhook durability** — outbox / DLQ (Phase D)
+4. **MFA policy UX** — admin-configurable per-user/org MFA requirements
+5. **HIBP online check** (optional) — k-anonymity API behind feature flag; offline denylist already ships

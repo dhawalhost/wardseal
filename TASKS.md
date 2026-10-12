@@ -34,7 +34,7 @@ This document provides a granular checklist of tasks to be completed for each ph
 -   [x] Secure token generation
     -   [x] Use a secure key management system (e.g., Vault, KMS) instead of in-memory keys
     -   [x] Implement key rotation
--   [x] Implement password hashing (e.g., bcrypt or Argon2)
+-   [x] Implement password hashing (Argon2id for new passwords; bcrypt verify + transparent upgrade)
 -   [x] Implement JWKS endpoint (`/.well-known/jwks.json`)
 -   [x] Write unit and integration tests for OIDC flows
 
@@ -103,14 +103,14 @@ This document provides a granular checklist of tasks to be completed for each ph
 
 -   [x] Implement a role management system (CRUD for roles)
 -   [x] Associate permissions with roles
--   [x] Integrate a policy engine (e.g., OPA) for fine-grained authorization
+-   [x] Integrate RBAC/ReBAC permission checks on management APIs (OPA client exists; full Rego policy pack is optional/roadmap)
 -   [x] Create a UI for managing roles and policies
 
 ### 3.4. Audit & Reporting
 
--   [x] Create an immutable audit trail for all events
+-   [x] Create an append-only audit trail (DB trigger immutability + NDJSON export)
 -   [x] Implement a service for querying and exporting audit logs
--   [x] Develop pre-built reports for compliance (e.g., access reviews, user activity)
+-   [ ] Develop full pre-built compliance report packs (access reviews UI exists; PDF/SIEM packs still expand)
 
 ## Phase 4: Hardening & Scalability
 
@@ -118,8 +118,12 @@ This document provides a granular checklist of tasks to be completed for each ph
 
 -   [x] Integrate with a secure key management system (KMS or HSM)
 -   [x] Integrate with a secrets management system (e.g., HashiCorp Vault)
--   [x] Conduct a full security audit and penetration test
+-   [x] Internal enterprise security audit (`docs/ENTERPRISE_AUDIT_REPORT.md`) + Phases A–C remediation
+-   [ ] External penetration test with Critical/High closed (`docs/runbooks/PEN_TEST.md`)
 -   [x] Implement rate limiting and other security measures at the API gateway
+-   [x] Dependabot + govulncheck + CycloneDX SBOM in CI
+-   [x] Break-glass elevation API + runbook
+-   [x] Route authz registry (`pkg/routeauthz`)
 
 ### 4.2. Scalability & Performance
 
@@ -172,7 +176,7 @@ This document provides a granular checklist of tasks to be completed for each ph
 
 -   [x] Create a dedicated developer portal
 -   [x] Publish comprehensive API documentation
--   [x] Provide SDKs for common languages (Go, TypeScript, Java)
+-   [ ] Provide SDKs for common languages (Go, TypeScript, Java) — OpenAPI present; generated SDKs not fully published
 -   [x] Write quickstart guides and tutorials
 
 ## Phase 5: Zero Trust Capabilities
