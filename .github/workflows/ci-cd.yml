@@ -73,7 +73,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25'
       - name: Run config policy tests
@@ -85,7 +85,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25'
       - name: Run golangci-lint
@@ -97,7 +97,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25'
       - name: Run unit tests
@@ -109,7 +109,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.25'
       - name: Install govulncheck
@@ -141,7 +141,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.24'
       - name: Set up WardSeal
