@@ -22,10 +22,19 @@ database:
     username: username
     password: password
 
-# Service-to-service authentication
+# Service-to-service authentication (mounted into each service Deployment)
 serviceAuth:
-  token: ""  # Override in secrets
+  existingSecret: ""  # e.g. wardseal-service-auth-staging
+  tokenKey: token
   header: X-Service-Auth
+
+# DB migrations Job (pre-install / pre-upgrade helm hook)
+migrations:
+  enabled: false
+  image: migrate/migrate:v4.18.2
+  configMapName: wardseal-migrations
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
 
 # =====================
 # Auth Service
@@ -172,7 +181,7 @@ provsvc:
       memory: 128Mi
 
 # =====================
-# Admin UI
+# Admin UI (manage.*)
 # =====================
 adminui:
   enabled: true
@@ -194,6 +203,34 @@ adminui:
     requests:
       cpu: 50m
       memory: 32Mi
+
+# =====================
+# Identity / Login UI (id.*) — required for login, set-password, signup
+# =====================
+idui:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-idui
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  nginx:
+    authServiceHost: wardseal-authsvc
+    authServicePort: 8080
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 64Mi
+    requests:
+      cpu: 20m
+      memory: 16Mi
 
 # =====================
 # Landing Site
@@ -264,13 +301,7 @@ ingress:
           pathType: Prefix
           service: provsvc
           port: 8084
-    - host: admin.wardseal.com
-      paths:
-        - path: /
-          pathType: Prefix
-          service: adminui
-          port: 80
-    - host: app.wardseal.com
+    - host: manage.wardseal.com
       paths:
         - path: /
           pathType: Prefix
@@ -280,42 +311,12 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-          service: adminui
-          port: 80
-    - host: dev.wardseal.com
-      paths:
-        - path: /
-          pathType: Prefix
-          service: adminui
-          port: 80
-    - host: cdn.wardseal.com
-      paths:
-        - path: /
-          pathType: Prefix
-          service: adminui
-          port: 80
-    - host: hooks.wardseal.com
-      paths:
-        - path: /
-          pathType: Prefix
-          service: govsvc
-          port: 8082
-    - host: status.wardseal.com
-      paths:
-        - path: /
-          pathType: Prefix
-          service: adminui
+          service: idui
           port: 80
   tls:
     - secretName: wardseal-tls
       hosts:
         - auth.wardseal.com
         - api.wardseal.com
-        - admin.wardseal.com
-        - app.wardseal.com
+        - manage.wardseal.com
         - id.wardseal.com
-        - developer.wardseal.com
-        - dev.wardseal.com
-        - cdn.wardseal.com
-        - hooks.wardseal.com
-        - status.wardseal.com

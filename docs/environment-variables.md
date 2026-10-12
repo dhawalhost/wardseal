@@ -70,7 +70,7 @@ go test -v -tags=integration ./tests/integration/...
 | `AUTH_SERVICE_URL` | ❌ | `http://localhost:8080` | Base URL for auth service |
 | `UI_URL` | ❌ | `http://manage.wardseal.local` | Admin UI origin used for login/password redirects |
 | `DIRECTORY_SERVICE_URL` | ❌ | `http://dirsvc:8081` | URL of directory service |
-| `SERVICE_AUTH_TOKEN` | ⚠️ | - | Token for service-to-service auth |
+| `SERVICE_AUTH_TOKEN` | ✅ (staging/prod) | local-only `dev-internal-token` | Token for service-to-service auth. **Required** in staging/production |
 | `SERVICE_AUTH_HEADER` | ❌ | `X-Service-Auth` | Header name for service auth |
 | `KMS_PROVIDER` | ❌ | `local` | Key provider: `local` or `vault` |
 | `JWT_PRIVATE_KEY_PATH` | ⚠️ | - | Required in local mode; filesystem path to private key |
@@ -140,7 +140,7 @@ go test -v -tags=integration ./tests/integration/...
 
 | Variable | Required | Default | Description |
 | :--- | :---: | :--- | :--- |
-| `SERVICE_AUTH_TOKEN` | ⚠️ | `dev-internal-token` | Token for service-to-service auth |
+| `SERVICE_AUTH_TOKEN` | ✅ (staging/prod) | local-only `dev-internal-token` | Token for service-to-service auth. **Required** in staging/production; development may fall back to a local default. |
 | `SERVICE_AUTH_HEADER` | ❌ | - | Custom header name for service auth |
 
 ---

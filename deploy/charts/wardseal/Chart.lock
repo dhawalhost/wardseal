@@ -17,8 +17,11 @@ dependencies:
 - name: adminui
   repository: file://../adminui
   version: 0.1.0
+- name: idui
+  repository: file://../idui
+  version: 0.1.0
 - name: landingui
   repository: file://../landingui
   version: 0.1.0
-digest: sha256:f91b5a173043955ac9b70f9b803e9e126225d00b3eccf4ed1cf3877321eb5f75
-generated: "2026-03-19T20:37:07.678965+05:30"
+digest: sha256:b6d20c8d204801c359f55489e7224a032dc000d980b692173d66b16c29371694
+generated: "2026-10-12T15:53:45.043004+05:30"

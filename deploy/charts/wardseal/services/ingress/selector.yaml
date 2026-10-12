@@ -19,5 +19,8 @@ provsvc:
 adminui:
   enabled: false
 
+idui:
+  enabled: false
+
 landingui:
   enabled: false

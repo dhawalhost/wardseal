@@ -75,7 +75,7 @@ jobs:
           fi
           
           # Check UI URL is set to production domain
-          if grep -q 'name: "UI_URL"' /tmp/wardseal-prod-manifests.yaml && grep -q 'value: "https://manage.wardseal.com"' /tmp/wardseal-prod-manifests.yaml; then
+          if grep -q 'name: "UI_URL"' /tmp/wardseal-prod-manifests.yaml && grep -q 'value: "https://id.wardseal.com"' /tmp/wardseal-prod-manifests.yaml; then
             echo "✓ UI_URL correctly configured for production"
           else
             echo "✗ UI_URL not correctly configured for production"

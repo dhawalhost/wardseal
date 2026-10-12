@@ -30,6 +30,7 @@ Each file contains independent image tags for:
 - `policysvc`
 - `provsvc`
 - `adminui`
+- `idui`
 - `landingui`
 
 Update only the service you want to promote; leave others unchanged.
@@ -38,7 +39,7 @@ Update only the service you want to promote; leave others unchanged.
 
 Use the `CI/CD` workflow in GitHub Actions with **Run workflow** and provide:
 
-- `service`: service to build (`authsvc`, `dirsvc`, `govsvc`, `policysvc`, `provsvc`, `adminui`, `landingui`)
+- `service`: service to build (`authsvc`, `dirsvc`, `govsvc`, `policysvc`, `provsvc`, `adminui`, `idui`, `landingui`)
 - `version`: base semantic version (example: `v1.2.3` or `1.2.3`; workflow normalizes to `v*`)
 - `tag_suffix`: optional extra suffix (example: `rc1`)
 - `push_latest`: whether to also push `latest`
@@ -154,7 +155,7 @@ kubectl apply -n argocd -f deploy/argocd/application-production.yaml
 
 In GitHub Actions, run `CI/CD` workflow manually with:
 
-- `service`: one of `authsvc`, `dirsvc`, `govsvc`, `policysvc`, `provsvc`, `adminui`, `landingui`
+- `service`: one of `authsvc`, `dirsvc`, `govsvc`, `policysvc`, `provsvc`, `adminui`, `idui`, `landingui`
 - `version`: semver (for example `0.1.1` or `v0.1.1`)
 - `tag_suffix`: optional (for example `rc1`)
 - `push_latest`: optional latest image push
@@ -209,7 +210,7 @@ To track and sync services independently, use the new manifests under:
 
 For each environment, there are separate apps for:
 
-- `authsvc`, `dirsvc`, `govsvc`, `policysvc`, `provsvc`, `adminui`, `landingui`, `ingress`
+- `authsvc`, `dirsvc`, `govsvc`, `policysvc`, `provsvc`, `adminui`, `idui`, `landingui`, `ingress`
 
 Each service app uses its own chart path (`deploy/charts/<service>`) and local values files:
 

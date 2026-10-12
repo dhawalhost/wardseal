@@ -88,6 +88,21 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.database.existingSecret | default "wardseal-db-credentials" }}
                   key: database
+
+            {{- if and .Values.database .Values.database.sslMode }}
+            - name: DB_SSLMODE
+              value: {{ .Values.database.sslMode | quote }}
+            {{- end }}
+            {{- end }}
+
+            {{- if and .Values.serviceAuth .Values.serviceAuth.existingSecret }}
+            - name: SERVICE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceAuth.existingSecret }}
+                  key: {{ .Values.serviceAuth.tokenKey | default "token" }}
+            - name: SERVICE_AUTH_HEADER
+              value: {{ .Values.serviceAuth.header | default "X-Service-Auth" | quote }}
             {{- end }}
             {{- if and .Values.vaultAppRole .Values.vaultAppRole.existingSecret }}
             - name: VAULT_ADDR
@@ -113,6 +128,11 @@ spec:
             - name: VAULT_KEY_PATH
               value: {{ .Values.vaultAppRole.keyPath | default "transit" | quote }}
             {{- end }}
+
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}

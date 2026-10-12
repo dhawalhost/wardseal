@@ -31,3 +31,7 @@ adminui:
 landingui:
   image:
     tag: "v0.1.1"
+
+idui:
+  image:
+    tag: "v0.1.1"

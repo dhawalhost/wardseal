@@ -36,6 +36,12 @@ http:
       rule: Host(`manage.wardseal.local`)
       service: adminui
 
+    idui:
+      entryPoints:
+        - web
+      rule: Host(`id.wardseal.local`)
+      service: idui
+
     landingui-site:
       entryPoints:
         - web
@@ -72,6 +78,11 @@ http:
       loadBalancer:
         servers:
           - url: http://adminui:80
+
+    idui:
+      loadBalancer:
+        servers:
+          - url: http://idui:80
 
     landingui:
       loadBalancer:
