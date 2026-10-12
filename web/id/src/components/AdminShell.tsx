@@ -29,6 +29,7 @@ import {
     Clock
 } from 'lucide-react';
 
+import { api } from '@/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +88,6 @@ const AdminShell: React.FC = () => {
     React.useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const { api } = await import('@/api');
                 const res = await api.get('/api/v1/user/profile');
                 if (res.data && res.data.name) {
                     setUserName(res.data.name);

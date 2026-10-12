@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { seedSessionFromAuthResponse, navigateSafeRedirect, resolveSafeRedirect } from '@wardseal/shared';
 import { socialLogin } from '../api';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -24,7 +25,7 @@ const SocialCallback: React.FC = () => {
             const stateParts = state.split(':');
             let tenantID = '';
             let provider = '';
-            
+
             if (stateParts.length >= 4) {
                 tenantID = stateParts[1];
                 provider = stateParts[3];
@@ -36,23 +37,23 @@ const SocialCallback: React.FC = () => {
             }
 
             try {
-                // Construct redirectURI - must match what was sent to authorize
                 const redirectURI = window.location.origin + window.location.pathname;
-                
                 const response = await socialLogin(provider, code, redirectURI);
-                
+
                 if (response.pending_token && response.error === 'mfa_required') {
-                    // Redirect to MFA completion
                     navigate(`/login?step=mfa&pending_token=${response.pending_token}`);
                     return;
                 }
 
-                // Success! Tokens are set by axios interceptor/cookie
-                // Redirect back to original target if stored, or profile
+                seedSessionFromAuthResponse({
+                    ...response,
+                    tenant_id: response.tenant_id || tenantID,
+                });
+
                 const savedRedirect = localStorage.getItem('login_redirect_uri');
-                if (savedRedirect) {
-                    localStorage.removeItem('login_redirect_uri');
-                    window.location.href = savedRedirect;
+                localStorage.removeItem('login_redirect_uri');
+                if (savedRedirect && resolveSafeRedirect(savedRedirect)) {
+                    navigateSafeRedirect(savedRedirect, '/profile');
                 } else {
                     navigate('/profile');
                 }
@@ -62,7 +63,7 @@ const SocialCallback: React.FC = () => {
             }
         };
 
-        handleCallback();
+        void handleCallback();
     }, [location, navigate]);
 
     if (error) {
@@ -76,7 +77,7 @@ const SocialCallback: React.FC = () => {
                             {error}
                         </AlertDescription>
                     </Alert>
-                    <button 
+                    <button
                         onClick={() => navigate('/login')}
                         className="w-full mt-6 py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg hover:shadow-primary/20 transition-all"
                     >

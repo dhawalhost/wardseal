@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { resolveManageConsoleUrl } from '@wardseal/shared';
 import { Button } from "@/components/ui/button";
 import { ExternalLink, LayoutGrid, Search, Loader2, Sparkles, Box } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,9 @@ const PortalDashboard = () => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const [canAccessAdmin, setCanAccessAdmin] = useState(
+        () => localStorage.getItem('isAdmin') === 'true'
+    );
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -31,6 +35,7 @@ const PortalDashboard = () => {
             }
         };
 
+        setCanAccessAdmin(localStorage.getItem('isAdmin') === 'true');
         fetchApplications();
     }, []);
 
@@ -64,14 +69,11 @@ const PortalDashboard = () => {
                             <p className="text-on-surface-variant/60 font-medium text-lg max-w-xl leading-relaxed">
                                 Securely access and manage your application tunnels and enterprise resources.
                             </p>
-                            {localStorage.getItem('isAdmin') === 'true' && (
+                            {canAccessAdmin && (
                                 <div className="pt-4">
                                     <Button
                                         onClick={() => {
-                                            const adminUrl = window.location.hostname.endsWith('.local')
-                                                ? 'http://admin.wardseal.local'
-                                                : 'https://admin.wardseal.com';
-                                            window.location.assign(adminUrl);
+                                            window.location.assign(resolveManageConsoleUrl());
                                         }}
                                         className="h-12 px-8 rounded-2xl bg-inverse text-on-inverse font-bold text-sm hover:opacity-90 transition-all flex items-center gap-3 shadow-xl shadow-on-surface/10"
                                     >

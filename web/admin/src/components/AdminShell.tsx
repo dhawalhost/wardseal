@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { api } from '@/api';
 import {
     LayoutDashboard,
     Target,
@@ -160,7 +161,6 @@ const AdminShell: React.FC = () => {
     React.useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const { api } = await import('@/api');
                 const res = await api.get('/api/v1/user/profile');
                 if (res.data?.name) {
                     setUserName(res.data.name);
@@ -173,7 +173,7 @@ const AdminShell: React.FC = () => {
                 console.error('Failed to fetch profile in AdminShell', err);
             }
         };
-        fetchProfile();
+        void fetchProfile();
     }, []);
 
     const [systemsHealthy, setSystemsHealthy] = React.useState<boolean | null>(null);

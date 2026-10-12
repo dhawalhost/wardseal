@@ -1,23 +1,30 @@
 /**
- * Shared environment configuration for all WardSeal MFEs.
- * Each MFE sets VITE_* variables in its own .env.local file.
+ * Shared environment configuration for WardSeal MFEs.
  */
 
+const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env ?? {};
+
 export const AppConfig = {
-  /** Base URL of the Identity / Login UI (id.wardseal.*) */
-  idUrl: (import.meta as any).env?.VITE_ID_URL ?? 'http://id.wardseal.local',
+  /** Identity / Login UI (id.*) */
+  idUrl: env.VITE_ID_URL ?? 'http://id.wardseal.local',
 
-  /** Base URL for API calls — points to the MFE's own nginx proxy */
-  apiUrl: (import.meta as any).env?.VITE_API_URL ?? '',
+  /** This MFE's own origin / nginx proxy (often empty = same-origin) */
+  apiUrl: env.VITE_API_URL ?? '',
 
-  /** The raw authsvc URL (used only by id MFE for login/token calls) */
-  authUrl: (import.meta as any).env?.VITE_AUTH_URL ?? 'http://auth.wardseal.local',
+  /** Raw authsvc URL (id MFE SSO / token calls) */
+  authUrl: env.VITE_AUTH_URL || env.VITE_AUTHSVC_URL || 'http://auth.wardseal.local',
 
-  /** Deployment mode: 'saas' | 'selfhost' */
-  mode: (import.meta as any).env?.VITE_APP_MODE ?? 'selfhost',
+  /** Deployment mode */
+  mode: env.VITE_APP_MODE ?? 'selfhost',
 
-  isSaaS() { return this.mode === 'saas'; },
-  isSelfHost() { return this.mode !== 'saas'; },
+  allowedRedirectOrigins: env.VITE_ALLOWED_REDIRECT_ORIGINS ?? '',
+
+  isSaaS() {
+    return this.mode === 'saas';
+  },
+  isSelfHost() {
+    return this.mode !== 'saas';
+  },
 };
 
 export default AppConfig;

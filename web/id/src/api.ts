@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-export const AUTHSVC_URL = (import.meta as any).env?.VITE_AUTHSVC_URL || '';
-const DIRSVC_URL = (import.meta as any).env?.VITE_DIRSVC_URL || '';
-const GOVSVC_URL = (import.meta as any).env?.VITE_GOVSVC_URL || '';
+const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env ?? {};
 
-console.log('API Strings:', { AUTHSVC_URL, DIRSVC_URL, GOVSVC_URL });
+// Prefer explicit service URLs; fall back to AUTH_URL / same-origin API proxy.
+export const AUTHSVC_URL =
+  env.VITE_AUTHSVC_URL || env.VITE_AUTH_URL || env.VITE_API_URL || '';
+const DIRSVC_URL = env.VITE_DIRSVC_URL || env.VITE_API_URL || '';
+const GOVSVC_URL = env.VITE_GOVSVC_URL || env.VITE_API_URL || '';
 
 export const api = axios.create({
     baseURL: AUTHSVC_URL,

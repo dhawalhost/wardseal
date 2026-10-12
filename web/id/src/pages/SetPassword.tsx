@@ -27,8 +27,8 @@ const SetPassword: React.FC = () => {
       setError('Invalid or missing setup token.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (password.length < 12) {
+      setError('Password must be at least 12 characters with upper, lower, number, and special character.');
       return;
     }
     if (password !== confirmPassword) {
