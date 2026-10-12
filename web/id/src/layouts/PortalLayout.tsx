@@ -11,6 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { resolveManageConsoleUrl, seedSessionFromProfile } from '@wardseal/shared';
 import api, { getUserRoles } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -19,36 +20,9 @@ import BoringAvatar from 'boring-avatars';
 
 const ADMIN_ROLE = 'admin';
 
-type TokenPayload = {
-    sub?: string;
-    user_id?: string;
-    roles?: string[];
-    role?: string;
-};
-
 type RBACRole = {
     id?: string;
     name?: string;
-};
-
-const decodeTokenPayload = (token: string | null): TokenPayload | null => {
-    if (!token) return null;
-    try {
-        const [, payload] = token.split('.');
-        if (!payload) return null;
-
-        const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-        return JSON.parse(atob(padded));
-    } catch {
-        return null;
-    }
-};
-
-const getTokenUserID = (token: string | null): string => {
-    const payload = decodeTokenPayload(token);
-    if (!payload) return '';
-    return payload.sub || payload.user_id || '';
 };
 
 const PortalLayout = () => {
@@ -65,24 +39,28 @@ const PortalLayout = () => {
         let mounted = true;
 
         const loadAdminAccess = async () => {
-            const token = localStorage.getItem('token');
-            const userID = getTokenUserID(token);
-            if (!userID) {
-                if (mounted) setCanAccessAdmin(false);
-                return;
-            }
+            let userID = localStorage.getItem('userId') || '';
 
             try {
                 const profileRes = await api.get('/api/v1/user/profile');
-                if (profileRes.data && profileRes.data.name) {
+                seedSessionFromProfile(profileRes.data ?? {});
+                if (profileRes.data?.name) {
                     if (mounted) setUserName(profileRes.data.name);
-                    localStorage.setItem('userName', profileRes.data.name);
-                } else if (profileRes.data && profileRes.data.email) {
+                } else if (profileRes.data?.email) {
                     if (mounted) setUserName(profileRes.data.email);
-                    localStorage.setItem('userName', profileRes.data.email);
                 }
+                userID =
+                    profileRes.data?.user_id ||
+                    profileRes.data?.userID ||
+                    profileRes.data?.id ||
+                    userID;
             } catch (e) {
                 console.error("Failed to fetch profile in PortalLayout", e);
+            }
+
+            if (!userID) {
+                if (mounted) setCanAccessAdmin(false);
+                return;
             }
 
             try {
@@ -91,13 +69,14 @@ const PortalLayout = () => {
                 const roleNames = roles
                     .map((role: RBACRole | string) => (typeof role === 'string' ? role : role?.name))
                     .filter((name: any): name is string => typeof name === 'string');
-
+                const isAdmin = roleNames.some((role: string) => role.toLowerCase() === ADMIN_ROLE);
+                localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
                 if (mounted) {
-                    setCanAccessAdmin(roleNames.some((role: string) => role.toLowerCase() === ADMIN_ROLE));
+                    setCanAccessAdmin(isAdmin);
                 }
             } catch {
                 if (mounted) {
-                    setCanAccessAdmin(false);
+                    setCanAccessAdmin(localStorage.getItem('isAdmin') === 'true');
                 }
             }
         };
@@ -136,10 +115,7 @@ const PortalLayout = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    const adminUrl = window.location.hostname.endsWith('.local')
-                                        ? 'http://admin.wardseal.local'
-                                        : 'https://admin.wardseal.com';
-                                    window.location.assign(adminUrl);
+                                    window.location.assign(resolveManageConsoleUrl());
                                 }}
                                 className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-semibold text-[10px] px-4 hover:bg-surface-container transition-all"
                             >
@@ -158,7 +134,7 @@ const PortalLayout = () => {
                                         <Avatar className="h-8 w-8">
                                             <BoringAvatar
                                                 size={32}
-                                                name={getTokenUserID(localStorage.getItem('token')) || 'user'}
+                                                name={localStorage.getItem('userId') || userName || 'user'}
                                                 variant="marble"
                                                 colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
                                             />
@@ -185,8 +161,8 @@ const PortalLayout = () => {
                                             <DropdownMenuItem
                                                 onClick={() => {
                                                     const adminUrl = window.location.hostname.endsWith('.local')
-                                                        ? 'http://admin.wardseal.local'
-                                                        : 'https://admin.wardseal.com';
+                                                        ? 'http://manage.wardseal.local'
+                                                        : 'https://manage.wardseal.com';
                                                     window.location.assign(adminUrl);
                                                 }}
                                                 className="rounded-lg focus:bg-primary/5 focus:text-primary font-medium text-sm px-3 py-2 cursor-pointer"

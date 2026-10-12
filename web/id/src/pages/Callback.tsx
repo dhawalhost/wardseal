@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { navigateSafeRedirect } from '../lib/safeRedirect';
 
 /**
  * Callback — Post-login redirect handler for web/id.
@@ -6,31 +7,12 @@ import React, { useEffect } from 'react';
  * After a successful login, authsvc sets the httpOnly cookie and the Login
  * page navigates to /callback?redirect_uri=<original-destination>.
  *
- * This page reads redirect_uri and sends the user there.
- * If no redirect_uri is present, falls back to the user profile page.
+ * Only same-origin redirects are honored.
  */
 const Callback: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const redirectUri = params.get('redirect_uri');
-
-    if (redirectUri) {
-      // Basic safety check: only allow same-domain redirects
-      try {
-        const target = new URL(redirectUri);
-        const idHost = window.location.hostname; // e.g. id.wardseal.local
-        const baseDomain = idHost.replace(/^id\./, ''); // e.g. wardseal.local
-        if (target.hostname.endsWith(baseDomain)) {
-          window.location.href = redirectUri;
-          return;
-        }
-      } catch {
-        // Invalid URL — fall through to default
-      }
-    }
-
-    // Default: go to profile
-    window.location.href = '/profile';
+    navigateSafeRedirect(params.get('redirect_uri'), '/profile');
   }, []);
 
   return (

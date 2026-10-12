@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams, useLocation } from 'react-router-dom';
-import { login, getBranding, completeMfaLogin, lookupUser, beginLogin, finishLogin, getSetupStatus, getUserRoles, api, getUserProfile, getPublicSSOProviders } from '../api';
+import { login, getBranding, completeMfaLogin, lookupUser, beginLogin, finishLogin, getSetupStatus, api, getUserProfile, getPublicSSOProviders } from '../api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,41 +14,7 @@ import {
     GlassCardContent,
     GlassCardDescription
 } from '@/components/layout';
-
-const ADMIN_ROLE = 'admin';
-
-type TokenPayload = {
-    sub?: string;
-    user_id?: string;
-    roles?: string[];
-    role?: string;
-};
-
-type RBACRole = {
-    id?: string;
-    name?: string;
-};
-
-const decodeTokenPayload = (token: string | null): TokenPayload | null => {
-    if (!token) return null;
-
-    try {
-        const [, payload] = token.split('.');
-        if (!payload) return null;
-
-        const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-        return JSON.parse(atob(padded));
-    } catch {
-        return null;
-    }
-};
-
-const getTokenUserID = (token: string | null): string => {
-    const payload = decodeTokenPayload(token);
-    if (!payload) return '';
-    return payload.sub || payload.user_id || '';
-};
+import { navigateSafeRedirect, resolveSafeRedirect, seedSessionFromAuthResponse } from '@wardseal/shared';
 
 const Login: React.FC = () => {
     const policyBaseUrl = window.location.hostname.endsWith('.local')
@@ -139,8 +105,12 @@ const Login: React.FC = () => {
     const handleSocialLogin = (providerName: string) => {
         if (!tenantID) return;
         // Redirect to the backend authorize endpoint
-        const authUrl = `${import.meta.env.VITE_AUTH_URL}/sso/login/${providerName}?tenant_id=${tenantID}`;
-        window.location.href = authUrl;
+        const authBase =
+            import.meta.env.VITE_AUTH_URL ||
+            import.meta.env.VITE_AUTHSVC_URL ||
+            import.meta.env.VITE_API_URL ||
+            '';
+        window.location.href = `${authBase}/sso/login/${providerName}?tenant_id=${tenantID}`;
     };
 
     useEffect(() => {
@@ -181,7 +151,7 @@ const Login: React.FC = () => {
             
             const searchParams = new URLSearchParams(location.search);
             const redirectUri = searchParams.get('redirect_uri');
-            if (redirectUri) {
+            if (redirectUri && resolveSafeRedirect(redirectUri)) {
                 localStorage.setItem('login_redirect_uri', redirectUri);
             }
         }
@@ -189,13 +159,12 @@ const Login: React.FC = () => {
 
 
     const performRedirection = async () => {
-        const redirectUri = searchParams.get('redirect_uri');
-        if (redirectUri) {
-            if (redirectUri.startsWith('/')) {
-                window.location.assign(window.location.origin + redirectUri);
-            } else {
-                window.location.href = redirectUri;
-            }
+        const fromQuery = searchParams.get('redirect_uri');
+        const fromStorage = localStorage.getItem('login_redirect_uri');
+        localStorage.removeItem('login_redirect_uri');
+        const redirectUri = fromQuery || fromStorage;
+        if (resolveSafeRedirect(redirectUri)) {
+            navigateSafeRedirect(redirectUri, '/portal');
             return;
         }
         navigate('/portal');
@@ -286,15 +255,7 @@ const Login: React.FC = () => {
                 return;
             }
 
-            localStorage.setItem('token', data.token);
-            const tokenUserID = getTokenUserID(data.token) || email;
-            localStorage.setItem('userId', tokenUserID);
-            if (data.tenant_id) {
-                localStorage.setItem('tenantID', data.tenant_id);
-            }
-            if (data.tenant_slug) {
-                localStorage.setItem('tenantSlug', data.tenant_slug);
-            }
+            seedSessionFromAuthResponse(data, email);
 
             await performRedirection();
         } catch (err: any) {
@@ -313,15 +274,7 @@ const Login: React.FC = () => {
             const creds = await startAuthentication(options);
             const data = await finishLogin(userID, creds);
 
-            localStorage.setItem('token', data.token);
-            const tokenUserID = getTokenUserID(data.token) || email;
-            localStorage.setItem('userId', tokenUserID);
-            if (data.tenant_id) {
-                localStorage.setItem('tenantID', data.tenant_id);
-            }
-            if (data.tenant_slug) {
-                localStorage.setItem('tenantSlug', data.tenant_slug);
-            }
+            seedSessionFromAuthResponse(data, email);
 
             await performRedirection();
         } catch (err: any) {
@@ -337,15 +290,7 @@ const Login: React.FC = () => {
         setLoading(true);
         try {
             const data = await completeMfaLogin(pendingToken, totpCode, mfaUserId);
-            localStorage.setItem('token', data.token);
-            const tokenUserID = getTokenUserID(data.token) || email;
-            localStorage.setItem('userId', tokenUserID);
-            if (data.tenant_id) {
-                localStorage.setItem('tenantID', data.tenant_id);
-            }
-            if (data.tenant_slug) {
-                localStorage.setItem('tenantSlug', data.tenant_slug);
-            }
+            seedSessionFromAuthResponse(data, email);
 
             await performRedirection();
         } catch (err: any) {
@@ -361,16 +306,8 @@ const Login: React.FC = () => {
         try {
             await api.post('/api/v1/mfa/totp/verify', { user_id: mfaUserId, code: totpCode });
             const data = await completeMfaLogin(pendingToken, totpCode, mfaUserId);
-            
-            localStorage.setItem('token', data.token);
-            const tokenUserID = getTokenUserID(data.token) || email;
-            localStorage.setItem('userId', tokenUserID);
-            if (data.tenant_id) {
-                localStorage.setItem('tenantID', data.tenant_id);
-            }
-            if (data.tenant_slug) {
-                localStorage.setItem('tenantSlug', data.tenant_slug);
-            }
+
+            seedSessionFromAuthResponse(data, email);
 
             await performRedirection();
         } catch (err: any) {

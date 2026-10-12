@@ -13,6 +13,7 @@ import Callback from './pages/Callback';
 import SocialCallback from './pages/SocialCallback';
 import Logout from './pages/Logout';
 import PortalLayout from './layouts/PortalLayout';
+import AuthGuard from './components/AuthGuard';
 
 /**
  * web/id — Identity / Login UI
@@ -22,7 +23,7 @@ import PortalLayout from './layouts/PortalLayout';
  * ?redirect_uri query parameter (their original destination).
  *
  * Protected routes (profile, passkeys, mfa) show account self-service.
- * All authentication API calls go to VITE_AUTH_URL (auth.wardseal.*).
+ * Auth API calls use VITE_AUTH_URL / VITE_AUTHSVC_URL / same-origin proxy.
  */
 const App: React.FC = () => {
   return (
@@ -43,7 +44,7 @@ const App: React.FC = () => {
           <Route path="/social/callback" element={<SocialCallback />} />
 
           {/* Self-service account management (requires active session) */}
-          <Route element={<PortalLayout />}>
+          <Route element={<AuthGuard><PortalLayout /></AuthGuard>}>
             <Route path="/profile" element={<PortalProfile />} />
             <Route path="/mfa" element={<MFASetup />} />
             <Route path="/passkeys" element={<Passkeys />} />

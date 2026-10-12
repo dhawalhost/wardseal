@@ -12,8 +12,8 @@ services:
       context: ./web/admin
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://admin.wardseal.local
-        VITE_AUTHSVC_URL: http://admin.wardseal.local
+        VITE_API_URL: http://manage.wardseal.local
+        VITE_AUTHSVC_URL: http://manage.wardseal.local
         VITE_GOVSVC_URL: http://api.wardseal.local
         VITE_DIRSVC_URL: http://api.wardseal.local
         VITE_ID_URL: http://id.wardseal.local
@@ -27,7 +27,7 @@ services:
         condition: service_healthy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.adminui.rule=Host(`admin.wardseal.local`)
+      - traefik.http.routers.adminui.rule=Host(`manage.wardseal.local`)
       - traefik.http.routers.adminui.entrypoints=web
       - traefik.http.services.adminui.loadbalancer.server.port=80
     networks:

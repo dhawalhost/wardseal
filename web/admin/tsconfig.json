@@ -23,11 +23,18 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@wardseal/shared": [
+        "../shared/src/index.ts"
+      ],
+      "@wardseal/shared/*": [
+        "../shared/src/*"
       ]
     }
   },
   "include": [
-    "src"
+    "src",
+    "../shared/src"
   ],
   "references": [
     {

@@ -139,8 +139,8 @@ const PortalLayout = () => {
                                 variant="outline"
                                 onClick={() => {
                                     const adminUrl = window.location.hostname.endsWith('.local')
-                                        ? 'http://admin.wardseal.local'
-                                        : 'https://admin.wardseal.com';
+                                        ? 'http://manage.wardseal.local'
+                                        : 'https://manage.wardseal.com';
                                     window.location.assign(adminUrl);
                                 }}
                                 className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-bold text-[11px] px-4 hover:bg-surface-container transition-all"
@@ -187,8 +187,8 @@ const PortalLayout = () => {
                                             <DropdownMenuItem
                                                 onClick={() => {
                                                     const adminUrl = window.location.hostname.endsWith('.local')
-                                                        ? 'http://admin.wardseal.local'
-                                                        : 'https://admin.wardseal.com';
+                                                        ? 'http://manage.wardseal.local'
+                                                        : 'https://manage.wardseal.com';
                                                     window.location.assign(adminUrl);
                                                 }}
                                                 className="rounded-lg focus:bg-primary/5 focus:text-primary font-medium text-sm px-3 py-2 cursor-pointer"
