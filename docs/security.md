@@ -8,7 +8,8 @@ WardSeal implements industry-standard security controls to protect your identity
 
 | Feature | Implementation |
 |---------|----------------|
-| Password Hashing | bcrypt with cost factor 10 |
+| Password Hashing | Argon2id (64 MiB, t=3, p=4); legacy bcrypt verified and upgraded on login |
+| Password Policy | Min 12 chars; upper/lower/digit/special; offline breach denylist |
 | MFA | TOTP (RFC 6238) + WebAuthn |
 | Brute Force Protection | Account lockout after 5 failed attempts |
 | Session Security | httpOnly cookies, SameSite=Strict |

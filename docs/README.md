@@ -24,7 +24,11 @@ WardSeal is built as a microservices architecture. Below are the detailed docume
 *   [Deployment Guide](deployment.md)
 
 ## API Reference
-*   See `api/` directory for Protocol Buffer definitions (if applicable).
+*   OpenAPI: [`api/openapi.yaml`](../api/openapi.yaml) (management + security-critical routes)
+*   Route authz registry: `pkg/routeauthz`
+*   Threat model: [THREAT_MODEL.md](THREAT_MODEL.md)
+*   Enterprise audit: [ENTERPRISE_AUDIT_REPORT.md](ENTERPRISE_AUDIT_REPORT.md)
+*   Runbooks: [BREAK_GLASS.md](runbooks/BREAK_GLASS.md), [PEN_TEST.md](runbooks/PEN_TEST.md), [CLOUD_PREREQS.md](runbooks/CLOUD_PREREQS.md), [URL_HOSTS.md](runbooks/URL_HOSTS.md), [IR_DRILL.md](runbooks/IR_DRILL.md)
 
 ## Policies & Compliance
 *   [Policy Pack](policies/README.md)
