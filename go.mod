@@ -32,7 +32,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.49.0
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 	golang.org/x/time v0.15.0
 	google.golang.org/api v0.276.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
