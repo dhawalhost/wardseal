@@ -5,14 +5,14 @@ env:
   LOG_LEVEL: warn
   DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
   AUTH_SERVICE_URL: https://auth.wardseal.com
-  UI_URL: https://manage.wardseal.com
+  UI_URL: https://id.wardseal.com
   KMS_PROVIDER: vault
   REDIS_ENABLED: "true"
   REDIS_ADDR: redis-production.wardseal.svc.cluster.local:6379
   WEBAUTHN_SESSION_TTL_SECONDS: "600"
   RATE_LIMIT_USE_TENANT: "true"
   RATE_LIMIT_KEY_PREFIX: wardseal:ratelimit
-  CORS_ALLOWED_ORIGINS: https://wardseal.com,https://manage.wardseal.com
+  CORS_ALLOWED_ORIGINS: https://wardseal.com,https://manage.wardseal.com,https://id.wardseal.com,https://auth.wardseal.com
 
 database:
   existingSecret: wardseal-db-credentials-production

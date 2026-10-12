@@ -36,6 +36,11 @@ dependencies:
     repository: "file://../adminui"
     condition: adminui.enabled
 
+  - name: idui
+    version: "0.1.0"
+    repository: "file://../idui"
+    condition: idui.enabled
+
   - name: landingui
     version: "0.1.0"
     repository: "file://../landingui"

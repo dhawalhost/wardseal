@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-LOCAL_HOSTS=("wardseal.local" "auth.wardseal.local" "api.wardseal.local" "manage.wardseal.local")
+LOCAL_HOSTS=("wardseal.local" "auth.wardseal.local" "api.wardseal.local" "manage.wardseal.local" "id.wardseal.local")
 
 DB_USER="${DB_USER:-user}"
 DB_PASS="${DB_PASS:-password}"
@@ -217,12 +217,33 @@ if [[ -d "web/admin" ]]; then
     --build-arg VITE_AUTHSVC_URL="http://auth.wardseal.local" \
     --build-arg VITE_DIRSVC_URL="http://api.wardseal.local" \
     --build-arg VITE_GOVSVC_URL="http://api.wardseal.local" \
+    --build-arg VITE_API_URL="http://manage.wardseal.local" \
+    --build-arg VITE_ID_URL="http://id.wardseal.local" \
+    --build-arg VITE_ALLOWED_REDIRECT_ORIGINS="http://manage.wardseal.local,http://id.wardseal.local,http://auth.wardseal.local,http://wardseal.local" \
     --build-arg VITE_APP_MODE="saas" \
     -t "wardseal-adminui:$IMAGE_TAG" \
     -f "web/admin/Dockerfile" \
-    "web/admin" \
+    "web" \
     || fail "Failed to build adminui"
   pass "Built wardseal-adminui:$IMAGE_TAG"
+fi
+
+# Build Identity / Login UI
+if [[ -d "web/id" ]]; then
+  echo "  Building wardseal-idui:$IMAGE_TAG ..."
+  docker build --load \
+    --build-arg VITE_API_URL="http://id.wardseal.local" \
+    --build-arg VITE_AUTH_URL="http://auth.wardseal.local" \
+    --build-arg VITE_AUTHSVC_URL="http://auth.wardseal.local" \
+    --build-arg VITE_DIRSVC_URL="http://api.wardseal.local" \
+    --build-arg VITE_GOVSVC_URL="http://api.wardseal.local" \
+    --build-arg VITE_ALLOWED_REDIRECT_ORIGINS="http://manage.wardseal.local,http://id.wardseal.local,http://auth.wardseal.local,http://wardseal.local" \
+    --build-arg VITE_APP_MODE="saas" \
+    -t "wardseal-idui:$IMAGE_TAG" \
+    -f "web/id/Dockerfile" \
+    "web" \
+    || fail "Failed to build idui"
+  pass "Built wardseal-idui:$IMAGE_TAG"
 fi
 
 # Build Landing Site (React + Vite SPA served by NGINX)
@@ -265,6 +286,10 @@ elif [[ "$RUNTIME" == "nerdctl" ]]; then
   if [[ -d "web/admin" ]]; then
     load_image_containerd "wardseal-adminui"
     pass "Imported wardseal-adminui:$IMAGE_TAG into k8s.io"
+  fi
+  if [[ -d "web/id" ]]; then
+    load_image_containerd "wardseal-idui"
+    pass "Imported wardseal-idui:$IMAGE_TAG into k8s.io"
   fi
   if [[ "$DEPLOY_LANDING" == "true" && -d "web/landing" ]]; then
     load_image_containerd "wardseal-landingui"
@@ -436,6 +461,7 @@ echo "  Landing Site   : http://wardseal.local"
 echo "  Auth Service   : http://auth.wardseal.local"
 echo "  API Service    : http://api.wardseal.local"
 echo "  Console UI     : http://manage.wardseal.local"
+echo "  Identity UI    : http://id.wardseal.local"
 echo "  OpenID Config  : http://auth.wardseal.local/t/admin-system/.well-known/openid-configuration"
 echo ""
 echo "  View logs      : kubectl logs -n $NAMESPACE -l app=wardseal-authsvc -f"
