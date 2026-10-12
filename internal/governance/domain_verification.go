@@ -13,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
+
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
 // DomainVerificationHandler handles domain verification API requests.
@@ -28,10 +30,12 @@ func NewDomainVerificationHandler(db *sqlx.DB, store OrganizationRepository, log
 }
 
 // RegisterRoutes registers domain verification routes.
-func (h *DomainVerificationHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/organizations/:id/domain-verification", h.getDomainVerification)
-	rg.POST("/organizations/:id/domain-verification/generate", h.generateVerificationToken)
-	rg.POST("/organizations/:id/domain-verification/verify", h.verifyDomain)
+func (h *DomainVerificationHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "users", "read")
+	write := middleware.RequirePermission(checker, "users", "write")
+	rg.GET("/organizations/:id/domain-verification", read, h.getDomainVerification)
+	rg.POST("/organizations/:id/domain-verification/generate", write, h.generateVerificationToken)
+	rg.POST("/organizations/:id/domain-verification/verify", write, h.verifyDomain)
 }
 
 // DomainVerificationResponse contains verification details.

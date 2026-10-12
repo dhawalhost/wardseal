@@ -17,6 +17,7 @@ import (
 	"github.com/dhawalhost/gokit/observability"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.uber.org/zap"
@@ -32,6 +33,7 @@ import (
 	"github.com/dhawalhost/wardseal/pkg/kms"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	wardsealobs "github.com/dhawalhost/wardseal/pkg/observability"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 func main() {
@@ -75,11 +77,14 @@ func main() {
 	}
 
 	directoryServiceURL := cfg.Auth.DirectoryServiceURL
-	serviceToken := cfg.Auth.ServiceAuthToken
-	if serviceToken.IsEmpty() {
-		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback, not production credentials
+	resolvedToken, err := middleware.ResolveServiceAuthToken(string(cfg.Environment), cfg.Auth.ServiceAuthToken.Raw())
+	if err != nil {
+		log.Fatal("Invalid service auth configuration", zap.Error(err))
+	}
+	if cfg.Auth.ServiceAuthToken.IsEmpty() {
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
+	serviceToken := types.Secret(resolvedToken)
 	serviceHeader := cfg.Auth.ServiceAuthHeader
 
 	dbConfig := database.Config{
@@ -97,7 +102,7 @@ func main() {
 		os.Exit(1)
 	}
 	clientStore := oauthclient.NewRepository(db)
-	samlStore := saml.NewStore(db, cfg.Auth.DirectoryServiceURL, cfg.Auth.ServiceAuthToken.Raw(), cfg.Auth.ServiceAuthHeader)
+	samlStore := saml.NewStore(db, cfg.Auth.DirectoryServiceURL, serviceToken.Raw(), serviceHeader)
 	deviceStore := auth.NewDeviceRepository(db)
 	signalStore := auth.NewSignalRepository(db)
 	webauthnStore := auth.NewWebAuthnRepository(db)
@@ -137,7 +142,7 @@ func main() {
 	// Phase 2: The Graph (ReBAC)
 	authzRepo := authz.NewRepository(db)
 	authzEngine := authz.NewEngine(authzRepo, log, globalRedisClient)
-	rbacSvc := rbac.NewService(rbacRepo, authzEngine) 
+	rbacSvc := rbac.NewService(rbacRepo, authzEngine)
 
 	authServiceURL := cfg.Auth.BaseURL
 
@@ -253,6 +258,7 @@ func main() {
 
 	// Security Middleware
 	router.Use(middleware.Wrap(gokitmiddleware.SecureHeaders()))
+	router.Use(middleware.SecurityHeadersMiddleware())
 	router.Use(middleware.SoftwareWAFMiddleware())
 
 	router.Use(middleware.DistributedRateLimitMiddleware(middleware.DistributedRateLimitConfig{
@@ -330,26 +336,41 @@ func main() {
 	router.GET("/healthz", gin.WrapF(healthHandler.LiveHandler()))
 	router.GET("/readyz", gin.WrapF(healthHandler.ReadyHandler()))
 
-	// SAML Setup
+	pubKey := signer.PublicKey()
+	tokenValidator := func(tokenString string) (*middleware.Claims, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return pubKey, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		if claims, ok := token.Claims.(*middleware.Claims); ok && token.Valid {
+			return claims, nil
+		}
+		return nil, fmt.Errorf("invalid token")
+	}
 
-	// Register SAML management API
-	samlHandlers := saml.NewHTTPHandler(samlStore, samlIdPRepo, cipher, log)
-	samlHandlers.RegisterRoutes(router.Group("/api/v1"))
-
-	// Developer Portal API (self-service app registration, API keys)
-	developerHandlers := auth.NewDeveloperAPIHandler(db, log)
-	developerHandlers.RegisterRoutes(router.Group("/api/v1"))
-
-	// RBAC API (Roles and Permissions)
-	rbacHandlers := rbac.NewHTTPHandler(rbacSvc, log)
-	rbacGroup := router.Group("/api/v1")
-	rbacGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
+	mgmt := router.Group("/api/v1")
+	mgmt.Use(middleware.TenantExtractor(middleware.TenantConfig{
 		HeaderName: "X-Tenant-ID",
 		SlugResolver: func(ctx context.Context, slug string) (string, error) {
 			return svc.ResolveTenantSlug(ctx, slug)
 		},
 	}))
-	rbacHandlers.RegisterRoutes(rbacGroup)
+	mgmt.Use(middleware.RequireUserAuth(tokenValidator))
+
+	samlHandlers := saml.NewHTTPHandler(samlStore, samlIdPRepo, cipher, log)
+	samlHandlers.RegisterRoutes(mgmt)
+
+	developerHandlers := auth.NewDeveloperAPIHandler(db, log)
+	developerHandlers.RegisterRoutes(mgmt)
+
+	rbacHandlers := rbac.NewHTTPHandler(rbacSvc, log)
+	rbacHandlers.RegisterRoutes(mgmt, rbacSvc)
+	rbacHandlers.RegisterBreakGlassRoutes(mgmt, rbacSvc)
 
 	// Register IdP-initiated endpoint logic is handled inside authHandlers.RegisterRoutes -> svc.SAML()
 

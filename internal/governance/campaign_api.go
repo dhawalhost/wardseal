@@ -13,32 +13,35 @@ import (
 // CampaignHTTPHandler handles campaign HTTP requests.
 type CampaignHTTPHandler struct {
 	svc    CampaignService
+	perms  middleware.PermissionChecker
 	logger *zap.Logger
 }
 
 // NewCampaignHTTPHandler creates a new campaign HTTP handler.
-func NewCampaignHTTPHandler(svc CampaignService, logger *zap.Logger) *CampaignHTTPHandler {
-	return &CampaignHTTPHandler{svc: svc, logger: logger}
+func NewCampaignHTTPHandler(svc CampaignService, logger *zap.Logger, perms middleware.PermissionChecker) *CampaignHTTPHandler {
+	return &CampaignHTTPHandler{svc: svc, logger: logger, perms: perms}
 }
 
 // RegisterRoutes registers campaign routes.
 func (h *CampaignHTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	read := middleware.RequirePermission(h.perms, "roles", "read")
+	write := middleware.RequirePermission(h.perms, "roles", "write")
+	del := middleware.RequirePermission(h.perms, "roles", "delete")
 	campaigns := rg.Group("/campaigns")
 	{
-		campaigns.POST("", h.createCampaign)
-		campaigns.GET("", h.listCampaigns)
-		campaigns.GET("/:id", h.getCampaign)
-		campaigns.POST("/:id/start", h.startCampaign)
-		campaigns.POST("/:id/complete", h.completeCampaign)
-		campaigns.POST("/:id/cancel", h.cancelCampaign)
-		campaigns.DELETE("/:id", h.deleteCampaign)
+		campaigns.POST("", write, h.createCampaign)
+		campaigns.GET("", read, h.listCampaigns)
+		campaigns.GET("/:id", read, h.getCampaign)
+		campaigns.POST("/:id/start", write, h.startCampaign)
+		campaigns.POST("/:id/complete", write, h.completeCampaign)
+		campaigns.POST("/:id/cancel", write, h.cancelCampaign)
+		campaigns.DELETE("/:id", del, h.deleteCampaign)
 
-		// Review items
-		campaigns.POST("/:id/items", h.addReviewItem)
-		campaigns.GET("/:id/items", h.listPendingItems)
-		campaigns.GET("/items", h.listReviewItems)
-		campaigns.POST("/:id/items/:itemId/approve", h.approveItem)
-		campaigns.POST("/:id/items/:itemId/revoke", h.revokeItem)
+		campaigns.POST("/:id/items", write, h.addReviewItem)
+		campaigns.GET("/:id/items", read, h.listPendingItems)
+		campaigns.GET("/items", read, h.listReviewItems)
+		campaigns.POST("/:id/items/:itemId/approve", write, h.approveItem)
+		campaigns.POST("/:id/items/:itemId/revoke", write, h.revokeItem)
 	}
 }
 

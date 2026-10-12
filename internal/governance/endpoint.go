@@ -12,18 +12,21 @@ import (
 // EndpointHandler handles device registration and trust.
 type EndpointHandler struct {
 	svc    Service
+	perms  middleware.PermissionChecker
 	logger *zap.Logger
 }
 
-func NewEndpointHandler(svc Service, logger *zap.Logger) *EndpointHandler {
-	return &EndpointHandler{svc: svc, logger: logger}
+func NewEndpointHandler(svc Service, logger *zap.Logger, perms middleware.PermissionChecker) *EndpointHandler {
+	return &EndpointHandler{svc: svc, logger: logger, perms: perms}
 }
 
 func (h *EndpointHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.POST("/governance/endpoints/register", h.registerDevice)
-	rg.GET("/governance/endpoints", h.listDevices)
-	rg.GET("/governance/endpoints/:id", h.getDevice)
-	rg.PUT("/governance/endpoints/:id/status", h.updateDeviceStatus)
+	read := middleware.RequirePermission(h.perms, "applications", "read")
+	write := middleware.RequirePermission(h.perms, "applications", "write")
+	rg.POST("/governance/endpoints/register", write, h.registerDevice)
+	rg.GET("/governance/endpoints", read, h.listDevices)
+	rg.GET("/governance/endpoints/:id", read, h.getDevice)
+	rg.PUT("/governance/endpoints/:id/status", write, h.updateDeviceStatus)
 }
 
 func (h *EndpointHandler) registerDevice(c *gin.Context) {

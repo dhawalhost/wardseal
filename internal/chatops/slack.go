@@ -137,14 +137,14 @@ func (h *SlackHandler) HandleCommand(w http.ResponseWriter, r *http.Request) {
 		}
 		workloadID := parts[2]
 		scopes := parts[3:]
-		
+
 		req, err := h.govSvc.CreateAgentAccessRequest(r.Context(), tenantID, workloadID, scopes, "Requested via Slack agent command", "4h")
 		if err != nil {
 			h.log.Error("failed to create agent request", zap.Error(err))
 			h.sendEphemeralResponse(w, "❌ Failed to create agent access request.")
 			return
 		}
-		
+
 		h.sendEphemeralResponse(w, fmt.Sprintf("✅ *Agent Access Request Created*\nID: `%s`\nWorkload: `%s`\nScopes: `%s`", req.ID, workloadID, strings.Join(scopes, ", ")))
 		return
 	}
@@ -472,7 +472,7 @@ func (h *SlackHandler) NotifyAccessRequest(ctx context.Context, req governance.A
 			"type": "section",
 			"text": map[string]interface{}{
 				"type": "mrkdwn",
-				"text": fmt.Sprintf("🔔 *New Access Request*\n*Requester:* %s\n*Resource:* %s (%s)\n*Reason:* %s",
+				"text": fmt.Sprintf("🔔 *New Access Request*\n*Requester:* %s\n*Resource:* %s (%s)\n*Reason:* %v",
 					req.RequesterID, req.ResourceID, req.ResourceType, req.Reason),
 			},
 		},
@@ -590,6 +590,7 @@ func (h *SlackHandler) NotifyAccessAvailable(ctx context.Context, tenantID, slac
 
 	return nil
 }
+
 // HandleAskCommand performs a conversational audit using LLM.
 func (h *SlackHandler) HandleAskCommand(ctx context.Context, tenantID, question, responseURL string) {
 	if h.llm == nil {
@@ -633,7 +634,6 @@ CONTEXT:
 	// 4. Send Response back to Slack
 	h.sendDelayedResponse(responseURL, answer)
 }
-
 
 func (h *SlackHandler) sendDelayedResponse(responseURL, text string) {
 	payload := map[string]interface{}{

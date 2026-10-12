@@ -252,7 +252,11 @@ func (s *service) seedDefaultRolesAndPermissions(ctx context.Context, tenantID s
 	defaultRoles := []roleDef{
 		{"super-admin", "Full access to all system administrative tasks and configurations", []string{"*:*"}},
 		{"security-admin", "Manage and configure security parameters and policies", []string{
-			"users:read", "groups:read", "roles:read", "policies:read", "audit:read", "applications:read",
+			"users:read", "groups:read",
+			"roles:read", "roles:write",
+			"policies:read", "policies:write", "policies:delete",
+			"audit:read",
+			"applications:read", "applications:write", "applications:delete",
 		}},
 		{"user-admin", "Create, manage, and configure user profiles and access groups", []string{
 			"users:read", "users:write", "users:delete", "groups:read", "groups:write", "groups:delete",

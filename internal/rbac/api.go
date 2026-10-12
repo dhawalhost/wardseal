@@ -21,34 +21,35 @@ func NewHTTPHandler(svc Service, logger *zap.Logger) *HTTPHandler {
 }
 
 // RegisterRoutes registers RBAC routes.
-func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	// Roles
+func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.PermissionChecker) {
+	read := middleware.RequirePermission(checker, "roles", "read")
+	write := middleware.RequirePermission(checker, "roles", "write")
+	del := middleware.RequirePermission(checker, "roles", "delete")
+
 	roles := rg.Group("/roles")
 	{
-		roles.POST("", h.createRole)
-		roles.GET("", h.listRoles)
-		roles.GET("/:id", h.getRole)
-		roles.PUT("/:id", h.updateRole)
-		roles.DELETE("/:id", h.deleteRole)
-		roles.GET("/:id/permissions", h.getRolePermissions)
-		roles.POST("/:id/permissions/:permId", h.assignPermissionToRole)
-		roles.DELETE("/:id/permissions/:permId", h.removePermissionFromRole)
+		roles.POST("", write, h.createRole)
+		roles.GET("", read, h.listRoles)
+		roles.GET("/:id", read, h.getRole)
+		roles.PUT("/:id", write, h.updateRole)
+		roles.DELETE("/:id", del, h.deleteRole)
+		roles.GET("/:id/permissions", read, h.getRolePermissions)
+		roles.POST("/:id/permissions/:permId", write, h.assignPermissionToRole)
+		roles.DELETE("/:id/permissions/:permId", write, h.removePermissionFromRole)
 	}
 
-	// Permissions
 	perms := rg.Group("/permissions")
 	{
-		perms.POST("", h.createPermission)
-		perms.GET("", h.listPermissions)
+		perms.POST("", write, h.createPermission)
+		perms.GET("", read, h.listPermissions)
 	}
 
-	// User roles
 	users := rg.Group("/users")
 	{
-		users.GET("/:userId/roles", h.getUserRoles)
-		users.POST("/:userId/roles/:roleId", h.assignRoleToUser)
-		users.DELETE("/:userId/roles/:roleId", h.removeRoleFromUser)
-		users.GET("/:userId/permissions", h.getUserPermissions)
+		users.GET("/:userId/roles", read, h.getUserRoles)
+		users.POST("/:userId/roles/:roleId", write, h.assignRoleToUser)
+		users.DELETE("/:userId/roles/:roleId", write, h.removeRoleFromUser)
+		users.GET("/:userId/permissions", read, h.getUserPermissions)
 	}
 }
 

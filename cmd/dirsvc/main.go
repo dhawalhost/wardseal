@@ -22,7 +22,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/dhawalhost/wardseal/internal/audit"
+	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/directory"
+	"github.com/dhawalhost/wardseal/internal/rbac"
 	"github.com/dhawalhost/wardseal/internal/scim"
 	"github.com/dhawalhost/wardseal/pkg/config"
 	"github.com/dhawalhost/wardseal/pkg/database"
@@ -30,6 +32,7 @@ import (
 	"github.com/dhawalhost/wardseal/pkg/eventbus/redisbus"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	wardsealobs "github.com/dhawalhost/wardseal/pkg/observability"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 func main() {
@@ -92,11 +95,14 @@ func main() {
 	auditRepo := audit.NewRepository(db)
 	auditSvc := audit.NewService(auditRepo)
 
-	serviceToken := cfg.Directory.ServiceAuthToken
-	if serviceToken.IsEmpty() {
-		serviceToken = "dev-internal-token" //nolint:gosec // G101: dev-only fallback, not production credentials
+	resolvedToken, err := middleware.ResolveServiceAuthToken(string(cfg.Environment), cfg.Directory.ServiceAuthToken.Raw())
+	if err != nil {
+		log.Fatal("Invalid service auth configuration", zap.Error(err))
+	}
+	if cfg.Directory.ServiceAuthToken.IsEmpty() {
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
+	serviceToken := types.Secret(resolvedToken)
 	serviceHeader := cfg.Directory.ServiceAuthHeader
 
 	router := gin.Default()
@@ -135,6 +141,7 @@ func main() {
 
 	// Security Middleware
 	router.Use(middleware.Wrap(gokitmiddleware.SecureHeaders()))
+	router.Use(middleware.SecurityHeadersMiddleware())
 
 	var rateLimitRedisClient redis.UniversalClient
 	if cfg.Auth.RedisAddr != "" {
@@ -205,10 +212,16 @@ func main() {
 	router.GET("/scim/healthz", gin.WrapF(healthHandler.LiveHandler()))
 	router.GET("/readyz", gin.WrapF(healthHandler.ReadyHandler()))
 
+	rbacRepo := rbac.NewRepository(db)
+	authzRepo := authz.NewRepository(db)
+	authzEngine := authz.NewEngine(authzRepo, log, nil)
+	rbacSvc := rbac.NewService(rbacRepo, authzEngine)
+
 	// Register service routes
 	api := directory.NewHTTPHandler(svc, log, directory.HTTPHandlerConfig{
 		ServiceAuthToken:  serviceToken.Raw(),
 		ServiceAuthHeader: serviceHeader,
+		Perms:             rbacSvc,
 	})
 	api.RegisterRoutes(router)
 

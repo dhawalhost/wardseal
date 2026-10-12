@@ -13,20 +13,24 @@ import (
 // WebhookHTTPHandler handles webhook management requests.
 type WebhookHTTPHandler struct {
 	svc    webhook.Service
+	perms  middleware.PermissionChecker
 	logger *zap.Logger
 }
 
-func NewWebhookHTTPHandler(svc webhook.Service, logger *zap.Logger) *WebhookHTTPHandler {
-	return &WebhookHTTPHandler{svc: svc, logger: logger}
+func NewWebhookHTTPHandler(svc webhook.Service, logger *zap.Logger, perms middleware.PermissionChecker) *WebhookHTTPHandler {
+	return &WebhookHTTPHandler{svc: svc, logger: logger, perms: perms}
 }
 
 func (h *WebhookHTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	read := middleware.RequirePermission(h.perms, "applications", "read")
+	write := middleware.RequirePermission(h.perms, "applications", "write")
+	del := middleware.RequirePermission(h.perms, "applications", "delete")
 	hooks := rg.Group("/governance/webhooks")
 	{
-		hooks.POST("", h.createWebhook)
-		hooks.GET("", h.listWebhooks)
-		hooks.GET("/:id", h.getWebhook)
-		hooks.DELETE("/:id", h.deleteWebhook)
+		hooks.POST("", write, h.createWebhook)
+		hooks.GET("", read, h.listWebhooks)
+		hooks.GET("/:id", read, h.getWebhook)
+		hooks.DELETE("/:id", del, h.deleteWebhook)
 	}
 }
 

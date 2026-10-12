@@ -107,10 +107,18 @@ func main() {
 	var identity *mcp.Identity
 
 	if apiKey == "" {
-		log.Warn("No WARDSEAL_API_KEY provided. MCP server will run in unauthenticated mode (CAUTION)")
+		env := strings.ToLower(string(cfg.Environment))
+		if env == "staging" || env == "production" {
+			log.Fatal("WARDSEAL_API_KEY is required in staging/production")
+		}
+		log.Warn("No WARDSEAL_API_KEY provided. MCP server will run in unauthenticated mode (local only)")
 	} else if apiKey == cfg.Directory.ServiceAuthToken.Raw() {
-		log.Info("Authenticated via Master Service Token. Granting full access.")
-		identity = &mcp.Identity{TenantID: "*", SubjectID: "admin"}
+		tenantID := os.Getenv("WARDSEAL_MCP_TENANT_ID")
+		if tenantID == "" || tenantID == "*" {
+			log.Fatal("Master service token requires WARDSEAL_MCP_TENANT_ID (wildcard tenant is not allowed)")
+		}
+		log.Info("Authenticated via Master Service Token", zap.String("tenant", tenantID))
+		identity = &mcp.Identity{TenantID: tenantID, SubjectID: "admin"}
 	} else {
 		// Try to validate as a Workload API Key (ClientID:Secret)
 		parts := strings.SplitN(apiKey, ":", 2)

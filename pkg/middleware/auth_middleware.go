@@ -10,6 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// PermissionChecker evaluates whether a user may perform an action on a resource.
+type PermissionChecker interface {
+	HasPermission(ctx context.Context, tenantID, userID, resource, action string) (bool, error)
+}
+
 // TokenValidator defines a function that validates a token and returns claims.
 type TokenValidator func(token string) (*Claims, error)
 
@@ -149,4 +154,39 @@ func HasScope(scope, target string) bool {
 		}
 	}
 	return false
+}
+
+// RequirePermission enforces RBAC/ReBAC via PermissionChecker after RequireUserAuth.
+func RequirePermission(checker PermissionChecker, resource, action string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if checker == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authorization not configured"})
+			return
+		}
+		tenantID, err := TenantIDFromGinContext(c)
+		if err != nil || tenantID == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+			return
+		}
+		uid, exists := c.Get("user_id")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			return
+		}
+		userID, ok := uid.(string)
+		if !ok || userID == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			return
+		}
+		allowed, err := checker.HasPermission(c.Request.Context(), tenantID, userID, resource, action)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "authorization check failed"})
+			return
+		}
+		if !allowed {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+			return
+		}
+		c.Next()
+	}
 }

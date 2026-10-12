@@ -12,6 +12,7 @@ import (
 
 	"github.com/dhawalhost/wardseal/internal/audit"
 	"github.com/dhawalhost/wardseal/internal/directory"
+	"github.com/dhawalhost/wardseal/pkg/password"
 )
 
 // Service defines the business logic for SCIM operations.
@@ -33,8 +34,10 @@ func (s *Service) CreateUser(ctx context.Context, tenantID string, req User) (Us
 	if req.UserName == "" {
 		return User{}, errors.New("userName is required")
 	}
-	if req.Password != "" && len(req.Password) < 8 {
-		return User{}, errors.New("password must be at least 8 characters")
+	if req.Password != "" {
+		if err := password.ValidatePolicy(req.Password); err != nil {
+			return User{}, err
+		}
 	}
 	email := req.UserName
 	if req.PrimaryEmail != "" {
@@ -113,9 +116,13 @@ func (s *Service) CreateUser(ctx context.Context, tenantID string, req User) (Us
 func generateInitialPassword() string {
 	buf := make([]byte, 18)
 	if _, err := rand.Read(buf); err != nil {
-		return "ChangeMe123!"
+		return "TmpPassw0rd!x9K"
 	}
-	return "Ws!" + base64.RawURLEncoding.EncodeToString(buf)
+	pw := "Ws!" + base64.RawURLEncoding.EncodeToString(buf)
+	if err := password.ValidatePolicy(pw); err != nil {
+		return "TmpPassw0rd!x9K"
+	}
+	return pw
 }
 
 // GetUser retrieves a SCIM user by ID.
