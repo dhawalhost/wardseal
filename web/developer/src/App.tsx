@@ -27,7 +27,7 @@ const LoadingFallback = () => (
  */
 const App: React.FC = () => {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="wardseal-developer-theme">
+    <ThemeProvider defaultTheme="light" storageKey="wardseal-developer-theme">
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/developer" replace />} />
