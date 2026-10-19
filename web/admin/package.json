@@ -38,7 +38,7 @@
     "redoc": "^2.5.2",
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.4.0",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "yaml": "^2.8.1",
     "@dhawalhost/wardseal-ui-kit": "0.2.0"
   },
