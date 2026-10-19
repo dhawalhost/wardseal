@@ -250,7 +250,7 @@ func (env *TestEnv) setupServers(t *testing.T) {
 	env.GovServer = httptest.NewServer(govRouter)
 
 	// Setup Auth Service
-	samlStore := saml.NewStore(nil)
+	samlStore := saml.NewStore(env.DB, env.DirServer.URL, "", "")
 	loginAttemptStore := auth.NewLoginAttemptRepository(env.DB)
 	appStore := auth.NewDeveloperAppRepository(env.DB)
 
