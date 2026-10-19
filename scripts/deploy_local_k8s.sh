@@ -213,10 +213,12 @@ done
 # Build Admin UI (different context: web/admin, bake VITE_ URLs via --build-arg)
 if [[ -d "web/admin" ]]; then
   echo "  Building wardseal-adminui:$IMAGE_TAG ..."
+  # Same-origin AUTHSVC (empty / manage.*) so login cookies are first-party and
+  # AuthGuard on manage.* can see them. Cross-origin auth.* drops Domain cookies.
   docker build --load \
-    --build-arg VITE_AUTHSVC_URL="http://auth.wardseal.local" \
-    --build-arg VITE_DIRSVC_URL="http://api.wardseal.local" \
-    --build-arg VITE_GOVSVC_URL="http://api.wardseal.local" \
+    --build-arg VITE_AUTHSVC_URL="http://manage.wardseal.local" \
+    --build-arg VITE_DIRSVC_URL="http://manage.wardseal.local" \
+    --build-arg VITE_GOVSVC_URL="http://manage.wardseal.local" \
     --build-arg VITE_API_URL="http://manage.wardseal.local" \
     --build-arg VITE_ID_URL="http://id.wardseal.local" \
     --build-arg VITE_ALLOWED_REDIRECT_ORIGINS="http://manage.wardseal.local,http://id.wardseal.local,http://auth.wardseal.local,http://wardseal.local" \
@@ -231,12 +233,13 @@ fi
 # Build Identity / Login UI
 if [[ -d "web/id" ]]; then
   echo "  Building wardseal-idui:$IMAGE_TAG ..."
+  # Same-origin AUTHSVC on id.* (nginx proxies to authsvc) for first-party cookies.
   docker build --load \
     --build-arg VITE_API_URL="http://id.wardseal.local" \
-    --build-arg VITE_AUTH_URL="http://auth.wardseal.local" \
-    --build-arg VITE_AUTHSVC_URL="http://auth.wardseal.local" \
-    --build-arg VITE_DIRSVC_URL="http://api.wardseal.local" \
-    --build-arg VITE_GOVSVC_URL="http://api.wardseal.local" \
+    --build-arg VITE_AUTH_URL="http://id.wardseal.local" \
+    --build-arg VITE_AUTHSVC_URL="http://id.wardseal.local" \
+    --build-arg VITE_DIRSVC_URL="http://id.wardseal.local" \
+    --build-arg VITE_GOVSVC_URL="http://id.wardseal.local" \
     --build-arg VITE_ALLOWED_REDIRECT_ORIGINS="http://manage.wardseal.local,http://id.wardseal.local,http://auth.wardseal.local,http://wardseal.local" \
     --build-arg VITE_APP_MODE="saas" \
     -t "wardseal-idui:$IMAGE_TAG" \

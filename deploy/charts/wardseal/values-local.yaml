@@ -47,6 +47,11 @@ authsvc:
     DIRECTORY_SERVICE_URL: http://wardseal-dirsvc.wardseal-local.svc.cluster.local:8081
     AUTH_SERVICE_URL: http://auth.wardseal.local
     KMS_PROVIDER: local
+    # Exactly 32 bytes for local AES-256 (dev only — never use in cloud)
+    KMS_MASTER_KEY: "0123456789abcdef0123456789abcdef"
+    # Signer paths (KMS) — distinct from JWT_* validation paths used by other services
+    KMS_PRIVATE_KEY_PATH: /etc/wardseal/keys/private_key.pem
+    KMS_PUBLIC_KEY_PATH: /etc/wardseal/keys/public_key.pem
     JWT_PRIVATE_KEY_PATH: /etc/wardseal/keys/private_key.pem
     JWT_PUBLIC_KEY_PATH: /etc/wardseal/keys/public_key.pem
     DEPLOYMENT_MODE: saas
@@ -54,7 +59,8 @@ authsvc:
     REDIS_ADDR: redis.wardseal-local.svc.cluster.local:6379
     REDIS_DB: "0"
     REDIS_ENABLED: "true"
-    AUTH_COOKIE_DOMAIN: "wardseal.local"
+    # Bound as auth.cookie_domain (COOKIE_DOMAIN / APP_AUTH_COOKIE_DOMAIN)
+    COOKIE_DOMAIN: "wardseal.local"
     WEBAUTHN_SESSION_TTL_SECONDS: "600"
     CORS_ALLOWED_ORIGINS: "http://id.wardseal.local,http://manage.wardseal.local,http://app.wardseal.local,http://developer.wardseal.local,http://status.wardseal.local,http://wardseal.local,http://auth.wardseal.local"
     RATE_LIMIT_USE_TENANT: "true"
@@ -70,6 +76,7 @@ authsvc:
 
   database:
     existingSecret: wardseal-db-credentials
+    sslMode: disable
 
   # No Vault in local — sub-chart default is vault-approle; disable it
   vaultAppRole:
@@ -89,6 +96,30 @@ authsvc:
   autoscaling:
     enabled: false
 
+# Shared local config required by pkg/config.MustLoad for every service
+# (UI_URL + JWT paths are validated whenever ENVIRONMENT=local).
+localSharedEnv: &localSharedEnv
+  ENVIRONMENT: local
+  LOG_LEVEL: debug
+  AUTH_SERVICE_URL: http://auth.wardseal.local
+  UI_URL: http://id.wardseal.local
+  JWT_PRIVATE_KEY_PATH: /etc/wardseal/keys/private_key.pem
+  JWT_PUBLIC_KEY_PATH: /etc/wardseal/keys/public_key.pem
+  KMS_PROVIDER: local
+  KMS_MASTER_KEY: "0123456789abcdef0123456789abcdef"
+  KMS_PRIVATE_KEY_PATH: /etc/wardseal/keys/private_key.pem
+  KMS_PUBLIC_KEY_PATH: /etc/wardseal/keys/public_key.pem
+
+localJwtVolumes: &localJwtVolumes
+  - name: jwt-keys
+    secret:
+      secretName: wardseal-jwt-keys
+
+localJwtVolumeMounts: &localJwtVolumeMounts
+  - name: jwt-keys
+    mountPath: /etc/wardseal/keys
+    readOnly: true
+
 # =====================
 # Directory Service
 # =====================
@@ -102,26 +133,29 @@ dirsvc:
     pullPolicy: IfNotPresent
 
   env:
-    ENVIRONMENT: local
-    LOG_LEVEL: debug
+    <<: *localSharedEnv
     REDIS_ADDR: redis.wardseal-local.svc.cluster.local:6379
     REDIS_ENABLED: "true"
     CORS_ALLOWED_ORIGINS: "http://id.wardseal.local,http://manage.wardseal.local,http://app.wardseal.local,http://developer.wardseal.local,http://status.wardseal.local,http://wardseal.local,http://auth.wardseal.local"
 
   database:
     existingSecret: wardseal-db-credentials
+    sslMode: disable
 
   # No Vault in local
   vaultAppRole:
     existingSecret: ""
 
+  volumes: *localJwtVolumes
+  volumeMounts: *localJwtVolumeMounts
+
   resources:
     limits:
       cpu: 250m
-      memory: 256Mi
+      memory: 512Mi
     requests:
       cpu: 50m
-      memory: 64Mi
+      memory: 128Mi
 
 # =====================
 # Governance Service
@@ -136,8 +170,7 @@ govsvc:
     pullPolicy: IfNotPresent
 
   env:
-    ENVIRONMENT: local
-    LOG_LEVEL: debug
+    <<: *localSharedEnv
     DIRECTORY_SERVICE_URL: http://wardseal-dirsvc.wardseal-local.svc.cluster.local:8081
     REDIS_ADDR: redis.wardseal-local.svc.cluster.local:6379
     REDIS_ENABLED: "true"
@@ -145,10 +178,14 @@ govsvc:
 
   database:
     existingSecret: wardseal-db-credentials
+    sslMode: disable
 
   # No Vault in local
   vaultAppRole:
     existingSecret: ""
+
+  volumes: *localJwtVolumes
+  volumeMounts: *localJwtVolumeMounts
 
   resources:
     limits:
@@ -171,14 +208,17 @@ policysvc:
     pullPolicy: IfNotPresent
 
   env:
-    ENVIRONMENT: local
-    LOG_LEVEL: debug
-  
+    <<: *localSharedEnv
+
   database:
     existingSecret: wardseal-db-credentials
+    sslMode: disable
 
   vaultAppRole:
     existingSecret: ""
+
+  volumes: *localJwtVolumes
+  volumeMounts: *localJwtVolumeMounts
 
   resources:
     limits:
@@ -201,15 +241,18 @@ provsvc:
     pullPolicy: IfNotPresent
 
   env:
-    ENVIRONMENT: local
-    LOG_LEVEL: debug
+    <<: *localSharedEnv
     CORS_ALLOWED_ORIGINS: "http://id.wardseal.local,http://manage.wardseal.local,http://app.wardseal.local,http://developer.wardseal.local,http://status.wardseal.local,http://wardseal.local,http://auth.wardseal.local"
 
   database:
     existingSecret: wardseal-db-credentials
+    sslMode: disable
 
   vaultAppRole:
     existingSecret: ""
+
+  volumes: *localJwtVolumes
+  volumeMounts: *localJwtVolumeMounts
 
   resources:
     limits:

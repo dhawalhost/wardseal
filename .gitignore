@@ -53,3 +53,4 @@ web/help/dist
 tests/e2e/node_modules
 graphify-out
 web/ui/storybook-static
+.cursor
