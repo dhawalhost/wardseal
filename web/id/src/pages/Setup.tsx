@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { performSetup, getSetupStatus } from '../api';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle, Shield, ShieldCheck, Loader2, Key, Command, Package } from "lucide-react";
-import { 
-    GlassCard, 
-    GlassCardHeader, 
-    GlassCardTitle, 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, ShieldCheck, Loader2, Key } from 'lucide-react';
+import {
+    GlassCard,
+    GlassCardHeader,
+    GlassCardTitle,
     GlassCardContent,
-    GlassCardDescription
+    GlassCardDescription,
 } from '@/components/layout';
 
 const Setup: React.FC = () => {
@@ -30,7 +30,7 @@ const Setup: React.FC = () => {
                     navigate('/login');
                 }
             } catch (err) {
-                console.error("Failed to check setup status", err);
+                console.error('Failed to check setup status', err);
             } finally {
                 setChecking(false);
             }
@@ -43,12 +43,12 @@ const Setup: React.FC = () => {
         setError('');
 
         if (password !== confirmPassword) {
-            setError("Entropy mismatch detected.");
+            setError('Passwords do not match.');
             return;
         }
 
         if (password.length < 8) {
-            setError("Seed entropy must be at least 8 segments.");
+            setError('Password must be at least 8 characters.');
             return;
         }
 
@@ -61,7 +61,7 @@ const Setup: React.FC = () => {
 
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.error || "Provisioning sequence failed.");
+            setError(err.response?.data?.error || 'Setup failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -70,65 +70,68 @@ const Setup: React.FC = () => {
     if (checking) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="animate-in fade-in duration-1000 flex flex-col items-center gap-6">
-                    <div className="h-16 w-16 bg-primary/5 rounded-[2rem] flex items-center justify-center border border-primary/20 animate-pulse">
-                        <Command className="w-8 h-8 text-primary/40" />
-                    </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-on-surface-variant/30 italic">Pinging_Logic_Core...</p>
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Checking setup status…</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background px-6 py-12 transition-all duration-700">
-            <div className="w-full max-w-[420px] space-y-12 animate-in fade-in zoom-in-95 duration-700">
-                <div className="text-center space-y-6">
+        <div className="flex items-center justify-center min-h-screen bg-background px-6 py-12">
+            <div className="w-full max-w-[420px] space-y-8 animate-in fade-in duration-500">
+                <div className="text-center space-y-4">
                     <div className="flex justify-center">
-                        <div className="w-16 h-16 bg-primary rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/30">
-                            <ShieldCheck className="w-8 h-8 text-white" />
+                        <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-sm">
+                            <ShieldCheck className="w-6 h-6 text-primary-foreground" />
                         </div>
                     </div>
                 </div>
 
-                <GlassCard className="border-none shadow-2xl bg-card overflow-hidden">
-                    <GlassCardHeader className="pt-12 pb-6 px-10 text-center">
-                        <GlassCardTitle className="text-4xl font-black italic tracking-tighter leading-none">SYSTEM_GENESIS</GlassCardTitle>
-                        <div className="h-1 w-12 bg-primary mx-auto mt-6 mb-4 rounded-full" />
-                        <GlassCardDescription className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40">Initialize Cluster Authority</GlassCardDescription>
+                <GlassCard className="shadow-sm border-border bg-card overflow-hidden rounded-xl">
+                    <GlassCardHeader className="pt-8 pb-4 px-8 text-center border-b border-border">
+                        <GlassCardTitle className="text-2xl font-bold tracking-tight">Initial setup</GlassCardTitle>
+                        <GlassCardDescription className="mt-2">
+                            Create the root administrator account for this WardSeal instance.
+                        </GlassCardDescription>
                     </GlassCardHeader>
                     <form onSubmit={handleSubmit}>
-                        <GlassCardContent className="px-10 pb-12 space-y-8">
+                        <GlassCardContent className="px-8 pb-8 space-y-6">
                             {error && (
-                                <div className="p-4 bg-destructive/10 text-destructive rounded-xl flex items-center gap-3 border border-destructive/20 animate-in fade-in slide-in-from-top-2">
+                                <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
                                     <AlertCircle className="h-5 w-5 shrink-0" />
-                                    <span className="text-xs font-bold uppercase tracking-tight">{error}</span>
+                                    <span className="text-sm font-medium">{error}</span>
                                 </div>
                             )}
 
-                            <div className="space-y-4">
-                                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 italic ml-1">01 // Root_Identifier</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-sm font-semibold text-on-surface">
+                                    Admin email
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="ADMIN@ARCHITECTURE"
-                                    className="h-14 rounded-2xl bg-surface-container/30 border-none font-bold text-sm tracking-tight placeholder:opacity-20 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                                    placeholder="admin@company.com"
+                                    className="h-12 rounded-lg border-border bg-background shadow-xs"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     disabled={loading}
                                 />
                             </div>
-                            
-                            <div className="space-y-4">
-                                <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 italic ml-1">02 // Secure_Entropy</Label>
-                                <div className="relative group">
-                                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant/20 group-focus-within:text-primary transition-colors" />
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password" className="text-sm font-semibold text-on-surface">
+                                    Password
+                                </Label>
+                                <div className="relative">
+                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         id="password"
                                         type="password"
-                                        placeholder="MIN_8_SEGMENTS"
-                                        className="h-14 pl-12 rounded-2xl bg-surface-container/30 border-none font-bold text-sm tracking-widest focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                                        placeholder="Minimum 8 characters"
+                                        className="h-12 pl-10 rounded-lg border-border bg-background shadow-xs"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -137,13 +140,15 @@ const Setup: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <Label htmlFor="confirmPassword" className="text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 italic ml-1">03 // Verification_Seed</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword" className="text-sm font-semibold text-on-surface">
+                                    Confirm password
+                                </Label>
                                 <Input
                                     id="confirmPassword"
                                     type="password"
-                                    placeholder="RE-COMMIT_SEED"
-                                    className="h-14 rounded-2xl bg-surface-container/30 border-none font-bold text-sm tracking-widest focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                                    placeholder="Re-enter password"
+                                    className="h-12 rounded-lg border-border bg-background shadow-xs"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
@@ -151,20 +156,18 @@ const Setup: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="pt-4 space-y-6">
-                                <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-on-surface/10 bg-inverse text-on-inverse hover:opacity-90 transition-all" disabled={loading}>
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "COMPLETE_PROVISIONING"}
+                            <div className="pt-2 space-y-4">
+                                <Button
+                                    type="submit"
+                                    className="w-full h-12 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground hover:opacity-90 transition-opacity"
+                                    disabled={loading}
+                                >
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Complete setup'}
                                 </Button>
-                                
-                                <div className="flex flex-col items-center gap-4 text-center">
-                                     <div className="flex items-center gap-2 px-3 py-1 bg-success-subtle rounded-full border border-success/10">
-                                         <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                                         <span className="text-[9px] font-black uppercase tracking-widest text-success">PROVISION_LEVEL_0</span>
-                                     </div>
-                                     <p className="text-[10px] font-bold text-on-surface-variant/30 uppercase tracking-[0.2em] leading-relaxed max-w-[200px]">
-                                        Full administrative authority will be committed to this node.
-                                     </p>
-                                </div>
+
+                                <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                                    This account receives full administrative authority for the instance.
+                                </p>
                             </div>
                         </GlassCardContent>
                     </form>

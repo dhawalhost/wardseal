@@ -79,7 +79,7 @@ const SocialCallback: React.FC = () => {
                     </Alert>
                     <button
                         onClick={() => navigate('/login')}
-                        className="w-full mt-6 py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg hover:shadow-primary/20 transition-all"
+                        className="w-full mt-6 py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold shadow-sm transition-opacity hover:opacity-90"
                     >
                         Return to Login
                     </button>

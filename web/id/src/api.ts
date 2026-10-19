@@ -2,9 +2,19 @@ import axios from 'axios';
 
 const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env ?? {};
 
-// Prefer explicit service URLs; fall back to AUTH_URL / same-origin API proxy.
-export const AUTHSVC_URL =
-  env.VITE_AUTHSVC_URL || env.VITE_AUTH_URL || env.VITE_API_URL || '';
+/**
+ * Auth calls must be same-origin on id.* so Set-Cookie is first-party.
+ * Cross-origin posts to auth.* often fail to persist Domain cookies in Chromium,
+ * which then makes manage.* AuthGuard bounce back to login.
+ */
+function sameOriginAuthBase(): string {
+  if (typeof window !== 'undefined' && window.location.hostname.startsWith('id.')) {
+    return '';
+  }
+  return env.VITE_AUTHSVC_URL || env.VITE_AUTH_URL || env.VITE_API_URL || '';
+}
+
+export const AUTHSVC_URL = sameOriginAuthBase();
 const DIRSVC_URL = env.VITE_DIRSVC_URL || env.VITE_API_URL || '';
 const GOVSVC_URL = env.VITE_GOVSVC_URL || env.VITE_API_URL || '';
 
@@ -66,7 +76,10 @@ govApi.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Add a request interceptor to inject metadata
+// Cookie-first session: do not auto-attach localStorage Bearer.
+// RequireUserAuth prefers Authorization over wardseal_access_token, so a stale
+// or MFA pending token in localStorage produces RSA verification 401s.
+// Callers that need a step-up/pending token must set Authorization explicitly.
 api.interceptors.request.use(
     (config) => {
         const tenantID = localStorage.getItem('tenantID');
@@ -336,17 +349,17 @@ export const createPermission = async (resource: string, action: string, descrip
 
 // RBAC - User Roles
 export const getUserRoles = async (userId: string) => {
-    const response = await govApi.get(`/api/v1/users/${userId}/roles`);
+    const response = await govApi.get(`/api/v1/roles/users/${userId}`);
     return response.data;
 };
 
 export const assignRoleToUser = async (userId: string, roleId: string) => {
-    const response = await govApi.post(`/api/v1/users/${userId}/roles/${roleId}`);
+    const response = await govApi.post(`/api/v1/roles/users/${userId}/${roleId}`);
     return response.data;
 };
 
 export const removeRoleFromUser = async (userId: string, roleId: string) => {
-    const response = await govApi.delete(`/api/v1/users/${userId}/roles/${roleId}`);
+    const response = await govApi.delete(`/api/v1/roles/users/${userId}/${roleId}`);
     return response.data;
 };
 
