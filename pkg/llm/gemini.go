@@ -44,7 +44,7 @@ func (p *geminiProvider) Chat(ctx context.Context, messages []Message, tools []T
 	}
 
 	if len(tools) > 0 {
-		var decls []*genai.FunctionDeclaration
+		decls := make([]*genai.FunctionDeclaration, 0, len(tools))
 		for _, t := range tools {
 			// Basic schema mapping - in a real app we'd convert JSON Schema to genai.Schema
 			decls = append(decls, &genai.FunctionDeclaration{

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/dhawalhost/wardseal/pkg/database"
+	"github.com/jmoiron/sqlx"
 )
 
 type sqlWorkloadRepository struct {
@@ -99,7 +99,7 @@ func (r *sqlWorkloadRepository) Update(ctx context.Context, id string, updates m
 
 	return database.RunInTenantTx(ctx, r.db, func(tx *sqlx.Tx) error {
 		query := "UPDATE workloads SET "
-		args := []interface{}{}
+		args := make([]interface{}, 0, len(updates)+1)
 		i := 1
 		for k, v := range updates {
 			query += fmt.Sprintf("%s = $%d, ", k, i)

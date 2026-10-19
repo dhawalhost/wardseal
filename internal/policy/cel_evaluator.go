@@ -82,7 +82,7 @@ func (e *CELEvaluator) Evaluate(ctx context.Context, input Input, p *Policy) (bo
 	}
 
 	// 5. Interpret result
-	if out.Value().(bool) {
+	if allowed, ok := out.Value().(bool); ok && allowed {
 		return true, "Allowed by CEL policy", nil
 	}
 

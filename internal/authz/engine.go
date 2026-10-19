@@ -43,7 +43,9 @@ func (e *Engine) Check(ctx context.Context, tenantID, subID, subType, rel, ns, o
 		}
 	} else {
 		if val, ok := e.localCache.Load(cacheKey); ok {
-			return val.(bool), nil
+			if b, ok := val.(bool); ok {
+				return b, nil
+			}
 		}
 	}
 
@@ -91,7 +93,10 @@ func (e *Engine) InvalidateByTuple(ctx context.Context, tenantID string, tuple R
 
 	// Also clear local fallback cache
 	e.localCache.Range(func(key, value interface{}) bool {
-		k := key.(string)
+		k, ok := key.(string)
+		if !ok {
+			return true
+		}
 		if strings.HasPrefix(k, fmt.Sprintf("authz:cache:%s:", tenantID)) {
 			if strings.Contains(k, tuple.ObjectID) || strings.Contains(k, tuple.SubjectID) {
 				e.localCache.Delete(key)
