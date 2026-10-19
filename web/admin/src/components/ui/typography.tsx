@@ -18,8 +18,8 @@ const typographyVariants = cva(
         large: "text-lg font-semibold",
         small: "text-sm font-medium leading-none",
         muted: "text-sm text-muted-foreground",
-        label: "text-[11px] font-bold tracking-tight text-on-surface-variant/40",
-        detail: "text-[10px] font-medium tracking-tight text-on-surface-variant/60",
+        label: "text-[11px] font-bold tracking-tight text-muted-foreground",
+        detail: "text-[10px] font-medium tracking-tight text-muted-foreground",
         code: "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
       },
       textTransform: {

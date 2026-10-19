@@ -9,7 +9,6 @@ import {
     Activity, 
     History,
     RefreshCw,
-    Terminal,
     AlertCircle,
     CheckCircle2
 } from 'lucide-react';
@@ -19,10 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
     PageHeader, 
     GlassCard, 
-    GlassCardHeader, 
-    GlassCardTitle, 
-    GlassCardContent,
-    GlassCardDescription, PageLayout
+    PageLayout
 } from '@/components/layout';
 import { askAI, getAuditLogs } from '@/api';
 import { cn } from '@/lib/utils';
@@ -110,162 +106,163 @@ const CopilotPage: React.FC = () => {
 
   return (
     <PageLayout>
-    <div className="space-y-10 animate-in fade-in duration-700 h-[calc(100vh-160px)] flex flex-col">
+    <div className="space-y-page animate-in fade-in duration-300 h-[calc(100vh-160px)] flex flex-col">
       <PageHeader 
-        icon={<Sparkles className="w-8 h-8 text-primary shadow-sm" />}
+        icon={<Sparkles className="w-6 h-6 text-secondary" />}
         title="Security Copilot"
-        description="Autonomous identity governance and real-time audit intelligence."
+        description="Ask questions about identity, access, and recent audit activity."
       />
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-10 overflow-hidden">
-        {/* Sidebar Info */}
-        <div className="lg:col-span-1 space-y-8 h-full overflow-y-auto pr-4 hidden lg:block custom-scrollbar">
-            <div className="space-y-4">
-                <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-[0.22em] ml-1">Live Intelligence</p>
-                <div className="space-y-3">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-card overflow-hidden">
+        <div className="lg:col-span-1 space-y-6 h-full overflow-y-auto pr-2 hidden lg:block custom-scrollbar">
+            <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">System status</p>
+                <div className="space-y-2">
                     {[
                         { label: 'Identity Graph', status: 'Healthy', icon: <History className="w-3.5 h-3.5" /> },
                         { label: 'Access Policies', status: 'Active', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
                         { label: 'Audit Stream', status: 'Recording', icon: <Activity className="w-3.5 h-3.5" /> },
                     ].map(item => (
-                        <div key={item.label} className="p-4 rounded-2xl bg-card shadow-sm ring-1 ring-on-surface/5 flex items-center justify-between group hover:ring-primary/20 transition-all">
-                            <div className="flex items-center gap-3">
-                                <div className="text-primary/40 group-hover:text-primary transition-colors">{item.icon}</div>
-                                <span className="text-[12px] font-bold text-on-surface">{item.label}</span>
+                        <div key={item.label} className="p-3 rounded-lg bg-card shadow-sm border border-border flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="text-secondary">{item.icon}</div>
+                                <span className="text-sm font-semibold text-on-surface">{item.label}</span>
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-tighter text-success bg-success-subtle px-2 py-0.5 rounded-full">{item.status}</span>
+                            <span className="text-[10px] font-semibold text-success bg-success-subtle px-2 py-0.5 rounded-md">{item.status}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className="space-y-4">
-                <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-[0.22em] ml-1">Recent Activity</p>
-                <div className="space-y-3">
+            <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Recent Activity</p>
+                <div className="space-y-2">
                     {logsLoading ? (
-                        [1, 2, 3].map(i => <div key={i} className="h-16 bg-surface-container/30 animate-pulse rounded-2xl" />)
+                        [1, 2, 3].map(i => <div key={i} className="h-14 bg-muted/30 animate-pulse rounded-lg" />)
                     ) : auditLogs.length === 0 ? (
-                        <div className="p-4 rounded-2xl bg-surface-container/10 border border-dashed border-on-surface/10 text-center">
-                            <p className="text-[11px] font-medium text-on-surface-variant/40">No activity recorded yet.</p>
+                        <div className="p-3 rounded-lg bg-muted/20 border border-dashed border-border text-center">
+                            <p className="text-xs font-medium text-muted-foreground">No activity recorded yet.</p>
                         </div>
                     ) : (
                         auditLogs.map((log, i) => (
-                            <div key={log.id || i} className="p-4 rounded-2xl bg-card shadow-sm ring-1 ring-on-surface/5 space-y-1.5 transition-all hover:translate-x-1">
+                            <div key={log.id || i} className="p-3 rounded-lg bg-card shadow-sm border border-border space-y-1">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant/60">{log.action}</span>
-                                    <span className="text-[9px] font-medium text-on-surface-variant/40">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    <span className="text-xs font-semibold text-muted-foreground">{log.action}</span>
+                                    <span className="text-[10px] font-medium text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                 </div>
-                                <p className="text-[11px] font-medium text-on-surface leading-tight line-clamp-2">
+                                <p className="text-xs font-medium text-on-surface leading-tight line-clamp-2">
                                     {log.details?.reason || log.details?.user_id || "System action performed."}
                                 </p>
                             </div>
                         ))
                     )}
                 </div>
-                <Button variant="ghost" onClick={() => window.location.href='/audit'} className="w-full text-[10px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary hover:bg-primary/5">View Full Audit Log</Button>
+                <Button variant="ghost" onClick={() => window.location.href='/audit'} className="w-full text-xs font-semibold text-secondary hover:text-secondary hover:bg-secondary/5">View Full Audit Log</Button>
             </div>
 
-            <div className="space-y-4">
-                <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-[0.22em] ml-1">Suggested Inquiries</p>
+            <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Suggested questions</p>
                 <div className="flex flex-col gap-2">
                     {SUGGESTED_PROMPTS.map(p => (
                         <button 
                             key={p}
                             onClick={() => handleSend(p)}
-                            className="text-left p-4 rounded-xl hover:bg-primary/5 hover:text-primary transition-all group ring-1 ring-transparent hover:ring-primary/10 bg-surface-container/30"
+                            className="text-left p-3 rounded-lg hover:bg-secondary/5 hover:text-secondary transition-colors border border-transparent hover:border-secondary/10 bg-muted/30"
                         >
-                            <span className="text-[12px] font-bold block opacity-60 group-hover:opacity-100 transition-opacity">{p}</span>
+                            <span className="text-sm font-medium text-muted-foreground hover:text-secondary">{p}</span>
                         </button>
                     ))}
                 </div>
             </div>
         </div>
 
-        {/* Chat Area */}
-        <div className="lg:col-span-3 flex flex-col h-full bg-card rounded-[32px] shadow-2xl shadow-on-surface/5 overflow-hidden ring-1 ring-on-surface/5">
-            <header className="bg-surface-container/50 px-10 py-6 border-b flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        <Bot className="w-6 h-6 text-white" />
+        <div className="lg:col-span-3 flex flex-col h-full bg-card rounded-lg shadow-sm overflow-hidden border border-border">
+            <header className="bg-muted/30 px-card py-4 border-b border-border flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center shadow-sm">
+                        <Bot className="w-5 h-5 text-secondary-foreground" />
                     </div>
                     <div>
-                        <h4 className="text-xl font-bold tracking-tight text-on-surface">WARDSEAL_AI</h4>
+                        <h4 className="text-base font-bold tracking-tight text-on-surface">WardSeal Copilot</h4>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-success">Cognitive Hub Active</span>
+                            <div className="w-2 h-2 bg-success rounded-full" />
+                            <span className="text-xs font-semibold text-success">Online</span>
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl bg-card shadow-sm ring-1 ring-on-surface/5 text-on-surface-variant/40 hover:text-primary transition-all transform hover:rotate-180 duration-500" onClick={() => setMessages([{role: 'bot', text: 'Cognitive buffer cleared. Ready for new audit instructions.', timestamp: new Date().toLocaleTimeString()}])}>
-                        <RefreshCw className="w-5 h-5" />
-                    </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg border border-border text-muted-foreground hover:text-secondary"
+                  onClick={() => setMessages([{role: 'bot', text: 'Conversation cleared. How can I help with identity and access?', timestamp: new Date().toLocaleTimeString()}])}
+                >
+                    <RefreshCw className="w-4 h-4" />
+                </Button>
             </header>
 
-            <ScrollArea className="flex-1 px-10 py-10 bg-card/50" viewportRef={scrollRef}>
-                <div className="space-y-12 max-w-5xl mx-auto">
+            <ScrollArea className="flex-1 px-card py-card bg-card" viewportRef={scrollRef}>
+                <div className="space-y-6 max-w-5xl mx-auto">
                     {messages.map((m, i) => (
-                        <div key={i} className={cn("flex gap-6 animate-in slide-in-from-bottom-3 duration-500", m.role === 'user' ? "flex-row-reverse" : "flex-row")}>
+                        <div key={i} className={cn("flex gap-3", m.role === 'user' ? "flex-row-reverse" : "flex-row")}>
                             <div className={cn(
-                                "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform hover:scale-110",
-                                m.role === 'bot' ? "bg-primary text-primary-foreground" : "bg-black text-white"
+                                "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                                m.role === 'bot' ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"
                             )}>
-                                {m.role === 'bot' ? <Sparkles className="w-6 h-6" /> : <User className="w-6 h-6" />}
+                                {m.role === 'bot' ? <Sparkles className="w-4 h-4" /> : <User className="w-4 h-4" />}
                             </div>
-                            <div className={cn("space-y-2", m.role === 'user' ? "items-end" : "items-start")}>
+                            <div className={cn("space-y-1", m.role === 'user' ? "items-end" : "items-start")}>
                                 <div className={cn(
-                                    "p-7 rounded-[32px] text-[15px] font-medium leading-relaxed shadow-sm ring-1 ring-on-surface/5 max-w-2xl whitespace-pre-wrap",
-                                    m.role === 'bot' ? "bg-card text-on-surface" : "bg-surface-container text-on-surface"
+                                    "p-4 rounded-lg text-sm font-medium leading-relaxed shadow-sm border border-border max-w-2xl whitespace-pre-wrap",
+                                    m.role === 'bot' ? "bg-card text-on-surface" : "bg-muted/50 text-on-surface"
                                 )}>
                                     {m.text}
                                 </div>
-                                <p className={cn("text-[10px] font-bold text-on-surface-variant/30 uppercase tracking-[0.2em]", m.role === 'user' ? "mr-4" : "ml-4")}>
+                                <p className={cn("text-xs font-medium text-muted-foreground", m.role === 'user' ? "mr-2 text-right" : "ml-2")}>
                                     {m.timestamp}
                                 </p>
                             </div>
                         </div>
                     ))}
                     {loading && (
-                        <div className="flex gap-6 animate-pulse">
-                            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-                                <Loader2 className="w-6 h-6 animate-spin" />
+                        <div className="flex gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center border border-secondary/20">
+                                <Loader2 className="w-4 h-4 animate-spin" />
                             </div>
-                            <div className="p-7 rounded-[32px] bg-card border border-dashed border-primary/20 text-[15px] font-black italic text-primary/40">
-                                Retrieving identity Graph & Audit streams...
+                            <div className="p-4 rounded-lg bg-card border border-dashed border-border text-sm font-medium text-muted-foreground">
+                                Analyzing identity and audit data…
                             </div>
                         </div>
                     )}
                 </div>
             </ScrollArea>
 
-            <div className="p-10 bg-card border-t shrink-0">
-                <div className="relative group max-w-5xl mx-auto ring-1 ring-on-surface/5 rounded-[24px] focus-within:ring-primary/40 transition-all shadow-inner overflow-hidden">
+            <div className="p-card bg-card border-t border-border shrink-0">
+                <div className="relative max-w-5xl mx-auto border border-border rounded-lg focus-within:ring-2 focus-within:ring-secondary/20 transition-shadow overflow-hidden">
                     <Input
-                        placeholder="Inspect organization hygiene or ask about specific governance events..."
+                        placeholder="Ask about access, risk, or recent governance events…"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        className="h-16 pr-24 border-none bg-surface-container/20 text-base font-semibold focus-visible:ring-0 px-8 text-on-surface placeholder:text-on-surface-variant/30"
+                        className="h-12 pr-14 border-none bg-transparent text-sm font-medium focus-visible:ring-0 px-4 text-on-surface placeholder:text-muted-foreground"
                     />
-                    <div className="absolute right-2 top-2">
+                    <div className="absolute right-1.5 top-1.5">
                         <Button
                             onClick={() => handleSend()}
                             disabled={!query.trim() || loading}
-                            className="h-12 w-12 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:translate-y-[-2px] active:translate-y-[0px] bg-primary hover:bg-primary-hover"
+                            className="h-9 w-9 rounded-lg shadow-sm bg-secondary text-secondary-foreground hover:opacity-90"
                         >
-                            <Send className="w-5 h-5" />
+                            <Send className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
-                <div className="max-w-5xl mx-auto mt-4 px-4 flex items-center justify-between text-on-surface-variant/20">
+                <div className="max-w-5xl mx-auto mt-3 px-1 flex items-center justify-between text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">End-to-End Encrypted</span>
+                        <span className="text-xs font-medium">Encrypted in transit</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <AlertCircle className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">AI Insights May require human verification</span>
+                        <span className="text-xs font-medium">AI answers may need human review</span>
                     </div>
                 </div>
             </div>

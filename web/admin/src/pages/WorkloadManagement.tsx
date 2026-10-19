@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
     Plus,
-    Server,
-    Key,
     Activity,
     Trash2,
     Cpu,
@@ -14,9 +12,6 @@ import {
     MoreHorizontal,
     Box,
     Terminal,
-    Fingerprint,
-    X,
-    Database,
     RefreshCcw
 } from 'lucide-react';
 import { getWorkloads, createWorkload } from '../api';
@@ -30,7 +25,7 @@ import {
     GlassTableHeader,
     GlassTableHead,
     GlassTableRow,
-    GlassCardDescription, PageLayout
+    PageLayout
 } from '@/components/layout';
 import {
     TableBody,
@@ -58,7 +53,6 @@ const WorkloadManagement: React.FC = () => {
     const [workloads, setWorkloads] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Create state
     const [showCreate, setShowCreate] = useState(false);
     const [newName, setNewName] = useState('');
     const [newHandle, setNewHandle] = useState('');
@@ -96,42 +90,42 @@ const WorkloadManagement: React.FC = () => {
             fetchWorkloads();
         } catch (err: any) {
             console.error(err);
-            setError('Failed to initialize workload primitive. Please verify your handle uniqueness.');
+            setError('Failed to create machine account. Check that the service handle is unique.');
         } finally {
             setIsCreating(false);
         }
     };
 
-    if (loading && workloads.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" /></div>;
+    if (loading && workloads.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
     return (
         <PageLayout>
-        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<Database className="w-10 h-10 text-primary" />}
+                icon={<Cpu className="w-6 h-6 text-secondary" />}
                 title="Machine Accounts"
-                description="Manage accounts for services, scripts, and automated systems. Control how machine identities access your infrastructure."
+                description="Manage accounts for services, scripts, and automated systems."
                 actions={
-                    <Button onClick={() => setShowCreate(true)} className="h-11 rounded-xl bg-primary text-primary-foreground font-bold tracking-tight text-[11px] px-8 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                        <Plus className="w-4 h-4 mr-3" /> Add Machine Account
+                    <Button onClick={() => setShowCreate(true)} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                        <Plus className="w-4 h-4 mr-1.5" /> Add machine account
                     </Button>
                 }
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-card">
                 {[
-                    { label: 'Cluster capacity', value: workloads.length, icon: <Cpu className="w-5 h-5" />, color: 'bg-primary/5 text-primary' },
-                    { label: 'Active vectors', value: workloads.filter(w => w.status === 'active').length, icon: <Activity className="w-5 h-5" />, color: 'bg-success-subtle text-success' },
-                    { label: 'Pending rotations', value: workloads.filter(w => w.status === 'rotated').length, icon: <Zap className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600' },
+                    { label: 'Total accounts', value: workloads.length, icon: <Cpu className="w-4 h-4" />, color: 'bg-secondary/10 text-secondary' },
+                    { label: 'Active', value: workloads.filter(w => w.status === 'active').length, icon: <Activity className="w-4 h-4" />, color: 'bg-success-subtle text-success' },
+                    { label: 'Rotated', value: workloads.filter(w => w.status === 'rotated').length, icon: <Zap className="w-4 h-4" />, color: 'bg-warning/10 text-warning' },
                 ].map((stat) => (
-                    <GlassCard key={stat.label} className="border-none shadow-xl shadow-on-surface/5 bg-card overflow-hidden rounded-[24px]">
-                        <GlassCardContent className="p-8">
+                    <GlassCard key={stat.label} className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                        <GlassCardContent className="p-card">
                             <div className="flex items-center justify-between">
-                                <div className="space-y-3">
-                                    <p className="text-on-surface-variant/40 font-bold text-[12px] tracking-tight">{stat.label}</p>
-                                    <p className="text-3xl font-black tracking-tighter text-on-surface">{stat.value}</p>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground font-semibold text-xs tracking-wide uppercase">{stat.label}</p>
+                                    <p className="text-2xl font-bold tracking-tight text-on-surface tabular-nums">{stat.value}</p>
                                 </div>
-                                <div className={`p-4 rounded-2xl ${stat.color} shadow-sm`}>
+                                <div className={`p-2 rounded-lg ${stat.color}`}>
                                     {stat.icon}
                                 </div>
                             </div>
@@ -140,97 +134,94 @@ const WorkloadManagement: React.FC = () => {
                 ))}
             </div>
 
-            <GlassCard className="overflow-hidden border-none shadow-2xl shadow-on-surface/5 bg-card rounded-[32px]">
-                <GlassCardHeader className="py-10 px-10 border-b border-on-surface/5 bg-surface-container/5">
-                    <div className="flex items-center gap-6">
-                        <div className="p-4 bg-primary/5 rounded-2xl text-primary">
-                            <ShieldCheck className="w-7 h-7" />
+            <GlassCard className="overflow-hidden border border-border shadow-sm bg-card rounded-xl">
+                <GlassCardHeader className="py-card px-card border-b border-border">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                            <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-2xl font-bold tracking-tight text-on-surface">Account List</GlassCardTitle>
-                            <p className="text-on-surface-variant/40 font-bold text-[12px] mt-1 tracking-tight">
-                                {workloads.length} Managed Accounts
+                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Accounts</GlassCardTitle>
+                            <p className="text-muted-foreground text-sm mt-0.5">
+                                {workloads.length} managed accounts
                             </p>
                         </div>
                     </div>
                 </GlassCardHeader>
                 <GlassCardContent className="p-0">
-                    <div className="overflow-x-auto min-h-[400px]">
+                    <div className="overflow-x-auto">
                         <GlassTable>
                             <GlassTableHeader>
-                                <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                    <GlassTableHead className="py-6 pl-10 font-bold text-[12px] tracking-tight text-on-surface-variant/40">Name</GlassTableHead>
-                                    <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Account ID</GlassTableHead>
-                                    <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Created</GlassTableHead>
-                                    <GlassTableHead className="text-right font-bold text-[12px] tracking-tight text-on-surface-variant/40 pr-10">Actions</GlassTableHead>
-                                    <GlassTableHead className="text-right pr-10 font-bold text-[12px] tracking-tight text-on-surface-variant/40">Directives</GlassTableHead>
+                                <GlassTableRow className="hover:bg-transparent border-b border-border">
+                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Name</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Service handle</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Last used</GlassTableHead>
+                                    <GlassTableHead className="text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
                                 {workloads.length === 0 ? (
                                     <GlassTableRow>
-                                        <TableCell colSpan={5} className="py-40 text-center">
-                                            <div className="flex flex-col items-center gap-6 opacity-20">
-                                                <Box className="h-16 w-16" />
-                                                <span className="text-sm font-medium italic">No machine identities specialized for this cluster.</span>
+                                        <TableCell colSpan={5} className="py-16 text-center text-sm font-medium text-muted-foreground">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <Box className="h-8 w-8 text-muted-foreground" />
+                                                No machine accounts yet.
                                             </div>
                                         </TableCell>
                                     </GlassTableRow>
                                 ) : (
                                     workloads.map((w) => (
-                                        <GlassTableRow key={w.id} className="hover:bg-surface-container/20 transition-all border-b border-on-surface/5 last:border-0 group">
-                                            <TableCell className="py-8 pl-10">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-11 h-11 rounded-2xl bg-surface-container flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-sm">
-                                                        <Terminal className="h-5 w-5 opacity-40 group-hover:opacity-100" />
+                                        <GlassTableRow key={w.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
+                                            <TableCell className="py-card pl-card">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                                        <Terminal className="h-4 w-4" />
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-base tracking-tight text-on-surface group-hover:text-primary transition-colors">
+                                                        <span className="font-semibold text-sm tracking-tight text-on-surface">
                                                             {w.name}
                                                         </span>
-                                                        <code className="text-[10px] font-bold text-on-surface-variant/40 mt-1 italic tracking-tight font-mono">
-                                                            uid: {w.id.substring(0, 12).toLowerCase()}
+                                                        <code className="text-xs font-medium text-muted-foreground mt-0.5 font-mono">
+                                                            {w.id.substring(0, 12)}…
                                                         </code>
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="py-8">
-                                                <Badge className="bg-card ring-1 ring-on-surface/5 text-on-surface-variant border-none rounded-xl text-[10px] font-bold py-1.5 px-4 group-hover:ring-primary/20 transition-all tracking-tight italic">
+                                            <TableCell className="py-card">
+                                                <Badge className="bg-muted text-muted-foreground border-none rounded-md text-xs font-semibold py-0.5 px-2">
                                                     {w.service_handle}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="py-8">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`h-2 w-2 rounded-full ${w.status === 'active' ? 'bg-success shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-on-surface-variant/20'}`} />
-                                                    <span className={`text-[11px] font-bold tracking-tight ${w.status === 'active' ? 'text-success' : 'text-on-surface-variant/40'}`}>
-                                                        {w.status === 'active' ? 'Operational' : 'Dormant'}
+                                            <TableCell className="py-card">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`h-2 w-2 rounded-full ${w.status === 'active' ? 'bg-success' : 'bg-muted-foreground'}`} />
+                                                    <span className={`text-sm font-semibold ${w.status === 'active' ? 'text-success' : 'text-muted-foreground'}`}>
+                                                        {w.status === 'active' ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="py-8">
-                                                <div className="flex items-center gap-2.5 text-on-surface-variant/60 font-medium text-xs italic">
-                                                    <Activity className="w-3.5 h-3.5 opacity-40" />
-                                                    {w.last_used_at ? new Date(w.last_used_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No Telemetry'}
-                                                </div>
+                                            <TableCell className="py-card text-sm font-medium text-muted-foreground">
+                                                {w.last_used_at ? new Date(w.last_used_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never'}
                                             </TableCell>
-                                            <TableCell className="py-8 text-right pr-10">
+                                            <TableCell className="py-card text-right pr-card">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-surface-container transition-all">
-                                                            <MoreHorizontal className="h-5 w-5 text-on-surface-variant/60" />
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
+                                                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-[200px] rounded-2xl border-none shadow-2xl shadow-on-surface/10 p-2 bg-card">
-                                                        <DropdownMenuItem className="font-bold text-[11px] tracking-tight gap-3 py-3 px-4 rounded-lg focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors">
-                                                            <RefreshCcw className="w-3.5 h-3.5 opacity-40" /> Reset Key
+                                                    <DropdownMenuContent align="end" className="w-[180px] rounded-lg border border-border shadow-sm p-1 bg-card">
+                                                        <DropdownMenuItem className="font-semibold text-xs gap-2 py-2 px-3 rounded-md cursor-pointer">
+                                                            <RefreshCcw className="w-3.5 h-3.5 text-muted-foreground" /> Reset key
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="font-bold text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-xl focus:bg-primary/5 focus:text-primary transition-colors">
-                                                            <Activity className="w-4 h-4 opacity-50" />
-                                                            View insights
+                                                        <DropdownMenuItem className="font-semibold text-xs gap-2 py-2 px-3 cursor-pointer rounded-md">
+                                                            <Activity className="w-3.5 h-3.5 text-muted-foreground" />
+                                                            View activity
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive font-bold text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-xl focus:bg-destructive/10 focus:text-destructive transition-colors">
-                                                            <Trash2 className="w-4 h-4" />
-                                                            Decommission
+                                                        <DropdownMenuItem className="text-destructive font-semibold text-xs gap-2 py-2 px-3 cursor-pointer rounded-md focus:bg-destructive/10 focus:text-destructive">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                            Delete
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -245,58 +236,57 @@ const WorkloadManagement: React.FC = () => {
             </GlassCard>
 
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
-                <DialogContent className="sm:max-w-[550px] rounded-[32px] border-none p-0 overflow-hidden shadow-2xl shadow-on-surface/20">
-                    <DialogHeader className="bg-surface-container/10 p-10 border-b border-on-surface/5">
-                        <div className="flex items-center gap-5">
-                            <div className="p-3.5 bg-primary rounded-2xl text-primary-foreground shadow-lg shadow-primary/20">
-                                <Plus className="w-7 h-7" />
+                <DialogContent className="sm:max-w-[480px] rounded-xl border border-border p-0 overflow-hidden shadow-sm">
+                    <DialogHeader className="bg-card p-card border-b border-border">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
+                                <Plus className="w-5 h-5" />
                             </div>
                             <div>
-                                <DialogTitle className="text-3xl font-bold tracking-tight">Create Machine Account</DialogTitle>
-                                <DialogDescription className="text-on-surface-variant/60 font-medium text-[11px] mt-2">
+                                <DialogTitle className="text-lg font-bold tracking-tight">Create machine account</DialogTitle>
+                                <DialogDescription className="text-muted-foreground text-sm mt-1">
                                     Add a new identity for an automated service or workload.
                                 </DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
-                    <form onSubmit={handleCreateWorkload} className="p-10 space-y-8 bg-card">
+                    <form onSubmit={handleCreateWorkload} className="p-card space-y-4 bg-card">
                         {error && (
-                            <Alert variant="destructive" className="rounded-2xl border-none bg-destructive/10 text-destructive animate-in slide-in-from-top-2">
-                                <AlertDescription className="font-bold text-xs tracking-tight flex items-center gap-3">
-                                    <Fingerprint className="w-4 h-4" />
-                                    Collision alert: {error}
+                            <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-destructive">
+                                <AlertDescription className="font-semibold text-sm">
+                                    {error}
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        <div className="space-y-2.5">
-                            <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Name</Label>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Name</Label>
                             <Input
                                 value={newName}
                                 onChange={e => setNewName(e.target.value)}
-                                placeholder="e.g. auth-aggregator-v2"
-                                className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6"
+                                placeholder="e.g. auth-aggregator"
+                                className="h-10 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
                                 required
                             />
                         </div>
 
-                        <div className="space-y-4">
-                            <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Service handle (subject id)</Label>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Service handle</Label>
                             <Input
                                 value={newHandle}
                                 onChange={e => setNewHandle(e.target.value)}
                                 placeholder="e.g. system:service:aggregator"
-                                className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6 font-mono"
+                                className="h-10 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4 font-mono"
                                 required
                             />
                         </div>
 
-                        <DialogFooter className="pt-6 gap-4">
-                            <Button type="button" variant="ghost" onClick={() => setShowCreate(false)} className="h-14 px-8 rounded-2xl font-bold text-[12px] hover:bg-surface-container/20">
-                                Abort
+                        <DialogFooter className="pt-2 gap-2">
+                            <Button type="button" variant="ghost" onClick={() => setShowCreate(false)} className="h-9 px-4 rounded-lg font-semibold text-sm">
+                                Cancel
                             </Button>
-                            <Button type="submit" disabled={isCreating} className="w-full h-12 rounded-xl font-bold text-sm shadow-md shadow-primary/10">
-                                {isCreating ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Create Account'}
+                            <Button type="submit" disabled={isCreating} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                                {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create account'}
                             </Button>
                         </DialogFooter>
                     </form>

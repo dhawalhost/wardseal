@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getSafetyActions, confirmSafetyAction, rejectSafetyAction } from '../api';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, ShieldAlert, History, Activity } from 'lucide-react';
+import { Check, X, ShieldAlert, History, Activity, Loader2 } from 'lucide-react';
 import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassTable, GlassTableHeader, GlassTableHead, GlassTableRow, PageLayout
 } from '@/components/layout';
 
@@ -33,7 +32,7 @@ const SafetyInbox: React.FC = () => {
     const handleConfirm = async (id: string) => {
         try {
             await confirmSafetyAction(id, 'Confirmed via Dashboard');
-            fetchActions(); // Refresh list
+            fetchActions();
         } catch (err) {
             alert('Failed to confirm safety action');
         }
@@ -48,122 +47,124 @@ const SafetyInbox: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-muted-foreground">Loading security alerts...</div>;
+    if (loading) return (
+        <div className="h-[400px] flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
 
     return (
         <PageLayout>
-        <div className="space-y-12 animate-in fade-in duration-700">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<ShieldAlert className="w-10 h-10 text-destructive" />}
+                icon={<ShieldAlert className="w-6 h-6 text-destructive" />}
                 title="Security Alerts"
                 description="Review and approve automated security actions. Stop unauthorized access or lock accounts in response to threats."
                 actions={
                     <Button
                         variant="outline"
                         onClick={() => fetchActions()}
-                        className="h-11 rounded-xl bg-card ring-1 ring-on-surface/5 font-bold tracking-tight text-[11px] px-8 shadow-sm transition-all hover:bg-surface-container"
+                        className="h-9 rounded-lg bg-card border border-border font-semibold text-sm px-4 shadow-sm"
                     >
-                        <History className="mr-2 h-4 w-4" /> Refresh
+                        <History className="mr-1.5 h-4 w-4" /> Refresh
                     </Button>
                 }
             />
 
             {error && (
-                <div className="bg-destructive/10 text-destructive px-6 py-4 rounded-2xl flex items-center gap-4 text-[12px] font-bold tracking-tight border border-destructive/20 animate-in slide-in-from-top-2">
+                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg flex items-center gap-3 text-sm font-semibold border border-destructive/20">
                     <ShieldAlert className="h-4 w-4" />
-                    Error: {error}
+                    {error}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-8">
-                <GlassCard className="border-none shadow-2xl shadow-destructive/5 bg-card overflow-hidden rounded-[32px]">
-                    <GlassCardHeader className="bg-destructive/10/30 border-b border-destructive/20 py-8 px-10">
-                        <div className="flex items-center gap-5">
-                            <div className="p-3 bg-destructive rounded-2xl text-white shadow-lg shadow-destructive/20">
-                                <Activity className="h-6 w-6" />
-                            </div>
-                            <div>
-                                <GlassCardTitle className="text-2xl font-bold tracking-tight text-on-surface">Priority Alerts</GlassCardTitle>
-                                <p className="text-destructive/60 font-bold text-[12px] mt-1 tracking-tight">Pending security actions ({actions.length})</p>
-                            </div>
+            <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                <GlassCardHeader className="border-b border-border py-card px-card">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-destructive/10 rounded-lg text-destructive">
+                            <Activity className="h-4 w-4" />
                         </div>
-                    </GlassCardHeader>
-                    <GlassCardContent className="p-0">
-                        <GlassTable>
-                            <GlassTableHeader>
-                                 <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                    <GlassTableHead className="py-6 pl-10 font-bold text-[12px] tracking-tight text-on-surface-variant/40">Action Type</GlassTableHead>
-                                    <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Target User/Resource</GlassTableHead>
-                                    <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Reason</GlassTableHead>
-                                    <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Details</GlassTableHead>
-                                    <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Time</GlassTableHead>
-                                    <GlassTableHead className="text-right font-bold text-[12px] tracking-tight text-on-surface-variant/40 pr-10">Actions</GlassTableHead>
+                        <div>
+                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Pending alerts</GlassCardTitle>
+                            <p className="text-muted-foreground text-sm mt-0.5">{actions.length} actions awaiting review</p>
+                        </div>
+                    </div>
+                </GlassCardHeader>
+                <GlassCardContent className="p-0">
+                    <GlassTable>
+                        <GlassTableHeader>
+                             <GlassTableRow className="hover:bg-transparent border-b border-border">
+                                <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Action type</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Target</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Reason</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Details</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Time</GlassTableHead>
+                                <GlassTableHead className="text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
+                            </GlassTableRow>
+                        </GlassTableHeader>
+                        <TableBody>
+                            {actions.length === 0 ? (
+                                <GlassTableRow>
+                                    <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 rounded-xl bg-success-subtle flex items-center justify-center">
+                                                <Check className="h-6 w-6 text-success" />
+                                            </div>
+                                            <span className="font-medium text-sm">No pending security alerts.</span>
+                                        </div>
+                                    </TableCell>
                                 </GlassTableRow>
-                            </GlassTableHeader>
-                            <TableBody>
-                                {actions.length === 0 ? (
-                                    <GlassTableRow>
-                                        <TableCell colSpan={6} className="text-center py-32 text-on-surface-variant/30 italic">
-                                            <div className="flex flex-col items-center gap-6">
-                                                <div className="w-20 h-20 rounded-3xl bg-success-subtle flex items-center justify-center">
-                                                    <Check className="h-10 w-10 text-success opacity-40" />
-                                                </div>
-                                                <span className="max-w-xs font-bold text-[12px] tracking-tight text-on-surface-variant/40 italic">No pending security alerts.</span>
+                            ) : (
+                                actions.map((action) => (
+                                    <GlassTableRow key={action.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
+                                        <TableCell className="py-card pl-card">
+                                            <Badge className="bg-destructive/10 text-destructive border-none rounded-md font-semibold text-xs px-2 py-0.5">
+                                                {action.action_type ? (action.action_type.charAt(0).toUpperCase() + action.action_type.slice(1).toLowerCase()).replaceAll('_', ' ') : 'Unknown Action'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="py-card font-mono text-xs font-semibold text-on-surface">{action.target_id}</TableCell>
+                                        <TableCell className="py-card max-w-xs text-sm font-medium text-muted-foreground">{action.reason}</TableCell>
+                                        <TableCell className="py-card">
+                                            <div className="flex gap-1.5 flex-wrap">
+                                                {Array.isArray(action.metadata?.org_ids) && action.metadata.org_ids.map((org: string) => (
+                                                    <Badge key={org} className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-[10px] px-2 py-0.5">
+                                                        {org}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-card">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-semibold text-on-surface">{new Date(action.created_at).toLocaleDateString()}</span>
+                                                <span className="text-xs font-mono font-medium text-muted-foreground">{new Date(action.created_at).toLocaleTimeString()}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-card text-right pr-card">
+                                            <div className="flex justify-end gap-2">
+                                                 <Button
+                                                    size="sm"
+                                                    className="h-8 rounded-lg bg-destructive hover:opacity-90 text-secondary-foreground font-semibold text-xs px-3 shadow-sm"
+                                                    onClick={() => handleConfirm(action.id)}
+                                                >
+                                                    <Check className="h-3.5 w-3.5 mr-1.5" /> Confirm
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 rounded-lg bg-card border border-border font-semibold text-xs px-3 shadow-sm text-muted-foreground"
+                                                    onClick={() => handleReject(action.id)}
+                                                >
+                                                    <X className="h-3.5 w-3.5 mr-1.5" /> Reject
+                                                </Button>
                                             </div>
                                         </TableCell>
                                     </GlassTableRow>
-                                ) : (
-                                    actions.map((action) => (
-                                        <GlassTableRow key={action.id} className="hover:bg-destructive/10/10 transition-all border-b border-on-surface/5 last:border-0 group">
-                                            <TableCell className="py-8 pl-10">
-                                                <Badge className="bg-destructive/100/10 text-destructive border-none rounded-lg font-bold text-[11px] tracking-tight px-3 py-1 group-hover:bg-destructive/100 group-hover:text-white transition-all">
-                                                    {action.action_type ? (action.action_type.charAt(0).toUpperCase() + action.action_type.slice(1).toLowerCase()).replaceAll('_', ' ') : 'Unknown Action'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="py-8 font-mono text-xs font-bold text-on-surface">{action.target_id}</TableCell>
-                                            <TableCell className="py-8 max-w-xs text-xs font-medium italic text-on-surface-variant/60">{action.reason}</TableCell>
-                                            <TableCell className="py-8">
-                                                <div className="flex gap-1.5 flex-wrap">
-                                                    {Array.isArray(action.metadata?.org_ids) && action.metadata.org_ids.map((org: string) => (
-                                                        <Badge key={org} className="bg-surface-container text-on-surface-variant/40 border-none rounded-lg font-bold text-[10px] tracking-tight px-2 py-0.5 h-5">
-                                                            {org}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-8">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-[11px] font-bold text-on-surface">{new Date(action.created_at).toLocaleDateString()}</span>
-                                                    <span className="text-[10px] font-mono font-bold text-on-surface-variant/20 tracking-tight">{new Date(action.created_at).toLocaleTimeString()}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-8 text-right pr-10">
-                                                <div className="flex justify-end gap-3">
-                                                     <Button
-                                                        size="sm"
-                                                        className="h-10 rounded-xl bg-destructive hover:bg-red-700 text-white font-bold tracking-tight text-[11px] px-5 shadow-lg shadow-destructive/20 transition-all active:scale-95"
-                                                        onClick={() => handleConfirm(action.id)}
-                                                    >
-                                                        <Check className="h-3.5 w-3.5 mr-2" /> Confirm
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-10 rounded-xl bg-card ring-1 ring-on-surface/5 font-bold tracking-tight text-[11px] px-5 shadow-sm transition-all hover:bg-surface-container active:scale-95 text-on-surface-variant/40"
-                                                        onClick={() => handleReject(action.id)}
-                                                    >
-                                                        <X className="h-3.5 w-3.5 mr-2" /> Reject
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </GlassTableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </GlassTable>
-                    </GlassCardContent>
-                </GlassCard>
-            </div>
+                                ))
+                            )}
+                        </TableBody>
+                    </GlassTable>
+                </GlassCardContent>
+            </GlassCard>
         </div>
         </PageLayout>
     );

@@ -13,8 +13,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BoringAvatar from 'boring-avatars';
+import { Avatar } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Users,
@@ -82,7 +81,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                 </code>
             </TableCell>
             <TableCell className="py-1.5">
-                <span className="text-[10px] font-medium text-on-surface-variant/60 flex items-center gap-2">
+                <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-2">
                     {group.created_at ? new Date(group.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Verified'}
                 </span>
             </TableCell>
@@ -120,7 +119,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                 {/* Current Members Section */}
                                 <section>
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 flex items-center gap-2 uppercase">
+                                        <h3 className="text-[10px] font-bold tracking-tight text-muted-foreground flex items-center gap-2 uppercase">
                                             <ShieldCheck className="w-3.5 h-3.5 text-success" />
                                             Current Members
                                         </h3>
@@ -137,28 +136,21 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                         ) : members.length === 0 ? (
                                             <div className="py-12 text-center border-2 border-dashed rounded-2xl bg-surface-container/10">
                                                 <ShieldAlert className="w-8 h-8 mx-auto text-on-surface-variant/10 mb-2" />
-                                                <p className="text-xs font-medium text-on-surface-variant/40">No users are in this group.</p>
+                                                <p className="text-xs font-medium text-muted-foreground">No users are in this group.</p>
                                             </div>
                                         ) : (
                                             <div className="grid gap-2">
                                                 {members.map(member => (
-                                                    <div key={member.id} className="flex items-center justify-between p-3 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all group/member">
+                                                    <div key={member.id} className="flex items-center justify-between p-3 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-lg hover:shadow-sm transition-all group/member">
                                                         <div className="flex items-center gap-3">
                                                             {(() => {
                                                                 const email = member.email || (member.emails && member.emails.length > 0 ? member.emails[0].value : '');
                                                                 return (
                                                                     <>
-                                                                        <Avatar className="h-8 w-8 rounded-lg ring-1 ring-on-surface/5 overflow-hidden">
-                                                                            <BoringAvatar
-                                                                                size={32}
-                                                                                name={email || ''}
-                                                                                variant="marble"
-                                                                                colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                                                                            />
-                                                                        </Avatar>
+                                                                        <Avatar name={email || ''} size={32} className="h-8 w-8 rounded-lg ring-1 ring-on-surface/5 overflow-hidden" />
                                                                         <div>
                                                                             <p className="text-xs font-bold text-on-surface">{email || 'Unknown User'}</p>
-                                                                            <p className="text-[9px] font-bold text-on-surface-variant/20 mt-0.5 flex items-center gap-1 tracking-tight">
+                                                                            <p className="text-[9px] font-bold text-muted-foreground mt-0.5 flex items-center gap-1 tracking-tight">
                                                                                 <span className={`h-1.5 w-1.5 rounded-full ${member.status === 'active' ? 'bg-success' : 'bg-destructive/100'}`} />
                                                                                 {member.status === 'active' ? 'Active' : 'Offline'}
                                                                             </p>
@@ -185,12 +177,12 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                 {/* Assign New Members Section */}
                                 <section className="space-y-6">
                                     <div className="flex flex-col gap-4">
-                                        <h3 className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 flex items-center gap-2 uppercase">
+                                        <h3 className="text-[10px] font-bold tracking-tight text-muted-foreground flex items-center gap-2 uppercase">
                                             <Users className="w-3.5 h-3.5 text-primary" />
                                             Add More Members
                                         </h3>
                                         <div className="relative group">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                             <Input
                                                 placeholder="Search for users to add..."
                                                 className="h-10 border-none rounded-xl font-medium text-xs pl-10 bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
@@ -203,24 +195,17 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                     <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                         {filteredAvailableUsers.length === 0 ? (
                                             <div className="py-8 text-center bg-surface-container/10 rounded-2xl border-2 border-dashed">
-                                                <p className="text-[10px] font-bold text-on-surface-variant/20 tracking-tight uppercase">No users found.</p>
+                                                <p className="text-[10px] font-bold text-muted-foreground tracking-tight uppercase">No users found.</p>
                                             </div>
                                         ) : (
                                             filteredAvailableUsers.map(user => (
-                                                <div key={user.id} className="flex items-center justify-between p-2.5 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all group/add">
+                                                <div key={user.id} className="flex items-center justify-between p-2.5 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-lg hover:shadow-sm transition-all group/add">
                                                     <div className="flex items-center gap-3">
                                                         {(() => {
                                                             const email = user.email || (user.emails && user.emails.length > 0 ? user.emails[0].value : '');
                                                             return (
                                                                 <>
-                                                                    <Avatar className="h-7 w-7 rounded-lg ring-1 ring-on-surface/5 overflow-hidden">
-                                                                        <BoringAvatar
-                                                                            size={28}
-                                                                            name={email || ''}
-                                                                            variant="marble"
-                                                                            colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                                                                        />
-                                                                    </Avatar>
+                                                                    <Avatar name={email || ''} size={28} className="h-7 w-7 rounded-lg ring-1 ring-on-surface/5 overflow-hidden" />
                                                                     <p className="text-[11px] font-bold text-on-surface">{email || 'Anonymous'}</p>
                                                                 </>
                                                             );

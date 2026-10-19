@@ -6,18 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Save, Palette, RefreshCw, LayoutTemplate } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 
 import { Badge } from '@/components/ui/badge';
-import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassCardDescription, PageLayout
+import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, PageLayout
 } from '@/components/layout';
 
 const Branding: React.FC = () => {
     const [config, setConfig] = useState<BrandingConfig>({
         tenant_id: '',
-        logo_url: '/wardseal.svg', // Default
-        primary_color: '#05ffa3', // Default Mint
-        background_color: '#F4F7FB', // Default Light Gray
+        logo_url: '/wardseal.svg',
+        primary_color: '#0369A1',
+        background_color: '#F8FAFC',
         css_override: '',
         config: {}
     });
@@ -33,7 +32,6 @@ const Branding: React.FC = () => {
     const loadBranding = async () => {
         try {
             const data = await getBranding();
-            // initialize with defaults if empty properties
             setConfig(prev => ({
                 ...data,
                 primary_color: data.primary_color || prev.primary_color,
@@ -42,7 +40,6 @@ const Branding: React.FC = () => {
             }));
         } catch (err) {
             console.error(err);
-            // Ignore 404/empty, just keep defaults
         } finally {
             setLoading(false);
         }
@@ -55,7 +52,7 @@ const Branding: React.FC = () => {
         setSaving(true);
         try {
             await updateBranding(config);
-            setSuccess('Branding updated successfully!');
+            setSuccess('Branding updated successfully.');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             setError('Failed to update branding');
@@ -65,97 +62,90 @@ const Branding: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" /></div>;
+    if (loading) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
     return (
         <PageLayout>
-        <div className="space-y-12 animate-in fade-in duration-700">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<Palette className="w-8 h-8 text-primary" />}
+                icon={<Palette className="w-6 h-6 text-secondary" />}
                 title="Branding"
                 description="Customize the design of your login page and user portal."
                 actions={
                     <Button
                         variant="outline"
                         onClick={loadBranding}
-                        className="h-9 rounded-lg bg-card ring-1 ring-on-surface/5 font-bold text-[13px] px-6 shadow-sm transition-all hover:bg-surface-container"
+                        className="h-9 rounded-lg bg-card border border-border font-semibold text-sm px-4 shadow-sm"
                     >
-                        <RefreshCw className="h-4 w-4 mr-2" /> Reset Design
+                        <RefreshCw className="h-4 w-4 mr-1.5" /> Reset
                     </Button>
                 }
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                {/* SETTINGS COLUMN */}
-                <div className="lg:col-span-5 space-y-8">
-                    <GlassCard className="shadow-on-surface/10 rounded-xl">
-                        <GlassCardHeader className="py-5 px-6 border-b border-on-surface/5 bg-surface-container/10">
-                            <div className="flex items-center gap-6">
-                                <div className="p-2.5 bg-primary rounded-xl text-primary-foreground shadow-lg shadow-primary/20">
-                                    <LayoutTemplate className="w-5 h-5" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-card items-start">
+                <div className="lg:col-span-5 space-y-page">
+                    <GlassCard className="border border-border shadow-sm rounded-xl bg-card">
+                        <GlassCardHeader className="py-card px-card border-b border-border">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
+                                    <LayoutTemplate className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">Design Settings</GlassCardTitle>
-                                    <p className="text-on-surface-variant/60 font-medium text-[10px] mt-1 italic">Configure your brand colors and logo.</p>
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Design settings</GlassCardTitle>
+                                    <p className="text-muted-foreground text-sm mt-0.5">Configure brand colors and logo.</p>
                                 </div>
                             </div>
                         </GlassCardHeader>
-                        <GlassCardContent className="p-6">
-                            <form id="branding-form" onSubmit={handleSave} className="space-y-6">
+                        <GlassCardContent className="p-card">
+                            <form id="branding-form" onSubmit={handleSave} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="logo" className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                        <Palette className="w-3 h-3" />
+                                    <Label htmlFor="logo" className="text-xs font-semibold tracking-wide text-muted-foreground">
                                         Logo URL
                                     </Label>
-                                    <div className="relative">
-                                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/40">
-                                            <Palette className="h-4 w-4" />
-                                        </div>
-                                        <Input
-                                            id="logo"
-                                            type="url"
-                                            value={config.logo_url}
-                                            onChange={e => setConfig({ ...config, logo_url: e.target.value })}
-                                            placeholder="https://your-domain.com/logo.svg"
-                                            className="h-10 border-none rounded-lg bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-[13px] px-10"
-                                        />
-                                        <p className="text-[9px] font-medium text-on-surface-variant/40 mt-2 ml-1 italic">Recommended: Use an SVG or PNG with a transparent background.</p>
-                                    </div>
+                                    <Input
+                                        id="logo"
+                                        type="url"
+                                        value={config.logo_url}
+                                        onChange={e => setConfig({ ...config, logo_url: e.target.value })}
+                                        placeholder="https://your-domain.com/logo.svg"
+                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
+                                    />
+                                    <p className="text-xs font-medium text-muted-foreground">Recommended: SVG or PNG with a transparent background.</p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-card">
                                     <div className="space-y-2">
-                                        <Label htmlFor="primary" className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Primary Color</Label>
-                                        <div className="flex items-center gap-4">
+                                        <Label htmlFor="primary" className="text-xs font-semibold tracking-wide text-muted-foreground">Primary color</Label>
+                                        <div className="flex items-center gap-2">
                                             <Input
                                                 id="primary"
                                                 type="color"
                                                 value={config.primary_color}
                                                 onChange={e => setConfig({ ...config, primary_color: e.target.value })}
-                                                className="w-10 h-10 p-1 rounded-lg cursor-pointer border-none bg-surface-container/50 ring-1 ring-on-surface/5 shadow-sm transition-all"
+                                                className="w-10 h-10 p-1 rounded-lg cursor-pointer border border-border bg-card shadow-sm"
                                             />
                                             <Input
                                                 value={config.primary_color}
                                                 onChange={e => setConfig({ ...config, primary_color: e.target.value })}
-                                                className="uppercase font-mono text-[11px] font-bold tracking-widest h-10 rounded-lg border-none bg-surface-container/50 ring-1 ring-on-surface/5 px-3"
+                                                className="uppercase font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
                                                 maxLength={7}
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="bg" className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Background Color</Label>
-                                        <div className="flex items-center gap-4">
+                                        <Label htmlFor="bg" className="text-xs font-semibold tracking-wide text-muted-foreground">Background</Label>
+                                        <div className="flex items-center gap-2">
                                             <Input
                                                 id="bg"
                                                 type="color"
                                                 value={config.background_color}
                                                 onChange={e => setConfig({ ...config, background_color: e.target.value })}
-                                                className="w-10 h-10 p-1 rounded-lg cursor-pointer border-none bg-surface-container/50 ring-1 ring-on-surface/5 shadow-sm transition-all"
+                                                className="w-10 h-10 p-1 rounded-lg cursor-pointer border border-border bg-card shadow-sm"
                                             />
                                             <Input
                                                 value={config.background_color}
                                                 onChange={e => setConfig({ ...config, background_color: e.target.value })}
-                                                className="uppercase font-mono text-[11px] font-bold tracking-widest h-10 rounded-lg border-none bg-surface-container/50 ring-1 ring-on-surface/5 px-3"
+                                                className="uppercase font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
                                                 maxLength={7}
                                             />
                                         </div>
@@ -163,39 +153,37 @@ const Branding: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="css" className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Custom CSS</Label>
+                                    <Label htmlFor="css" className="text-xs font-semibold tracking-wide text-muted-foreground">Custom CSS</Label>
                                     <Textarea
                                         id="css"
                                         value={config.css_override}
                                         onChange={e => setConfig({ ...config, css_override: e.target.value })}
                                         rows={8}
-                                        placeholder=".LOGIN-CARD { border: 2px solid var(--primary); }"
-                                        className="flex min-h-[160px] w-full border-none rounded-xl bg-surface-container/50 ring-1 ring-on-surface/5 p-4 font-mono text-[10px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/20 custom-scrollbar-dark text-on-surface"
+                                        placeholder=".login-card { border: 2px solid var(--primary); }"
+                                        className="flex min-h-[160px] w-full border border-border rounded-xl bg-card p-4 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-secondary/20 text-on-surface"
                                     />
-                                    <p className="text-[10px] font-medium text-on-surface-variant/40 mt-2 ml-1 italic">Add custom CSS to further customize the login experience.</p>
+                                    <p className="text-xs font-medium text-muted-foreground">Optional CSS to further customize the login experience.</p>
                                 </div>
 
-                                <div className="pt-6">
+                                <div className="pt-2">
                                     {error && (
-                                        <div className="flex items-center gap-3 text-[11px] font-bold text-destructive bg-destructive/10 p-4 rounded-xl border border-destructive/20 mb-4 animate-in slide-in-from-top-2">
-                                            <div className="h-1.5 w-1.5 bg-destructive rounded-full animate-pulse" />
-                                            Error: {error}
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-destructive bg-destructive/5 p-3 rounded-lg border border-destructive/20 mb-3">
+                                            {error}
                                         </div>
                                     )}
                                     {success && (
-                                        <div className="flex items-center gap-3 text-[11px] font-bold text-success bg-success-subtle p-4 rounded-xl border border-success/10 mb-4 animate-in slide-in-from-top-2">
-                                            <div className="h-1.5 w-1.5 bg-success rounded-full animate-pulse" />
-                                            Success: {success}
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-success bg-success-subtle p-3 rounded-lg border border-success/20 mb-3">
+                                            {success}
                                         </div>
                                     )}
                                     <Button
                                         type="submit"
                                         form="branding-form"
                                         disabled={saving}
-                                        className="w-full h-10 rounded-lg font-bold text-[13px] shadow-lg shadow-primary/20 transition-all group"
+                                        className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm"
                                     >
-                                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                        Save Branding
+                                        {saving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+                                        Save branding
                                     </Button>
                                 </div>
                             </form>
@@ -203,83 +191,73 @@ const Branding: React.FC = () => {
                     </GlassCard>
                 </div>
 
-                {/* PREVIEW COLUMN */}
                 <div className="lg:col-span-7 lg:sticky lg:top-8">
-                    <GlassCard className="shadow-on-surface/5 flex flex-col h-full overflow-hidden">
-                        <GlassCardHeader className="py-5 px-6 border-b border-on-surface/5">
+                    <GlassCard className="border border-border shadow-sm flex flex-col h-full overflow-hidden rounded-xl bg-card">
+                        <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">Preview</GlassCardTitle>
-                                    <p className="text-on-surface-variant/60 font-medium text-[10px] mt-1 italic">See how your changes will look for users.</p>
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Preview</GlassCardTitle>
+                                    <p className="text-muted-foreground text-sm mt-0.5">How your login page will look to users.</p>
                                 </div>
-                                <Badge className="bg-success/10 text-success border-none rounded-lg font-bold text-[9px] tracking-tight px-3 py-1 uppercase italic">Live Preview</Badge>
+                                <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-[10px] px-2 py-0.5">Live preview</Badge>
                             </div>
                         </GlassCardHeader>
-                        <GlassCardContent className="p-0 bg-surface-container/30">
+                        <GlassCardContent className="p-0 bg-muted/30">
                             <div
-                                className="h-[600px] w-full flex items-center justify-center p-8 transition-all duration-700 relative overflow-hidden"
+                                className="h-[560px] w-full flex items-center justify-center p-card transition-colors duration-300"
                                 style={{ backgroundColor: config.background_color }}
                             >
-                                <div className="absolute inset-0 opacity-[0.03]"
-                                    style={{
-                                        backgroundImage: `linear-gradient(hsl(var(--on-surface)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--on-surface)) 1px, transparent 1px)`,
-                                        backgroundSize: '30px 30px'
-                                    }}
-                                />
-
-                                <div className="w-full max-w-[380px] bg-card rounded-xl border-none p-8 relative z-10 shadow-xl shadow-on-surface/10 animate-in zoom-in-95 duration-700">
-                                    <div className="text-center mb-10">
+                                <div className="w-full max-w-[360px] bg-card rounded-xl border border-border p-card relative z-10 shadow-sm">
+                                    <div className="text-center mb-8">
                                         {config.logo_url ? (
-                                            <img src={config.logo_url} alt="Logo" className="mx-auto h-12 min-w-[60px] mb-6 object-contain" />
+                                            <img src={config.logo_url} alt="Logo" className="mx-auto h-10 min-w-[48px] mb-4 object-contain" />
                                         ) : (
-                                            <div className="mx-auto h-12 w-12 bg-primary/5 rounded-xl flex items-center justify-center mb-6">
-                                                <Palette className="h-6 w-6 text-primary" />
+                                            <div className="mx-auto h-10 w-10 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                                                <Palette className="h-5 w-5 text-secondary" />
                                             </div>
                                         )}
-                                        <h2 className="text-2xl font-bold text-on-surface tracking-tight leading-none">Authentication</h2>
-                                        <p className="text-[10px] font-bold text-on-surface-variant/40 mt-4 leading-none italic">Secure login</p>
+                                        <h2 className="text-xl font-bold text-on-surface tracking-tight">Sign in</h2>
+                                        <p className="text-sm font-medium text-muted-foreground mt-2">Secure access to your account</p>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-on-surface-variant/40 ml-1">Email Address</label>
-                                            <div className="h-10 w-full rounded-lg bg-surface-container/50 ring-1 ring-on-surface/5 px-4 py-2 text-[13px] text-on-surface font-medium flex items-center select-none shadow-sm">
+                                    <div className="space-y-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-muted-foreground">Email</label>
+                                            <div className="h-10 w-full rounded-lg bg-muted/50 border border-border px-4 py-2 text-sm text-on-surface font-medium flex items-center select-none">
                                                 admin@wardseal.io
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             <div className="flex justify-between items-end">
-                                                <label className="text-[10px] font-bold text-on-surface-variant/40 ml-1">Password</label>
-                                                <span className="text-[10px] font-bold text-primary cursor-pointer hover:underline underline-offset-4 italic">Forgot password?</span>
+                                                <label className="text-xs font-semibold text-muted-foreground">Password</label>
+                                                <span className="text-xs font-semibold text-secondary cursor-pointer">Forgot password?</span>
                                             </div>
-                                            <div className="h-10 w-full rounded-lg bg-surface-container/50 ring-1 ring-on-surface/5 px-4 py-2 flex items-center shadow-sm">
-                                                <div className="flex gap-1.5 opacity-10">
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <div key={i} className="w-1.5 h-1.5 bg-on-surface rounded-full" />)}
+                                            <div className="h-10 w-full rounded-lg bg-muted/50 border border-border px-4 py-2 flex items-center">
+                                                <div className="flex gap-1.5 text-muted-foreground">
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <div key={i} className="w-1.5 h-1.5 bg-muted-foreground rounded-full" />)}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <button
-                                            className="w-full h-10 rounded-lg text-white font-bold text-[13px] transition-all active:scale-[0.98] mt-2 shadow-lg shadow-on-surface/10"
+                                            className="w-full h-10 rounded-lg text-white font-semibold text-sm mt-1 shadow-sm"
                                             style={{ backgroundColor: config.primary_color }}
                                         >
-                                            Sign In
+                                            Sign in
                                         </button>
 
-                                        <div className="relative my-8">
-                                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-on-surface/5" /></div>
-                                            <div className="relative flex justify-center text-[10px] font-bold"><span className="bg-card px-4 text-on-surface-variant/20 italic">Or sign in with</span></div>
+                                        <div className="relative my-6">
+                                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+                                            <div className="relative flex justify-center text-xs font-semibold"><span className="bg-card px-3 text-muted-foreground">Or continue with</span></div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 gap-3">
-                                            <div className="h-10 rounded-lg ring-1 ring-on-surface/5 bg-card text-on-surface flex items-center justify-center hover:bg-surface-container cursor-pointer transition-all font-bold text-[11px] shadow-sm italic">
-                                                Sign in with SSO
-                                            </div>
+                                        <div className="h-10 rounded-lg border border-border bg-card text-on-surface flex items-center justify-center font-semibold text-sm shadow-sm">
+                                            Sign in with SSO
                                         </div>
                                     </div>
 
-                                    <div className="mt-8 text-center border-t border-on-surface/5 pt-6">
-                                        <p className="text-[9px] font-bold text-on-surface-variant/20 italic">Powered by WardSeal</p>
+                                    <div className="mt-6 text-center border-t border-border pt-4">
+                                        <p className="text-xs font-medium text-muted-foreground">Powered by WardSeal</p>
                                     </div>
                                 </div>
                             </div>
@@ -287,7 +265,7 @@ const Branding: React.FC = () => {
                     </GlassCard>
                 </div>
             </div>
-        </div >
+        </div>
         </PageLayout>
     );
 };

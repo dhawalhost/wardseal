@@ -11,23 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
     ShieldAlert,
-    Globe,
     Network,
-    Trash2,
     Plus,
     ShieldCheck,
     Loader2,
-    Terminal,
-    MapPin,
     Activity,
-    Lock,
-    Binary,
-    Fingerprint,
-    X,
-    Filter,
-    ChevronRight,
-    Command,
-    ExternalLink
 } from 'lucide-react';
 import {
     TableBody,
@@ -49,7 +37,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassTable, GlassTableHeader, GlassTableHead, GlassTableRow, PageLayout
 } from '@/components/layout';
 import { IPPolicyTableRow } from '../components/IPPolicyTableRow';
@@ -59,7 +46,6 @@ const IPPolicies: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // New Policy State
     const [showCreate, setShowCreate] = useState(false);
     const [newRuleKind, setNewRuleKind] = useState<'cidr' | 'country'>('cidr');
     const [newValue, setNewValue] = useState('');
@@ -73,7 +59,7 @@ const IPPolicies: React.FC = () => {
             const data = await getIPPolicies();
             setPolicies(data || []);
         } catch (err) {
-            setError('Failed to retrieve network security policies.');
+            setError('Failed to load IP policies.');
         } finally {
             setLoading(false);
         }
@@ -98,101 +84,97 @@ const IPPolicies: React.FC = () => {
             setNewDesc('');
             fetchPolicies();
         } catch (err) {
-            setError('Failed to commit security policy.');
+            setError('Failed to create IP policy.');
         } finally {
             setCreating(false);
         }
     };
 
     const handleDeletePolicy = async (id: string) => {
-        if (!window.confirm('Revoke this network security policy? This action is immediate and may affect user access.')) return;
+        if (!window.confirm('Delete this IP policy? This may affect user access.')) return;
         try {
             await deleteIPPolicy(id);
             fetchPolicies();
         } catch (err) {
-            setError('Failed to revoke policy.');
+            setError('Failed to delete policy.');
         }
     };
 
-    if (loading && policies.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" /></div>;
+    if (loading && policies.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
     return (
         <PageLayout>
-        <div className="space-y-12 animate-in fade-in duration-700">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<ShieldCheck className="w-10 h-10 text-primary" />}
+                icon={<ShieldCheck className="w-6 h-6 text-secondary" />}
                 title="IP Access Policies"
                 description="Manage IP-based access rules. Restrict or allow access based on network locations."
                 actions={
                     <Dialog open={showCreate} onOpenChange={setShowCreate}>
                         <DialogTrigger asChild>
-                            <Button className="h-11 rounded-xl bg-primary text-primary-foreground font-bold tracking-tight text-[11px] px-8 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                                <Plus className="w-4 h-4 mr-3" /> Add IP Rule
+                            <Button className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                                <Plus className="w-4 h-4 mr-1.5" /> Add IP rule
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[600px] rounded-[32px] border-none p-0 overflow-hidden shadow-2xl shadow-on-surface/20">
-                            <DialogHeader className="bg-surface-container/10 p-10 border-b border-on-surface/5">
-                                <div className="flex items-center gap-5">
-                                    <div>
-                                        <DialogTitle className="text-3xl font-bold tracking-tight text-on-surface">Create New Rule</DialogTitle>
-                                        <DialogDescription className="text-on-surface-variant/60 font-medium text-[11px] mt-2">
-                                            Define a new IP or Geo-location access rule.
-                                        </DialogDescription>
-                                    </div>
-                                </div>
+                        <DialogContent className="sm:max-w-[520px] rounded-xl border border-border p-0 overflow-hidden shadow-sm">
+                            <DialogHeader className="bg-card p-card border-b border-border">
+                                <DialogTitle className="text-lg font-bold tracking-tight text-on-surface">Create IP rule</DialogTitle>
+                                <DialogDescription className="text-muted-foreground text-sm mt-1">
+                                    Define a new IP or geo-location access rule.
+                                </DialogDescription>
                             </DialogHeader>
-                            <form onSubmit={handleCreatePolicy} className="p-10 space-y-8 bg-card">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2.5">
-                                        <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Rule Type</Label>
+                            <form onSubmit={handleCreatePolicy} className="p-card space-y-4 bg-card">
+                                <div className="grid grid-cols-2 gap-card">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Rule type</Label>
                                         <Select value={newRuleKind} onValueChange={(v: any) => setNewRuleKind(v)}>
-                                            <SelectTrigger className="h-12 border-none rounded-xl bg-surface-container/30 ring-1 ring-on-surface/5 focus:ring-2 focus:ring-primary/20 font-bold text-[11px] tracking-tight transition-all">
+                                            <SelectTrigger className="h-10 border border-border rounded-lg bg-card focus:ring-secondary/20 font-medium text-sm">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-none shadow-xl font-bold text-[11px] tracking-tight">
-                                                <SelectItem value="cidr">IP CIDR Range</SelectItem>
-                                                <SelectItem value="country">Geo ISO Code</SelectItem>
+                                            <SelectContent className="rounded-lg border border-border shadow-sm text-sm">
+                                                <SelectItem value="cidr">IP CIDR range</SelectItem>
+                                                <SelectItem value="country">Country ISO code</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="space-y-2.5">
-                                        <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Action</Label>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Action</Label>
                                         <Select value={newAction} onValueChange={(v: any) => setNewAction(v)}>
-                                            <SelectTrigger className={`h-12 border-none rounded-xl bg-surface-container/30 ring-1 focus:ring-2 transition-all font-bold text-[11px] tracking-tight ${newAction === 'allow' ? 'text-success ring-emerald-500/20' : 'text-destructive ring-destructive/20'}`}>
+                                            <SelectTrigger className={`h-10 border border-border rounded-lg bg-card focus:ring-secondary/20 font-medium text-sm ${newAction === 'allow' ? 'text-success' : 'text-destructive'}`}>
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-none shadow-xl font-bold text-[11px] tracking-tight">
-                                                <SelectItem value="allow" className="text-success">Allow Traffic</SelectItem>
-                                                <SelectItem value="deny" className="text-destructive">Deny Traffic</SelectItem>
+                                            <SelectContent className="rounded-lg border border-border shadow-sm text-sm">
+                                                <SelectItem value="allow" className="text-success">Allow traffic</SelectItem>
+                                                <SelectItem value="deny" className="text-destructive">Deny traffic</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2.5">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">{newRuleKind === 'cidr' ? 'IP CIDR Range' : 'Country ISO Code'}</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">{newRuleKind === 'cidr' ? 'IP CIDR range' : 'Country ISO code'}</Label>
                                     <Input
                                         value={newValue}
                                         onChange={(e) => setNewValue(e.target.value)}
-                                        className="h-12 border-none rounded-xl bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 font-mono text-sm px-6 transition-all"
+                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-mono text-sm px-4"
                                         placeholder={newRuleKind === 'cidr' ? 'e.g. 192.168.1.0/24' : 'ISO 3166-1 alpha-2 (e.g. CN)'}
                                         required
                                     />
                                 </div>
 
-                                <div className="space-y-2.5">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Rule Description</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Description</Label>
                                     <Input
                                         value={newDesc}
                                         onChange={(e) => setNewDesc(e.target.value)}
-                                        className="h-12 border-none rounded-xl bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm px-6 transition-all"
+                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
                                         placeholder="Purpose of this access rule..."
                                     />
                                 </div>
 
-                                <DialogFooter className="pt-6">
-                                    <Button type="submit" disabled={creating} className="w-full h-12 rounded-xl font-bold text-sm shadow-md shadow-primary/10">
-                                        {creating ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Rule'}
+                                <DialogFooter className="pt-2">
+                                    <Button type="submit" disabled={creating} className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                                        {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create rule'}
                                     </Button>
                                 </DialogFooter>
                             </form>
@@ -201,67 +183,54 @@ const IPPolicies: React.FC = () => {
                 }
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-                <div className="lg:col-span-1 space-y-10">
-                    <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card overflow-hidden rounded-[24px]">
-                        <GlassCardHeader className="py-8 px-8 border-b border-on-surface/5">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-primary/5 rounded-xl">
-                                    <Terminal className="w-5 h-5 text-primary" />
+            {error && (
+                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold">
+                    {error}
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-card">
+                <div className="lg:col-span-1 space-y-page">
+                    <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                        <GlassCardHeader className="py-card px-card border-b border-border">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                    <Activity className="w-4 h-4 text-secondary" />
                                 </div>
-                                <GlassCardTitle className="text-xl font-bold tracking-tight">Add IP Rule</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-bold tracking-tight">Status</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
-                        <GlassCardContent className="p-8 space-y-8">
+                        <GlassCardContent className="p-card space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold tracking-tight text-on-surface-variant/40">System state</span>
-                                <Badge className="bg-success-subtle text-success rounded-lg font-bold text-[10px] tracking-tight px-3 py-1 border-none shadow-sm animate-pulse">Enforcing</Badge>
+                                <span className="text-xs font-semibold tracking-wide text-muted-foreground">Enforcement</span>
+                                <Badge className="bg-success-subtle text-success rounded-md font-semibold text-xs px-2 py-0.5 border-none">Active</Badge>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold tracking-tight text-on-surface-variant/40">Rule density</span>
+                                <span className="text-xs font-semibold tracking-wide text-muted-foreground">Total rules</span>
                                 <span className="text-2xl font-bold tracking-tight text-on-surface tabular-nums">{policies.length}</span>
-                            </div>
-                            <div className="space-y-4 pt-4 border-t border-on-surface/5">
-                                <div className="flex items-center gap-3 text-[11px] font-bold tracking-tight text-primary uppercase">
-                                    <Activity className="w-4 h-4" />
-                                    Real-time sync
-                                </div>
-                                <div className="p-4 bg-surface-container/30 rounded-xl font-mono text-[10px] text-on-surface/60 tracking-tight leading-relaxed">
-                                    [SYNC] MATING_RULE: Denied from CN (Policy ID: PX_12)<br />
-                                    [SYNC] MATING_RULE: Allowed CIDR 10.42.0.0/16
-                                </div>
                             </div>
                         </GlassCardContent>
                     </GlassCard>
 
-                    <div className="bg-inverse text-on-inverse p-8 rounded-[32px] flex items-start gap-6 shadow-xl shadow-on-surface/10 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                            <ShieldAlert className="w-20 h-20 -mr-4 -mt-4 text-primary" />
-                        </div>
-                        <ShieldAlert className="w-8 h-8 text-primary flex-shrink-0 opacity-80" />
-                        <p className="text-[11px] font-bold leading-relaxed tracking-tight text-on-inverse/60 group-hover:text-white transition-opacity">
-                            Rules are processed by specificity prioritization. Structural default: ALLOW if zero collision vectors identified.
+                    <div className="bg-secondary text-secondary-foreground p-card rounded-xl flex items-start gap-3 shadow-sm border border-secondary/20">
+                        <ShieldAlert className="w-5 h-5 text-secondary-foreground flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground/80">
+                            Rules are evaluated by specificity. If no matching rule applies, traffic is allowed by default.
                         </p>
                     </div>
                 </div>
 
                 <div className="lg:col-span-3">
-                    <div className="flex items-center gap-6 mb-8 ml-4">
-                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        <h2 className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 italic">Enforcement matrix shard</h2>
-                        <div className="h-px flex-1 bg-on-surface/5" />
-                    </div>
-
-                    <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-[32px]">
-                        <GlassCardHeader className="py-10 px-10 border-b border-on-surface/5">
-                            <div className="flex items-center gap-5">
-                                <div className="p-4 bg-primary/5 rounded-2xl">
-                                    <Network className="w-8 h-8 text-primary" />
+                    <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                        <GlassCardHeader className="py-card px-card border-b border-border">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                    <Network className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-2xl font-bold tracking-tight text-on-surface">Active IP Rules</GlassCardTitle>
-                                    <p className="text-on-surface-variant/40 font-bold text-[12px] mt-1 tracking-tight">
-                                        {policies.length} Synchronized Rules
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Active IP rules</GlassCardTitle>
+                                    <p className="text-muted-foreground text-sm mt-0.5">
+                                        {policies.length} rules configured
                                     </p>
                                 </div>
                             </div>
@@ -270,21 +239,18 @@ const IPPolicies: React.FC = () => {
                             <div className="overflow-x-auto">
                                 <GlassTable>
                                     <GlassTableHeader>
-                                        <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                            <GlassTableHead className="py-6 pl-10 font-bold text-[12px] tracking-tight text-on-surface-variant/40">IP Rule / Location</GlassTableHead>
-                                            <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Type</GlassTableHead>
-                                            <GlassTableHead className="font-bold text-[12px] tracking-tight text-on-surface-variant/40">Description</GlassTableHead>
-                                            <GlassTableHead className="text-right font-bold text-[12px] tracking-tight text-on-surface-variant/40 pr-10">Actions</GlassTableHead>
+                                        <GlassTableRow className="hover:bg-transparent border-b border-border">
+                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">IP rule / location</GlassTableHead>
+                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Type</GlassTableHead>
+                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Description</GlassTableHead>
+                                            <GlassTableHead className="text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>
                                         {policies.length === 0 ? (
                                             <GlassTableRow>
-                                                <TableCell colSpan={4} className="py-40 text-center">
-                                                    <div className="flex flex-col items-center gap-6 opacity-20">
-                                                        <Activity className="h-16 w-16" />
-                                                        <span className="text-[13px] font-bold tracking-tight italic">Null policy state // Open architecture</span>
-                                                    </div>
+                                                <TableCell colSpan={4} className="py-16 text-center text-sm font-medium text-muted-foreground">
+                                                    No IP policies configured.
                                                 </TableCell>
                                             </GlassTableRow>
                                         ) : (

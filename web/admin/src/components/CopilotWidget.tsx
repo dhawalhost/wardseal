@@ -60,7 +60,7 @@ const CopilotWidget = () => {
                 <p className="text-sm font-bold text-on-surface leading-none">Security Copilot</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                  <p className="text-[10px] font-bold text-success uppercase tracking-widest">Active Audit</p>
+                  <p className="text-[10px] font-semibold text-success">Online</p>
                 </div>
               </div>
             </div>
@@ -74,7 +74,7 @@ const CopilotWidget = () => {
               {messages.map((m, i) => (
                 <div key={i} className={cn("flex gap-3", m.role === 'user' ? "flex-row-reverse" : "flex-row")}>
                   <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
-                    m.role === 'bot' ? "bg-primary/10 text-primary" : "bg-inverse text-on-inverse")}>
+                    m.role === 'bot' ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground")}>
                     {m.role === 'bot' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
                   </div>
                   <div className={cn("max-w-[80%] p-4 rounded-2xl text-[13px] font-medium leading-relaxed shadow-sm",
@@ -90,7 +90,7 @@ const CopilotWidget = () => {
                   <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                     <Loader2 className="w-4 h-4 animate-spin" />
                   </div>
-                  <div className="p-4 rounded-2xl bg-card border text-[13px] font-bold italic text-on-surface-variant/40">
+                  <div className="p-4 rounded-2xl bg-card border text-[13px] font-bold italic text-muted-foreground">
                     Analyzing identity graph...
                   </div>
                 </div>
@@ -116,8 +116,8 @@ const CopilotWidget = () => {
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-            <p className="text-[10px] text-center text-on-surface-variant/40 mt-3 font-bold uppercase tracking-widest">
-              AI can hallucinate. Verify critical insights.
+            <p className="text-xs text-center text-muted-foreground mt-3">
+              AI suggestions may be incomplete — verify before acting.
             </p>
           </div>
         </GlassCard>
@@ -127,8 +127,8 @@ const CopilotWidget = () => {
       <Button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-16 h-16 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 group",
-          isOpen ? "bg-on-surface" : "bg-primary"
+          "w-14 h-14 rounded-xl shadow-sm transition-colors duration-150 group",
+          isOpen ? "bg-secondary text-secondary-foreground" : "bg-secondary text-secondary-foreground"
         )}
       >
         {isOpen ? (

@@ -62,7 +62,7 @@ const LoginRedirect: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="wardseal-admin-theme">
+    <ThemeProvider defaultTheme="light" storageKey="wardseal-admin-theme">
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

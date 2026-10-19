@@ -3,31 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { getPolicies, createPolicy, Policy } from '../api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-    Loader2, 
-    ShieldCheck, 
-    ShieldAlert, 
-    Plus, 
-    Settings2, 
+import {
+    Loader2,
+    ShieldCheck,
+    ShieldAlert,
+    Plus,
     FileJson,
     Trash2,
     X,
-    AlertCircle,
-    Info,
-    Layout,
-    Fingerprint,
-    Command,
-    Zap,
-    ExternalLink,
-    Terminal,
-    Binary,
     ArrowUpRight
 } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassTable, GlassTableHeader, GlassTableHead, GlassTableRow, GlassCardDescription, GlassCardFooter, PageLayout
+import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassTable, GlassTableHeader, GlassTableHead, GlassTableRow, PageLayout
 } from '@/components/layout';
 import { TableBody, TableCell } from '@/components/ui/table';
 
@@ -50,7 +40,7 @@ const Policies: React.FC = () => {
             setPolicies(data || []);
         } catch (err) {
             console.error(err);
-            setMessage({ text: "Failed to load tenant security policies.", type: 'error' });
+            setMessage({ text: "Failed to load security policies.", type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -78,7 +68,7 @@ const Policies: React.FC = () => {
                 is_enabled: true
             });
 
-            setMessage({ text: "The security policy has been successfully deployed.", type: 'success' });
+            setMessage({ text: "Policy created successfully.", type: 'success' });
             setIsCreateOpen(false);
             setNewPolicy({
                 name: '',
@@ -88,29 +78,29 @@ const Policies: React.FC = () => {
             fetchPolicies();
         } catch (err) {
             console.error(err);
-            setMessage({ text: "Could not persist the new policy rule.", type: 'error' });
+            setMessage({ text: "Could not create the policy.", type: 'error' });
         }
     };
 
-    if (loading && policies.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" /></div>;
+    if (loading && policies.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
     return (
         <PageLayout>
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 py-6">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<ShieldCheck className="w-8 h-8 text-primary" />}
+                icon={<ShieldCheck className="w-6 h-6 text-secondary" />}
                 title="Security Policies"
                 description="Define security rules for your organization. Control access to resources and data."
                 actions={
-                    <Button onClick={() => setIsCreateOpen(true)} className="h-9 rounded-lg bg-primary text-primary-foreground font-bold tracking-tight text-[11px] px-6 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                        <Plus className="w-3.5 h-3.5 mr-2" /> Create Policy
+                    <Button onClick={() => setIsCreateOpen(true)} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                        <Plus className="w-4 h-4 mr-1.5" /> Create policy
                     </Button>
                 }
             />
 
             {message && (
-                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className="rounded-xl border-none bg-surface-container/50 backdrop-blur-md">
-                    <AlertDescription className="font-bold text-xs tracking-tight flex items-center gap-3">
+                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className="rounded-lg border border-border bg-card shadow-sm">
+                    <AlertDescription className="font-semibold text-sm flex items-center gap-3">
                         {message.type === 'error' ? <ShieldAlert className="w-4 h-4 text-destructive" /> : <ShieldCheck className="w-4 h-4 text-success" />}
                         {message.text}
                     </AlertDescription>
@@ -118,148 +108,133 @@ const Policies: React.FC = () => {
             )}
 
             {isCreateOpen && (
-                <GlassCard className="border-none shadow-2xl shadow-on-surface/10 bg-card overflow-hidden rounded-xl animate-in slide-in-from-top-12 duration-700">
-                    <GlassCardHeader className="py-6 px-8 border-b border-on-surface/5 bg-surface-container/10">
+                <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                    <GlassCardHeader className="py-card px-card border-b border-border">
                         <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary">
-                                    <Fingerprint className="w-6 h-6" />
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                                    <FileJson className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">Deploy policy logic</GlassCardTitle>
-                                    <p className="text-on-surface-variant/40 font-bold text-[10px] mt-0.5 tracking-tight italic">Architectural perimeter definition protocol</p>
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Create policy</GlassCardTitle>
+                                    <p className="text-muted-foreground text-sm mt-0.5">Define access control rules with JSON</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)} className="rounded-lg h-9 w-9 hover:bg-destructive/10 hover:text-destructive transition-all">
+                            <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)} className="rounded-lg h-9 w-9 hover:bg-destructive/10 hover:text-destructive">
                                 <X className="w-5 h-5" />
                             </Button>
                         </div>
                     </GlassCardHeader>
-                    <GlassCardContent className="p-8 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3">
-                                <Label htmlFor="name" className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Policy identifier</Label>
-                                <Input 
-                                    id="name" 
-                                    placeholder="e.g. SOC2_CORE_ACCESS" 
-                                    className="h-10 rounded-lg border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-4 italic"
+                    <GlassCardContent className="p-card space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
+                            <div className="space-y-2">
+                                <Label htmlFor="name" className="text-xs font-semibold tracking-wide text-muted-foreground">Policy name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="e.g. Admin access"
+                                    className="h-10 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
                                     value={newPolicy.name}
                                     onChange={(e) => setNewPolicy({...newPolicy, name: e.target.value})}
                                 />
                             </div>
-                            <div className="space-y-3">
-                                <Label htmlFor="type" className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Rule engine kernel</Label>
-                                <Input 
-                                    id="type" 
+                            <div className="space-y-2">
+                                <Label htmlFor="type" className="text-xs font-semibold tracking-wide text-muted-foreground">Rule type</Label>
+                                <Input
+                                    id="type"
                                     value={newPolicy.rule_type}
-                                    className="h-10 rounded-lg border-none bg-surface-container ring-1 ring-on-surface/5 font-bold text-sm px-4 select-none tracking-tight opacity-50"
+                                    className="h-10 rounded-lg border border-border bg-muted font-medium text-sm px-4"
                                     readOnly
                                 />
                             </div>
                         </div>
-                        <div className="space-y-3">
-                            <Label htmlFor="rule" className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Behavioral definition json</Label>
-                            <div className="relative group">
-                                <Textarea 
-                                    id="rule" 
-                                    rows={8} 
-                                    className="font-mono text-sm rounded-xl border-none bg-on-surface text-primary p-6 focus-visible:ring-2 focus-visible:ring-primary/20 resize-none shadow-2xl transition-all"
-                                    value={newPolicy.rule_data}
-                                    onChange={(e) => setNewPolicy({...newPolicy, rule_data: e.target.value})}
-                                />
-                                <div className="absolute right-6 top-6 opacity-10 pointer-events-none group-hover:opacity-40 transition-opacity">
-                                    <Binary className="w-8 h-8 text-primary" />
-                                </div>
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="rule" className="text-xs font-semibold tracking-wide text-muted-foreground">Rule definition (JSON)</Label>
+                            <Textarea
+                                id="rule"
+                                rows={8}
+                                className="font-mono text-sm rounded-xl border border-border bg-muted p-4 focus-visible:ring-secondary/20 resize-none"
+                                value={newPolicy.rule_data}
+                                onChange={(e) => setNewPolicy({...newPolicy, rule_data: e.target.value})}
+                            />
                         </div>
-                        
-                        <div className="flex flex-col md:flex-row justify-end gap-4 pt-4 italic">
-                            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="h-10 px-6 rounded-lg font-bold text-xs tracking-tight text-on-surface-variant/40 hover:bg-surface-container transition-all">Discard logic</Button>
-                            <Button onClick={handleCreate} className="h-10 px-10 rounded-lg font-bold text-xs tracking-tight shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98]">Commit deployment</Button>
+
+                        <div className="flex flex-col md:flex-row justify-end gap-2 pt-2">
+                            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg font-semibold text-sm text-muted-foreground hover:bg-muted">Cancel</Button>
+                            <Button onClick={handleCreate} className="h-9 px-6 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">Create policy</Button>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
             )}
 
-            <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-xl">
-                <GlassCardHeader className="py-5 px-6 border-b border-on-surface/5 bg-surface-container/5">
+            <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                            <Zap className="w-5 h-5" />
+                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                            <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-lg font-bold tracking-tight text-on-surface">Policy List</GlassCardTitle>
-                            <p className="text-on-surface-variant/40 font-bold text-[10px] mt-0.5 tracking-tight">
-                                {policies.length} Active Policies
+                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Policies</GlassCardTitle>
+                            <p className="text-muted-foreground text-sm mt-0.5">
+                                {policies.length} active policies
                             </p>
                         </div>
                     </div>
                 </GlassCardHeader>
                 <GlassCardContent className="p-0">
-                    <div className="overflow-x-auto min-h-[500px]">
+                    <div className="overflow-x-auto">
                         <GlassTable>
                             <GlassTableHeader>
-                                <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                    <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                        <GlassTableHead className="py-3 pl-6 font-bold text-[10px] tracking-tight text-on-surface-variant/40 uppercase">Policy Name</GlassTableHead>
-                                        <GlassTableHead className="py-3 font-bold text-[10px] tracking-tight text-on-surface-variant/40 uppercase">Rules</GlassTableHead>
-                                        <GlassTableHead className="py-3 text-center font-bold text-[10px] tracking-tight text-on-surface-variant/40 uppercase">Enforcement state</GlassTableHead>
-                                        <GlassTableHead className="py-3 font-bold text-[10px] tracking-tight text-on-surface-variant/40 uppercase">Created</GlassTableHead>
-                                        <GlassTableHead className="py-3 text-right font-bold text-[10px] tracking-tight text-on-surface-variant/40 pr-6 uppercase">Actions</GlassTableHead>
-                                    </GlassTableRow>
+                                <GlassTableRow className="hover:bg-transparent border-b border-border">
+                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Policy name</GlassTableHead>
+                                    <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Rules</GlassTableHead>
+                                    <GlassTableHead className="py-3 text-center font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
+                                    <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Created</GlassTableHead>
+                                    <GlassTableHead className="py-3 text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
                                 {policies.length === 0 ? (
                                     <GlassTableRow>
-                                        <TableCell colSpan={5} className="py-40 text-center">
-                                            <div className="flex flex-col items-center gap-6 opacity-20 italic">
-                                                <div className="w-24 h-24 rounded-[32px] bg-surface-container flex items-center justify-center p-6 border-2 border-dashed border-on-surface/10">
-                                                    <FileJson className="h-full w-full" />
-                                                </div>
-                                                <span className="text-[12px] font-bold tracking-tight text-on-surface-variant opacity-60">Null policy cell // Directory clear</span>
-                                            </div>
+                                        <TableCell colSpan={5} className="py-16 text-center text-sm font-medium text-muted-foreground">
+                                            No policies found.
                                         </TableCell>
                                     </GlassTableRow>
                                 ) : (
                                     policies.map(policy => (
-                                        <GlassTableRow key={policy.id} className="hover:bg-surface-container/10 transition-all border-b border-on-surface/5 last:border-0 group">
-                                            <TableCell className="py-3 pl-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center shadow-md group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
-                                                        <FileJson className="w-4 h-4 opacity-40 group-hover:opacity-100" />
+                                        <GlassTableRow key={policy.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
+                                            <TableCell className="py-card pl-card">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                                        <FileJson className="w-4 h-4" />
                                                     </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold tracking-tight text-on-surface group-hover:text-primary transition-all duration-300">{policy.name}</span>
-                                                        <span className="text-[9px] font-bold text-on-surface-variant/20 tracking-tight mt-0.5 opacity-60 italic">ID: {policy.id.substring(0, 12)}...</span>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-sm font-semibold tracking-tight text-on-surface truncate">{policy.name}</span>
+                                                        <span className="text-xs text-muted-foreground font-mono mt-0.5">ID: {policy.id.substring(0, 12)}…</span>
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="py-3 text-[10px] font-bold tracking-tight text-on-surface-variant/40 italic">
+                                            <TableCell className="py-card text-sm font-medium text-muted-foreground">
                                                 {policy.rule_type}
                                             </TableCell>
-                                            <TableCell className="text-center py-3">
-                                                {policy.is_enabled ? 
-                                                    <Badge className="bg-success/10 text-success border-none rounded-md font-bold text-[9px] tracking-tight px-3 py-1 italic">Enforcement active</Badge> : 
-                                                    <Badge className="bg-surface-container text-on-surface-variant/40 border-none rounded-md font-bold text-[9px] tracking-tight px-3 py-1 italic">Rules halted</Badge>
+                                            <TableCell className="text-center py-card">
+                                                {policy.is_enabled ?
+                                                    <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-xs px-2 py-0.5">Active</Badge> :
+                                                    <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Disabled</Badge>
                                                 }
                                             </TableCell>
-                                            <TableCell className="py-3">
-                                                <span className="text-[10px] font-medium text-on-surface-variant/40 italic flex items-center gap-2">
-                                                    <div className="w-1.5 h-1.5 bg-on-surface/5 rounded-full" />
-                                                    {new Date(policy.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </span>
+                                            <TableCell className="py-card text-sm font-medium text-muted-foreground">
+                                                {new Date(policy.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </TableCell>
-                                            <TableCell className="py-3 text-right pr-6">
-                                                <div className="flex justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                                                    <Button 
-                                                        variant="ghost" 
+                                            <TableCell className="py-card text-right pr-card">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
                                                         onClick={() => navigate(`/policies/${policy.id}`)}
-                                                        className="h-8 rounded-lg px-3 font-bold text-[10px] tracking-tight text-primary border border-primary/10 hover:bg-primary/5 hover:border-primary/20 transition-all"
+                                                        className="h-8 rounded-lg px-3 font-semibold text-xs text-secondary border border-border hover:bg-muted"
                                                     >
-                                                        <ArrowUpRight className="w-3.5 h-3.5 mr-1.5" /> View Policy
+                                                        <ArrowUpRight className="w-3.5 h-3.5 mr-1.5" /> View
                                                     </Button>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 border border-transparent hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-all">
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive rounded-lg">
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </Button>
                                                 </div>
@@ -273,26 +248,23 @@ const Policies: React.FC = () => {
                 </GlassCardContent>
             </GlassCard>
 
-            <div className="bg-inverse text-on-inverse p-8 rounded-3xl shadow-2xl shadow-on-surface/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                    <Command className="w-32 h-32 -mr-10 -mt-10 text-primary-foreground" />
-                </div>
-                <div className="flex flex-col lg:flex-row items-center gap-8 relative z-10">
-                    <div className="p-4 bg-card/5 rounded-2xl backdrop-blur-xl border border-on-inverse/10 shadow-inner">
-                        <Terminal className="w-8 h-8 text-primary-foreground animate-pulse" />
+            <div className="bg-secondary text-secondary-foreground p-card rounded-xl shadow-sm border border-secondary/20">
+                <div className="flex flex-col lg:flex-row items-center gap-card">
+                    <div className="p-3 bg-secondary-foreground/10 rounded-lg">
+                        <ShieldCheck className="w-6 h-6 text-secondary-foreground" />
                     </div>
-                    <div className="space-y-2 flex-1 text-center lg:text-left">
-                        <h3 className="text-2xl font-bold tracking-tight">Post-login policy engine</h3>
-                        <p className="text-xs font-medium opacity-60 max-w-2xl leading-relaxed italic tracking-tight">
-                            Policy sync triggers real-time event propagation across all active identity cells. Ensure structural JSON compliance to prevent enforcement lockout. 
+                    <div className="space-y-1 flex-1 text-center lg:text-left">
+                        <h3 className="text-lg font-bold tracking-tight">Policy enforcement</h3>
+                        <p className="text-sm font-medium text-secondary-foreground/80 max-w-2xl">
+                            Policies apply after login across active sessions. Use valid JSON to avoid enforcement errors.
                         </p>
                     </div>
-                    <div className="flex gap-3">
-                        <Button variant="outline" onClick={() => navigate('/policies')} className="h-10 px-6 rounded-lg border-on-inverse/10 bg-card/5 hover:bg-card/10 text-white font-bold tracking-tight text-[10px]">
-                            View Policies
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => navigate('/policies')} className="h-9 px-4 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-semibold text-sm">
+                            View policies
                         </Button>
-                        <Button onClick={() => navigate('/audit')} className="h-10 px-6 rounded-lg font-bold tracking-tight text-[10px] shadow-2xl shadow-primary/20">
-                            Audit Logs
+                        <Button onClick={() => navigate('/audit')} className="h-9 px-4 rounded-lg bg-secondary-foreground text-secondary font-semibold text-sm shadow-sm">
+                            Audit logs
                         </Button>
                     </div>
                 </div>

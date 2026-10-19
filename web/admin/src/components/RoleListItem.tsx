@@ -28,7 +28,7 @@ export const RoleListItem: React.FC<RoleListItemProps> = ({
             className={`
                 group flex items-center justify-between p-3.5 cursor-pointer transition-all rounded-xl
                 ${isSelected
-                    ? 'bg-primary/10 ring-1 ring-primary/30 shadow-lg shadow-primary/5'
+                    ? 'bg-primary/10 ring-1 ring-primary/30 shadow-sm'
                     : 'bg-card/50 hover:bg-surface-container/40 ring-1 ring-on-surface/5 hover:ring-on-surface/10'}
             `}
         >
@@ -37,7 +37,7 @@ export const RoleListItem: React.FC<RoleListItemProps> = ({
                     <Fingerprint className={`h-4.5 w-4.5 opacity-40 ${isSelected ? 'text-primary opacity-100' : ''}`} />
                     {role.name}
                 </div>
-                <div className="text-[10px] font-medium text-on-surface-variant/40 truncate mt-1.5 tracking-tight">
+                <div className="text-[10px] font-medium text-muted-foreground truncate mt-1.5 tracking-tight">
                     {role.description || 'No description provided'}
                 </div>
             </div>

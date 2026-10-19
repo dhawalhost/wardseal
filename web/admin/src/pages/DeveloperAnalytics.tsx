@@ -48,16 +48,16 @@ export function DeveloperAnalytics() {
 
     return (
         <PageLayout>
-        <div className="space-y-10 animate-in fade-in duration-700">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<BarChart2 className="w-10 h-10 text-primary" />}
+                icon={<BarChart2 className="w-6 h-6 text-secondary" />}
                 title="API Analytics"
                 description="Monitor your API usage, latency, and error rates across the platform over the last 7 days."
                 actions={
                     <Button
                         onClick={fetchAnalytics}
                         variant="outline"
-                        className="h-11 rounded-xl font-bold text-[11px] px-6 border-none ring-1 ring-on-surface/10 hover:bg-surface-container transition-all"
+                        className="h-9 rounded-lg font-semibold text-sm px-4 border border-border hover:bg-muted/50 shadow-sm"
                         disabled={loading}
                     >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
@@ -67,90 +67,88 @@ export function DeveloperAnalytics() {
             />
 
             {error && (
-                <div className="bg-destructive/10 text-destructive p-5 rounded-2xl flex items-center gap-3 font-bold text-sm">
+                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg border border-destructive/20 flex items-center gap-3 font-semibold text-sm">
                     <AlertCircle className="h-5 w-5 shrink-0" />
                     {error}
                 </div>
             )}
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card rounded-[24px] overflow-hidden">
-                    <GlassCardContent className="p-8 flex flex-col gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-card">
+                <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
+                    <GlassCardContent className="p-card flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary/10 rounded-xl">
-                                <Activity className="h-5 w-5 text-primary" />
+                            <div className="p-2 bg-secondary/10 rounded-lg">
+                                <Activity className="h-4 w-4 text-secondary" />
                             </div>
-                            <span className="text-[12px] font-bold tracking-tight text-on-surface-variant/40">Total Calls (7d)</span>
+                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total Calls (7d)</span>
                         </div>
-                        <p className="text-5xl font-bold tracking-tight text-on-surface tabular-nums">{loading ? '—' : totalCalls.toLocaleString()}</p>
+                        <p className="text-3xl font-bold tracking-tight text-on-surface tabular-nums">{loading ? '—' : totalCalls.toLocaleString()}</p>
                     </GlassCardContent>
                 </GlassCard>
 
-                <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card rounded-[24px] overflow-hidden">
-                    <GlassCardContent className="p-8 flex flex-col gap-3">
+                <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
+                    <GlassCardContent className="p-card flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary/10 rounded-xl">
-                                <Clock className="h-5 w-5 text-primary" />
+                            <div className="p-2 bg-secondary/10 rounded-lg">
+                                <Clock className="h-4 w-4 text-secondary" />
                             </div>
-                            <span className="text-[12px] font-bold tracking-tight text-on-surface-variant/40">Avg Latency</span>
+                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Avg Latency</span>
                         </div>
-                        <p className="text-5xl font-bold tracking-tight text-on-surface tabular-nums">
-                            {loading ? '—' : <>{avgLatency}<span className="text-2xl ml-2 text-on-surface-variant/40">ms</span></>}
+                        <p className="text-3xl font-bold tracking-tight text-on-surface tabular-nums">
+                            {loading ? '—' : <>{avgLatency}<span className="text-lg ml-1 text-muted-foreground">ms</span></>}
                         </p>
                     </GlassCardContent>
                 </GlassCard>
 
-                <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card rounded-[24px] overflow-hidden">
-                    <GlassCardContent className="p-8 flex flex-col gap-3">
+                <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
+                    <GlassCardContent className="p-card flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-destructive/10 rounded-xl">
-                                <AlertCircle className="h-5 w-5 text-destructive" />
+                            <div className="p-2 bg-destructive/10 rounded-lg">
+                                <AlertCircle className="h-4 w-4 text-destructive" />
                             </div>
-                            <span className="text-[12px] font-bold tracking-tight text-on-surface-variant/40">Total Errors (7d)</span>
+                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total Errors (7d)</span>
                         </div>
-                        <p className={`text-5xl font-bold tracking-tight tabular-nums ${totalErrors > 0 ? 'text-destructive' : 'text-on-surface'}`}>
+                        <p className={`text-3xl font-bold tracking-tight tabular-nums ${totalErrors > 0 ? 'text-destructive' : 'text-on-surface'}`}>
                             {loading ? '—' : totalErrors.toLocaleString()}
                         </p>
                     </GlassCardContent>
                 </GlassCard>
             </div>
 
-            {/* Traffic Chart */}
-            <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card rounded-[32px] overflow-hidden">
-                <GlassCardHeader className="py-8 px-10 border-b border-on-surface/5">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-xl">
-                            <Zap className="w-5 h-5 text-primary" />
+            <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
+                <GlassCardHeader className="py-card px-card border-b border-border">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-secondary/10 rounded-lg">
+                            <Zap className="w-4 h-4 text-secondary" />
                         </div>
-                        <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">API Traffic</GlassCardTitle>
+                        <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">API Traffic</GlassCardTitle>
                     </div>
                 </GlassCardHeader>
-                <GlassCardContent className="p-10">
+                <GlassCardContent className="p-card">
                     {loading ? (
                         <div className="h-[300px] flex items-center justify-center">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+                            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
                         </div>
                     ) : analytics.length === 0 ? (
-                        <div className="h-[300px] flex flex-col items-center justify-center gap-4 opacity-20">
-                            <BarChart2 className="h-16 w-16" />
-                            <p className="text-sm font-bold tracking-tight text-center">No API traffic recorded yet.</p>
+                        <div className="h-[300px] flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                            <BarChart2 className="h-12 w-12" />
+                            <p className="text-sm font-medium text-center">No API traffic recorded yet.</p>
                         </div>
                     ) : (
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={analytics}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={formatDate} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v: any) => `${v}`} />
+                                    <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--border))" vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={formatDate} fontSize={12} fontWeight={600} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                                    <YAxis fontSize={12} fontWeight={600} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v: any) => `${v}`} />
                                     <Tooltip
-                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', borderWidth: 1 }}
                                         itemStyle={{ color: 'hsl(var(--foreground))' }}
                                         labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
                                         labelFormatter={(label: any) => `Date: ${formatDate(label)}`}
                                     />
-                                    <Line type="monotone" dataKey="total_calls" name="Total Calls" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" dataKey="errors" name="Errors" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
+                                    <Line type="monotone" dataKey="total_calls" name="Total Calls" stroke="hsl(var(--secondary))" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                                    <Line type="monotone" dataKey="errors" name="Errors" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 3 }} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
@@ -158,18 +156,17 @@ export function DeveloperAnalytics() {
                 </GlassCardContent>
             </GlassCard>
 
-            {/* Guidance */}
-            <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-primary/5 rounded-[24px] overflow-hidden">
-                <GlassCardContent className="p-8 flex gap-6 items-start">
-                    <div className="p-3 bg-primary/10 rounded-xl shrink-0">
-                        <Terminal className="h-6 w-6 text-primary" />
+            <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
+                <GlassCardContent className="p-card flex gap-4 items-start">
+                    <div className="p-2 bg-secondary/10 rounded-lg shrink-0">
+                        <Terminal className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
                         <h4 className="font-bold text-base tracking-tight text-on-surface">Interactive API Logs</h4>
-                        <p className="text-sm text-on-surface-variant/60 mt-1 leading-relaxed">
+                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                             Looking for specific request payloads? Go to{' '}
-                            <a href="/developer/apps" className="text-primary hover:underline font-bold">OAuth Apps</a>{' '}
-                            or your API Keys to view detailed, interactive logs tied to each credential.
+                            <a href="/developer/apps" className="text-secondary hover:underline font-semibold">OAuth Apps</a>{' '}
+                            or your API Keys to view detailed logs for each credential.
                         </p>
                     </div>
                 </GlassCardContent>

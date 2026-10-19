@@ -14,8 +14,7 @@ import {
 import api, { getUserRoles } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BoringAvatar from 'boring-avatars';
+import { Avatar } from '@/components/ui/avatar';
 
 const ADMIN_ROLE = 'admin';
 
@@ -121,7 +120,7 @@ const PortalLayout = () => {
                     {/* Logo Area */}
                     <div className="flex items-center gap-6">
                         <Link to="/portal" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 flex items-center justify-center rounded-full transition-transform group-hover:scale-105">
+                            <div className="w-10 h-10 flex items-center justify-center rounded-full">
                                 <img src='/wardseal.svg' height={20} width={20} alt='wardseal' className="w-10 h-10" />
                             </div>
                             <div className="flex flex-col">
@@ -151,14 +150,7 @@ const PortalLayout = () => {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-surface-container transition-all">
-                                        <Avatar className="h-8 w-8">
-                                            <BoringAvatar
-                                                size={32}
-                                                name={getTokenUserID(localStorage.getItem('token')) || 'user'}
-                                                variant="marble"
-                                                colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                                            />
-                                        </Avatar>
+                                        <Avatar name={getTokenUserID(localStorage.getItem('token')) || 'user'} size={32} className="h-8 w-8" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-64 rounded-lg border p-1 shadow-lg overflow-hidden">
@@ -217,7 +209,7 @@ const PortalLayout = () => {
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-4">
-                        <span className="text-[10px] font-bold text-on-surface-variant/40 tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
+                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
                     </div>
                 </div>
 
@@ -231,7 +223,7 @@ const PortalLayout = () => {
                             <img src="/wardseal.svg" alt="WardSeal" height={20} width={20} className="w-4 h-4" />
                             <p className="text-[11px] font-bold text-on-surface-variant">Secured by WardSeal</p>
                         </div>
-                        <p className="text-[10px] font-medium text-on-surface-variant/40 mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
+                        <p className="text-[10px] font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center gap-10">

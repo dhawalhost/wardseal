@@ -21,7 +21,7 @@ export const IPPolicyTableRow: React.FC<IPPolicyTableRowProps> = ({ policy, onDe
                     </div>
                     <div className="flex flex-col">
                         <span className="text-lg font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">{policy.cidr || policy.country_code || (policy as any).country}</span>
-                        <span className="text-[10px] font-bold font-mono tracking-tight text-on-surface-variant/30 mt-1 italic">Id: {policy.id.substring(0, 8)}</span>
+                        <span className="text-[10px] font-bold font-mono tracking-tight text-muted-foreground mt-1 italic">Id: {policy.id.substring(0, 8)}</span>
                     </div>
                 </div>
             </TableCell>
@@ -35,14 +35,14 @@ export const IPPolicyTableRow: React.FC<IPPolicyTableRowProps> = ({ policy, onDe
             </TableCell>
             <TableCell className="py-8">
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2.5 text-[11px] font-bold tracking-tight text-on-surface-variant/40 group-hover:text-on-surface transition-colors italic">
+                    <div className="flex items-center gap-2.5 text-[11px] font-bold tracking-tight text-muted-foreground group-hover:text-on-surface transition-colors italic">
                         {policy.cidr ? (
                             <><Network className="w-4 h-4 text-primary opacity-40 group-hover:opacity-100" /> Cidr range</>
                         ) : (
                             <><Globe className="w-4 h-4 text-primary opacity-40 group-hover:opacity-100" /> Geo iso</>
                         )}
                     </div>
-                    <span className="text-[12px] font-medium text-on-surface-variant/60 tracking-tight">
+                    <span className="text-[12px] font-medium text-muted-foreground tracking-tight">
                         {policy.reason || 'No description provided'}
                     </span>
                 </div>

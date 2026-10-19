@@ -34,12 +34,12 @@ export const OrganizationRow: React.FC<OrganizationRowProps> = ({
                     </div>
                     <div className="flex flex-col">
                         <span className="text-base font-bold text-on-surface group-hover:text-primary transition-colors">{org.name}</span>
-                        {org.display_name && <span className="text-[10px] font-bold text-on-surface-variant/40 mt-0.5">{org.display_name}</span>}
+                        {org.display_name && <span className="text-[10px] font-bold text-muted-foreground mt-0.5">{org.display_name}</span>}
                     </div>
                 </div>
             </TableCell>
             <TableCell className="py-3">
-                <span className="font-mono text-[10px] font-bold text-on-surface-variant/60">
+                <span className="font-mono text-[10px] font-bold text-muted-foreground">
                     {org.domain || 'Unbound'}
                 </span>
             </TableCell>
@@ -63,7 +63,7 @@ export const OrganizationRow: React.FC<OrganizationRowProps> = ({
                 <Button 
                     size="icon" 
                     variant="ghost" 
-                    className="h-9 w-9 rounded-lg text-on-surface-variant/30 hover:text-destructive hover:bg-destructive/10 transition-all" 
+                    className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all" 
                     onClick={() => handleDelete(org.id)}
                 >
                     <Trash2 className="h-4 w-4" />

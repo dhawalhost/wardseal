@@ -21,9 +21,6 @@ import {
     Server, 
     ShieldPlus, 
     AlertCircle,
-    Binary,
-    Link2,
-    Eye,
     Fingerprint
 } from 'lucide-react';
 import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassTable, GlassTableHeader, GlassTableHead, GlassTableRow, PageLayout
@@ -65,7 +62,7 @@ const Discovery: React.FC = () => {
                     
                     if (status.status === 'completed') {
                         setMessage({ text: "Network scan completed successfully.", type: 'success' });
-                        fetchResources(); // Refresh the asset list
+                        fetchResources();
                         clearInterval(pollInterval);
                     } else if (status.status === 'failed') {
                         setMessage({ text: `Scan failed: ${status.message || 'Unknown error'}`, type: 'error' });
@@ -88,28 +85,18 @@ const Discovery: React.FC = () => {
             setMessage(null);
             const response = await triggerDiscoveryScan();
             if (response.job_id) {
-                // Initialize scan state immediately
                 setCurrentJob({
                     id: response.job_id,
                     tenant_id: '',
                     status: 'processing',
                     progress: 0,
-                    message: 'Initializing scan engine...',
+                    message: 'Initializing scan…',
                     started_at: new Date().toISOString()
                 });
             }
         } catch (err) {
             console.error(err);
             setMessage({ text: "Could not start network scan.", type: 'error' });
-        }
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'promoted':
-                return <Badge className="bg-success-subtle text-success border-none rounded-xl font-bold text-[10px] tracking-tight px-4 py-1.5 shadow-sm gap-2.5"><CheckCircle2 className="w-3.5 h-3.5" /> Managed</Badge>;
-            default:
-                return <Badge className="bg-on-surface/5 text-on-surface/40 border-none rounded-xl font-bold text-[10px] tracking-tight px-4 py-1.5 gap-2.5"><Clock className="w-3.5 h-3.5" /> Discovered</Badge>;
         }
     };
 
@@ -122,20 +109,20 @@ const Discovery: React.FC = () => {
 
     const isScanning = currentJob?.status === 'queued' || currentJob?.status === 'processing';
 
-    if (loading && resources.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" /></div>;
+    if (loading && resources.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-muted-foreground" /></div>;
 
     return (
         <PageLayout>
-        <div className="space-y-12 animate-in fade-in duration-700">
+        <div className="space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<Search className="w-8 h-8 text-primary" />}
+                icon={<Search className="w-6 h-6 text-secondary" />}
                 title="Discovery"
                 description="Scan your network for users, groups, and applications to bring them under WardSeal protection."
                 actions={
                     <Button 
                         onClick={handleRunScan} 
                         disabled={isScanning}
-                        className="h-9 rounded-lg bg-primary text-primary-foreground font-bold tracking-tight text-[11px] px-6 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm"
                     >
                         {isScanning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
                         {isScanning ? 'Scanning...' : 'Start Scan'}
@@ -144,76 +131,64 @@ const Discovery: React.FC = () => {
             />
 
             {currentJob && isScanning && (
-                <GlassCard className="border-none shadow-2xl shadow-primary/10 bg-card overflow-hidden rounded-xl relative">
+                <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg relative">
                     <div 
-                        className="absolute top-0 left-0 h-1.5 bg-primary transition-all duration-1000 shadow-[0_0_12px_rgba(var(--primary),0.4)]" 
+                        className="absolute top-0 left-0 h-1 bg-secondary transition-all duration-1000" 
                         style={{ width: `${currentJob.progress}%` }}
                     />
-                    <GlassCardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center">
-                                <Activity className="w-6 h-6 animate-pulse text-primary" />
+                    <GlassCardContent className="p-card flex flex-col md:flex-row items-center justify-between gap-card">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
+                                <Activity className="w-5 h-5 text-secondary" />
                             </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] font-bold tracking-tight text-primary animate-pulse">Scan in Progress</span>
-                                <h3 className="text-xl font-bold tracking-tight text-on-surface">{currentJob.message || 'Scanning network...'}</h3>
-                                <div className="flex items-center gap-3 text-on-surface-variant/40">
-                                    <Binary className="w-3.5 h-3.5" />
-                                    <span className="text-[11px] font-bold tracking-tight italic">Job ID: {currentJob.id?.substring(0, 8).toLowerCase()}</span>
-                                </div>
+                            <div className="space-y-0.5">
+                                <span className="text-xs font-semibold text-secondary">Scan in Progress</span>
+                                <h3 className="text-base font-bold tracking-tight text-on-surface">{currentJob.message || 'Scanning network...'}</h3>
+                                <span className="text-xs font-medium text-muted-foreground">Job ID: {currentJob.id?.substring(0, 8).toLowerCase()}</span>
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className="text-4xl font-bold tracking-tighter tabular-nums text-on-surface">{currentJob.progress}<span className="text-xl ml-1 opacity-20">%</span></span>
+                            <span className="text-3xl font-bold tracking-tight tabular-nums text-on-surface">{currentJob.progress}<span className="text-lg ml-1 text-muted-foreground">%</span></span>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
             )}
 
             {message && (
-                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className={`border-none rounded-xl p-4 flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 ${message.type === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-success-subtle text-success'}`}>
-                    <div className={`p-2 rounded-lg ${message.type === 'error' ? 'bg-red-100' : 'bg-emerald-100'}`}>
+                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className={`border rounded-lg p-4 flex items-center gap-3 ${message.type === 'error' ? 'bg-destructive/5 text-destructive border-destructive/20' : 'bg-success-subtle text-success border-success/20'}`}>
+                    <div className={`p-2 rounded-lg ${message.type === 'error' ? 'bg-destructive/10' : 'bg-success/10'}`}>
                         {message.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <ShieldPlus className="h-4 w-4" />}
                     </div>
-                    <AlertDescription className="font-bold text-[11px] tracking-tight">{message.text}</AlertDescription>
+                    <AlertDescription className="font-semibold text-sm">{message.text}</AlertDescription>
                 </Alert>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card overflow-hidden rounded-xl">
-                    <GlassCardContent className="p-6 relative group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                            <Server className="w-12 h-12 -mr-2 -mt-2 text-on-surface" />
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-card">
+                <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                    <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 uppercase">Total Found</span>
-                            <span className="text-4xl font-bold tracking-tighter tabular-nums transition-colors group-hover:text-primary">{resources.length}</span>
+                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total Found</span>
+                            <span className="text-3xl font-bold tracking-tight tabular-nums text-on-surface">{resources.length}</span>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
                 
-                <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card overflow-hidden rounded-xl">
-                    <GlassCardContent className="p-6 relative group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                            <Activity className="w-12 h-12 -mr-2 -mt-2 text-on-surface" />
-                        </div>
+                <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                    <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 uppercase">Unmanaged</span>
-                            <span className="text-4xl font-bold tracking-tighter tabular-nums transition-colors group-hover:text-destructive">
-                                {Math.round((resources.filter(r => r.status === 'discovered').length / (resources.length || 1)) * 100)}<span className="text-xl opacity-20 ml-1">%</span>
+                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Unmanaged</span>
+                            <span className="text-3xl font-bold tracking-tight tabular-nums text-on-surface">
+                                {Math.round((resources.filter(r => r.status === 'discovered').length / (resources.length || 1)) * 100)}<span className="text-lg text-muted-foreground ml-1">%</span>
                             </span>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
 
-                <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-card overflow-hidden rounded-xl">
-                    <GlassCardContent className="p-6 relative group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                            <ShieldPlus className="w-12 h-12 -mr-2 -mt-2 text-success" />
-                        </div>
+                <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                    <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 uppercase">Managed</span>
-                            <span className="text-4xl font-bold tracking-tighter tabular-nums text-success">
+                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Managed</span>
+                            <span className="text-3xl font-bold tracking-tight tabular-nums text-success">
                                 {resources.filter(r => r.status === 'promoted').length}
                             </span>
                         </div>
@@ -221,88 +196,88 @@ const Discovery: React.FC = () => {
                 </GlassCard>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-page">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 uppercase italic flex-shrink-0 opacity-60">Asset List</h2>
-                    <div className="h-px flex-1 bg-on-surface/5" />
+                    <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex-shrink-0">Asset List</h2>
+                    <div className="h-px flex-1 bg-border" />
                 </div>
 
-                <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-xl">
-                    <GlassCardHeader className="py-4 px-6 border-b border-on-surface/5">
-                        <div className="flex items-center gap-4">
-                            <div className="p-2.5 bg-primary/5 rounded-xl">
-                                <Search className="w-5 h-5 text-primary" />
+                <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                    <GlassCardHeader className="py-card px-card border-b border-border">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-secondary/10 rounded-lg">
+                                <Search className="w-4 h-4 text-secondary" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">Discovered Assets</GlassCardTitle>
-                                <p className="text-on-surface-variant/40 font-semibold text-[10px] mt-0.5 tracking-tight">List of users and resources found on your network.</p>
+                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Discovered Assets</GlassCardTitle>
+                                <p className="text-muted-foreground text-sm mt-0.5">Users and resources found on your network.</p>
                             </div>
                         </div>
                     </GlassCardHeader>
                     <GlassCardContent className="p-0">
                         {resources.length === 0 ? (
-                            <div className="py-32 text-center text-on-surface-variant/30 flex flex-col items-center gap-6 italic">
-                                <div className="w-20 h-20 rounded-3xl bg-surface-container/50 flex items-center justify-center">
-                                    <Server className="h-10 w-10 opacity-20" />
+                            <div className="py-16 text-center text-muted-foreground flex flex-col items-center gap-4">
+                                <div className="w-16 h-16 rounded-lg bg-muted/50 flex items-center justify-center">
+                                    <Server className="h-8 w-8 text-muted-foreground" />
                                 </div>
-                                <span className="max-w-xs font-bold text-[11px] tracking-tight leading-relaxed text-on-surface-variant/40">No assets found. Run a scan to find users and applications.</span>
+                                <span className="max-w-xs font-medium text-sm leading-relaxed">No assets found. Run a scan to find users and applications.</span>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <GlassTable>
                                     <GlassTableHeader>
-                                        <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                            <GlassTableHead className="py-3 pl-6">Name</GlassTableHead>
-                                            <GlassTableHead className="py-3">Source</GlassTableHead>
-                                            <GlassTableHead className="py-3">Type</GlassTableHead>
-                                            <GlassTableHead className="py-3">Status</GlassTableHead>
-                                            <GlassTableHead className="py-3 text-right pr-6">Actions</GlassTableHead>
+                                        <GlassTableRow className="hover:bg-transparent border-b border-border">
+                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Name</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Source</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Type</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
+                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>
                                         {resources.map(resource => (
-                                            <GlassTableRow key={resource.id} className="hover:bg-surface-container/10 transition-all border-b border-on-surface/5 last:border-0 group">
-                                                <TableCell className="py-3 pl-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-8 h-8 rounded-lg bg-surface-container/50 text-on-surface-variant/40 flex items-center justify-center transition-all group-hover:bg-primary group-hover:text-primary-foreground">
+                                            <GlassTableRow key={resource.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
+                                                <TableCell className="py-card pl-card">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-muted/50 text-muted-foreground flex items-center justify-center">
                                                             <Fingerprint className="w-4 h-4" />
                                                         </div>
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-[13px] font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">{resource.name}</span>
-                                                            <span className="text-[9px] font-bold font-mono tracking-tight opacity-20 italic truncate max-w-[150px]">{resource.external_id}</span>
+                                                        <div className="flex flex-col gap-0.5 min-w-0">
+                                                            <span className="text-sm font-semibold tracking-tight text-on-surface truncate">{resource.name}</span>
+                                                            <span className="text-xs font-mono text-muted-foreground truncate max-w-[150px]">{resource.external_id}</span>
                                                         </div>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="py-3">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="p-1.5 rounded-md bg-surface-container/50 text-on-surface-variant/60 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
+                                                <TableCell className="py-card">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="p-1.5 rounded-md bg-muted/50 text-muted-foreground">
                                                             {getSourceIcon(resource.source)}
                                                         </div>
-                                                        <span className="text-[11px] font-bold tracking-tight text-on-surface">{resource.source}</span>
+                                                        <span className="text-sm font-medium text-on-surface">{resource.source}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="py-3">
-                                                    <Badge className="bg-surface-container/50 text-on-surface-variant/60 border-none rounded-md font-bold text-[9px] tracking-tight px-2 py-0.5 group-hover:bg-surface-container transition-all">
+                                                <TableCell className="py-card">
+                                                    <Badge className="bg-muted/50 text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 shadow-none">
                                                         {resource.resource_type}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="py-3">
+                                                <TableCell className="py-card">
                                                     {resource.status === 'promoted' ? (
-                                                        <Badge className="bg-success/10 text-success border-none rounded-md font-bold text-[9px] tracking-tight px-2 py-0.5 flex items-center gap-1.5 w-fit">
-                                                            <CheckCircle2 className="w-2.5 h-2.5" /> Managed
+                                                        <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
+                                                            <CheckCircle2 className="w-3 h-3" /> Managed
                                                         </Badge>
                                                     ) : (
-                                                        <Badge className="bg-surface-container/50 text-on-surface-variant/60 border-none rounded-md font-bold text-[9px] tracking-tight px-2 py-0.5 flex items-center gap-1.5 w-fit">
-                                                            <Clock className="w-2.5 h-2.5" /> Discovered
+                                                        <Badge className="bg-muted/50 text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
+                                                            <Clock className="w-3 h-3" /> Discovered
                                                         </Badge>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="py-3 text-right pr-6">
+                                                <TableCell className="py-card text-right pr-card">
                                                     <Button 
                                                         size="sm" 
                                                         variant={resource.status === 'promoted' ? "ghost" : "outline"} 
                                                         disabled={resource.status === 'promoted'}
-                                                        className={`h-8 rounded-lg font-bold text-[10px] tracking-tight px-4 transition-all ${resource.status === 'promoted' ? 'text-success/40' : 'bg-card ring-1 ring-on-surface/5 hover:bg-surface-container'}`}
+                                                        className={`h-8 rounded-lg font-semibold text-xs px-3 ${resource.status === 'promoted' ? 'text-success' : 'border border-border hover:bg-muted/50'}`}
                                                     >
                                                         {resource.status === 'promoted' ? (
                                                             <div className="flex items-center gap-1.5">
