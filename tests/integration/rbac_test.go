@@ -174,7 +174,7 @@ func TestRBACUserPermissions(t *testing.T) {
 
 	client := NewHTTPClient(env.GovServer.URL, env.TestTenantID)
 
-	resp := client.Get(t, "/api/v1/users/"+env.TestUserID+"/permissions")
+	resp := client.Get(t, "/api/v1/roles/users/"+env.TestUserID+"/permissions")
 	AssertStatus(t, resp, http.StatusOK)
 
 	var result map[string]interface{}

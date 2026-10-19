@@ -151,6 +151,7 @@ func TestAccessRequestWorkflow(t *testing.T) {
 		approveReq.Header.Set("Content-Type", "application/json")
 		approveReq.Header.Set("X-Tenant-ID", env.TestTenantID)
 		approveReq.Header.Set("X-User-ID", "00000000-0000-0000-0000-000000000888") // Different from requester
+		approveReq.Header.Set("Authorization", "Bearer test-integration-token")
 		approveResp, err := http.DefaultClient.Do(approveReq)
 		if err != nil {
 			t.Fatalf("Approve request failed: %v", err)
@@ -183,6 +184,7 @@ func TestAccessRequestWorkflow(t *testing.T) {
 		rejectReq.Header.Set("Content-Type", "application/json")
 		rejectReq.Header.Set("X-Tenant-ID", env.TestTenantID)
 		rejectReq.Header.Set("X-User-ID", env.TestUserID)
+		rejectReq.Header.Set("Authorization", "Bearer test-integration-token")
 		rejectResp, err := http.DefaultClient.Do(rejectReq)
 		if err != nil {
 			t.Fatalf("Reject request failed: %v", err)

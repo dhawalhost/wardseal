@@ -29,6 +29,7 @@ import (
 	"github.com/dhawalhost/wardseal/internal/sso"
 	"github.com/dhawalhost/wardseal/internal/webhook"
 	"github.com/dhawalhost/wardseal/pkg/database"
+	"github.com/dhawalhost/wardseal/pkg/kms"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
@@ -140,6 +141,10 @@ func (env *TestEnv) setupTestData(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
 
+	// Clear login attempts and lockouts to prevent account lockout across test runs
+	env.DB.ExecContext(ctx, `DELETE FROM account_lockouts WHERE tenant_id = $1`, env.TestTenantID)
+	env.DB.ExecContext(ctx, `DELETE FROM login_attempts WHERE tenant_id = $1`, env.TestTenantID)
+
 	// Create test tenant
 	_, err := env.DB.ExecContext(ctx, `
 		INSERT INTO tenants (id, name, created_at, updated_at)
@@ -195,6 +200,8 @@ func (env *TestEnv) cleanupTestData(t *testing.T) {
 	ctx := context.Background()
 
 	// Clean up in reverse order of dependencies
+	env.DB.ExecContext(ctx, `DELETE FROM account_lockouts WHERE tenant_id = $1`, env.TestTenantID)
+	env.DB.ExecContext(ctx, `DELETE FROM login_attempts WHERE tenant_id = $1`, env.TestTenantID)
 	env.DB.ExecContext(ctx, `DELETE FROM certification_items WHERE tenant_id = $1`, env.TestTenantID)
 	env.DB.ExecContext(ctx, `DELETE FROM certification_campaigns WHERE tenant_id = $1`, env.TestTenantID)
 	env.DB.ExecContext(ctx, `DELETE FROM user_roles WHERE tenant_id = $1`, env.TestTenantID)
@@ -229,7 +236,7 @@ func (env *TestEnv) setupServers(t *testing.T) {
 	reqStore := governance.NewRepository(env.DB)
 	orgRepo := governance.NewOrganizationRepository(env.DB)
 	endpointRepo := governance.NewEndpointRepository(env.DB)
-	dirClient := governance.NewDirectoryClient(env.DirServer.URL, "", "")
+	dirClient := governance.NewDirectoryClient(env.DirServer.URL, "X-Internal-Service-Auth", "test-service-token")
 
 	policyRepo := policy.NewRepository(env.DB)
 	policyEngine := policy.NewSimpleEngine(policyRepo)
@@ -244,7 +251,12 @@ func (env *TestEnv) setupServers(t *testing.T) {
 
 	allowAll := middleware.PermissionChecker(allowAllIntegrationPerms{})
 	dummyValidator := func(token string) (*middleware.Claims, error) {
-		return &middleware.Claims{Tenant: "admin-system"}, nil
+		claims := &middleware.Claims{
+			Tenant: env.TestTenantID,
+			Roles:  []string{"admin"},
+		}
+		claims.Subject = env.TestUserID
+		return claims, nil
 	}
 	govHandler := governance.NewHTTPHandler(govSvc, campaignSvc, webhookSvc, nil, nil, dummyValidator, allowAll, env.Logger)
 	govRouter := gin.New()
@@ -252,6 +264,7 @@ func (env *TestEnv) setupServers(t *testing.T) {
 	apiGroup.Use(middleware.TenantExtractor(middleware.TenantConfig{
 		SlugResolver: govSvc.ResolveTenantSlug,
 	}))
+	apiGroup.Use(middleware.RequireUserAuth(dummyValidator))
 
 	govHandler.RegisterRoutes(govRouter) // Note: New Governance API handles sub-routes properly
 
@@ -268,7 +281,11 @@ func (env *TestEnv) setupServers(t *testing.T) {
 	auditHandler := audit.NewHTTPHandler(auditSvc, env.Logger)
 	auditHandler.RegisterRoutes(apiGroup, allowAll)
 
-	connectorRepo := connector.NewRepository(env.DB, nil)
+	localCipher, err := kms.NewLocalCipher("12345678901234567890123456789012")
+	if err != nil {
+		t.Fatalf("Failed to create local cipher: %v", err)
+	}
+	connectorRepo := connector.NewRepository(env.DB, localCipher)
 	connectorRegistry := connector.NewRegistry()
 	connectorSvc := connector.NewService(connectorRepo, connectorRegistry)
 	connectorHandler := connector.NewHTTPHandler(connectorSvc, env.Logger)
@@ -307,19 +324,21 @@ func (env *TestEnv) setupServers(t *testing.T) {
 
 // HTTPClient provides helper methods for making HTTP requests in tests.
 type HTTPClient struct {
-	BaseURL  string
-	TenantID string
-	Token    string
-	client   *http.Client
+	BaseURL      string
+	TenantID     string
+	Token        string
+	ServiceToken string
+	client       *http.Client
 }
 
 // NewHTTPClient creates a new HTTP client for testing.
 func NewHTTPClient(baseURL, tenantID string) *HTTPClient {
 	return &HTTPClient{
-		BaseURL:  baseURL,
-		TenantID: tenantID,
-		Token:    "test-integration-token",
-		client:   &http.Client{Timeout: 10 * time.Second},
+		BaseURL:      baseURL,
+		TenantID:     tenantID,
+		Token:        "test-integration-token",
+		ServiceToken: "test-service-token",
+		client:       &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -333,6 +352,9 @@ func (c *HTTPClient) Get(t *testing.T, path string) *http.Response {
 	req.Header.Set("X-Tenant-ID", c.TenantID)
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
+	if c.ServiceToken != "" {
+		req.Header.Set("X-Internal-Service-Auth", c.ServiceToken)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -357,6 +379,9 @@ func (c *HTTPClient) Post(t *testing.T, path string, body interface{}) *http.Res
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
 	}
+	if c.ServiceToken != "" {
+		req.Header.Set("X-Internal-Service-Auth", c.ServiceToken)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		t.Fatalf("POST request failed: %v", err)
@@ -380,6 +405,9 @@ func (c *HTTPClient) Put(t *testing.T, path string, body interface{}) *http.Resp
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
 	}
+	if c.ServiceToken != "" {
+		req.Header.Set("X-Internal-Service-Auth", c.ServiceToken)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		t.Fatalf("PUT request failed: %v", err)
@@ -397,6 +425,9 @@ func (c *HTTPClient) Delete(t *testing.T, path string) *http.Response {
 	req.Header.Set("X-Tenant-ID", c.TenantID)
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
+	if c.ServiceToken != "" {
+		req.Header.Set("X-Internal-Service-Auth", c.ServiceToken)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
