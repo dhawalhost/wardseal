@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent } from "./GlassCard";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent } from "@dhawalhost/wardseal-ui-kit";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface PageSectionProps {
@@ -69,7 +69,7 @@ export const PageSection: React.FC<PageSectionProps> = ({
                                 {title}
                             </GlassCardTitle>
                             {description && (
-                                <p className="text-on-surface-variant/60 font-medium text-[10px] mt-0.5 uppercase tracking-wide">
+                                <p className="text-muted-foreground font-medium text-[10px] mt-0.5 uppercase tracking-wide">
                                     {description}
                                 </p>
                             )}

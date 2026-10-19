@@ -14,8 +14,7 @@ import {
 import api, { getUserRoles } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BoringAvatar from 'boring-avatars';
+import { Avatar } from '@/components/ui/avatar';
 
 const ADMIN_ROLE = 'admin';
 
@@ -121,12 +120,12 @@ const PortalLayout = () => {
                     {/* Logo Area */}
                     <div className="flex items-center gap-4">
                         <Link to="/portal" className="flex items-center gap-2 group">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-lg transition-transform group-hover:scale-105">
+                            <div className="w-8 h-8 flex items-center justify-center rounded-lg">
                                 <img src='/wardseal.svg' height={16} width={16} alt='wardseal' className="w-8 h-8" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
-                                <span className="text-[9px] font-bold tracking-tight text-on-surface-variant/40 leading-none mt-0.5 uppercase">Developer portal</span>
+                                <span className="text-[9px] font-bold tracking-tight text-muted-foreground leading-none mt-0.5 uppercase">Developer portal</span>
                             </div>
                         </Link>
                     </div>
@@ -151,14 +150,7 @@ const PortalLayout = () => {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="h-9 w-9 p-0 rounded-full hover:bg-surface-container transition-all">
-                                        <Avatar className="h-7 w-7">
-                                            <BoringAvatar
-                                                size={28}
-                                                name={getTokenUserID(localStorage.getItem('token')) || 'user'}
-                                                variant="marble"
-                                                colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                                            />
-                                        </Avatar>
+                                        <Avatar name={getTokenUserID(localStorage.getItem('token')) || 'user'} size={28} className="h-7 w-7" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-64 rounded-lg border-none shadow-2xl p-1 bg-card">
@@ -217,7 +209,7 @@ const PortalLayout = () => {
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-3">
-                        <span className="text-[9px] font-bold text-on-surface-variant/30 tracking-tight px-3 border-l border-on-surface/5 uppercase">WardSeal Identity Platform</span>
+                        <span className="text-[9px] font-bold text-muted-foreground tracking-tight px-3 border-l border-on-surface/5 uppercase">WardSeal Identity Platform</span>
                     </div>
                 </div>
 
@@ -229,15 +221,15 @@ const PortalLayout = () => {
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                             <img src="/wardseal.svg" alt="WardSeal" height={16} width={16} className="w-3.5 h-3.5" />
-                            <p className="text-[10px] font-bold text-on-surface-variant/60 tracking-tight uppercase">Secured by WardSeal</p>
+                            <p className="text-[10px] font-bold text-muted-foreground tracking-tight uppercase">Secured by WardSeal</p>
                         </div>
-                        <p className="text-[9px] font-medium text-on-surface-variant/30 tracking-tight">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
+                        <p className="text-[9px] font-medium text-muted-foreground tracking-tight">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center gap-6">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-tight">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-tight">Terms</a>
-                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-on-surface-variant/40 hover:text-primary transition-colors uppercase tracking-tight">Security Policies</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight">Terms</a>
+                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight">Security Policies</a>
                     </div>
                 </div>
             </footer>

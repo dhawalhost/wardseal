@@ -30,12 +30,12 @@ export const DataPill: React.FC<DataPillProps> = ({
     return (
         <div className={cn("flex items-center gap-2.5", className)}>
             {icon && (
-                <div className="w-7 h-7 flex items-center justify-center bg-surface-container/50 rounded-lg text-on-surface-variant/40">
+                <div className="w-7 h-7 flex items-center justify-center bg-surface-container/50 rounded-lg text-muted-foreground">
                     {icon}
                 </div>
             )}
             <Tag
-                className="font-mono text-[11px] font-bold text-on-surface-variant/40 tracking-tight"
+                className="font-mono text-[11px] font-bold text-muted-foreground tracking-tight"
                 title={showTitle ? value : undefined}
                 {...(props as any)}
             >

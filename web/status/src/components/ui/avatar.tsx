@@ -1,46 +1,65 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+/**
+ * App Avatar — prefers @dhawalhost/wardseal-ui-kit@0.2.0 when `name` is set.
+ * Legacy compound (AvatarImage / AvatarFallback) kept as thin shells for gradual migration.
+ */
+import * as React from "react";
+import { Avatar as KitAvatar, type AvatarProps as KitAvatarProps } from "@dhawalhost/wardseal-ui-kit";
+import { cn } from "@/lib/utils";
 
-const Avatar = React.forwardRef<
-    HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-    <div
+export type AvatarProps = Partial<KitAvatarProps> &
+  React.HTMLAttributes<HTMLDivElement> & {
+    name?: string;
+  };
+
+const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
+  ({ name, size, variant, className, children, ...props }, ref) => {
+    if (name) {
+      return (
+        <KitAvatar
+          ref={ref}
+          name={name}
+          size={size}
+          variant={variant}
+          className={className}
+          {...props}
+        />
+      );
+    }
+    return (
+      <div
         ref={ref}
         className={cn(
-            "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-            className
+          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-container border border-border shadow-sm",
+          className
         )}
         {...props}
-    />
-))
-Avatar.displayName = "Avatar"
+      >
+        {children}
+      </div>
+    );
+  }
+);
+Avatar.displayName = "Avatar";
 
-const AvatarImage = React.forwardRef<
-    HTMLImageElement,
-    React.ImgHTMLAttributes<HTMLImageElement>
->(({ className, ...props }, ref) => (
-    <img
-        ref={ref}
-        className={cn("aspect-square h-full w-full", className)}
-        {...props}
-    />
-))
-AvatarImage.displayName = "AvatarImage"
+/** @deprecated Prefer kit Avatar with `name`. */
+const AvatarImage = ({ className, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+  <img className={cn("aspect-square h-full w-full object-cover", className)} alt="" {...props} />
+);
+AvatarImage.displayName = "AvatarImage";
 
-const AvatarFallback = React.forwardRef<
-    HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-    <div
-        ref={ref}
-        className={cn(
-            "flex h-full w-full items-center justify-center rounded-full bg-muted",
-            className
-        )}
-        {...props}
-    />
-))
-AvatarFallback.displayName = "AvatarFallback"
+/** @deprecated Prefer kit Avatar with `name`. */
+const AvatarFallback = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex h-full w-full items-center justify-center rounded-[inherit] bg-muted text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+);
+AvatarFallback.displayName = "AvatarFallback";
 
-export { Avatar, AvatarImage, AvatarFallback }
+export { Avatar, AvatarImage, AvatarFallback };
