@@ -41,64 +41,48 @@ const PortalDashboard = () => {
         <div className="space-y-page animate-in fade-in duration-700">
             {/* Header: Standard Modernist */}
             <div className="flex flex-col gap-card">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-card border-b border-outline/10 pb-section">
-                    <div className="space-y-card">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 flex items-center justify-center">
-                                <img src="/wardseal.svg" alt="WardSeal" className="w-7 h-7" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-body font-bold tracking-tight text-on-surface">WardSeal</span>
-                                <span className="text-detail font-bold tracking-widest text-primary uppercase opacity-40">Identity Portal</span>
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <h1 className="text-title font-bold tracking-tight text-on-surface leading-none">Resource Registry</h1>
-                            <p className="text-on-surface-variant/60 font-medium text-caption max-w-xl">
-                                Securely access and manage your application tunnels and enterprise resources.
-                            </p>
-                            {localStorage.getItem('isAdmin') === 'true' && (
-                                <div className="pt-2">
-                                    <Button
-                                        onClick={() => window.location.href = '/dashboard'}
-                                        className="h-9 px-4 rounded-lg bg-inverse text-on-inverse font-bold text-label hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-on-surface/5"
-                                    >
-                                        <LayoutGrid className="w-4 h-4" />
-                                        Admin Console
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-border pb-8">
+                    <div className="space-y-3 max-w-xl">
+                        <p className="text-xs font-semibold text-secondary">User portal</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Your applications</h1>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                            Launch assigned apps and manage access from one place.
+                        </p>
+                        {localStorage.getItem('isAdmin') === 'true' && (
+                            <Button
+                                onClick={() => { window.location.href = '/dashboard'; }}
+                                className="h-9 px-4 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm flex items-center gap-2"
+                            >
+                                <LayoutGrid className="w-4 h-4" />
+                                Admin console
+                            </Button>
+                        )}
                     </div>
 
-                    {/* SEARCH: Deep Modernist */}
-                    <div className="relative w-full max-w-md group self-end">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-transparent rounded-xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
-                            <Input
-                                placeholder="Search registry..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 pl-10 pr-4 border-none rounded-lg font-bold text-caption bg-card/40 backdrop-blur-2xl shadow-xl ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
-                            />
-                        </div>
+                    <div className="relative w-full max-w-md self-end">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search applications..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-10 pl-10 pr-4 rounded-lg border-border bg-card shadow-xs"
+                        />
                     </div>
                 </div>
 
                 {/* Applications Grid */}
                 <div className="min-h-[400px]">
                     {loading ? (
-                        <div className="h-[300px] flex flex-col items-center justify-center border border-dashed border-outline/20 rounded-2xl bg-card/20 backdrop-blur-sm">
-                            <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary/40" />
-                            <span className="text-label font-bold tracking-widest opacity-20 uppercase italic">Synchronizing...</span>
+                        <div className="h-[280px] flex flex-col items-center justify-center border border-dashed border-border rounded-xl bg-muted/40">
+                            <Loader2 className="h-8 w-8 animate-spin mb-3 text-secondary" />
+                            <span className="text-sm text-muted-foreground">Loading applications…</span>
                         </div>
                     ) : filteredApps.length === 0 ? (
-                        <GlassCard className="py-24 text-center border border-dashed border-outline/20 bg-card/20 shadow-none rounded-2xl">
-                            <Box className="h-12 w-12 text-on-surface-variant/5 mb-6 mx-auto" />
-                            <h3 className="text-heading font-bold text-on-surface tracking-tight">Registry Empty</h3>
-                            <p className="text-on-surface-variant/40 font-medium text-body mt-2 max-w-xs mx-auto">
-                                {searchQuery ? `No resources matching "${searchQuery}" located.` : 'No resources have been provisioned for this identity.'}
+                        <GlassCard className="py-16 text-center border border-dashed border-border bg-card shadow-none rounded-xl">
+                            <Box className="h-10 w-10 text-muted-foreground mb-4 mx-auto" />
+                            <h3 className="text-lg font-bold text-on-surface tracking-tight">No applications yet</h3>
+                            <p className="text-muted-foreground text-sm mt-2 max-w-xs mx-auto">
+                                {searchQuery ? `No matches for “${searchQuery}”.` : 'When your admin assigns apps, they will appear here.'}
                             </p>
                         </GlassCard>
                     ) : (
@@ -110,24 +94,22 @@ const PortalDashboard = () => {
                     )}
                 </div>
 
-                {/* Footer Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-card mt-card">
-                    <MetricCard 
-                        label="Resources_Index" 
-                        value={filteredApps.length.toString().padStart(2, '0')} 
-                        detail={<span className="text-caption font-bold text-on-surface-variant/20 italic tracking-tight">Available</span>} 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <MetricCard
+                        label="Showing"
+                        value={filteredApps.length.toString()}
+                        detail={<span className="text-xs text-muted-foreground">Matching search</span>}
                     />
-                    <MetricCard 
-                        label="Total_Provisioned" 
-                        value={applications.length.toString().padStart(2, '0')} 
-                        detail={<span className="text-detail font-bold text-on-surface-variant/30 tracking-widest uppercase">All Resources</span>} 
+                    <MetricCard
+                        label="Assigned"
+                        value={applications.length.toString()}
+                        detail={<span className="text-xs text-muted-foreground">Total applications</span>}
                     />
-                    <MetricCard label="Session_Status" value="LIVE">
+                    <MetricCard label="Session" value="Active">
                         <div className="flex items-center gap-2 mt-1">
-                            <div className="w-2.5 h-2.5 rounded-full bg-success animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.4)]" />
-                            <p className="text-heading font-bold text-on-surface tracking-tighter">LIVE</p>
+                            <div className="w-2 h-2 rounded-full bg-success" />
+                            <p className="text-sm font-semibold text-on-surface">Signed in</p>
                         </div>
-                        <span className="text-detail font-bold text-on-surface-variant/30 tracking-widest uppercase">Identity Verified</span>
                     </MetricCard>
                 </div>
             </div>

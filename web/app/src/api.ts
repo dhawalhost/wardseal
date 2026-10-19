@@ -334,17 +334,17 @@ export const createPermission = async (resource: string, action: string, descrip
 
 // RBAC - User Roles
 export const getUserRoles = async (userId: string) => {
-    const response = await govApi.get(`/api/v1/users/${userId}/roles`);
+    const response = await govApi.get(`/api/v1/roles/users/${userId}`);
     return response.data;
 };
 
 export const assignRoleToUser = async (userId: string, roleId: string) => {
-    const response = await govApi.post(`/api/v1/users/${userId}/roles/${roleId}`);
+    const response = await govApi.post(`/api/v1/roles/users/${userId}/${roleId}`);
     return response.data;
 };
 
 export const removeRoleFromUser = async (userId: string, roleId: string) => {
-    const response = await govApi.delete(`/api/v1/users/${userId}/roles/${roleId}`);
+    const response = await govApi.delete(`/api/v1/roles/users/${userId}/${roleId}`);
     return response.data;
 };
 

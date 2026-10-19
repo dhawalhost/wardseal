@@ -1,15 +1,2 @@
-import { cn } from "@/lib/utils"
-
-function Skeleton({
-    className,
-    ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-    return (
-        <div
-            className={cn("animate-pulse rounded-md bg-muted", className)}
-            {...props}
-        />
-    )
-}
-
-export { Skeleton }
+/** SoT: @dhawalhost/wardseal-ui-kit@0.2.0 */
+export { Skeleton } from "@dhawalhost/wardseal-ui-kit";

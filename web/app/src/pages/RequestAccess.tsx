@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { createAccessRequest } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, GitPullRequest, ShieldCheck, Clock, MessageSquare, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassCardDescription } from '@/components/layout';
+import {
+    PageHeader,
+    GlassCard,
+    GlassCardHeader,
+    GlassCardTitle,
+    GlassCardContent,
+    GlassCardDescription,
+} from '@/components/layout';
 
 const RequestAccess: React.FC = () => {
     const [resourceType, setResourceType] = useState('group');
@@ -25,7 +31,12 @@ const RequestAccess: React.FC = () => {
         setError('');
         setLoading(true);
         try {
-            await createAccessRequest(resourceType, resourceID, reason, duration === 'indefinite' ? undefined : duration);
+            await createAccessRequest(
+                resourceType,
+                resourceID,
+                reason,
+                duration === 'indefinite' ? undefined : duration
+            );
             navigate('/requests');
         } catch (err: any) {
             console.error(err);
@@ -35,129 +46,136 @@ const RequestAccess: React.FC = () => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 py-12">
+        <div className="max-w-3xl mx-auto space-y-page animate-in fade-in duration-500 py-8">
             <PageHeader
-                icon={<GitPullRequest className="w-10 h-10 text-primary" />}
-                title="Request Access"
-                description="Submit an elevated privilege request for just-in-time access to organizational resources."
+                icon={<GitPullRequest className="w-8 h-8 text-primary" />}
+                title="Request access"
+                description="Submit a request for temporary access to organizational resources."
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-12">
-                <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-[32px]">
-                    <GlassCardHeader className="py-10 px-10 border-b border-on-surface/5 bg-surface-container/10">
-                        <div className="flex items-center gap-6">
-                            <div className="p-4 bg-primary/5 rounded-2xl text-primary">
-                                <ShieldCheck className="w-7 h-7" />
-                            </div>
-                             <div>
-                                <GlassCardTitle className="text-3xl font-bold tracking-tight text-on-surface">New access request</GlassCardTitle>
-                                <GlassCardDescription className="text-on-surface-variant/40 font-bold text-[12px] mt-1 tracking-tight">
-                                    Identity verification & permission handshake
-                                </GlassCardDescription>
-                            </div>
+            <GlassCard className="shadow-sm border-border bg-card overflow-hidden rounded-xl">
+                <GlassCardHeader className="py-6 px-6 border-b border-border bg-muted/40">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 rounded-lg text-primary">
+                            <ShieldCheck className="w-5 h-5" />
                         </div>
-                    </GlassCardHeader>
-                    
-                    <GlassCardContent className="p-10">
-                        <form onSubmit={handleSubmit} className="space-y-10">
-                             {error && (
-                                <Alert variant="destructive" className="rounded-2xl border-none bg-destructive/10 text-destructive animate-in slide-in-from-top-2">
-                                    <AlertDescription className="font-bold text-xs tracking-tight">{error}</AlertDescription>
-                                </Alert>
-                            )}
+                        <div>
+                            <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">
+                                New access request
+                            </GlassCardTitle>
+                            <GlassCardDescription className="mt-1">
+                                Provide the resource details and a business justification.
+                            </GlassCardDescription>
+                        </div>
+                    </div>
+                </GlassCardHeader>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                 <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                        <Info className="w-3.5 h-3.5" />
-                                        Resource type
-                                    </Label>
-                                    <Select value={resourceType} onValueChange={setResourceType}>
-                                        <SelectTrigger className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm px-6">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-2xl border-none shadow-xl font-bold text-xs">
-                                            <SelectItem value="group">Group</SelectItem>
-                                            <SelectItem value="role">Role (RBAC)</SelectItem>
-                                            <SelectItem value="app">Application</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                <GlassCardContent className="p-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <Alert
+                                variant="destructive"
+                                className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive"
+                            >
+                                <AlertDescription className="text-sm font-medium">{error}</AlertDescription>
+                            </Alert>
+                        )}
 
-                                 <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">UID / Identifier</Label>
-                                    <Input
-                                        value={resourceID}
-                                        onChange={(e) => setResourceID(e.target.value)}
-                                        placeholder={resourceType === 'group' ? "e.g. engineering" : "e.g. salesforce"}
-                                        className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6 placeholder:opacity-30"
-                                        required
-                                    />
-                                    <p className="text-[10px] text-on-surface-variant/40 font-medium italic ml-1 leading-relaxed">
-                                        Enter the exact system identifier for authentication.
-                                    </p>
-                                </div>
-                            </div>
-
-                             <div className="space-y-4">
-                                <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    Just-in-time window
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                    <Info className="w-3.5 h-3.5" />
+                                    Resource type
                                 </Label>
-                                <Select value={duration} onValueChange={setDuration}>
-                                    <SelectTrigger className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm px-6">
-                                        <SelectValue placeholder="Select duration" />
+                                <Select value={resourceType} onValueChange={setResourceType}>
+                                    <SelectTrigger className="h-11 rounded-lg border-border bg-background shadow-xs text-sm">
+                                        <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-xl font-bold text-xs">
-                                        <SelectItem value="1h">1 Hour (Quick Tasks)</SelectItem>
-                                        <SelectItem value="4h">4 Hours (Standard Session)</SelectItem>
-                                        <SelectItem value="24h">24 Hours (Daily Access)</SelectItem>
-                                        <SelectItem value="indefinite">Indefinite (Static RBAC)</SelectItem>
+                                    <SelectContent className="rounded-lg border-border shadow-sm text-sm">
+                                        <SelectItem value="group">Group</SelectItem>
+                                        <SelectItem value="role">Role (RBAC)</SelectItem>
+                                        <SelectItem value="app">Application</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
-                             <div className="space-y-4">
-                                <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                    <MessageSquare className="w-3.5 h-3.5" />
-                                    Business justification
-                                </Label>
-                                <Textarea
-                                    value={reason}
-                                    onChange={(e) => setReason(e.target.value)}
-                                    placeholder="Provide detailed context for this privilege escalation..."
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-muted-foreground">Resource ID</Label>
+                                <Input
+                                    value={resourceID}
+                                    onChange={(e) => setResourceID(e.target.value)}
+                                    placeholder={resourceType === 'group' ? 'e.g. engineering' : 'e.g. salesforce'}
+                                    className="h-11 rounded-lg border-border bg-background shadow-xs text-sm"
                                     required
-                                    rows={4}
-                                    className="rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium text-sm p-6 resize-none placeholder:opacity-30"
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Enter the exact system identifier for the resource.
+                                </p>
                             </div>
+                        </div>
 
-                            <div className="pt-6 flex flex-col gap-4">
-                                 <Button type="submit" className="w-full h-16 rounded-[20px] font-bold text-[13px] tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all" disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="mr-3 h-5 w-5 animate-spin" /> Finalizing request...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="mr-3 h-4 w-4" /> Commit request
-                                        </>
-                                    )}
-                                </Button>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                <Clock className="w-3.5 h-3.5" />
+                                Access duration
+                            </Label>
+                            <Select value={duration} onValueChange={setDuration}>
+                                <SelectTrigger className="h-11 rounded-lg border-border bg-background shadow-xs text-sm">
+                                    <SelectValue placeholder="Select duration" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-lg border-border shadow-sm text-sm">
+                                    <SelectItem value="1h">1 hour</SelectItem>
+                                    <SelectItem value="4h">4 hours</SelectItem>
+                                    <SelectItem value="24h">24 hours</SelectItem>
+                                    <SelectItem value="indefinite">Indefinite</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                                 <Button 
-                                    variant="ghost" 
-                                    type="button" 
-                                    className="w-full h-12 font-bold text-[11px] tracking-tight text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container/20 rounded-xl transition-all" 
-                                    onClick={() => navigate('/requests')}
-                                >
-                                    Cancel and return to dashboard
-                                </Button>
-                            </div>
-                        </form>
-                    </GlassCardContent>
-                </GlassCard>
-            </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                Business justification
+                            </Label>
+                            <Textarea
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                placeholder="Explain why you need this access…"
+                                required
+                                rows={4}
+                                className="rounded-lg border-border bg-background shadow-xs text-sm p-4 resize-none"
+                            />
+                        </div>
+
+                        <div className="pt-2 flex flex-col gap-3">
+                            <Button
+                                type="submit"
+                                className="w-full h-11 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="mr-2 h-4 w-4" /> Submit request
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                className="w-full h-10 font-semibold text-sm text-muted-foreground hover:text-on-surface rounded-lg"
+                                onClick={() => navigate('/requests')}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </form>
+                </GlassCardContent>
+            </GlassCard>
         </div>
     );
 };

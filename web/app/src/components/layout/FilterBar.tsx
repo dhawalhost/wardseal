@@ -1,8 +1,7 @@
 import React from "react";
 import { Search, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input, Button } from "@dhawalhost/wardseal-ui-kit";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface FilterBarProps {
@@ -65,7 +64,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         >
             {/* Search input */}
             <div className="flex-1 relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant/40 group-focus-within:text-primary transition-colors pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
                 <Input
                     placeholder={placeholder}
                     className="pl-12 h-12 border-none rounded-2xl bg-card ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium"
@@ -81,7 +80,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             {showFilterButton && (
                 <Button
                     type="submit"
-                    className="h-12 rounded-2xl px-10 font-bold text-[12px] tracking-tight shadow-sm shadow-primary/10 transition-all shrink-0"
+                    className="h-12 rounded-2xl px-10 font-bold text-[12px] tracking-tight shadow-sm transition-all shrink-0"
                 >
                     <Filter className="mr-2 h-4 w-4" />
                     {submitLabel}

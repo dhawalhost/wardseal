@@ -1,6 +1,13 @@
 # Identity Platform Design System & Constraints
 
-1. THEME: Strict Dark Mode. Default background is `bg-zinc-950`, text is `text-zinc-50`.
-2. ACCESSIBILITY (WCAG 2.1 AA): High contrast is mandatory. All interactive elements (buttons, inputs, links) MUST have explicit keyboard focus states using Tailwind's `focus-visible:ring-2` and `focus-visible:ring-offset-2`. Include `aria-labels` on all icon-only buttons.
-3. SUSTAINABILITY (Performance): Lean code only. Zero decorative images. Use `lucide-react` for lightweight SVG icons. Do NOT import heavy animation libraries (like Three.js).
-4. MOTION: Micro-interactions only. Apply a strict 150ms `ease-in-out` transition to button hovers. Use basic CSS keyframes for loading spinners. No scroll-jacking or page-level transition animations.
+Source of truth for product direction: [`design-system/wardseal/MASTER.md`](../design-system/wardseal/MASTER.md).
+Token + component SoT: [`@dhawalhost/wardseal-ui-kit`](../wardseal-ui-kit) (workspace mirror [`ui/`](ui/)).
+
+1. **THEME (light-first):** Default is light slate surfaces (`bg-background` ≈ `#F8FAFC`), navy primary (`#0F172A`), blue CTA (`bg-secondary` / `#0369A1`). Optional `.dark` mode is supported but secondary. Do not use neon cyberpunk green as the default brand color.
+2. **TYPOGRAPHY:** Plus Jakarta Sans for UI and display. Body text ≥16px where primary content; dense tables may use 14px with adequate line-height.
+3. **ACCESSIBILITY (WCAG 2.1 AA):** High contrast. Interactive elements MUST use `focus-visible:ring-2` + offset. `aria-label` on icon-only buttons. Respect `prefers-reduced-motion`.
+4. **SUSTAINABILITY:** Lean code. Lucide SVG icons only. No heavy animation libraries (Three.js, etc.).
+5. **MOTION:** Micro-interactions only — 150–200ms `ease-in-out` on hovers. No scroll-jacking or page-level transition theater.
+6. **AVOID:** Purple/pink AI gradients, emoji-as-icons, glass-card overuse, playful consumer chrome on trust surfaces (login, MFA, billing).
+7. **LANDING:** Marketing SPA imports kit `tokens.css` and maps local aliases (`--accent` = CTA → kit `--secondary`). Do not fork a second palette.
+8. **PRODUCT APPS:** Depend on `@dhawalhost/wardseal-ui-kit@0.2.0`. App layouts (`FilterBar`, `PageSection`, shells) may live in-app but must compose kit components. `@/components/ui/*` primitives are kit re-exports (thin adapters only for API tweaks).
