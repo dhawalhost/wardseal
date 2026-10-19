@@ -66,7 +66,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     const confirmButtonClass = {
         danger:  "bg-destructive hover:bg-red-700 text-white shadow-lg shadow-destructive/20",
         warning: "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20",
-        default: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20",
+        default: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm",
     }[variant];
 
     const iconColor = {
@@ -87,7 +87,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                             <DialogTitle className="text-2xl font-bold tracking-tight text-on-surface">
                                 {title}
                             </DialogTitle>
-                            <DialogDescription className="text-on-surface-variant/60 font-medium text-[11px] mt-2 italic">
+                            <DialogDescription className="text-muted-foreground font-medium text-[11px] mt-2 italic">
                                 This action may be irreversible.
                             </DialogDescription>
                         </div>

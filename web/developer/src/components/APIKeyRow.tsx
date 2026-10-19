@@ -25,11 +25,11 @@ export const APIKeyRow: React.FC<APIKeyRowProps> = ({
         <div className="flex items-center justify-between p-4 hover:bg-surface-container/20 transition-all group">
             <div className="flex items-center gap-4">
                 <div className="p-2 rounded-lg bg-surface-container/50 ring-1 ring-on-surface/5 group-hover:bg-primary/10 group-hover:ring-primary/20 transition-all">
-                    <Fingerprint className="h-4 w-4 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
+                    <Fingerprint className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <div className="space-y-0.5">
                     <div className="text-[13px] font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors leading-none uppercase">{apiKey.name}</div>
-                    <div className="flex items-center gap-3 text-[10px] font-bold tracking-tight text-on-surface-variant/40 uppercase">
+                    <div className="flex items-center gap-3 text-[10px] font-bold tracking-tight text-muted-foreground uppercase">
                         <span className="font-mono bg-surface-container px-1.5 py-0.5 rounded text-[9px]">{apiKey.key_prefix}...</span>
                         <span>• {new Date(apiKey.created_at).toLocaleDateString()}</span>
                     </div>

@@ -21,7 +21,7 @@ export const DeveloperMetricCard: React.FC<DeveloperMetricCardProps> = ({
             <GlassCardContent className="p-3.5 flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                     {icon}
-                    <span className="text-[10px] font-bold tracking-tight text-on-surface-variant/40 uppercase">{title}</span>
+                    <span className="text-[10px] font-bold tracking-tight text-muted-foreground uppercase">{title}</span>
                 </div>
                 <div className={`text-xl font-bold tracking-tight tabular-nums ${valueClassName}`}>
                     {loading ? '—' : value}

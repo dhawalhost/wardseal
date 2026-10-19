@@ -47,7 +47,7 @@ export function DeveloperAnalytics() {
     };
 
     return (
-        <div className="space-y-4 animate-in fade-in duration-700">
+        <div className="space-y-page animate-in fade-in duration-500">
             <PageHeader
                 icon={<BarChart2 className="w-5 h-5 text-primary" />}
                 title="API Analytics"
@@ -56,7 +56,7 @@ export function DeveloperAnalytics() {
                     <Button
                         onClick={fetchAnalytics}
                         variant="outline"
-                        className="h-9 rounded-lg font-bold text-[11px] px-4 border-none ring-1 ring-on-surface/10 hover:bg-surface-container transition-all"
+                        className="h-9 rounded-lg font-semibold text-sm px-4 border border-border hover:bg-muted/40 transition-colors"
                         disabled={loading}
                     >
                         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
@@ -73,7 +73,7 @@ export function DeveloperAnalytics() {
             )}
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-card">
                 <DeveloperMetricCard
                     icon={
                         <div className="p-1.5 bg-primary/10 rounded-lg">
@@ -95,7 +95,7 @@ export function DeveloperAnalytics() {
                     value={
                         <>
                             {avgLatency}
-                            <span className="text-sm ml-1 text-on-surface-variant/40">ms</span>
+                            <span className="text-sm ml-1 text-muted-foreground">ms</span>
                         </>
                     }
                     loading={loading}
@@ -115,24 +115,24 @@ export function DeveloperAnalytics() {
             </div>
 
             {/* Traffic Chart */}
-            <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card rounded-xl overflow-hidden">
-                <GlassCardHeader className="py-2.5 px-4 border-b border-on-surface/5">
+            <GlassCard className="border border-border shadow-sm bg-card rounded-xl overflow-hidden">
+                <GlassCardHeader className="py-4 px-5 border-b border-border">
                     <div className="flex items-center gap-2.5">
-                        <div className="p-1 bg-primary/10 rounded-lg">
-                            <Zap className="w-3 h-3 text-primary" />
+                        <div className="p-1.5 bg-primary/10 rounded-lg">
+                            <Zap className="w-3.5 h-3.5 text-primary" />
                         </div>
-                        <GlassCardTitle className="text-[11px] font-bold tracking-tight text-on-surface uppercase">API Traffic</GlassCardTitle>
+                        <GlassCardTitle className="text-sm font-bold tracking-tight text-on-surface">API traffic</GlassCardTitle>
                     </div>
                 </GlassCardHeader>
-                <GlassCardContent className="p-4">
+                <GlassCardContent className="p-5">
                     {loading ? (
                         <div className="h-[300px] flex items-center justify-center">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : analytics.length === 0 ? (
-                        <div className="h-[300px] flex flex-col items-center justify-center gap-4 opacity-20">
-                            <BarChart2 className="h-16 w-16" />
-                            <p className="text-sm font-bold tracking-tight text-center">No API traffic recorded yet.</p>
+                        <div className="h-[300px] flex flex-col items-center justify-center gap-3">
+                            <BarChart2 className="h-10 w-10 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground text-center">No API traffic recorded yet.</p>
                         </div>
                     ) : (
                         <div className="h-[300px] w-full">
@@ -157,16 +157,16 @@ export function DeveloperAnalytics() {
             </GlassCard>
 
             {/* Guidance */}
-            <GlassCard className="border-none shadow-xl shadow-on-surface/5 bg-primary/5 rounded-xl overflow-hidden">
+            <GlassCard className="border border-border shadow-sm bg-muted/40 rounded-xl overflow-hidden">
                 <GlassCardContent className="p-4 flex gap-3 items-start">
                     <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
                         <Terminal className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-xs tracking-tight text-on-surface uppercase">Interactive API Logs</h4>
-                        <p className="text-[10px] text-on-surface-variant/60 mt-0.5 leading-relaxed font-medium">
+                        <h4 className="font-semibold text-sm tracking-tight text-on-surface">Interactive API logs</h4>
+                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                             Looking for specific request payloads? Go to{' '}
-                            <a href="/developer/apps" className="text-primary hover:underline font-bold">OAuth Apps</a>{' '}
+                            <a href="/developer/apps" className="text-primary hover:underline font-semibold">OAuth Apps</a>{' '}
                             to view detailed logs tied to each credential.
                         </p>
                     </div>
