@@ -155,6 +155,10 @@ test-integration: infra-up ## Run integration tests against live infrastructure
 	APP_DATABASE_USER=user \
 	APP_DATABASE_PASSWORD=password \
 	APP_DATABASE_NAME=identity_platform \
+	TEST_DB_HOST=localhost \
+	TEST_DB_USER=user \
+	TEST_DB_PASSWORD=password \
+	TEST_DB_NAME=identity_platform \
 	go test -v -tags=integration ./tests/integration/...
 
 .PHONY: ui

@@ -60,15 +60,42 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	// Use environment variable for database connection or default to local
 	dbHost := os.Getenv("TEST_DB_HOST")
 	if dbHost == "" {
+		dbHost = os.Getenv("APP_DATABASE_HOST")
+	}
+	if dbHost == "" {
 		dbHost = "127.0.0.1"
+	}
+
+	dbName := os.Getenv("TEST_DB_NAME")
+	if dbName == "" {
+		dbName = os.Getenv("APP_DATABASE_NAME")
+	}
+	if dbName == "" {
+		dbName = "identity_platform"
+	}
+
+	dbUser := os.Getenv("TEST_DB_USER")
+	if dbUser == "" {
+		dbUser = os.Getenv("APP_DATABASE_USER")
+	}
+	if dbUser == "" {
+		dbUser = "user"
+	}
+
+	dbPassword := os.Getenv("TEST_DB_PASSWORD")
+	if dbPassword == "" {
+		dbPassword = os.Getenv("APP_DATABASE_PASSWORD")
+	}
+	if dbPassword == "" {
+		dbPassword = "password"
 	}
 
 	dbConfig := database.Config{
 		Host:     dbHost,
 		Port:     5432,
-		User:     envOr("TEST_DB_USER", "user"),
-		Password: envOr("TEST_DB_PASSWORD", "password"),
-		DBName:   envOr("TEST_DB_NAME", "identity_platform_test"),
+		User:     dbUser,
+		Password: dbPassword,
+		DBName:   dbName,
 		SSLMode:  "disable",
 	}
 
