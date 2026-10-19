@@ -46,7 +46,7 @@ export const TelemetryLogs: Story = {
               <div className="text-[10px] text-on-surface-variant/40">10:45:12 AM • node-01</div>
             </div>
           </div>
-          <div className="flex items-start gap-3 text-xs leading-normal border-t border-on-surface/5 pt-4">
+          <div className="flex items-start gap-3 text-xs leading-normal border-t border-border pt-4">
             <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div>
               <div className="font-semibold text-primary">Cryptographic Signature Validated</div>

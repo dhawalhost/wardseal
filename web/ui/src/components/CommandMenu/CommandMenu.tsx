@@ -95,9 +95,9 @@ export function CommandMenu({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden border border-white/10 bg-card/95 backdrop-blur-2xl shadow-2xl rounded-xl">
+      <DialogContent className="max-w-lg p-0 overflow-hidden border border-border bg-card/95 backdrop-blur-2xl shadow-2xl rounded-xl">
         {/* Search Input */}
-        <div className="flex items-center border-b border-on-surface/5 px-4 h-12 gap-3 shrink-0">
+        <div className="flex items-center border-b border-border px-4 h-12 gap-3 shrink-0">
           <Search className="w-4 h-4 text-on-surface-variant/40 shrink-0" />
           <input
             value={query}
@@ -137,7 +137,7 @@ export function CommandMenu({
                             "w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-semibold transition-all duration-150 group/cmd border border-transparent",
                             isActive
                               ? "bg-primary/5 text-primary border-primary/10"
-                              : "text-on-surface-variant/70 hover:bg-white/5 hover:text-on-surface"
+                              : "text-on-surface-variant/70 hover:bg-muted hover:text-on-surface"
                           )}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -176,7 +176,7 @@ export function CommandMenu({
         </div>
 
         {/* Footer controls instruction */}
-        <div className="h-9 px-4 border-t border-on-surface/5 flex items-center gap-4 text-[9px] font-bold text-on-surface-variant/30 uppercase tracking-wider bg-surface-container-low/40 shrink-0">
+        <div className="h-9 px-4 border-t border-border flex items-center gap-4 text-[9px] font-bold text-on-surface-variant/30 uppercase tracking-wider bg-surface-container-low/40 shrink-0">
           <span className="flex items-center gap-1.5">
             <kbd className="bg-surface-container border border-outline/10 px-1 rounded">↑↓</kbd>
             <span>Navigate</span>

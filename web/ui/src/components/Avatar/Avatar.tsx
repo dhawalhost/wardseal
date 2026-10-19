@@ -14,7 +14,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
       <div
         ref={ref}
         className={cn(
-          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-container border border-on-surface/5 shadow-sm transition-transform hover:scale-105 duration-200",
+          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-container border border-border shadow-sm",
           className
         )}
         style={{ width: size, height: size }}
@@ -24,7 +24,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
           size={size}
           name={name}
           variant={variant}
-          colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
+          colors={["#0F172A", "#0369A1", "#334155", "#E2E8F0", "#0284C7"]}
         />
       </div>
     );

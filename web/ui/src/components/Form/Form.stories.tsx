@@ -40,7 +40,7 @@ export const EnrollmentForm: Story = {
             </FormSection>
             
             <FormSection title="Access Factor Constraints" description="Gateway authentication controls">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-surface-container border border-border">
                 <div className="space-y-0.5">
                   <Label htmlFor="strict-factor" className="text-on-surface text-xs font-semibold normal-case">Strict POSTURE signature check</Label>
                   <p className="text-[10px] text-on-surface-variant/40 font-medium">Verify TPM signature challenges</p>

@@ -133,7 +133,7 @@ export default {
                 hero:   ["32px", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "800" }],
             },
 
-            // ── Spacing tokens ──
+            // ── Layout spacing ──
             spacing: {
                 page: "var(--space-page)",
                 section: "var(--space-section)",

@@ -52,7 +52,7 @@ export const GlassCard: Story = {
     <Card className="w-[380px]" {...args}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-white/10 rounded-lg text-primary">
+          <div className="p-2 bg-muted rounded-lg text-primary">
             <Activity className="w-5 h-5 text-primary" />
           </div>
           <div>

@@ -8,45 +8,70 @@ export interface BreadcrumbItem {
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-export interface PageHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface PageHeaderProps extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
   title: React.ReactNode;
   description?: React.ReactNode;
+  /** Optional leading icon in a bordered tile */
+  icon?: React.ReactNode;
+  /** Secondary line under the title (e.g. last updated) */
+  meta?: React.ReactNode;
   breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
   search?: React.ReactNode;
 }
 
-const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
-  ({ className, title, description, breadcrumbs, actions, search, ...props }, ref) => {
+/**
+ * In-page title block. Horizontal padding is owned by PageLayout —
+ * this component only handles vertical rhythm and the bottom rule.
+ */
+const PageHeader = React.forwardRef<HTMLElement, PageHeaderProps>(
+  (
+    {
+      className,
+      title,
+      description,
+      icon,
+      meta,
+      breadcrumbs,
+      actions,
+      search,
+      ...props
+    },
+    ref
+  ) => {
     return (
-      <div
+      <header
         ref={ref}
         className={cn(
-          "flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:justify-between border-b border-border bg-background/50 backdrop-blur-sm py-5 px-6 shrink-0 transition-all",
+          "flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between",
+          "pb-6 lg:pb-8 border-b border-border",
           className
         )}
         {...props}
       >
-        {/* Title & Navigation */}
-        <div className="flex flex-col space-y-1.5 flex-1 min-w-0">
-          {/* Breadcrumbs */}
+        <div className="min-w-0 flex-1 space-y-3">
           {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav className="flex items-center space-x-1.5 text-xs text-on-surface-variant/40 font-bold uppercase tracking-wider mb-1 flex-wrap">
+            <nav
+              className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold uppercase tracking-wide flex-wrap"
+              aria-label="Breadcrumb"
+            >
               {breadcrumbs.map((crumb, idx) => {
                 const isLast = idx === breadcrumbs.length - 1;
                 return (
                   <React.Fragment key={crumb.label + idx}>
-                    {idx > 0 && <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-40" />}
+                    {idx > 0 && (
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                    )}
                     {crumb.href && !isLast ? (
                       <a
                         href={crumb.href}
                         onClick={crumb.onClick}
-                        className="hover:text-primary transition-colors cursor-pointer"
+                        className="hover:text-on-surface transition-colors cursor-pointer"
                       >
                         {crumb.label}
                       </a>
                     ) : (
-                      <span className={isLast ? "text-on-surface-variant/75" : ""}>{crumb.label}</span>
+                      <span className={isLast ? "text-on-surface" : undefined}>{crumb.label}</span>
                     )}
                   </React.Fragment>
                 );
@@ -54,25 +79,37 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
             </nav>
           )}
 
-          {/* Title */}
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-on-surface truncate">
-            {title}
-          </h1>
+          <div className="flex items-center gap-3">
+            {icon && (
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-secondary"
+                aria-hidden
+              >
+                {icon}
+              </div>
+            )}
+            <div className="min-w-0 space-y-1">
+              <h1 className="text-2xl lg:text-[28px] font-bold tracking-tight text-on-surface leading-tight truncate">
+                {title}
+              </h1>
+              {meta}
+            </div>
+          </div>
 
-          {/* Description */}
           {description && (
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-medium">
+            <p className="text-sm lg:text-[15px] text-muted-foreground font-medium leading-relaxed max-w-2xl">
               {description}
             </p>
           )}
         </div>
 
-        {/* Actions & Filters */}
-        <div className="flex items-center space-x-3 shrink-0">
-          {search && <div className="w-full md:w-64">{search}</div>}
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
-        </div>
-      </div>
+        {(search || actions) && (
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {search && <div className="w-full sm:w-64">{search}</div>}
+            {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
+          </div>
+        )}
+      </header>
     );
   }
 );

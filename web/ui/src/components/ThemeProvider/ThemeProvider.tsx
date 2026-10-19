@@ -6,7 +6,7 @@ export interface ThemeProviderProps {
   children: React.ReactNode;
   /**
    * Theme applied on first load when no localStorage value exists.
-   * @default "dark"
+   * @default "light" — WardSeal brand default (MASTER light-first).
    */
   defaultTheme?: Theme;
   /**
@@ -32,7 +32,7 @@ const ThemeProviderContext = React.createContext<ThemeContextProps | undefined>(
 
 export function ThemeProvider({
   children,
-  defaultTheme = "dark",
+  defaultTheme = "light",
   storageKey = "wardseal-ui-theme",
   forcedTheme,
   ...props

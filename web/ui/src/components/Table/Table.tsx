@@ -19,7 +19,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b border-on-surface/5 bg-card/20", className)} {...props} />
+  <thead ref={ref} className={cn("[&_tr]:border-b border-border bg-card/20", className)} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -42,7 +42,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t border-on-surface/5 bg-muted/50 font-medium [&>tr]:last:border-b-0",
+      "border-t border-border bg-muted/50 font-medium [&>tr]:last:border-b-0",
       className
     )}
     {...props}
@@ -57,7 +57,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-on-surface/5 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b border-border transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
       className
     )}
     {...props}
@@ -126,7 +126,7 @@ const GlassTableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("glass-header border-b border-on-surface/5 bg-black/20 sticky top-0 z-10", className)} {...props} />
+  <thead ref={ref} className={cn("glass-header border-b border-border bg-muted sticky top-0 z-10", className)} {...props} />
 ));
 GlassTableHeader.displayName = "GlassTableHeader";
 
@@ -137,7 +137,7 @@ const GlassTableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-on-surface/5 transition-all hover:bg-surface-container/20 group/row",
+      "border-b border-border transition-all hover:bg-surface-container/20 group/row",
       className
     )}
     {...props}

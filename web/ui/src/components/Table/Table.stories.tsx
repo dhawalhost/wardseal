@@ -169,7 +169,7 @@ function CardWrapper({
     <div
       className={
         isGlass
-          ? "relative overflow-hidden rounded-xl border border-white/5 bg-black/40 backdrop-blur-xl p-6 shadow-card"
+          ? "glass-card p-6 shadow-card"
           : "rounded-xl border border-border bg-card p-6 text-card-foreground shadow-card"
       }
     >

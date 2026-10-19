@@ -45,6 +45,9 @@ export const tailwindPreset = {
           container: "hsl(var(--secondary-container))",
           "on-container": "hsl(var(--on-secondary-container))",
         },
+        // Material-style aliases (optional; prefer text-primary-foreground in components)
+        "on-primary": "hsl(var(--on-primary))",
+        "on-secondary": "hsl(var(--on-secondary))",
 
         // ── Semantic state colors ──
         success: {
@@ -62,8 +65,14 @@ export const tailwindPreset = {
           foreground: "hsl(var(--error-foreground))",
           subtle: "hsl(var(--error-subtle))",
         },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+          subtle: "hsl(var(--info-subtle))",
+        },
 
         // ── shadcn compat ──
+        // Note: `--secondary` is the brand CTA blue (MASTER accent). `--accent` is soft fill.
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -86,6 +95,12 @@ export const tailwindPreset = {
         },
       },
 
+      fontFamily: {
+        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        display: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+      },
+
       // ── Border radius scale ──
       borderRadius: {
         sm: "var(--radius-sm)",
@@ -93,8 +108,8 @@ export const tailwindPreset = {
         md: "var(--radius-md)",
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
-        "2xl": "32px",
-        "3xl": "40px",
+        "2xl": "16px",
+        "3xl": "24px",
       },
 
       // ── Box shadow scale ──
@@ -105,11 +120,12 @@ export const tailwindPreset = {
         overlay: "var(--shadow-overlay)",
       },
 
-      // ── Spacing tokens ──
+      // ── Layout spacing (do not remap sm/md/lg — keeps Tailwind scale intact) ──
+      // Fallbacks keep utilities usable if token CSS fails to load.
       spacing: {
-        page: "var(--space-page)",
-        section: "var(--space-section)",
-        card: "var(--space-card)",
+        page: "var(--space-page, 40px)",
+        section: "var(--space-section, 32px)",
+        card: "var(--space-card, 24px)",
       },
 
       // ── Keyframes & Animations ──
