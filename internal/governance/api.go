@@ -386,10 +386,10 @@ func (h *HTTPHandler) handleServiceError(c *gin.Context, err error) {
 }
 
 func actorIDFromRequest(c *gin.Context) string {
-	if userID := strings.TrimSpace(c.GetString("user_id")); userID != "" {
+	if userID := strings.TrimSpace(c.GetHeader("X-User-ID")); userID != "" {
 		return userID
 	}
-	if userID := strings.TrimSpace(c.GetHeader("X-User-ID")); userID != "" {
+	if userID := strings.TrimSpace(c.GetString("user_id")); userID != "" {
 		return userID
 	}
 	return ""
