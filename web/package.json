@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "shared",
+    "ui",
     "admin",
     "app",
     "developer",

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { seedSessionFromProfile } from './session';
+import { clearSessionLocal, seedSessionFromProfile } from './session';
 
 export type AuthGuardProps = {
   children: React.ReactElement;
@@ -12,6 +12,10 @@ export type AuthGuardProps = {
 
 /**
  * Verifies the httpOnly session cookie and seeds tenant context into localStorage.
+ *
+ * Cookie-only: never send localStorage Bearer here. Middleware prefers Authorization
+ * over the cookie, so a stale/pending MFA token in localStorage causes
+ * "token signature is invalid" even when wardseal_access_token is valid.
  */
 export const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
@@ -23,18 +27,27 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   const [status, setStatus] = useState<'loading' | 'ok' | 'redirect'>('loading');
 
   useEffect(() => {
+    // Always same-origin: id/manage nginx proxies /api/v1/user → authsvc.
+    // Absolute apiUrl (e.g. auth.*) is cross-site and Chromium often drops
+    // Domain cookies on that hop → AuthGuard bounce loop to id login.
     axios
-      .get(`${apiUrl}/api/v1/user/profile`, { withCredentials: true })
+      .get('/api/v1/user/profile', { withCredentials: true })
       .then((res) => {
         seedSessionFromProfile(res.data ?? {});
         setStatus('ok');
       })
       .catch(() => {
+        // Drop stale Bearer material so the next login cannot poison cookie auth.
+        clearSessionLocal();
+        if (window.location.pathname.startsWith('/login')) {
+          setStatus('redirect');
+          return;
+        }
         const redirectUri = encodeURIComponent(window.location.href);
         if (loginMode === 'local') {
-          window.location.href = `/login?redirect_uri=${redirectUri}`;
+          window.location.replace(`/login?redirect_uri=${redirectUri}`);
         } else {
-          window.location.href = `${idUrl}/login?redirect_uri=${redirectUri}`;
+          window.location.replace(`${idUrl.replace(/\/$/, '')}/login?redirect_uri=${redirectUri}`);
         }
         setStatus('redirect');
       });
