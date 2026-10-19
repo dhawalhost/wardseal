@@ -311,8 +311,14 @@ func (tm *ToolManager) ListTools(ctx context.Context) ([]llm.Tool, error) {
 	if err != nil {
 		return nil, err
 	}
-	m := resp.(map[string]interface{})
-	mcpTools := m["tools"].([]Tool)
+	m, ok := resp.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected response type: %T", resp)
+	}
+	mcpTools, ok := m["tools"].([]Tool)
+	if !ok {
+		return nil, fmt.Errorf("unexpected tools type: %T", m["tools"])
+	}
 
 	llmTools := make([]llm.Tool, len(mcpTools))
 	for i, t := range mcpTools {
@@ -534,8 +540,12 @@ func (tm *ToolManager) handleCallTool(ctx context.Context, params json.RawMessag
 		if err != nil {
 			return nil, err
 		}
+		cidrStr := ""
+		if p.CIDR != nil {
+			cidrStr = *p.CIDR
+		}
 		return ToolResponse{
-			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("IP policy %s created: %s %s", p.ID, p.Type, p.CIDR)}},
+			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("IP policy %s created: %s %s", p.ID, p.Type, cidrStr)}},
 		}, nil
 
 	case "wardseal_list_clients":

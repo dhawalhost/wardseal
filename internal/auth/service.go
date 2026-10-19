@@ -423,13 +423,15 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 	var resp *http.Response
 	err = s.httpCB.Execute(func() error {
 		var doErr error
-		resp, doErr = s.httpClient.Do(req)
+		resp, doErr = s.httpClient.Do(req) //nolint:bodyclose // closed in outer scope
 		return doErr
 	})
+	if resp != nil && resp.Body != nil {
+		defer func() { _ = resp.Body.Close() }()
+	}
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return "", ErrInvalidCredentials
@@ -698,13 +700,15 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 		var resp *http.Response
 		err = s.httpCB.Execute(func() error {
 			var doErr error
-			resp, doErr = s.httpClient.Do(req)
+			resp, doErr = s.httpClient.Do(req) //nolint:bodyclose // closed in outer scope
 			return doErr
 		})
+		if resp != nil && resp.Body != nil {
+			defer func() { _ = resp.Body.Close() }()
+		}
 		if err != nil {
 			return LookupResult{}, fmt.Errorf("failed to discover tenant: %w", err)
 		}
-		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusNotFound {
 			return LookupResult{}, errors.New("user not found (or tenant could not be discovered)")
@@ -740,13 +744,15 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 	var resp *http.Response
 	err = s.httpCB.Execute(func() error {
 		var doErr error
-		resp, doErr = s.httpClient.Do(req)
+		resp, doErr = s.httpClient.Do(req) //nolint:bodyclose // closed in outer scope
 		return doErr
 	})
+	if resp != nil && resp.Body != nil {
+		defer func() { _ = resp.Body.Close() }()
+	}
 	if err != nil {
 		return LookupResult{}, err
 	}
-	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return LookupResult{}, errors.New("user not found")
@@ -2217,6 +2223,15 @@ func (s *authService) LoginWithMFAStepUp(ctx context.Context, stepUpToken, totpC
 }
 
 func (s *authService) GetUserByID(ctx context.Context, tenantID, userID string) (UserProfile, error) {
+	if s.directoryServiceURL == "" {
+		return UserProfile{}, fmt.Errorf("directory service URL not configured")
+	}
+
+	client := s.httpClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+
 	u := fmt.Sprintf("%s/scim/v2/Users/%s", s.directoryServiceURL, userID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
@@ -2228,7 +2243,7 @@ func (s *authService) GetUserByID(ctx context.Context, tenantID, userID string) 
 		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken)
 	}
 
-	resp, err := s.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return UserProfile{}, err
 	}
