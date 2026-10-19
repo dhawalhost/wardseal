@@ -11,19 +11,19 @@ import (
 
 // Event represents an audit log entry.
 type Event struct {
-	ID           string          `json:"id" db:"id"`
-	TenantID     string          `json:"tenant_id" db:"tenant_id"`
-	Timestamp    time.Time       `json:"timestamp" db:"timestamp"`
-	ActorID      *string         `json:"actor_id,omitempty" db:"actor_id"`
-	ActorType    string          `json:"actor_type" db:"actor_type"` // user, system, service
-	Action       string          `json:"action" db:"action"`
-	ResourceType string          `json:"resource_type" db:"resource_type"`
-	ResourceID   *string         `json:"resource_id,omitempty" db:"resource_id"`
-	ResourceName *string         `json:"resource_name,omitempty" db:"resource_name"`
+	ID           string           `json:"id" db:"id"`
+	TenantID     string           `json:"tenant_id" db:"tenant_id"`
+	Timestamp    time.Time        `json:"timestamp" db:"timestamp"`
+	ActorID      *string          `json:"actor_id,omitempty" db:"actor_id"`
+	ActorType    string           `json:"actor_type" db:"actor_type"` // user, system, service
+	Action       string           `json:"action" db:"action"`
+	ResourceType string           `json:"resource_type" db:"resource_type"`
+	ResourceID   *string          `json:"resource_id,omitempty" db:"resource_id"`
+	ResourceName *string          `json:"resource_name,omitempty" db:"resource_name"`
 	Details      *json.RawMessage `json:"details,omitempty" db:"details"`
-	IPAddress    *string         `json:"ip_address,omitempty" db:"ip_address"`
-	UserAgent    *string         `json:"user_agent,omitempty" db:"user_agent"`
-	Outcome      string          `json:"outcome" db:"outcome"` // success, failure
+	IPAddress    *string          `json:"ip_address,omitempty" db:"ip_address"`
+	UserAgent    *string          `json:"user_agent,omitempty" db:"user_agent"`
+	Outcome      string           `json:"outcome" db:"outcome"` // success, failure
 }
 
 // LogInput holds input for creating an audit log entry.

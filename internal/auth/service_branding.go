@@ -7,7 +7,7 @@ func (s *authService) GetBranding(ctx context.Context, tenantID string) (Brandin
 		// Fallback for when store is not initialized (e.g. tests)
 		return BrandingConfig{TenantID: tenantID}, nil
 	}
-	
+
 	config, err := s.brandingStore.Get(ctx, tenantID)
 	if err != nil {
 		return BrandingConfig{}, err

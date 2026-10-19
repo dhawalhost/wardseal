@@ -51,7 +51,7 @@ func TestToolManager_ListTools(t *testing.T) {
 	}
 
 	tools := res.(map[string]interface{})["tools"].([]Tool)
-	
+
 	requiredTools := []string{
 		"wardseal_get_stats",
 		"wardseal_list_workloads",

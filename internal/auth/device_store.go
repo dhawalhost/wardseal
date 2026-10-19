@@ -6,9 +6,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/dhawalhost/wardseal/pkg/database"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/dhawalhost/wardseal/pkg/database"
 )
 
 // Device represents a user's device.

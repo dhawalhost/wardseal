@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/dhawalhost/wardseal/pkg/database"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/dhawalhost/wardseal/pkg/database"
 )
 
 // APIKeyRecord represents an API key in the database.

@@ -122,7 +122,7 @@ func (s *Server) write(v interface{}) {
 		s.logger.Error("Failed to marshal response", zap.Error(err))
 		return
 	}
-	fmt.Fprintf(os.Stdout, "%s\n", data)
+	_, _ = fmt.Fprintf(os.Stdout, "%s\n", data)
 }
 
 // Built-in handlers

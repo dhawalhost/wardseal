@@ -57,7 +57,7 @@ func (c *Client) Check(ctx context.Context, input Input) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("OPA check failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("OPA returned status: %d", resp.StatusCode)

@@ -57,10 +57,10 @@ type Service interface {
 }
 
 type directoryService struct {
-	repo Repository
-	bus  eventbus.EventBus
+	repo            Repository
+	bus             eventbus.EventBus
 	passwordHistory map[string][]string
-	mu sync.RWMutex
+	mu              sync.RWMutex
 }
 
 var ErrInvalidCredentials = errors.New("invalid credentials")

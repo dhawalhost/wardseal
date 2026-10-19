@@ -105,32 +105,6 @@ func hasSCIMAdminRole(roles []string) bool {
 	return false
 }
 
-func jwtClaimScopes(claims jwtlib.MapClaims) []string {
-	raw, ok := claims["scope"]
-	if !ok {
-		raw, ok = claims["scopes"]
-	}
-	if !ok {
-		return nil
-	}
-	switch v := raw.(type) {
-	case string:
-		return strings.Fields(v)
-	case []string:
-		return v
-	case []interface{}:
-		out := make([]string, 0, len(v))
-		for _, item := range v {
-			if s, ok := item.(string); ok && s != "" {
-				out = append(out, s)
-			}
-		}
-		return out
-	default:
-		return nil
-	}
-}
-
 func hasSCIMScope(scopes []string) bool {
 	for _, s := range scopes {
 		switch strings.ToLower(strings.TrimSpace(s)) {

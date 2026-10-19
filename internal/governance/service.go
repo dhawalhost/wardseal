@@ -950,10 +950,10 @@ func (s *governanceService) GatherAuditContext(ctx context.Context, tenantID str
 	stats, err := s.GetDashboardStats(ctx, tenantID)
 	if err == nil {
 		sb.WriteString("DASHBOARD STATS:\n")
-		sb.WriteString(fmt.Sprintf("- Active Users: %d\n", stats.ActiveUsers))
-		sb.WriteString(fmt.Sprintf("- Pending Requests: %d\n", stats.PendingRequests))
-		sb.WriteString(fmt.Sprintf("- Active Workloads: %d\n", stats.ActiveWorkloads))
-		sb.WriteString(fmt.Sprintf("- Hygiene Score: %d/100\n", stats.HygieneScore))
+		fmt.Fprintf(&sb, "- Active Users: %d\n", stats.ActiveUsers)
+		fmt.Fprintf(&sb, "- Pending Requests: %d\n", stats.PendingRequests)
+		fmt.Fprintf(&sb, "- Active Workloads: %d\n", stats.ActiveWorkloads)
+		fmt.Fprintf(&sb, "- Hygiene Score: %d/100\n", stats.HygieneScore)
 		sb.WriteString("\n")
 	}
 
@@ -969,8 +969,8 @@ func (s *governanceService) GatherAuditContext(ctx context.Context, tenantID str
 			if r.Reason != nil {
 				reason = *r.Reason
 			}
-			sb.WriteString(fmt.Sprintf("- [%s] %s (%s) requested access to %s (%s) for reason: %s\n",
-				r.ID, r.RequesterID, r.RequesterType, r.ResourceID, r.ResourceType, reason))
+			fmt.Fprintf(&sb, "- [%s] %s (%s) requested access to %s (%s) for reason: %s\n",
+				r.ID, r.RequesterID, r.RequesterType, r.ResourceID, r.ResourceType, reason)
 		}
 		sb.WriteString("\n")
 	}
@@ -983,8 +983,8 @@ func (s *governanceService) GatherAuditContext(ctx context.Context, tenantID str
 			if i >= 20 {
 				break
 			}
-			sb.WriteString(fmt.Sprintf("- %s:%s --(%s)--> %s:%s\n",
-				r.SubjectType, r.SubjectID, r.Relation, r.Namespace, r.ObjectID))
+			fmt.Fprintf(&sb, "- %s:%s --(%s)--> %s:%s\n",
+				r.SubjectType, r.SubjectID, r.Relation, r.Namespace, r.ObjectID)
 		}
 		sb.WriteString("\n")
 	}
