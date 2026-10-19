@@ -143,19 +143,19 @@ func TestRBACUserRoleAssignment(t *testing.T) {
 
 	// Get user roles
 	t.Run("GetUserRoles", func(t *testing.T) {
-		resp := client.Get(t, "/api/v1/users/"+env.TestUserID+"/roles")
+		resp := client.Get(t, "/api/v1/roles/users/"+env.TestUserID)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
 	// Assign role to user
 	t.Run("AssignRole", func(t *testing.T) {
-		resp := client.Post(t, "/api/v1/users/"+env.TestUserID+"/roles/"+roleID, nil)
+		resp := client.Post(t, "/api/v1/roles/users/"+env.TestUserID+"/"+roleID, nil)
 		AssertStatus(t, resp, http.StatusOK)
 	})
 
 	// Remove role from user
 	t.Run("RemoveRole", func(t *testing.T) {
-		resp := client.Delete(t, "/api/v1/users/"+env.TestUserID+"/roles/"+roleID)
+		resp := client.Delete(t, "/api/v1/roles/users/"+env.TestUserID+"/"+roleID)
 		AssertStatus(t, resp, http.StatusNoContent)
 	})
 

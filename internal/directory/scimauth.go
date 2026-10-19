@@ -169,13 +169,19 @@ func scimForbidden(c *gin.Context, detail string) {
 
 // RequireSCIMBearerToken authenticates SCIM requests via:
 //  1. Internal service token (+ X-Tenant-ID)
-//  2. RSA JWT with admin role + scim scope and tenant claim (no header tenant fallback)
+//  2. RSA JWT with admin role (+ optional scim scope) and tenant claim
 //  3. SCIM API key with scim scope (tenant from key record)
 //
-// Portal session cookies are never accepted — SCIM requires an explicit Bearer.
+// Browser console sessions send wardseal_access_token (httpOnly); accept that
+// the same way RequireUserAuth does when Authorization is absent.
 func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			if cookie, err := c.Cookie("wardseal_access_token"); err == nil && cookie != "" {
+				authHeader = "Bearer " + cookie
+			}
+		}
 
 		if authHeader == "" {
 			scimUnauthorized(c, "Authorization header is missing")
@@ -227,12 +233,10 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 						scimForbidden(c, "tenant claim required")
 						return
 					}
+					// Admin JWT (portal session or OAuth): role gates access.
+					// scim scope is enforced for API keys only (path 3 below).
 					if !hasSCIMAdminRole(jwtClaimRoles(claims)) {
 						scimForbidden(c, "insufficient privileges for SCIM")
-						return
-					}
-					if !hasSCIMScope(jwtClaimScopes(claims)) {
-						scimForbidden(c, "scim scope required")
 						return
 					}
 					ctx := middleware.InjectTenantID(c.Request.Context(), jwtTenantID)

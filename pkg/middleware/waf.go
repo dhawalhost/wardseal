@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	// SQL Injection patterns
-	sqliRegex = regexp.MustCompile(`(?i)('|\b)(UNION\b|SELECT\b|INSERT\b|DELETE\b|DROP\b|UPDATE\b|OR\b\s+\d+=\d+|--|\/\*)`)
-	
+	// SQL Injection patterns.
+	// Avoid bare `--` / `/*` — they false-positive on base64url JWT bodies (e.g. MFA pending_token).
+	sqliRegex = regexp.MustCompile(`(?i)('|\b)(UNION\b\s+SELECT\b|SELECT\b.+\bFROM\b|INSERT\b\s+INTO\b|DELETE\b\s+FROM\b|DROP\b\s+TABLE\b|UPDATE\b\s+\w+\s+SET\b|OR\b\s+\d+\s*=\s*\d+)`)
+
 	// XSS patterns
 	xssRegex = regexp.MustCompile(`(?i)(<script\b|javascript:|on\w+\s*=)`)
 )
