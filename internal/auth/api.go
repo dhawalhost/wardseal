@@ -42,10 +42,20 @@ func cookieSecure() bool {
 	}
 }
 
+// cookieSameSite: Lax on local HTTP so id.* → manage.* top-level redirects
+// still send Domain=.wardseal.local cookies. Strict breaks that hop and
+// causes AuthGuard ↔ login redirect loops.
+func cookieSameSite() http.SameSite {
+	if cookieSecure() {
+		return http.SameSiteStrictMode
+	}
+	return http.SameSiteLaxMode
+}
+
 // setAuthCookies sets httpOnly secure cookies for authentication tokens
 func (h *HTTPHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
 	secure := cookieSecure()
-	sameSite := http.SameSiteStrictMode
+	sameSite := cookieSameSite()
 
 	// Use CookieDomain from config if set, otherwise empty string means host only
 	domain := ""
@@ -70,7 +80,7 @@ func (h *HTTPHandler) clearAuthCookies(c *gin.Context) {
 		domain = h.svc.CookieDomain()
 	}
 	secure := cookieSecure()
-	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetSameSite(cookieSameSite())
 	c.SetCookie(AccessTokenCookie, "", -1, "/", domain, secure, true)
 	c.SetCookie(RefreshTokenCookie, "", -1, "/oauth2/token", domain, secure, true)
 }
@@ -209,6 +219,11 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	}
 	router.GET("/.well-known/jwks.json", h.jwks)
 
+	// TOTP enroll/verify accept access tokens OR MFA step-up tokens (login setup).
+	// Must not nest under RequireUserAuth(ValidateToken) — that rejects step-up aud.
+	mfaTOTP := router.Group("/api/v1/mfa")
+	h.RegisterTOTPRoutes(mfaTOTP)
+
 	// Session-protected group (User Portal, Profile, Apps)
 	// These rely on the wardseal_access_token cookie/Authorization header
 	// and extract the tenant context from the JWT itself.
@@ -226,10 +241,8 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 		setupAPI := sessionProtected.Group("/api/v1/setup")
 		setupAPI.POST("/password-link", h.createPasswordSetupLink)
 
-		// MFA management often happens within a session
 		mfaGroup := sessionProtected.Group("/api/v1/mfa")
 		h.RegisterWebAuthnRoutes(mfaGroup)
-		h.RegisterTOTPRoutes(mfaGroup)
 	}
 
 	tenantProtected := router.Group("/")
@@ -964,7 +977,7 @@ func (h *HTTPHandler) respondOAuthError(c *gin.Context, err *Error) {
 // SignupRequest is the request to create a new tenant and admin user.
 type SignupRequest struct {
 	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
+	Password    string `json:"password" binding:"required,min=12"`
 	CompanyName string `json:"company_name" binding:"required"`
 	Plan        string `json:"plan"` // Optional, defaults to "free" in service
 }
@@ -972,7 +985,11 @@ type SignupRequest struct {
 func (h *HTTPHandler) signup(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		msg := err.Error()
+		if strings.Contains(msg, "Password") && strings.Contains(msg, "min") {
+			msg = "password must be at least 12 characters long"
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
 
@@ -981,10 +998,13 @@ func (h *HTTPHandler) signup(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Signup failed", zap.Error(err))
 		if strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "exists") {
-			// If user/tenant exists (unlikely given UUID, but maybe email collision in global sense?)
-			// Currently our logic creates new tenant always. Directory service `CreateUser` might fail if email exists in that tenant?
-			// But tenant is new. So only if `directory` service enforces unique email globally (unlikely for multi-tenant).
 			c.JSON(http.StatusConflict, gin.H{"error": "Signup failed, possibly duplicate data"})
+			return
+		}
+		// Password / input policy errors are client-fixable (400), not opaque 500s.
+		msg := err.Error()
+		if strings.Contains(msg, "password") || strings.Contains(msg, "disabled") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Signup failed"})

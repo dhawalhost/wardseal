@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -475,7 +476,7 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 				zap.Strings("factors", risk.Factors))
 			return "", &Error{"access_denied", "login blocked due to security risk"}
 		}
-		if risk.Level == RiskLevelMedium {
+		if risk.Level == RiskLevelMedium && !strings.EqualFold(os.Getenv("ENVIRONMENT"), "local") {
 			zap.L().Info("MFA step-up required due to medium risk",
 				zap.String("user_id", userResp.User.ID),
 				zap.Int("score", risk.Score),
@@ -558,8 +559,10 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 		}
 	}
 
-	// 4.6 Check if TOTP is enabled OR required for admins/orgs
-	if s.totpStore != nil {
+	// 4.6 Check if TOTP is enabled OR required for admins/orgs.
+	// Local k8s skips MFA so password login can reach manage without an authenticator.
+	skipMFA := strings.EqualFold(os.Getenv("ENVIRONMENT"), "local")
+	if s.totpStore != nil && !skipMFA {
 		totpSecret, err := s.totpStore.GetByIdentity(ctx, tenantID, userResp.User.ID)
 		if err != nil {
 			return "", fmt.Errorf("failed to check TOTP status: %w", err)
@@ -1983,7 +1986,6 @@ func (s *authService) UpdateUserSelf(ctx context.Context, tenantID, userID strin
 
 	return nil
 }
-
 
 type cacheEntry struct {
 	value     bool

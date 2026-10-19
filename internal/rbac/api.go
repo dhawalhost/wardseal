@@ -30,6 +30,12 @@ func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.Per
 	{
 		roles.POST("", write, h.createRole)
 		roles.GET("", read, h.listRoles)
+		// User assignments under /roles/users/... so ingress /api/v1/users → dirsvc
+		// does not shadow these govsvc routes.
+		roles.GET("/users/:userId", read, h.getUserRoles)
+		roles.POST("/users/:userId/:roleId", write, h.assignRoleToUser)
+		roles.DELETE("/users/:userId/:roleId", write, h.removeRoleFromUser)
+		roles.GET("/users/:userId/permissions", read, h.getUserPermissions)
 		roles.GET("/:id", read, h.getRole)
 		roles.PUT("/:id", write, h.updateRole)
 		roles.DELETE("/:id", del, h.deleteRole)
@@ -42,14 +48,6 @@ func (h *HTTPHandler) RegisterRoutes(rg *gin.RouterGroup, checker middleware.Per
 	{
 		perms.POST("", write, h.createPermission)
 		perms.GET("", read, h.listPermissions)
-	}
-
-	users := rg.Group("/users")
-	{
-		users.GET("/:userId/roles", read, h.getUserRoles)
-		users.POST("/:userId/roles/:roleId", write, h.assignRoleToUser)
-		users.DELETE("/:userId/roles/:roleId", write, h.removeRoleFromUser)
-		users.GET("/:userId/permissions", read, h.getUserPermissions)
 	}
 }
 

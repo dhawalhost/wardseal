@@ -22,6 +22,7 @@ type TokenValidator func(token string) (*Claims, error)
 func RequireUserAuth(validator TokenValidator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		fromHeader := authHeader != ""
 		if authHeader == "" {
 			// Fallback to cookie
 			token, err := c.Cookie("wardseal_access_token")
@@ -39,6 +40,14 @@ func RequireUserAuth(validator TokenValidator) gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		claims, err := validator(tokenString)
+		// Browsers often keep a stale localStorage Bearer (old key / MFA pending)
+		// while wardseal_access_token is the real session. Prefer the cookie when
+		// the Authorization token fails verification.
+		if err != nil && fromHeader {
+			if cookieToken, cookieErr := c.Cookie("wardseal_access_token"); cookieErr == nil && cookieToken != "" && cookieToken != tokenString {
+				claims, err = validator(cookieToken)
+			}
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("invalid or expired token: %v", err)})
 			return
