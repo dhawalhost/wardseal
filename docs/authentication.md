@@ -136,7 +136,7 @@ Exchanges an authorization code from an external provider for a WardSeal JWT.
 {
   "provider": "google",
   "code": "auth_code_from_provider",
-  "redirect_uri": "https://app.wardseal.com/callback"
+  "redirect_uri": "https://id.wardseal.com/callback"
 }
 ```
 

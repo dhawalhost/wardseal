@@ -21,7 +21,7 @@ services:
       - APP_AUTH_DIRECTORY_SERVICE_URL=http://dirsvc:8081
       - APP_AUTH_UI_URL=http://id.wardseal.local
       - APP_AUTH_COOKIE_DOMAIN=${APP_AUTH_COOKIE_DOMAIN:-wardseal.local}
-      - APP_AUTH_CORS_ALLOWED_ORIGINS=http://id.wardseal.local,http://admin.wardseal.local,http://app.wardseal.local,http://developer.wardseal.local,http://status.wardseal.local,http://wardseal.local,http://id.wardseal.com,http://admin.wardseal.com,http://app.wardseal.com,http://developer.wardseal.com,http://status.wardseal.com,http://wardseal.com,http://auth.wardseal.local,http://auth.wardseal.com
+      - APP_AUTH_CORS_ALLOWED_ORIGINS=http://id.wardseal.local,http://manage.wardseal.local,http://app.wardseal.local,http://developer.wardseal.local,http://status.wardseal.local,http://wardseal.local,http://auth.wardseal.local,https://id.wardseal.com,https://manage.wardseal.com,https://wardseal.com,https://auth.wardseal.com
     volumes:
       - ./deploy/dev-keys:/etc/wardseal/keys:ro
     healthcheck:
@@ -37,8 +37,8 @@ services:
       - traefik.http.routers.authsvc-id.rule=Host(`id.wardseal.local`) && (PathPrefix(`/t/`) || PathPrefix(`/oauth2`) || PathPrefix(`/.well-known`) || PathPrefix(`/social/login`) || PathPrefix(`/login/lookup`) || PathPrefix(`/saml`) || PathPrefix(`/api/v1/mfa`) || PathPrefix(`/api/v1/user`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/roles`) || PathPrefix(`/api/v1/permissions`) || PathPrefix(`/api/v1/devices`) || PathPrefix(`/api/v1/branding`) || PathPrefix(`/api/v1/signup`) || PathPrefix(`/api/v1/setup`) || PathPrefix(`/api/v1/webauthn`) || PathPrefix(`/logout`) || PathPrefix(`/api/v1/logout`))
       - traefik.http.routers.authsvc-id.entrypoints=web
       - traefik.http.routers.authsvc-id.service=authsvc
-      # admin.wardseal.local — auth API paths
-      - traefik.http.routers.authsvc-admin.rule=Host(`admin.wardseal.local`) && (PathPrefix(`/t/`) || PathPrefix(`/oauth2`) || PathPrefix(`/.well-known`) || PathPrefix(`/api/v1/apps`) || PathPrefix(`/api/v1/api-keys`) || PathPrefix(`/api/v1/mfa`) || PathPrefix(`/api/v1/user`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/roles`) || PathPrefix(`/api/v1/permissions`) || PathPrefix(`/api/v1/devices`) || PathPrefix(`/api/v1/branding`) || PathPrefix(`/api/v1/setup`) || PathPrefix(`/api/v1/developer`) || PathPrefix(`/api/v1/webauthn`) || PathPrefix(`/logout`) || PathPrefix(`/api/v1/logout`))
+      # manage.wardseal.local — auth API paths
+      - traefik.http.routers.authsvc-admin.rule=Host(`manage.wardseal.local`) && (PathPrefix(`/t/`) || PathPrefix(`/oauth2`) || PathPrefix(`/.well-known`) || PathPrefix(`/api/v1/apps`) || PathPrefix(`/api/v1/api-keys`) || PathPrefix(`/api/v1/mfa`) || PathPrefix(`/api/v1/user`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/roles`) || PathPrefix(`/api/v1/permissions`) || PathPrefix(`/api/v1/devices`) || PathPrefix(`/api/v1/branding`) || PathPrefix(`/api/v1/setup`) || PathPrefix(`/api/v1/developer`) || PathPrefix(`/api/v1/webauthn`) || PathPrefix(`/logout`) || PathPrefix(`/api/v1/logout`))
       - traefik.http.routers.authsvc-admin.entrypoints=web
       - traefik.http.routers.authsvc-admin.service=authsvc
       # app.wardseal.local — user self-service auth API

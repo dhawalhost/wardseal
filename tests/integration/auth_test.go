@@ -71,7 +71,7 @@ func TestOAuthAuthorizeEndpoint(t *testing.T) {
 		params := url.Values{}
 		params.Set("response_type", "code")
 		params.Set("client_id", "test-client")
-		params.Set("redirect_uri", "https://app.wardseal.com/callback")
+		params.Set("redirect_uri", "https://id.wardseal.com/callback")
 		params.Set("scope", "openid profile")
 		params.Set("state", "xyz")
 		params.Set("code_challenge", challenge)
@@ -102,7 +102,7 @@ func TestOAuthAuthorizeEndpoint(t *testing.T) {
 		params := url.Values{}
 		params.Set("response_type", "code")
 		params.Set("client_id", "invalid-client")
-		params.Set("redirect_uri", "https://app.wardseal.com/callback")
+		params.Set("redirect_uri", "https://id.wardseal.com/callback")
 		params.Set("scope", "openid")
 		params.Set("code_challenge", "challenge")
 		params.Set("code_challenge_method", "S256")
@@ -241,7 +241,7 @@ func TestTokenEndpoint(t *testing.T) {
 			"grant_type":    "authorization_code",
 			"code":          "invalid-code",
 			"client_id":     "test-client",
-			"redirect_uri":  "https://app.wardseal.com/callback",
+			"redirect_uri":  "https://id.wardseal.com/callback",
 			"code_verifier": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd",
 		}
 		resp := client.Post(t, "/oauth/token", tokenReq)
@@ -315,5 +315,5 @@ func isValidRedirect(location string) bool {
 		return false
 	}
 	// Check if it's a relative redirect or to a known safe domain
-	return parsed.Host == "" || parsed.Host == "app.wardseal.com"
+	return parsed.Host == "" || parsed.Host == "id.wardseal.com"
 }

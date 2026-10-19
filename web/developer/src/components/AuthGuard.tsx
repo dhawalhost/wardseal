@@ -13,7 +13,7 @@ interface AuthGuardProps {
  *   - 200 OK  → render children
  *   - 401     → redirect to id.wardseal.* login?redirect_uri=<current-url>
  *
- * VITE_API_URL  points to this MFE's nginx proxy (e.g. http://admin.wardseal.local)
+ * VITE_API_URL  points to this MFE's nginx proxy (e.g. http://manage.wardseal.local)
  * VITE_ID_URL   points to the identity portal (e.g. http://id.wardseal.local)
  */
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {

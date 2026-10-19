@@ -208,10 +208,10 @@ const AdminShell: React.FC = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    const appUrl = window.location.hostname.endsWith('.local')
+                                    const targetUrl = window.location.hostname.endsWith('.local')
                                         ? 'http://app.wardseal.local'
-                                        : 'https://app.wardseal.com';
-                                    window.location.assign(appUrl);
+                                        : 'https://id.wardseal.com/portal';
+                                    window.location.assign(targetUrl);
                                 }}
                                 className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-all"
                             >

@@ -105,7 +105,7 @@ services:
       args:
         VITE_ENVIRONMENT: local
         VITE_SITE_BASE_URL: http://wardseal.local
-        VITE_CONSOLE_BASE_URL: http://app.wardseal.local
+        VITE_CONSOLE_BASE_URL: http://manage.wardseal.local
         VITE_SUPPORT_EMAIL: support@wardseal.com
     container_name: wardseal-landingui
     labels:

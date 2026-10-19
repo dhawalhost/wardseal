@@ -189,7 +189,7 @@ func (env *TestEnv) setupTestData(t *testing.T) {
 		INSERT INTO oauth_clients (tenant_id, client_id, client_type, name, redirect_uris, allowed_scopes)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (tenant_id, client_id) DO NOTHING
-	`, env.TestTenantID, "test-client", "public", "Test Client", "{https://app.wardseal.com/callback}", "{openid,profile,email}")
+	`, env.TestTenantID, "test-client", "public", "Test Client", "{https://id.wardseal.com/callback}", "{openid,profile,email}")
 	if err != nil {
 		t.Fatalf("Failed to create test OAuth client: %v", err)
 	}
