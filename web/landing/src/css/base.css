@@ -1,55 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/**
+ * Landing aliases on top of wardseal-ui-kit tokens.css (imported in main.jsx).
+ *
+ * Naming note: landing `--accent` means the CTA (kit `--secondary` / MASTER Accent).
+ * Kit’s soft `--accent` channel is overridden here for marketing class names only.
+ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Zinc-based dark palette ── */
-  --bg:            #09090b;
-  --bg-elevated:   #18181b;
-  --bg-card:       #18181b;
-  --bg-card-hover: #1f1f23;
-  --bg-surface:    rgba(24, 24, 27, 0.7);
+  --bg:            hsl(var(--background));
+  --bg-elevated:   hsl(var(--surface-bright));
+  --bg-card:       hsl(var(--card));
+  --bg-card-hover: hsl(var(--muted));
+  --bg-surface:    hsl(var(--card) / 0.85);
 
-  /* ── Accent: electric green for CTAs ── */
-  --accent:        #06ffa5;
-  --accent-dim:    rgba(6, 255, 165, 0.15);
-  --accent-glow:   rgba(6, 255, 165, 0.25);
-  --accent-text:   #09090b;
+  /* CTA — maps to kit secondary (MASTER Accent/CTA). Not kit soft accent. */
+  --accent:        hsl(var(--secondary));
+  --accent-dim:    hsl(var(--secondary) / 0.12);
+  --accent-glow:   hsl(var(--secondary) / 0.18);
+  --accent-text:   hsl(var(--on-secondary));
 
-  /* ── Semantic colors ── */
-  --cyan:          #22d3ee;
-  --cyan-dim:      rgba(34, 211, 238, 0.12);
+  --cyan:          hsl(199 89% 48%);
+  --cyan-dim:      hsl(199 89% 48% / 0.1);
 
-  /* ── Text hierarchy (zinc scale) ── */
-  --text:          #fafafa;
-  --text-secondary:#a1a1aa;
-  --text-dim:      #71717a;
-  --text-faint:    #52525b;
+  --text:          hsl(var(--foreground));
+  --text-secondary:hsl(var(--on-surface-variant));
+  --text-dim:      hsl(var(--muted-foreground));
+  --text-faint:    hsl(215 16% 47%);
 
-  /* ── Borders ── */
-  --border:        rgba(255, 255, 255, 0.06);
-  --border-hover:  rgba(255, 255, 255, 0.12);
-  --border-accent: rgba(6, 255, 165, 0.25);
+  /* Full color — uses kit --input channels (same as kit --border) to avoid circular override */
+  --border:        hsl(var(--input));
+  --border-hover:  hsl(var(--outline));
+  --border-accent: hsl(var(--secondary) / 0.35);
 
-  /* ── Typography ── */
-  --font-body:     'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono:     'JetBrains Mono', 'Fira Code', monospace;
+  --font-body:     var(--font-display);
+  /* --font-mono already set by kit tokens */
 
-  /* ── Radii ── */
-  --r-sm:   8px;
-  --r-md:   12px;
-  --r-lg:   16px;
-  --r-xl:   20px;
+  --r-sm:   var(--radius-md);
+  --r-md:   var(--radius-md);
+  --r-lg:   var(--radius-lg);
+  --r-xl:   var(--radius-xl);
   --r-full: 9999px;
 
-  /* ── Motion: strict 150ms micro-interactions ── */
   --transition: 150ms ease-in-out;
+  --container: 1120px;
 
-  /* ── Layout ── */
-  --container: 1200px;
+  /* Brand ink / CTA shortcuts for marketing CSS */
+  --ink:           hsl(var(--primary));
+  --ink-fg:        hsl(var(--on-primary));
+  --surface-muted: hsl(var(--muted));
 }
 
 html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 body {
   font-family: var(--font-body);
@@ -63,7 +73,6 @@ body {
 
 #root { min-height: 100vh; }
 
-/* ── Typography ── */
 h1, h2, h3, h4, h5 {
   font-family: var(--font-body);
   font-weight: 700;
@@ -72,98 +81,94 @@ h1, h2, h3, h4, h5 {
   line-height: 1.15;
   letter-spacing: -0.025em;
 }
-h1 { font-size: clamp(2.8rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.08; }
-h2 { font-size: clamp(2rem, 4vw, 2.8rem); }
+h1 { font-size: clamp(2.5rem, 5vw, 3.75rem); font-weight: 800; line-height: 1.08; }
+h2 { font-size: clamp(1.75rem, 3.5vw, 2.5rem); }
 h3 { font-size: 1.25rem; font-weight: 600; }
 p  { color: var(--text-secondary); font-size: 1.0625rem; line-height: 1.7; }
 a  { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 
-.container { max-width: var(--container); margin: 0 auto; padding: 0 32px; }
-.section { padding: 120px 0; position: relative; }
-.section-muted {
-  background: var(--bg-elevated);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
-/* ── Tag / Chip ── */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent-dim);
-  color: var(--accent);
-  padding: 6px 14px;
-  border-radius: var(--r-full);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border: 1px solid var(--border-accent);
-}
-
-/* ── Buttons ── */
 .btn {
-  border-radius: var(--r-md);
-  padding: 14px 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: 0.9375rem;
-  font-family: var(--font-body);
-  cursor: pointer;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition);
   text-decoration: none;
-  gap: 8px;
-  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
-  position: relative;
 }
 .btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-
+.btn-sm { height: 36px; padding: 0 14px; font-size: 0.875rem; }
+.btn-lg { height: 48px; padding: 0 22px; }
 .btn-accent {
   background: var(--accent);
   color: var(--accent-text);
-  border: 1px solid var(--accent);
-  font-weight: 700;
+  box-shadow: var(--shadow-xs);
 }
-.btn-accent:hover {
-  background: #00e896;
-  box-shadow: 0 0 20px var(--accent-glow);
-  transform: translateY(-1px);
-}
-.btn-accent:active { transform: translateY(0); }
-
+.btn-accent:hover { background: hsl(var(--secondary) / 0.9); }
 .btn-outline {
   background: transparent;
-  border: 1px solid var(--border-hover);
   color: var(--text);
+  border-color: var(--border);
 }
 .btn-outline:hover {
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.2);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+.btn-text {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--r-sm);
+  transition: color var(--transition);
+}
+.btn-text:hover { color: var(--text); }
+.btn-text:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-.btn-lg { padding: 16px 32px; font-size: 1rem; }
-.btn-sm { padding: 10px 20px; font-size: 0.875rem; }
-.btn-text { font-weight: 600; color: var(--text-dim); transition: color var(--transition); border: none; background: none; cursor: pointer; }
-.btn-text:hover { color: var(--text); }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
 
-/* ── Section Header ── */
-.section-header { margin-bottom: 64px; }
-.section-header h2 { margin-top: 16px; }
-.section-header p { margin-top: 12px; font-size: 1.125rem; max-width: 560px; }
-.section-header.align-center { text-align: center; max-width: 700px; margin-left: auto; margin-right: auto; }
-.section-header.align-center p { margin-left: auto; margin-right: auto; }
-
-/* ── Scroll reveal (lightweight) ── */
 .reveal {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: translateY(12px);
+  transition: opacity 400ms ease-out, transform 400ms ease-out;
 }
-.reveal.in-view { opacity: 1; transform: translateY(0); }
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}

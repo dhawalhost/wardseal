@@ -1,8 +1,33 @@
-/* ── Footer ── */
+/* ── Footer (light Trust & Authority) ── */
 .site-footer {
-  padding: 80px 0 32px;
-  background: #050506;
-  border-top: 1px solid var(--border);
+  padding: 72px 0 32px;
+  background: var(--ink);
+  border-top: 1px solid transparent;
+  color: var(--bg);
+}
+
+.site-footer .logo-text {
+  color: var(--bg);
+}
+
+.site-footer .footer-tagline,
+.site-footer .footer-col a,
+.site-footer .footer-bottom {
+  color: var(--text-faint);
+}
+
+.site-footer .footer-col h4 {
+  color: var(--border-hover);
+}
+
+.site-footer .footer-col a:hover {
+  color: var(--bg);
+}
+
+.site-footer .footer-col a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--accent);
+  border-radius: 4px;
 }
 
 .footer-grid {
@@ -11,41 +36,56 @@
   gap: 48px;
   margin-bottom: 56px;
 }
-.footer-tagline { margin-top: 16px; color: var(--text-dim); font-size: 0.9375rem; line-height: 1.6; max-width: 280px; }
+.footer-tagline {
+  margin-top: 16px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  max-width: 280px;
+}
 
 .footer-col h4 {
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   margin-bottom: 20px;
-  color: var(--text-dim);
   font-weight: 600;
 }
 .footer-col ul { list-style: none; }
 .footer-col li { margin-bottom: 10px; }
 .footer-col a {
-  color: var(--text-faint);
   font-size: 0.875rem;
   transition: color var(--transition);
 }
-.footer-col a:hover { color: var(--text); }
-.footer-col a:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-  border-radius: 4px;
-}
 
 .footer-bottom {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
   padding-top: 24px;
   display: flex;
   justify-content: space-between;
-  color: var(--text-faint);
   font-size: 0.8125rem;
+}
+
+/* Pricing cards if present */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.pricing-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 32px 28px;
+  box-shadow: 0 4px 24px -6px rgb(15 23 42 / 0.06);
+}
+.pricing-card.featured {
+  border-color: var(--accent);
+  box-shadow: 0 8px 32px -8px rgb(3 105 161 / 0.2);
 }
 
 @media (max-width: 768px) {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .pricing-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .footer-grid { grid-template-columns: 1fr; gap: 28px; }
