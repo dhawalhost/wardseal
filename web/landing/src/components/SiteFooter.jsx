@@ -11,30 +11,34 @@ export default function SiteFooter() {
           <div>
             <Link className="logo" to="/" style={{ marginBottom: '24px' }}>
               <div className="logo-container">
-                <img src="/wardseal.svg" alt="WardSeal Logo" className="logo-img" />
+                <img src="/wardseal.svg" alt="WardSeal" className="logo-img" />
               </div>
               <span className="logo-text">WardSeal</span>
             </Link>
-            <div className="footer-tagline" style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: '1.6', maxWidth: '300px' }}>
-              Next-generation AI Identity &amp; Access Management for modern enterprises.
-            </div>
+            <p className="footer-tagline">
+              Enterprise identity and access management — authentication, authorization,
+              and directory governance on open standards.
+            </p>
           </div>
           <div className="footer-col">
             <h4>Product</h4>
             <ul>
-              <li><a href="/#features">Features</a></li>
-              <li><a href="/#pricing">Pricing</a></li>
+              <li><a href="/#product">Control plane</a></li>
+              <li><a href="/#capabilities">Capabilities</a></li>
+              <li><a href="/#platform">Platform</a></li>
+              <li><a href={`${consoleBaseUrl}/signup`}>Request access</a></li>
             </ul>
           </div>
           <div className="footer-col">
-            <h4>Developers</h4>
+            <h4>Resources</h4>
             <ul>
-              <li><a href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer">GitHub</a></li>
+              <li><a href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer">Documentation</a></li>
               <li><Link to="/policies">Policies</Link></li>
+              <li><a href={`${consoleBaseUrl}/login`}>Console sign-in</a></li>
             </ul>
           </div>
           <div className="footer-col">
-            <h4>Company</h4>
+            <h4>Legal</h4>
             <ul>
               <li><Link to="/privacy-policy">Privacy Policy</Link></li>
               <li><Link to="/terms-of-service">Terms of Service</Link></li>
@@ -44,7 +48,7 @@ export default function SiteFooter() {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} WardSeal. All rights reserved.</span>
-          <span>Built on open standards — OIDC · SAML · SCIM · WebAuthn</span>
+          <span>OIDC · SAML · SCIM · WebAuthn</span>
         </div>
       </div>
     </footer>

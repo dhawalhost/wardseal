@@ -1,3 +1,5 @@
+.section-muted { background: linear-gradient(180deg, var(--surface-muted) 0%, var(--bg) 100%); }
+
 /* ── Architecture Grid ── */
 .arch-grid {
   display: grid;
@@ -99,24 +101,48 @@
 
 /* ── CTA Banner ── */
 .cta-banner {
-  padding: 80px 48px;
+  padding: 72px 48px;
   border-radius: var(--r-xl);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: var(--ink);
+  border: 1px solid transparent;
   text-align: center;
   position: relative;
   overflow: hidden;
+  color: var(--bg);
 }
-.cta-banner::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+.cta-banner h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  margin-bottom: 16px;
+  color: var(--bg);
 }
-.cta-banner h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 12px; }
-.cta-banner p { font-size: 1.0625rem; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+.cta-banner p {
+  font-size: 1.0625rem;
+  margin-bottom: 32px;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+  color: var(--text-faint);
+}
+.cta-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: var(--accent-dim);
+  color: hsl(199 89% 72%);
+}
 .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.cta-banner .btn-outline {
+  color: var(--bg);
+  border-color: hsl(215 20% 65% / 0.35);
+}
+.cta-banner .btn-outline:hover {
+  background: hsl(var(--background) / 0.08);
+  border-color: hsl(var(--background) / 0.45);
+}
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {
