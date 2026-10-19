@@ -37,7 +37,7 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                 <TableCell className="py-1.5 pl-4">
                     <div className="flex items-center gap-2.5">
                         <div className={`h-1 w-1 rounded-full transition-all ${event.outcome === 'success' ? 'bg-success' : 'bg-destructive/100'}`} />
-                        <span className="text-[9px] font-bold text-on-surface-variant/40 group-hover:text-on-surface transition-colors">
+                        <span className="text-xs font-bold text-muted-foreground group-hover:text-on-surface transition-colors">
                             {formatDate(event.timestamp)}
                         </span>
                     </div>
@@ -45,7 +45,7 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                 <TableCell className="py-2 text-[11px] font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">
                     {event.action}
                 </TableCell>
-                <TableCell className="py-1.5 font-medium text-[9px] text-on-surface-variant">
+                <TableCell className="py-1.5 font-medium text-xs text-on-surface-variant">
                     <div className="flex flex-col">
                         <span className="text-[7px] font-bold tracking-tight text-primary mb-0 flex items-center opacity-60 uppercase">{event.resource_type}</span>
                         <span className="truncate max-w-[120px]" title={event.resource_name || event.resource_id}>
@@ -55,17 +55,17 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                 </TableCell>
                 <TableCell className="py-1.5">
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 flex items-center justify-center bg-surface-container/50 rounded-md text-on-surface-variant/40 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                        <div className="w-4 h-4 flex items-center justify-center bg-surface-container/50 rounded-md text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                             <Terminal className="h-2.5 w-2.5" />
                         </div>
-                        <code className="text-[9px] font-bold text-on-surface-variant/40 tracking-tight">
+                        <code className="text-xs font-bold text-muted-foreground tracking-tight">
                             {event.actor_id ? event.actor_id.substring(0, 10) : "system"}
                         </code>
                     </div>
                 </TableCell>
                 <TableCell className="py-2">
                     <Badge
-                        className={`rounded-md font-bold text-[8px] tracking-widest px-1.5 py-0 shadow-none border-none uppercase ${event.outcome === 'success' ? 'bg-success-subtle text-success' : 'bg-destructive/10 text-destructive'}`}
+                        className={`rounded-md font-bold text-[10px] tracking-wide px-1.5 py-0 shadow-none border-none uppercase ${event.outcome === 'success' ? 'bg-success-subtle text-success' : 'bg-destructive/10 text-destructive'}`}
                     >
                         {event.outcome === 'success' ? 'success' : 'failure'}
                     </Badge>
@@ -91,9 +91,9 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                                         <Binary className="w-3.5 h-3.5" />
                                         Event Details
                                     </h4>
-                                    <p className="text-on-surface-variant/20 font-bold tracking-tight text-[9px] uppercase">Captured at {new Date(event.timestamp).toISOString()}</p>
+                                    <p className="text-muted-foreground font-bold tracking-tight text-xs uppercase">Captured at {new Date(event.timestamp).toISOString()}</p>
                                 </div>
-                                <div className="bg-card p-1.5 px-3 rounded-lg ring-1 ring-on-surface/5 text-[9px] font-bold text-on-surface-variant/40 tracking-tight shadow-sm uppercase">
+                                <div className="bg-card p-1.5 px-3 rounded-lg ring-1 ring-on-surface/5 text-xs font-bold text-muted-foreground tracking-tight shadow-sm uppercase">
                                     ID: {event.id.substring(0, 8)}
                                 </div>
                             </div>
@@ -102,7 +102,7 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                                 <div className="md:col-span-2">
                                     <div className="bg-card rounded-xl ring-1 ring-on-surface/5 p-3 relative overflow-hidden shadow-xl shadow-on-surface/5 group/payload">
                                         <div className="relative z-10 space-y-4">
-                                            <span className="text-[9px] font-bold tracking-tight text-primary/20 uppercase">// Raw Data</span>
+                                            <span className="text-xs font-bold tracking-tight text-primary/20 uppercase">// Raw Data</span>
                                             <pre className="text-on-surface font-mono text-[10px] leading-relaxed overflow-auto max-h-[300px] custom-scrollbar p-4 bg-surface-container/30 rounded-xl ring-1 ring-on-surface/5">
                                                 {JSON.stringify(event.details, null, 4)}
                                             </pre>
@@ -111,14 +111,14 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                                 </div>
                                 <div className="space-y-4">
                                     <div className="bg-card rounded-xl ring-1 ring-on-surface/5 p-4 space-y-2 shadow-lg shadow-on-surface/5">
-                                        <span className="text-[9px] font-bold tracking-widest text-on-surface-variant/40 uppercase">Actor</span>
+                                        <span className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Actor</span>
                                         <div className="flex items-center gap-2">
                                             <div className="w-6 h-6 rounded-lg bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px]">@</div>
                                             <span className="text-xs font-bold text-on-surface truncate">{event.actor_id || 'System'}</span>
                                         </div>
                                     </div>
                                     <div className="bg-card rounded-xl ring-1 ring-on-surface/5 p-4 space-y-2 shadow-lg shadow-on-surface/5">
-                                        <span className="text-[9px] font-bold tracking-widest text-on-surface-variant/40 uppercase">Resource</span>
+                                        <span className="text-xs font-bold tracking-wide text-muted-foreground uppercase">Resource</span>
                                         <div className="flex items-center gap-2">
                                             <div className="w-6 h-6 rounded-lg bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px]">#</div>
                                             <span className="text-xs font-bold text-on-surface truncate">{event.resource_id}</span>

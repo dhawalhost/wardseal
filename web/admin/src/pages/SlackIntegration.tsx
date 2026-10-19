@@ -15,19 +15,15 @@ import {
     Lock,
     Webhook,
     Zap,
-    Cpu,
     MessageSquare,
     Activity,
     Terminal,
-    Link2,
-    Binary,
-    Monitor,
     Hash,
+    Monitor,
     Command,
-    X,
     Layout
 } from 'lucide-react';
-import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassCardFooter, GlassCardDescription, PageLayout
+import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassCardFooter, PageLayout
 } from '@/components/layout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -104,109 +100,109 @@ const SlackIntegration: React.FC = () => {
         }
     };
 
-    if (loading && !status) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" /></div>;
+    if (loading && !status) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-muted-foreground" /></div>;
 
     const isConfigured = status?.status === 'ready';
 
     return (
         <PageLayout>
-        <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 py-12">
+        <div className="max-w-6xl mx-auto space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<Slack className="w-10 h-10 text-[#4A154B]" />}
-                title="ChatOps Intelligence"
-                description="Orchestrate organizational identity lifecycle through real-time enterprise messaging clusters."
+                icon={<Slack className="w-6 h-6 text-[#4A154B]" />}
+                title="Slack Integration"
+                description="Connect Slack for identity alerts, access requests, and ChatOps commands."
                 actions={
                     isConfigured && (
-                        <Badge className="bg-success/10 text-success border-none rounded-xl font-bold text-[11px] tracking-tight px-6 py-2.5 flex items-center gap-3">
+                        <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-xs px-3 py-1.5 flex items-center gap-2 shadow-none">
                             <ShieldCheck className="w-4 h-4" />
-                            Core link active
+                            Connected
                         </Badge>
                     )
                 }
             />
 
              {(error || success) && (
-                <div className="space-y-6">
+                <div className="space-y-3">
                     {error && (
-                        <Alert variant="destructive" className="rounded-2xl border-none bg-destructive/10 text-destructive">
-                            <AlertDescription className="font-bold text-xs tracking-tight flex items-center gap-3">
+                        <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-destructive">
+                            <AlertDescription className="font-semibold text-sm flex items-center gap-3">
                                 <ShieldAlert className="w-4 h-4" />
-                                Configuration alert: {error}
+                                {error}
                             </AlertDescription>
                         </Alert>
                     )}
                     {success && (
-                        <Alert className="rounded-2xl border-none bg-success-subtle text-success">
-                            <AlertDescription className="font-bold text-xs tracking-tight flex items-center gap-3">
+                        <Alert className="rounded-lg border border-success/20 bg-success-subtle text-success">
+                            <AlertDescription className="font-semibold text-sm flex items-center gap-3">
                                 <ShieldCheck className="w-4 h-4" />
-                                Event success: {success}
+                                {success}
                             </AlertDescription>
                         </Alert>
                     )}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                <div className="lg:col-span-4 space-y-10">
-                    <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-[32px]">
-                        <GlassCardHeader className="py-10 px-10 border-b border-on-surface/5 bg-surface-container/10">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/5 rounded-2xl text-primary">
-                                    <Zap className="w-7 h-7" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-card">
+                <div className="lg:col-span-4 space-y-page">
+                    <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                        <GlassCardHeader className="py-card px-card border-b border-border">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                                    <Zap className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">Node cluster</GlassCardTitle>
-                                    <p className="text-on-surface-variant/40 font-bold text-[12px] mt-1 tracking-tight italic">Live integration state</p>
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Connection status</GlassCardTitle>
+                                    <p className="text-muted-foreground text-sm mt-0.5">Current Slack workspace</p>
                                 </div>
                             </div>
                         </GlassCardHeader>
-                        <GlassCardContent className="p-10 flex flex-col items-center text-center space-y-10">
+                        <GlassCardContent className="p-card flex flex-col items-center text-center space-y-6">
                             {isConfigured ? (
                                 <>
-                                    <div className="relative group">
-                                        <div className="w-28 h-28 rounded-[28px] bg-[#4A154B]/5 flex items-center justify-center transition-all group-hover:scale-105 duration-500">
-                                            <Slack className="w-14 h-14 text-[#4A154B]" />
+                                    <div className="relative">
+                                        <div className="w-20 h-20 rounded-lg bg-[#4A154B]/10 flex items-center justify-center">
+                                            <Slack className="w-10 h-10 text-[#4A154B]" />
                                         </div>
-                                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-card border border-on-surface/5 rounded-2xl shadow-lg flex items-center justify-center">
-                                            <Activity className="w-5 h-5 text-success animate-pulse" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <h3 className="font-bold text-xl tracking-tight text-on-surface">Synchronized</h3>
-                                        <div className="flex flex-col gap-1.5 pt-2">
-                                            <code className="text-[10px] font-bold text-on-surface-variant/20 tracking-tight italic">Team: {status?.team_id}</code>
-                                            <code className="text-[10px] font-bold text-on-surface-variant/20 tracking-tight italic">App: {status?.app_id}</code>
+                                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-card border border-border rounded-lg shadow-sm flex items-center justify-center">
+                                            <Activity className="w-4 h-4 text-success" />
                                         </div>
                                     </div>
-                                    <div className="w-full space-y-4 pt-4">
+                                    <div className="space-y-2">
+                                        <h3 className="font-bold text-lg tracking-tight text-on-surface">Connected</h3>
+                                        <div className="flex flex-col gap-1 pt-1">
+                                            <code className="text-xs font-medium text-muted-foreground">Team: {status?.team_id}</code>
+                                            <code className="text-xs font-medium text-muted-foreground">App: {status?.app_id}</code>
+                                        </div>
+                                    </div>
+                                    <div className="w-full space-y-3 pt-2">
                                         <Button 
                                             variant="outline" 
-                                            className="w-full h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 font-bold tracking-tight text-sm transition-all hover:bg-surface-container shadow-sm" 
+                                            className="w-full h-10 rounded-lg border border-border font-semibold text-sm hover:bg-muted/50 shadow-sm" 
                                             onClick={fetchStatus}
                                         >
-                                            <RefreshCcw className="w-4 h-4 mr-3" /> Audit integrity
+                                            <RefreshCcw className="w-4 h-4 mr-2" /> Refresh status
                                         </Button>
                                         <Button 
                                             variant="ghost" 
-                                            className="w-full h-12 text-destructive font-bold tracking-tight text-[11px] hover:bg-destructive/10 hover:text-destructive rounded-2xl transition-all" 
+                                            className="w-full h-10 text-destructive font-semibold text-sm hover:bg-destructive/10 hover:text-destructive rounded-lg" 
                                             onClick={handleDisconnect}
                                         >
-                                            <Trash2 className="w-4 h-4 mr-2.5" /> Terminate link
+                                            <Trash2 className="w-4 h-4 mr-2" /> Disconnect
                                         </Button>
                                     </div>
                                 </>
                             ) : (
                                 <>
-                                    <div className="w-28 h-28 rounded-[28px] bg-surface-container/50 flex items-center justify-center opacity-20">
-                                        <Slack className="w-14 h-14" />
+                                    <div className="w-20 h-20 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground">
+                                        <Slack className="w-10 h-10" />
                                     </div>
-                                    <div className="space-y-6">
-                                        <p className="text-[11px] font-bold tracking-tight opacity-40 leading-relaxed max-w-[200px]">
-                                            Zero activity vectors detected in current manifest
+                                    <div className="space-y-4">
+                                        <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[220px]">
+                                            No Slack workspace connected yet.
                                         </p>
-                                        <Button variant="outline" className="h-12 rounded-2xl border-none bg-surface-container ring-1 ring-on-surface/5 font-bold tracking-tight text-[11px] px-8" asChild>
+                                        <Button variant="outline" className="h-10 rounded-lg border border-border font-semibold text-sm px-4" asChild>
                                             <a href="https://api.slack.com/apps" target="_blank" rel="noreferrer">
-                                                <ExternalLink className="w-4 h-4 mr-3" /> API portal
+                                                <ExternalLink className="w-4 h-4 mr-2" /> Slack API portal
                                             </a>
                                         </Button>
                                     </div>
@@ -215,54 +211,51 @@ const SlackIntegration: React.FC = () => {
                         </GlassCardContent>
                     </GlassCard>
 
-                    <div className="bg-inverse text-on-inverse p-10 rounded-[40px] flex items-start gap-6 shadow-2xl shadow-on-surface/10 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                            <Binary className="w-24 h-24 -mr-4 -mt-4 text-primary" />
-                        </div>
-                        <Activity className="w-8 h-8 text-primary flex-shrink-0 opacity-80" />
-                        <p className="text-[12px] font-bold leading-relaxed tracking-tight text-on-inverse/40">
-                            Telemetry: Event propagation is handled via structural WebSocket clusters, ensuring latency-free identity auditing.
+                    <div className="bg-secondary text-secondary-foreground p-card rounded-lg flex items-start gap-4 shadow-sm border border-secondary/20">
+                        <Activity className="w-5 h-5 text-secondary-foreground flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground/80">
+                            Events are delivered over secure webhooks so identity actions stay in sync with Slack.
                         </p>
                     </div>
                 </div>
 
                 <div className="lg:col-span-8">
-                    <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-[32px]">
-                        <GlassCardHeader className="py-10 px-10 border-b border-on-surface/5 bg-surface-container/10">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/10 text-primary rounded-2xl">
-                                    <Layout className="w-7 h-7" />
+                    <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                        <GlassCardHeader className="py-card px-card border-b border-border">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
+                                    <Layout className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-3xl font-bold tracking-tight text-on-surface">Configuration manifest</GlassCardTitle>
-                                    <p className="text-on-surface-variant/40 font-bold text-[12px] mt-1 tracking-tight italic">Structural handshake parameters</p>
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Configuration</GlassCardTitle>
+                                    <p className="text-muted-foreground text-sm mt-0.5">Slack app credentials and endpoints</p>
                                 </div>
                             </div>
                         </GlassCardHeader>
                         <form onSubmit={handleSave}>
-                            <GlassCardContent className="p-10 space-y-10">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-4">
-                                        <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
+                            <GlassCardContent className="p-card space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-2">
                                             <Hash className="w-3.5 h-3.5" />
-                                            Team identifier
+                                            Team ID
                                         </Label>
                                         <Input 
                                             placeholder="e.g. T0123ABC"
-                                            className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6 font-mono"
+                                            className="h-11 rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm font-mono"
                                             value={form.team_id}
                                             onChange={e => setForm({...form, team_id: e.target.value})}
                                             required
                                         />
                                     </div>
-                                    <div className="space-y-4">
-                                        <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-2">
                                             <Monitor className="w-3.5 h-3.5" />
-                                            App identifier
+                                            App ID
                                         </Label>
                                         <Input 
                                             placeholder="e.g. A0123XYZ"
-                                            className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6 font-mono"
+                                            className="h-11 rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm font-mono"
                                             value={form.app_id}
                                             onChange={e => setForm({...form, app_id: e.target.value})}
                                             required
@@ -270,62 +263,62 @@ const SlackIntegration: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-2">
                                         <Lock className="w-3.5 h-3.5" />
                                         Bot user token (OAuth)
                                     </Label>
                                     <Input 
                                         type="password"
-                                        placeholder={isConfigured ? "• • • • • • • • • • • • • • • •" : "xoxb-xxxx-xxxx-xxxx"}
-                                        className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6"
+                                        placeholder={isConfigured ? "••••••••••••••••" : "xoxb-xxxx-xxxx-xxxx"}
+                                        className="h-11 rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm"
                                         value={form.bot_token}
                                         onChange={e => setForm({...form, bot_token: e.target.value})}
                                         required={!isConfigured}
                                     />
-                                    <p className="text-[10px] font-bold tracking-tight text-on-surface-variant/20 ml-1 flex items-center gap-2 italic">
-                                        AES-256 symmetric encryption applied // Redacted in interface
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        Tokens are encrypted at rest and never shown again after save.
                                     </p>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-2">
                                         <ShieldCheck className="w-3.5 h-3.5" />
-                                        Signing cryptographic secret
+                                        Signing secret
                                     </Label>
                                     <Input 
                                         type="password"
-                                        placeholder={isConfigured ? "• • • • • • • • • • • • • • • •" : "Raw hex secret from Slack portal"}
-                                        className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6"
+                                        placeholder={isConfigured ? "••••••••••••••••" : "Signing secret from Slack"}
+                                        className="h-11 rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm"
                                         value={form.signing_secret}
                                         onChange={e => setForm({...form, signing_secret: e.target.value})}
                                         required={!isConfigured}
                                     />
                                 </div>
 
-                                <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-2">
                                         <Webhook className="w-3.5 h-3.5" />
-                                        Inbound webhook endpoint
+                                        Incoming webhook URL
                                     </Label>
                                     <Input 
                                         placeholder="https://hooks.slack.com/services/..."
-                                        className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6 font-mono"
+                                        className="h-11 rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm font-mono"
                                         value={form.webhook_url}
                                         onChange={e => setForm({...form, webhook_url: e.target.value})}
                                     />
                                 </div>
                             </GlassCardContent>
-                            <GlassCardFooter className="py-10 px-10 border-t border-on-surface/5 bg-surface-container/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                                <div className="flex items-center gap-6">
-                                    <div className={`w-3 h-3 rounded-full transition-all ${form.enabled ? 'bg-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' : 'bg-on-surface/10'}`} />
+                            <GlassCardFooter className="py-card px-card border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-2.5 h-2.5 rounded-full ${form.enabled ? 'bg-success' : 'bg-muted-foreground'}`} />
                                     <div className="flex flex-col">
-                                        <span className="text-[12px] font-bold tracking-tight text-on-surface italic">State: {form.enabled ? 'Active Enforcement' : 'Dormant'}</span>
-                                        <span className="text-[10px] font-bold tracking-tight text-on-surface-variant/20 mt-0.5">Deterministic clusters synchronized</span>
+                                        <span className="text-sm font-semibold text-on-surface">{form.enabled ? 'Enabled' : 'Disabled'}</span>
+                                        <span className="text-xs font-medium text-muted-foreground">Integration state</span>
                                     </div>
                                 </div>
-                                <Button type="submit" disabled={saving} className="h-16 rounded-[24px] font-bold tracking-tight text-sm px-12 shadow-2xl shadow-primary/30 transition-all hover:scale-[1.01] active:scale-[0.99] w-full md:w-auto">
-                                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Commit orchestration'}
+                                <Button type="submit" disabled={saving} className="h-11 rounded-lg font-semibold text-sm px-6 bg-secondary text-secondary-foreground shadow-sm w-full md:w-auto">
+                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save configuration'}
                                 </Button>
                             </GlassCardFooter>
                         </form>
@@ -333,35 +326,35 @@ const SlackIntegration: React.FC = () => {
                 </div>
             </div>
 
-            <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-inverse text-on-inverse overflow-hidden rounded-[40px] p-12">
-                <div className="flex flex-col lg:flex-row items-start gap-12">
-                    <div className="p-5 bg-card/5 rounded-3xl backdrop-blur-xl border border-on-inverse/5">
-                        <MessageSquare className="w-10 h-10 text-primary" />
+            <GlassCard className="border border-secondary/20 shadow-sm bg-secondary text-secondary-foreground overflow-hidden rounded-lg p-card">
+                <div className="flex flex-col lg:flex-row items-start gap-card">
+                    <div className="p-3 bg-secondary-foreground/10 rounded-lg">
+                        <MessageSquare className="w-6 h-6 text-secondary-foreground" />
                     </div>
-                    <div className="space-y-10 flex-1">
-                        <div className="space-y-4">
-                            <h3 className="text-3xl font-bold tracking-tight">Manual routing matrix</h3>
-                            <p className="text-[12px] tracking-tight font-bold opacity-40 leading-relaxed max-w-2xl italic">
-                                Route organizational command clusters to this service's deterministic endpoint for verified execution.
+                    <div className="space-y-6 flex-1">
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold tracking-tight">Slash command endpoint</h3>
+                            <p className="text-sm font-medium text-secondary-foreground/80 leading-relaxed max-w-2xl">
+                                Point your Slack app&apos;s slash commands to this URL.
                             </p>
                         </div>
                         
-                        <div className="bg-card/5 p-8 rounded-3xl border border-on-inverse/5 backdrop-blur-md group transition-all hover:bg-card/[0.07] cursor-pointer">
-                            <div className="flex items-center gap-6">
-                                <div className="p-2 bg-primary/10 rounded-xl">
-                                    <Terminal className="h-5 w-5 text-primary-foreground" />
+                        <div className="bg-secondary-foreground/10 p-4 rounded-lg border border-secondary-foreground/10">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary-foreground/10 rounded-lg">
+                                    <Terminal className="h-4 w-4 text-secondary-foreground" />
                                 </div>
-                                <code className="font-mono text-base font-bold text-primary-foreground select-all">
+                                <code className="font-mono text-sm font-semibold text-secondary-foreground select-all break-all">
                                     {window.location.origin}/integrations/slack/commands
                                 </code>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             {['/wardseal-whoami', '/wardseal-lock', '/wardseal-audit'].map(cmd => (
-                                <div key={cmd} className="flex items-center gap-4 py-4 px-6 rounded-2xl bg-card/[0.03] border border-on-inverse/5 transition-all hover:bg-card/[0.08] hover:border-on-inverse/10 group cursor-default">
-                                    <Command className="h-4 w-4 opacity-20 group-hover:opacity-100 group-hover:text-primary-foreground transition-all" />
-                                    <span className="font-mono text-[11px] font-bold tracking-tight text-primary-foreground/40 group-hover:text-primary-foreground transition-all">{cmd}</span>
+                                <div key={cmd} className="flex items-center gap-3 py-3 px-4 rounded-lg bg-secondary-foreground/5 border border-secondary-foreground/10">
+                                    <Command className="h-4 w-4 text-secondary-foreground/80" />
+                                    <span className="font-mono text-xs font-semibold text-secondary-foreground">{cmd}</span>
                                 </div>
                             ))}
                         </div>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Settings2, Key, Mail, ShieldAlert, MoreHorizontal } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BoringAvatar from 'boring-avatars';
+import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GlassTableRow } from '@/components/layout';
@@ -49,19 +48,12 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
         <GlassTableRow className="hover:bg-surface-container/20 transition-all border-b border-on-surface/5 last:border-0 group">
             <TableCell className="py-1.5 pl-4">
                 <div className="flex items-center gap-2.5">
-                    <Avatar className="h-6 w-6 border-none ring-1 ring-on-surface/5 rounded-md overflow-hidden group-hover:scale-105 transition-transform">
-                        <BoringAvatar
-                            size={24}
-                            name={user.emails?.[0]?.value || user.userName}
-                            variant="marble"
-                            colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                        />
-                    </Avatar>
+                    <Avatar name={user.emails?.[0]?.value || user.userName} size={24} className="h-6 w-6 border-none ring-1 ring-on-surface/5 rounded-md overflow-hidden group-hover:scale-105 transition-transform" />
                     <div className="flex flex-col">
                         <span className="font-bold text-[11px] tracking-tight text-on-surface group-hover:text-primary transition-colors">
                             {user.displayName || user.userName}
                         </span>
-                        <span className="text-[8px] font-medium text-on-surface-variant/60 mt-0 flex items-center gap-2">
+                        <span className="text-[8px] font-medium text-muted-foreground mt-0 flex items-center gap-2">
                             {user.emails?.[0]?.value || 'No verifiable email'}
                         </span>
                     </div>
@@ -78,12 +70,12 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
             <TableCell className="py-1.5">
                 <div className="flex flex-wrap gap-1">
                     {(user.groups || []).map((group: any) => (
-                        <Badge key={group.value} variant="outline" className="rounded-md font-bold text-[7px] tracking-tight px-1 py-0 bg-on-surface/5 border-none text-on-surface-variant/60">
+                        <Badge key={group.value} variant="outline" className="rounded-md font-bold text-[7px] tracking-tight px-1 py-0 bg-on-surface/5 border-none text-muted-foreground">
                             {group.display}
                         </Badge>
                     ))}
                     {(!user.groups || user.groups.length === 0) && (
-                        <span className="text-[8px] font-medium text-on-surface-variant/20 italic">No groups</span>
+                        <span className="text-[8px] font-medium text-muted-foreground italic">No groups</span>
                     )}
                 </div>
             </TableCell>

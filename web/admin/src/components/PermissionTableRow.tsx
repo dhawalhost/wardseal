@@ -23,7 +23,7 @@ export const PermissionTableRow: React.FC<PermissionTableRowProps> = ({ permissi
                     {permission.action}
                 </Badge>
             </TableCell>
-            <TableCell className="py-1.5 text-[9px] font-bold text-on-surface-variant/20 italic tracking-tight pr-4">{permission.description || 'No system definition metadata'}</TableCell>
+            <TableCell className="py-1.5 text-[9px] font-bold text-muted-foreground italic tracking-tight pr-4">{permission.description || 'No system definition metadata'}</TableCell>
         </GlassTableRow>
     );
 };

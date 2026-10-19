@@ -35,7 +35,7 @@ export const AccessRequestRow: React.FC<AccessRequestRowProps> = ({
                     </div>
                      <div className="flex flex-col">
                         <span className="text-[13px] font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">{req.requester_id}</span>
-                        <span className="text-[8px] font-bold font-mono tracking-tight text-on-surface-variant/30 mt-0.5 italic">ID: {req.id.substring(0, 8).toLowerCase()}</span>
+                        <span className="text-[8px] font-bold font-mono tracking-tight text-muted-foreground mt-0.5 italic">ID: {req.id.substring(0, 8).toLowerCase()}</span>
                     </div>
                 </div>
             </TableCell>
@@ -43,12 +43,12 @@ export const AccessRequestRow: React.FC<AccessRequestRowProps> = ({
                 <div className="flex flex-col gap-1">
                      <div className="flex items-center gap-1.5">
                         <Badge className="bg-surface-container text-on-surface-variant border-none rounded-md font-bold text-[8px] px-1.5 py-0.5 tracking-tight">{req.resource_type}</Badge>
-                        <span className="text-[10px] font-bold text-on-surface-variant/60 tracking-tight flex items-center gap-1.5 italic">
+                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight flex items-center gap-1.5 italic">
                             <Terminal className="w-3 h-3" />
                             {req.resource_id}
                         </span>
                     </div>
-                    <span className="text-[9px] font-medium text-on-surface-variant/40 truncate max-w-[200px]" title={req.reason}>
+                    <span className="text-[9px] font-medium text-muted-foreground truncate max-w-[200px]" title={req.reason}>
                         {req.reason}
                     </span>
                 </div>
@@ -60,7 +60,7 @@ export const AccessRequestRow: React.FC<AccessRequestRowProps> = ({
                         {req.duration}
                     </div>
                 ) : (
-                    <span className="text-[9px] font-bold text-on-surface-variant/20 tracking-tight italic">Permanent</span>
+                    <span className="text-[9px] font-bold text-muted-foreground tracking-tight italic">Permanent</span>
                 )}
             </TableCell>
             <TableCell className="py-3">

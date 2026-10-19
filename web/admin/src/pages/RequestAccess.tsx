@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { createAccessRequest } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,129 +36,127 @@ const RequestAccess: React.FC = () => {
 
     return (
         <PageLayout>
-        <div className="max-w-3xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 py-12">
+        <div className="max-w-3xl mx-auto space-y-page animate-in fade-in duration-300">
             <PageHeader
-                icon={<GitPullRequest className="w-10 h-10 text-primary" />}
+                icon={<GitPullRequest className="w-6 h-6 text-secondary" />}
                 title="Request Access"
-                description="Submit an elevated privilege request for just-in-time access to organizational resources."
+                description="Submit a request for temporary or ongoing access to organizational resources."
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-12">
-                <GlassCard className="border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-[32px]">
-                    <GlassCardHeader className="py-10 px-10 border-b border-on-surface/5 bg-surface-container/10">
-                        <div className="flex items-center gap-6">
-                            <div className="p-4 bg-primary/5 rounded-2xl text-primary">
-                                <ShieldCheck className="w-7 h-7" />
-                            </div>
-                             <div>
-                                <GlassCardTitle className="text-3xl font-bold tracking-tight text-on-surface">New access request</GlassCardTitle>
-                                <GlassCardDescription className="text-on-surface-variant/40 font-bold text-[12px] mt-1 tracking-tight">
-                                    Identity verification & permission handshake
-                                </GlassCardDescription>
-                            </div>
+            <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
+                <GlassCardHeader className="py-card px-card border-b border-border">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                            <ShieldCheck className="w-4 h-4" />
                         </div>
-                    </GlassCardHeader>
-                    
-                    <GlassCardContent className="p-10">
-                        <form onSubmit={handleSubmit} className="space-y-10">
-                             {error && (
-                                <Alert variant="destructive" className="rounded-2xl border-none bg-destructive/10 text-destructive animate-in slide-in-from-top-2">
-                                    <AlertDescription className="font-bold text-xs tracking-tight">{error}</AlertDescription>
-                                </Alert>
-                            )}
+                         <div>
+                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">New access request</GlassCardTitle>
+                            <GlassCardDescription className="text-muted-foreground text-sm mt-0.5">
+                                Provide resource details and a business justification
+                            </GlassCardDescription>
+                        </div>
+                    </div>
+                </GlassCardHeader>
+                
+                <GlassCardContent className="p-card">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                         {error && (
+                            <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-destructive">
+                                <AlertDescription className="font-semibold text-sm">{error}</AlertDescription>
+                            </Alert>
+                        )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                 <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                        <Info className="w-3.5 h-3.5" />
-                                        Resource type
-                                    </Label>
-                                    <Select value={resourceType} onValueChange={setResourceType}>
-                                        <SelectTrigger className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm px-6">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-2xl border-none shadow-xl font-bold text-xs">
-                                            <SelectItem value="group">Group</SelectItem>
-                                            <SelectItem value="role">Role (RBAC)</SelectItem>
-                                            <SelectItem value="app">Application</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                 <div className="space-y-4">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">UID / Identifier</Label>
-                                    <Input
-                                        value={resourceID}
-                                        onChange={(e) => setResourceID(e.target.value)}
-                                        placeholder={resourceType === 'group' ? "e.g. engineering" : "e.g. salesforce"}
-                                        className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-bold text-sm px-6 placeholder:opacity-30"
-                                        required
-                                    />
-                                    <p className="text-[10px] text-on-surface-variant/40 font-medium italic ml-1 leading-relaxed">
-                                        Enter the exact system identifier for authentication.
-                                    </p>
-                                </div>
-                            </div>
-
-                             <div className="space-y-4">
-                                <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    Just-in-time window
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
+                             <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                                    <Info className="w-3.5 h-3.5" />
+                                    Resource type
                                 </Label>
-                                <Select value={duration} onValueChange={setDuration}>
-                                    <SelectTrigger className="h-14 rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-sm px-6">
-                                        <SelectValue placeholder="Select duration" />
+                                <Select value={resourceType} onValueChange={setResourceType}>
+                                    <SelectTrigger className="h-11 rounded-lg border border-border bg-card focus:ring-2 focus:ring-secondary/20 font-medium text-sm">
+                                        <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-xl font-bold text-xs">
-                                        <SelectItem value="1h">1 Hour (Quick Tasks)</SelectItem>
-                                        <SelectItem value="4h">4 Hours (Standard Session)</SelectItem>
-                                        <SelectItem value="24h">24 Hours (Daily Access)</SelectItem>
-                                        <SelectItem value="indefinite">Indefinite (Static RBAC)</SelectItem>
+                                    <SelectContent className="rounded-lg border border-border shadow-sm">
+                                        <SelectItem value="group">Group</SelectItem>
+                                        <SelectItem value="role">Role (RBAC)</SelectItem>
+                                        <SelectItem value="app">Application</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
-                             <div className="space-y-4">
-                                <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1 flex items-center gap-2">
-                                    <MessageSquare className="w-3.5 h-3.5" />
-                                    Business justification
-                                </Label>
-                                <Textarea
-                                    value={reason}
-                                    onChange={(e) => setReason(e.target.value)}
-                                    placeholder="Provide detailed context for this privilege escalation..."
+                             <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Resource ID</Label>
+                                <Input
+                                    value={resourceID}
+                                    onChange={(e) => setResourceID(e.target.value)}
+                                    placeholder={resourceType === 'group' ? "e.g. engineering" : "e.g. salesforce"}
+                                    className="h-11 rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm"
                                     required
-                                    rows={4}
-                                    className="rounded-2xl border-none bg-surface-container/50 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium text-sm p-6 resize-none placeholder:opacity-30"
                                 />
+                                <p className="text-xs text-muted-foreground font-medium">
+                                    Enter the exact system identifier for the resource.
+                                </p>
                             </div>
+                        </div>
 
-                            <div className="pt-6 flex flex-col gap-4">
-                                 <Button type="submit" className="w-full h-16 rounded-[20px] font-bold text-[13px] tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all" disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="mr-3 h-5 w-5 animate-spin" /> Finalizing request...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="mr-3 h-4 w-4" /> Commit request
-                                        </>
-                                    )}
-                                </Button>
+                         <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                                <Clock className="w-3.5 h-3.5" />
+                                Access duration
+                            </Label>
+                            <Select value={duration} onValueChange={setDuration}>
+                                <SelectTrigger className="h-11 rounded-lg border border-border bg-card focus:ring-2 focus:ring-secondary/20 font-medium text-sm">
+                                    <SelectValue placeholder="Select duration" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-lg border border-border shadow-sm">
+                                    <SelectItem value="1h">1 Hour</SelectItem>
+                                    <SelectItem value="4h">4 Hours</SelectItem>
+                                    <SelectItem value="24h">24 Hours</SelectItem>
+                                    <SelectItem value="indefinite">Indefinite</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                                 <Button 
-                                    variant="ghost" 
-                                    type="button" 
-                                    className="w-full h-12 font-bold text-[11px] tracking-tight text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container/20 rounded-xl transition-all" 
-                                    onClick={() => navigate('/requests')}
-                                >
-                                    Cancel and return to dashboard
-                                </Button>
-                            </div>
-                        </form>
-                    </GlassCardContent>
-                </GlassCard>
-            </div>
+                         <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                Business justification
+                            </Label>
+                            <Textarea
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                placeholder="Explain why you need this access..."
+                                required
+                                rows={4}
+                                className="rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium text-sm p-4 resize-none"
+                            />
+                        </div>
+
+                        <div className="pt-2 flex flex-col gap-3">
+                             <Button type="submit" className="w-full h-11 rounded-lg font-semibold text-sm bg-secondary text-secondary-foreground shadow-sm" disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="mr-2 h-4 w-4" /> Submit request
+                                    </>
+                                )}
+                            </Button>
+
+                             <Button 
+                                variant="ghost" 
+                                type="button" 
+                                className="w-full h-10 font-semibold text-sm text-muted-foreground hover:text-on-surface hover:bg-muted/50 rounded-lg" 
+                                onClick={() => navigate('/requests')}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </form>
+                </GlassCardContent>
+            </GlassCard>
         </div>
         </PageLayout>
     );

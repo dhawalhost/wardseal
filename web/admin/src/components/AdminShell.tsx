@@ -35,8 +35,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BoringAvatar from 'boring-avatars';
+import { Avatar } from '@/components/ui/avatar';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
 import CopilotWidget from './CopilotWidget';
@@ -235,17 +234,17 @@ const AdminShell: React.FC = () => {
     return (
         <div className="flex min-h-screen font-sans bg-background selection:bg-primary/10 selection:text-primary">
             {/* ── Sidebar ───────────────────────────────────────────────── */}
-            <aside className="w-64 border-r border-on-surface/5 bg-card flex flex-col fixed inset-y-0 z-50">
+            <aside className="w-64 border-r border-border bg-card flex flex-col fixed inset-y-0 z-50 shadow-xs">
 
                 {/* Logo */}
-                <div className="h-16 flex items-center px-5 border-b border-on-surface/5 shrink-0">
+                <div className="h-14 flex items-center px-5 border-b border-border shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/10">
+                        <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-secondary/10">
                             <img src="/wardseal.svg" alt="WardSeal" className="w-5 h-5" />
                         </div>
                         <div>
                             <span className="font-bold text-sm tracking-tight text-on-surface">WardSeal</span>
-                            <div className="text-[9px] font-bold text-on-surface-variant/30 tracking-widest uppercase leading-none mt-0.5">Admin Console</div>
+                            <div className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase leading-none mt-0.5">Admin</div>
                         </div>
                     </div>
                 </div>
@@ -272,17 +271,17 @@ const AdminShell: React.FC = () => {
                                     <div className="flex items-center gap-2.5">
                                         <SectionIcon className={cn(
                                             "w-3.5 h-3.5 transition-colors",
-                                            hasActiveChild ? "text-primary" : "text-on-surface-variant/40 group-hover:text-on-surface-variant"
+                                            hasActiveChild ? "text-primary" : "text-muted-foreground group-hover:text-on-surface-variant"
                                         )} />
                                         <span className={cn(
                                             "text-[11px] font-bold tracking-wider uppercase transition-colors",
-                                            hasActiveChild ? "text-primary" : "text-on-surface-variant/40 group-hover:text-on-surface-variant"
+                                            hasActiveChild ? "text-primary" : "text-muted-foreground group-hover:text-on-surface-variant"
                                         )}>
                                             {section.label}
                                         </span>
                                     </div>
                                     <ChevronDown className={cn(
-                                        "w-3 h-3 text-on-surface-variant/30 transition-transform duration-200",
+                                        "w-3 h-3 text-muted-foreground transition-transform duration-200",
                                         isOpen && "rotate-180"
                                     )} />
                                 </button>
@@ -303,17 +302,16 @@ const AdminShell: React.FC = () => {
                                                     className={cn(
                                                         "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 group relative",
                                                         active
-                                                            ? "bg-primary/10 text-primary"
-                                                            : "text-on-surface-variant hover:bg-surface-container/60 hover:text-on-surface"
+                                                            ? "bg-secondary/10 text-secondary"
+                                                            : "text-on-surface-variant hover:bg-muted hover:text-on-surface"
                                                     )}
                                                 >
-                                                    {/* Active indicator bar */}
                                                     {active && (
-                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-full" />
+                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-secondary rounded-full" />
                                                     )}
                                                     <Icon className={cn(
                                                         "w-4 h-4 shrink-0 transition-colors",
-                                                        active ? "text-primary" : "opacity-40 group-hover:opacity-70"
+                                                        active ? "text-secondary" : "opacity-50 group-hover:opacity-80"
                                                     )} />
                                                     <span className={cn(
                                                         "text-[13px] transition-colors flex-1 truncate",
@@ -322,7 +320,7 @@ const AdminShell: React.FC = () => {
                                                         {item.label}
                                                     </span>
                                                     {item.badge && (
-                                                        <span className="text-[8px] font-bold tracking-widest bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
+                                                        <span className="text-[10px] font-bold tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
                                                             {item.badge}
                                                         </span>
                                                     )}
@@ -343,23 +341,16 @@ const AdminShell: React.FC = () => {
                         onClick={handleLogout}
                         title="Click to sign out"
                     >
-                        <Avatar className="h-8 w-8 border border-on-surface/5 shadow-sm shrink-0">
-                            <BoringAvatar
-                                size={32}
-                                name={userId}
-                                variant="marble"
-                                colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                            />
-                        </Avatar>
+                        <Avatar name={userId} size={32} className="h-8 w-8 border border-on-surface/5 shadow-sm shrink-0" />
                         <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-semibold text-on-surface truncate leading-tight">
                                 {userName}
                             </p>
-                            <p className="text-[10px] text-on-surface-variant/40 truncate leading-tight mt-0.5">
+                            <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
                                 {tenantId}
                             </p>
                         </div>
-                        <LogOut className="w-3.5 h-3.5 text-on-surface-variant/30 group-hover:text-destructive transition-colors shrink-0" />
+                        <LogOut className="w-3.5 h-3.5 text-muted-foreground group-hover:text-destructive transition-colors shrink-0" />
                     </div>
                 </div>
             </aside>
@@ -368,13 +359,13 @@ const AdminShell: React.FC = () => {
             <main className="flex-1 ml-64 h-screen flex flex-col bg-surface overflow-hidden">
 
                 {/* Top bar */}
-                <header className="h-16 border-b border-on-surface/5 bg-card/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-8">
+                <header className="h-14 border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-8">
                     {/* Breadcrumb */}
                     <nav className="flex items-center gap-1.5 text-sm">
-                        <span className="text-on-surface-variant/30 font-medium text-[13px]">
+                        <span className="text-muted-foreground font-medium text-[13px]">
                             {activeSection?.label || 'Overview'}
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-on-surface-variant/20" />
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="text-on-surface font-semibold text-[13px]">
                             {activeItem?.label || 'Dashboard'}
                         </span>
@@ -384,13 +375,13 @@ const AdminShell: React.FC = () => {
                     <div className="flex items-center gap-3">
                         {/* Global search */}
                         <div className="relative hidden lg:block group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant/30 group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <Input
                                 type="search"
                                 placeholder="Search..."
-                                className="w-56 bg-surface-container border-none rounded-lg pl-9 h-9 text-[13px] focus-visible:ring-1 focus-visible:ring-primary/20 transition-all font-medium placeholder:text-on-surface-variant/30"
+                                className="w-56 bg-surface-container border-none rounded-lg pl-9 h-9 text-[13px] focus-visible:ring-1 focus-visible:ring-primary/20 transition-all font-medium placeholder:text-muted-foreground"
                             />
-                            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-on-surface-variant/20 bg-surface-container px-1.5 py-0.5 rounded border border-on-surface/5">
+                            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground bg-surface-container px-1.5 py-0.5 rounded border border-on-surface/5">
                                 ⌘K
                             </kbd>
                         </div>
@@ -413,7 +404,7 @@ const AdminShell: React.FC = () => {
 
                         {/* Notifications */}
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg relative hover:bg-surface-container">
-                            <Bell className="w-4 h-4 text-on-surface-variant/60" />
+                            <Bell className="w-4 h-4 text-muted-foreground" />
                             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full" />
                         </Button>
 
@@ -430,7 +421,7 @@ const AdminShell: React.FC = () => {
                 <footer className="border-t border-on-surface/5 py-5 px-8 bg-card/50">
                     <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-[11px] font-semibold text-on-surface-variant/40">
+                            <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
                                 <div className={cn(
                                     "w-1.5 h-1.5 rounded-full",
                                     systemsHealthy === null ? "bg-on-surface-variant/20 animate-pulse" :
@@ -440,9 +431,9 @@ const AdminShell: React.FC = () => {
                                  systemsHealthy ? "All systems operational" : "Degraded performance"}
                             </div>
 
-                            <span className="text-[10px] font-bold text-on-surface-variant/20">v4.2.0</span>
+                            <span className="text-[10px] font-bold text-muted-foreground">v4.2.0</span>
                         </div>
-                        <div className="flex items-center gap-6 text-[11px] font-semibold text-on-surface-variant/40">
+                        <div className="flex items-center gap-6 text-[11px] font-semibold text-muted-foreground">
                             <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Privacy</a>
                             <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Security</a>
                             <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Compliance</a>
