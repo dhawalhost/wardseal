@@ -57,39 +57,41 @@ const Passkeys: React.FC = () => {
     };
 
     return (
-        <div className="space-y-12 max-w-2xl mx-auto animate-in fade-in duration-700">
+        <div className="space-y-page max-w-2xl mx-auto animate-in fade-in duration-500">
             <PageHeader
-                icon={<Fingerprint className="w-10 h-10 text-primary" />}
+                icon={<Fingerprint className="w-8 h-8 text-primary" />}
                 title="Passkeys"
-                description="Go passwordless with biometric authentication. Use TouchID, FaceID, or a hardware security key."
+                description="Go passwordless with biometric authentication. Use Touch ID, Face ID, or a hardware security key."
             />
 
-            <GlassCard className="border-none shadow-2xl shadow-on-surface/5 overflow-hidden rounded-[32px] bg-card">
-                <GlassCardHeader className="bg-primary py-14 px-10 text-primary-foreground relative overflow-hidden">
-                    <div className="absolute top-0 right-0 opacity-10 p-8">
-                        <Fingerprint className="w-40 h-40 -mr-10 -mt-10" />
+            <GlassCard className="shadow-sm border-border overflow-hidden rounded-xl bg-card">
+                <GlassCardHeader className="bg-primary py-10 px-8 text-primary-foreground relative overflow-hidden border-b-0">
+                    <div className="absolute top-0 right-0 opacity-10 p-6 pointer-events-none">
+                        <Fingerprint className="w-32 h-32 -mr-8 -mt-8" />
                     </div>
-                    <div className="relative z-10 flex flex-col items-center text-center gap-6">
-                        <div className="w-20 h-20 bg-black/10 rounded-3xl flex items-center justify-center backdrop-blur-md shadow-inner">
-                            <Fingerprint className="w-10 h-10 text-primary-foreground" />
+                    <div className="relative z-10 flex flex-col items-center text-center gap-4">
+                        <div className="w-14 h-14 bg-primary-foreground/10 rounded-xl flex items-center justify-center">
+                            <Fingerprint className="w-7 h-7 text-primary-foreground" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-3xl font-bold tracking-tight text-primary-foreground">Register a Passkey</GlassCardTitle>
-                            <GlassCardDescription className="text-primary-foreground/60 font-medium text-sm mt-3 max-w-sm mx-auto leading-relaxed">
-                                Use TouchID, FaceID, or a hardware security key (YubiKey) to sign in faster and more securely.
+                            <GlassCardTitle className="text-2xl font-bold tracking-tight text-primary-foreground">
+                                Register a passkey
+                            </GlassCardTitle>
+                            <GlassCardDescription className="text-primary-foreground/70 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                                Use Touch ID, Face ID, or a hardware security key to sign in faster and more securely.
                             </GlassCardDescription>
                         </div>
                     </div>
                 </GlassCardHeader>
-                <GlassCardContent className="p-10 space-y-8">
+                <GlassCardContent className="p-8 space-y-6">
                     {message && (
-                        <div className="bg-success-subtle border border-success/20 text-success p-5 rounded-2xl flex items-center gap-3 font-bold text-sm animate-in slide-in-from-bottom-4">
+                        <div className="bg-success-subtle border border-success/20 text-success p-4 rounded-lg flex items-center gap-3 text-sm font-medium">
                             <Check className="h-5 w-5 shrink-0" />
                             {message}
                         </div>
                     )}
                     {error && (
-                        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-5 rounded-2xl flex items-center gap-3 font-bold text-sm animate-in slide-in-from-bottom-4">
+                        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg flex items-center gap-3 text-sm font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             {error}
                         </div>
@@ -98,20 +100,20 @@ const Passkeys: React.FC = () => {
                     <Button
                         onClick={handleRegister}
                         size="lg"
-                        className="w-full h-16 rounded-2xl text-base font-bold tracking-tight shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="w-full h-12 rounded-lg text-sm font-semibold shadow-sm bg-secondary text-secondary-foreground"
                         disabled={isRegistering}
                     >
                         {isRegistering ? (
                             <>
-                                <Loader2 className="mr-3 h-5 w-5 animate-spin" /> Waiting for device...
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Waiting for device…
                             </>
                         ) : (
                             <>
-                                <Fingerprint className="mr-3 h-5 w-5" /> Register Passkey
+                                <Fingerprint className="mr-2 h-4 w-4" /> Register passkey
                             </>
                         )}
                     </Button>
-                    <p className="text-xs text-center text-on-surface-variant/40 font-medium">
+                    <p className="text-xs text-center text-muted-foreground">
                         Supported on modern browsers (Chrome, Safari, Edge, Firefox) on macOS, Windows, iOS, and Android.
                     </p>
                 </GlassCardContent>

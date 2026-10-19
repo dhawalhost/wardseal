@@ -5,15 +5,17 @@ WORKDIR /workspace
 
 COPY package.json package-lock.json ./
 COPY shared/package.json ./shared/
+COPY ui/package.json ./ui/
 COPY admin/package.json ./admin/
 COPY app/package.json ./app/
 COPY developer/package.json ./developer/
 COPY id/package.json ./id/
 COPY landing/package.json ./landing/
 COPY status/package.json ./status/
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY shared ./shared
+COPY ui ./ui
 COPY id ./id
 
 WORKDIR /workspace/id

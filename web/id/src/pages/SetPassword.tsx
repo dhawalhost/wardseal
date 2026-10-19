@@ -49,14 +49,16 @@ const SetPassword: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Set Password</CardTitle>
-          <CardDescription>Choose a secure password for your account.</CardDescription>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <Card className="w-full max-w-md border-border shadow-sm rounded-xl bg-card">
+        <CardHeader className="border-b border-border">
+          <CardTitle className="text-xl font-bold tracking-tight">Set password</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Choose a secure password for your account.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -69,10 +71,11 @@ const SetPassword: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password" className="text-sm font-semibold">New password</Label>
               <Input
                 id="password"
                 type="password"
+                className="h-11 rounded-lg border-border shadow-xs"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -80,18 +83,21 @@ const SetPassword: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-sm font-semibold">Confirm password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
+                className="h-11 rounded-lg border-border shadow-xs"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Set Password'}</Button>
+          <CardFooter className="flex justify-end border-t border-border bg-muted/40">
+            <Button type="submit" className="rounded-lg font-semibold shadow-sm bg-secondary text-secondary-foreground" disabled={loading}>
+              {loading ? 'Saving…' : 'Set password'}
+            </Button>
           </CardFooter>
         </form>
       </Card>
