@@ -175,8 +175,8 @@ func (h *HTTPHandler) exportUserData(c *gin.Context) {
 	}
 
 	exportData := gin.H{
-		"profile":    profile,
-		"apps":       apps,
+		"profile":     profile,
+		"apps":        apps,
 		"exported_at": time.Now().Format(time.RFC3339),
 	}
 

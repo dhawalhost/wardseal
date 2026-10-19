@@ -43,9 +43,9 @@ func (s *authService) GetSSOAuthorizeURL(ctx context.Context, tenantID, provider
 	}
 
 	conf := &oauth2.Config{
-		ClientID:     clientID,
-		RedirectURL:  redirectURI,
-		Scopes:       []string{"openid", "profile", "email"},
+		ClientID:    clientID,
+		RedirectURL: redirectURI,
+		Scopes:      []string{"openid", "profile", "email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL: authURL,
 		},

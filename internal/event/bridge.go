@@ -13,10 +13,10 @@ import (
 
 // topicToWebhookEvent maps internal bus topics to customer-facing webhook types.
 var topicToWebhookEvent = map[string]string{
-	"UserCreated":             "user.created",
-	"UserDeactivated":         "user.deactivated",
-	"GroupMembershipChanged":  "group.membership_changed",
-	"ProposedRevocation":      "access.proposed_revocation",
+	"UserCreated":            "user.created",
+	"UserDeactivated":        "user.deactivated",
+	"GroupMembershipChanged": "group.membership_changed",
+	"ProposedRevocation":     "access.proposed_revocation",
 }
 
 // RegisterWebhookBridge subscribes the dispatcher to EventBus topics.

@@ -2,14 +2,14 @@ package main
 
 import (
 	"os"
+	"time"
 
+	"github.com/dhawalhost/gokit/health"
 	"github.com/dhawalhost/gokit/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"time"
 
-	"github.com/dhawalhost/gokit/health"
 	"github.com/dhawalhost/wardseal/internal/provisioning"
 	"github.com/dhawalhost/wardseal/pkg/config"
 )

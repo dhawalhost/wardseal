@@ -7,12 +7,12 @@ import (
 func TestRegistryCoversCriticalSurfaces(t *testing.T) {
 	t.Parallel()
 	required := map[string]bool{
-		"dirsvc POST /internal/tenants":             false,
-		"dirsvc POST /users":                        false,
-		"policysvc POST /policies":                  false,
-		"authsvc POST /api/v1/break-glass/elevate":  false,
-		"govsvc GET /api/v1/audit/export":           false,
-		"mcpsvc POST /mcp":                          false,
+		"dirsvc POST /internal/tenants":            false,
+		"dirsvc POST /users":                       false,
+		"policysvc POST /policies":                 false,
+		"authsvc POST /api/v1/break-glass/elevate": false,
+		"govsvc GET /api/v1/audit/export":          false,
+		"mcpsvc POST /mcp":                         false,
 	}
 	for _, r := range Registry {
 		key := r.Service + " " + r.Method + " " + r.Path

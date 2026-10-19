@@ -143,4 +143,3 @@ func isSensitiveKey(key string) bool {
 	k := strings.ToLower(key)
 	return k == "password" || k == "token" || k == "access_token" || k == "refresh_token" || k == "secret" || k == "client_secret"
 }
-

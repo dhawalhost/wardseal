@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // postgres driver
-	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
 // Config holds the configuration for the database connection.
@@ -64,7 +64,7 @@ func RunInTenantTx(ctx context.Context, db *sqlx.DB, fn func(tx *sqlx.Tx) error)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if tenantID != "" {
 		_, err = tx.ExecContext(ctx, "SELECT set_config('app.current_tenant_id', $1, true)", tenantID)

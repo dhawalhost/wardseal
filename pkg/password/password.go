@@ -28,15 +28,15 @@ const (
 )
 
 var (
-	ErrTooShort      = errors.New("password must be at least 12 characters long")
-	ErrTooLong       = errors.New("password must be at most 128 characters long")
-	ErrTooCommon     = errors.New("password is too common or previously breached")
-	ErrNeedUpper     = errors.New("password must contain at least one uppercase letter")
-	ErrNeedLower     = errors.New("password must contain at least one lowercase letter")
-	ErrNeedNumber    = errors.New("password must contain at least one number")
-	ErrNeedSpecial   = errors.New("password must contain at least one special character")
-	ErrInvalidHash   = errors.New("invalid password hash")
-	ErrMismatch      = errors.New("password does not match")
+	ErrTooShort    = errors.New("password must be at least 12 characters long")
+	ErrTooLong     = errors.New("password must be at most 128 characters long")
+	ErrTooCommon   = errors.New("password is too common or previously breached")
+	ErrNeedUpper   = errors.New("password must contain at least one uppercase letter")
+	ErrNeedLower   = errors.New("password must contain at least one lowercase letter")
+	ErrNeedNumber  = errors.New("password must contain at least one number")
+	ErrNeedSpecial = errors.New("password must contain at least one special character")
+	ErrInvalidHash = errors.New("invalid password hash")
+	ErrMismatch    = errors.New("password does not match")
 )
 
 // ValidatePolicy enforces length, complexity, and common-password denylist.

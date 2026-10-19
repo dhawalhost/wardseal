@@ -2,25 +2,25 @@ package scim
 
 // User represents a SCIM 2.0 User resource.
 type User struct {
-	Schemas  []string `json:"schemas"`
+	Schemas     []string `json:"schemas"`
 	ID          string   `json:"id,omitempty"`
 	ExternalID  string   `json:"externalId,omitempty"`
 	UserName    string   `json:"userName"`
 	DisplayName string   `json:"displayName,omitempty"`
 	Password    string   `json:"password,omitempty"`
-	Name     struct {
+	Name        struct {
 		GivenName  string `json:"givenName,omitempty"`
 		FamilyName string `json:"familyName,omitempty"`
 	} `json:"name,omitempty"`
-	Emails []Email    `json:"emails,omitempty"`
+	Emails       []Email       `json:"emails,omitempty"`
 	PhoneNumbers []PhoneNumber `json:"phoneNumbers,omitempty"`
-	PrimaryEmail string `json:"primaryEmail,omitempty"`
-	Groups []GroupRef `json:"groups,omitempty"`
-	Active bool       `json:"active"`
-	Title  string     `json:"title,omitempty"`
-	Department string `json:"department,omitempty"`
-	Timezone string   `json:"timezone,omitempty"`
-	Meta   Meta       `json:"meta,omitempty"`
+	PrimaryEmail string        `json:"primaryEmail,omitempty"`
+	Groups       []GroupRef    `json:"groups,omitempty"`
+	Active       bool          `json:"active"`
+	Title        string        `json:"title,omitempty"`
+	Department   string        `json:"department,omitempty"`
+	Timezone     string        `json:"timezone,omitempty"`
+	Meta         Meta          `json:"meta,omitempty"`
 }
 
 type GroupRef struct {
