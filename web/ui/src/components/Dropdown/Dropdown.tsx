@@ -43,7 +43,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-white/5 bg-card/95 backdrop-blur-xl p-1 text-on-surface shadow-2xl data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+      "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-border bg-card/95 backdrop-blur-xl p-1 text-on-surface shadow-2xl data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
       className
     )}
     {...props}
@@ -60,7 +60,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[12rem] overflow-hidden rounded-xl border border-white/5 bg-card/95 backdrop-blur-xl p-1 text-on-surface shadow-2xl data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+        "z-50 min-w-[12rem] overflow-hidden rounded-xl border border-border bg-card/95 backdrop-blur-xl p-1 text-on-surface shadow-2xl data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
         className
       )}
       {...props}

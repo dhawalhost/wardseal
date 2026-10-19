@@ -18,6 +18,7 @@ export const Default: Story = {
   args: {
     title: "Identity Registry",
     description: "Manage cryptographically verified system users and MFA status.",
+    meta: <p className="text-xs font-medium text-muted-foreground">Updated just now</p>,
     breadcrumbs: [
       { label: "Dashboard", href: "#" },
       { label: "Identities", href: "#" },

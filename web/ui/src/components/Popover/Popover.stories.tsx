@@ -32,11 +32,11 @@ export const Default: Story = {
               </p>
             </div>
             <div className="grid gap-2 text-xs font-semibold text-on-surface-variant/70 leading-relaxed">
-              <div className="flex justify-between border-b border-on-surface/5 pb-2">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Active Server</span>
                 <span className="font-mono text-[10px] text-primary">us-east-01.wardseal.net</span>
               </div>
-              <div className="flex justify-between border-b border-on-surface/5 pb-2">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Handshake Ping</span>
                 <span className="font-mono text-[10px] text-primary">12 ms</span>
               </div>

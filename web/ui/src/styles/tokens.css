@@ -1,0 +1,214 @@
+/**
+ * WardSeal Design Tokens — Source of Truth
+ * ========================================
+ * Package: @dhawalhost/wardseal-ui-kit
+ *
+ * Rules:
+ * 1. Components MUST use these CSS variables (via Tailwind preset or hsl(var(--…))).
+ * 2. Never hardcode brand hex in components (no #0A0A0C, border-white/5, etc.).
+ * 3. HSL channels are stored WITHOUT the hsl() wrapper so opacity works:
+ *      background: hsl(var(--primary) / 0.1);
+ * 4. Light is the brand default (:root + .light). Dark overrides under .dark.
+ * 5. Role map (aligned with design-system/wardseal/MASTER.md):
+ *      --primary     → navy ink (#0F172A)
+ *      --secondary   → CTA blue (#0369A1)  ← MASTER “Accent/CTA”
+ *      --accent      → soft tint fill (not CTA)
+ *
+ * Import in apps:
+ *   import "@dhawalhost/wardseal-ui-kit/tokens.css";
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap");
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT THEME (default)
+   ═══════════════════════════════════════════════════════════════ */
+:root,
+.light {
+  /* ── Surfaces ── */
+  --background: 210 40% 98%;
+  --foreground: 222 47% 6%;
+
+  --surface: 210 40% 98%;
+  --surface-dim: 214 32% 94%;
+  --surface-bright: 0 0% 100%;
+  --surface-container-lowest: 0 0% 100%;
+  --surface-container-low: 210 40% 98%;
+  --surface-container: 214 32% 96%;
+  --surface-container-high: 214 32% 91%;
+  --surface-container-highest: 215 25% 87%;
+
+  --on-surface: 222 47% 6%;
+  --on-surface-variant: 215 16% 35%;
+  --outline: 214 20% 78%;
+  --outline-variant: 214 25% 88%;
+
+  /* ── Brand ── */
+  --primary: 222 47% 11%;
+  --on-primary: 0 0% 100%;
+  --primary-container: 214 32% 91%;
+  --on-primary-container: 222 47% 11%;
+
+  --secondary: 201 96% 32%;
+  --on-secondary: 0 0% 100%;
+  --secondary-container: 199 89% 94%;
+  --on-secondary-container: 201 96% 24%;
+
+  /* Soft fill — not the CTA */
+  --accent: 199 89% 94%;
+  --accent-foreground: 201 96% 24%;
+
+  /* ── Components ── */
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 6%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 6%;
+  --muted: 214 32% 94%;
+  --muted-foreground: 215 16% 35%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 201 96% 32%;
+
+  --surface-inverse: 222 47% 11%;
+  --on-surface-inverse: 210 40% 98%;
+
+  /* ── Semantic ── */
+  --success: 152 60% 32%;
+  --success-foreground: 0 0% 100%;
+  --success-subtle: 145 60% 93%;
+  --warning: 37 91% 40%;
+  --warning-foreground: 0 0% 100%;
+  --warning-subtle: 48 90% 93%;
+  --error: 0 72% 51%;
+  --error-foreground: 0 0% 100%;
+  --error-subtle: 0 80% 95%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --info: 201 96% 32%;
+  --info-foreground: 0 0% 100%;
+  --info-subtle: 199 89% 94%;
+
+  /* ── Overlay (modal scrim — intentional black alpha) ── */
+  --overlay: 222 47% 6%;
+  --overlay-opacity: 0.55;
+
+  /* ── Elevation ── */
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm: 0 2px 8px -2px rgb(15 23 42 / 0.06), 0 0 0 1px rgb(15 23 42 / 0.04);
+  --shadow-card: 0 4px 24px -6px rgb(15 23 42 / 0.08), 0 0 0 1px rgb(15 23 42 / 0.04);
+  --shadow-overlay: 0 16px 48px -8px rgb(15 23 42 / 0.16), 0 0 0 1px rgb(15 23 42 / 0.06);
+
+  /* ── Radius ── */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* ── Spacing ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-page: 40px;
+  --space-section: 32px;
+  --space-card: 24px;
+
+  /* ── Typography ── */
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK THEME
+   ═══════════════════════════════════════════════════════════════ */
+.dark {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+
+  --surface: 222 47% 6%;
+  --surface-dim: 222 47% 4%;
+  --surface-bright: 217 33% 12%;
+  --surface-container-lowest: 222 47% 4%;
+  --surface-container-low: 222 47% 7%;
+  --surface-container: 217 33% 10%;
+  --surface-container-high: 217 33% 14%;
+  --surface-container-highest: 215 25% 18%;
+
+  --on-surface: 210 40% 98%;
+  --on-surface-variant: 215 20% 65%;
+  --outline: 215 16% 30%;
+  --outline-variant: 217 33% 18%;
+
+  --primary: 210 40% 96%;
+  --on-primary: 222 47% 11%;
+  --primary-container: 217 33% 18%;
+  --on-primary-container: 210 40% 96%;
+
+  --secondary: 199 80% 48%;
+  --on-secondary: 222 47% 6%;
+  --secondary-container: 201 50% 18%;
+  --on-secondary-container: 199 89% 88%;
+
+  --accent: 217 33% 14%;
+  --accent-foreground: 210 40% 98%;
+
+  --card: 217 33% 10%;
+  --card-foreground: 210 40% 98%;
+  --popover: 217 33% 10%;
+  --popover-foreground: 210 40% 98%;
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 18%;
+  --input: 217 33% 18%;
+  --ring: 199 80% 48%;
+
+  --surface-inverse: 210 40% 98%;
+  --on-surface-inverse: 222 47% 11%;
+
+  --success: 152 55% 40%;
+  --success-foreground: 0 0% 100%;
+  --success-subtle: 152 40% 14%;
+  --warning: 37 91% 45%;
+  --warning-foreground: 0 0% 100%;
+  --warning-subtle: 48 40% 12%;
+  --error: 0 72% 51%;
+  --error-foreground: 0 0% 100%;
+  --error-subtle: 0 50% 14%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --info: 199 80% 48%;
+  --info-foreground: 222 47% 6%;
+  --info-subtle: 201 50% 18%;
+
+  --overlay: 222 47% 4%;
+  --overlay-opacity: 0.7;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-sm: 0 4px 16px -4px rgb(0 0 0 / 0.35);
+  --shadow-card: 0 8px 32px -8px rgb(0 0 0 / 0.45);
+  --shadow-overlay: 0 24px 64px -12px rgb(0 0 0 / 0.55);
+
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-page: 40px;
+  --space-section: 32px;
+  --space-card: 24px;
+
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}

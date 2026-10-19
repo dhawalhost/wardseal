@@ -53,7 +53,7 @@ export const HealthyPortal: Story = {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-start gap-4 p-4 rounded-lg bg-white/5 border border-white/5">
+              <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-container border border-border">
                 <KeyRound className="w-8 h-8 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h4 className="text-sm font-bold text-on-surface">Registered YubiKey 5C NFC</h4>
@@ -62,7 +62,7 @@ export const HealthyPortal: Story = {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-4 p-4 rounded-lg bg-white/5 border border-white/5">
+              <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-container border border-border">
                 <Laptop className="w-8 h-8 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h4 className="text-sm font-bold text-on-surface">MacBook Pro TouchID Passkey</h4>
@@ -91,11 +91,11 @@ export const HealthyPortal: Story = {
               <CardDescription>Active credential and posture assessment</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between border-b border-on-surface/5 pb-3">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <span className="text-xs font-semibold text-on-surface-variant/80">Hardware MFA factor</span>
                 <Badge variant="success">Verified</Badge>
               </div>
-              <div className="flex items-center justify-between border-b border-on-surface/5 pb-3">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <span className="text-xs font-semibold text-on-surface-variant/80">Device OS Patch State</span>
                 <Badge variant="success">Up to Date</Badge>
               </div>

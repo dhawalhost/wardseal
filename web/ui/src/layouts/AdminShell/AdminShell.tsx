@@ -69,7 +69,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
           {/* Brand Header */}
           <div className="h-16 px-6 border-b border-border flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/5 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center shadow-sm shrink-0">
                 <ShieldCheck className="w-4 h-4 text-primary" />
               </div>
               <span className="font-bold text-sm tracking-wider uppercase text-on-surface">
@@ -89,7 +89,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
           <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-6">
             {navigation.map((group) => (
               <div key={group.title} className="space-y-2">
-                <h3 className="px-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/30">
+                <h3 className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {group.title}
                 </h3>
                 <ul className="space-y-0.5">
@@ -211,7 +211,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
         {isMobileOpen && (
           <div
             onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"
+            className="fixed inset-0 overlay-scrim backdrop-blur-sm z-30 md:hidden"
           />
         )}
 
@@ -259,8 +259,8 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
             </div>
           </header>
 
-          {/* Page Body */}
-          <main className="flex-1 overflow-y-auto custom-scrollbar bg-background/25">
+          {/* Page body — no padding here; wrap page content in <PageLayout> */}
+          <main className="flex-1 overflow-hidden flex flex-col min-h-0 custom-scrollbar bg-background/25">
             {children}
           </main>
         </div>

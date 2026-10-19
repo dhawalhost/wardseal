@@ -1,5 +1,12 @@
-// ── CSS STYLES (Design tokens) ──
-import "./styles/global.css";
+/**
+ * WardSeal Brand UI Kit — source of truth for the WardSeal design system.
+ *
+ * Apps must import styles explicitly:
+ *   import "@dhawalhost/wardseal-ui-kit/tokens.css";
+ *   // or the full bundle: import "@dhawalhost/wardseal-ui-kit/styles.css";
+ * And use the Tailwind preset:
+ *   presets: [require("@dhawalhost/wardseal-ui-kit/tailwind-preset").tailwindPreset]
+ */
 
 // ── UTILITIES ──
 export { cn } from "./lib/utils";
@@ -30,6 +37,16 @@ export {
   CardDescription,
   CardContent,
   CardFooter,
+} from "./components/Card/Card";
+
+/** App-facing aliases — same primitives as Card (product UIs used Glass* names). */
+export {
+  Card as GlassCard,
+  CardHeader as GlassCardHeader,
+  CardTitle as GlassCardTitle,
+  CardDescription as GlassCardDescription,
+  CardContent as GlassCardContent,
+  CardFooter as GlassCardFooter,
 } from "./components/Card/Card";
 
 // Dropdown
@@ -195,6 +212,18 @@ export type {
 export { PageHeader } from "./layouts/PageHeader/PageHeader";
 export type { PageHeaderProps, BreadcrumbItem } from "./layouts/PageHeader/PageHeader";
 
+// PageLayout
+export { PageLayout } from "./layouts/PageLayout/PageLayout";
+export type { PageLayoutProps } from "./layouts/PageLayout/PageLayout";
+
+// Container / Stack / Section
+export { Container } from "./layouts/Container/Container";
+export type { ContainerProps, ContainerSize } from "./layouts/Container/Container";
+export { Stack } from "./layouts/Stack/Stack";
+export type { StackProps, StackGap } from "./layouts/Stack/Stack";
+export { Section } from "./layouts/Section/Section";
+export type { SectionProps } from "./layouts/Section/Section";
+
 // AdminShell
 export { AdminShell } from "./layouts/AdminShell/AdminShell";
 export type {
@@ -207,6 +236,20 @@ export type {
 export { PortalLayout } from "./layouts/PortalLayout/PortalLayout";
 export type { PortalLayoutProps, PortalLink } from "./layouts/PortalLayout/PortalLayout";
 
+// StatCard
+export { StatCard, statCardVariants } from "./components/StatCard/StatCard";
+export type { StatCardProps } from "./components/StatCard/StatCard";
+
 // ── THEME SYSTEM ──
 export { ThemeProvider, useTheme } from "./components/ThemeProvider/ThemeProvider";
 export type { ThemeProviderProps, Theme } from "./components/ThemeProvider/ThemeProvider";
+
+// ── TOKEN REFERENCE (JS) ──
+export {
+  brandHex,
+  space,
+  radius,
+  fontFamily,
+  cssVars,
+  tokenMeta,
+} from "./tokens";

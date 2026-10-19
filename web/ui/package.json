@@ -1,7 +1,7 @@
 {
   "name": "@dhawalhost/wardseal-ui-kit",
-  "version": "0.1.0",
-  "description": "WardSeal Brand UI Component Library — React + Tailwind, dual-theme, Radix primitives.",
+  "version": "0.2.0",
+  "description": "WardSeal Brand UI — workspace mirror of @dhawalhost/wardseal-ui-kit (edit the kit repo, then sync).",
   "keywords": [
     "wardseal",
     "ui",
@@ -21,16 +21,14 @@
   "sideEffects": [
     "./dist/styles.css"
   ],
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./styles.css": "./dist/styles.css",
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles/global.css",
+    "./tokens.css": "./src/styles/tokens.css",
+    "./tailwind-preset": "./src/tailwind-preset.ts",
     "./package.json": "./package.json"
   },
   "files": [

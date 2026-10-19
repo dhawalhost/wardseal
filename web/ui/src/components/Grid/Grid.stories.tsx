@@ -118,7 +118,7 @@ export const BrandSpacingGaps: Story = {
           Dashboard Page Spacing (`gap="page"`)
         </h3>
         <p className="text-xs text-on-surface-variant/60 mb-4">
-          Uses WardSeal's global page space token (`var(--space-page)` / 24px) for layouts.
+          Uses WardSeal's global page space token (`var(--space-page)` / 40px) for layouts.
         </p>
         <Grid cols={3} gap="page">
           <DemoBox>Dashboard Card 1</DemoBox>
@@ -132,7 +132,7 @@ export const BrandSpacingGaps: Story = {
           Section Spacing (`gap="section"`)
         </h3>
         <p className="text-xs text-on-surface-variant/60 mb-4">
-          Uses WardSeal's global section space token (`var(--space-section)` / 20px).
+          Uses WardSeal's global section space token (`var(--space-section)` / 32px).
         </p>
         <Grid cols={3} gap="section">
           <DemoBox>Section Component A</DemoBox>
@@ -146,7 +146,7 @@ export const BrandSpacingGaps: Story = {
           Card Element Spacing (`gap="card"`)
         </h3>
         <p className="text-xs text-on-surface-variant/60 mb-4">
-          Uses WardSeal's inner card space token (`var(--space-card)` / 16px).
+          Uses WardSeal's inner card space token (`var(--space-card)` / 24px).
         </p>
         <Grid cols={3} gap="card">
           <DemoBox>Inner Item 1</DemoBox>

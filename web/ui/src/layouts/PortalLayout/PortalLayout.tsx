@@ -52,7 +52,7 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
       <div
         ref={ref}
         className={cn(
-          "min-h-screen w-screen bg-[#0A0A0C] flex flex-col justify-between font-sans text-on-surface relative overflow-x-hidden",
+          "min-h-screen w-screen bg-background flex flex-col justify-between font-sans text-on-surface relative overflow-x-hidden",
           className
         )}
         {...props}
@@ -62,15 +62,15 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
         <div className="absolute bottom-[-200px] right-[-100px] w-[500px] h-[400px] bg-accent/5 rounded-full blur-[120px] pointer-events-none z-0" />
 
         {/* ── TOPBAR HEADER ── */}
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
+        <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md shrink-0">
           <div className="max-w-7xl mx-auto h-16 px-4 md:px-8 flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/5">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-secondary/10 border border-border flex items-center justify-center shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-secondary" />
                 </div>
-                <span className="font-bold text-sm tracking-wider uppercase text-on-surface">
+                <span className="font-bold text-sm tracking-tight text-on-surface">
                   {brandName}
                 </span>
               </div>
@@ -82,10 +82,10 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
                     key={link.label}
                     onClick={link.onClick}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-semibold tracking-tight transition-all duration-200",
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold tracking-tight transition-colors duration-150 cursor-pointer",
                       link.isActive
-                        ? "bg-white/5 text-primary font-bold shadow-sm"
-                        : "text-on-surface-variant/60 hover:text-on-surface hover:bg-white/5"
+                        ? "bg-secondary/10 text-secondary font-bold shadow-sm"
+                        : "text-muted-foreground hover:text-on-surface hover:bg-muted"
                     )}
                   >
                     {link.label}
@@ -97,7 +97,7 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
             {/* Right side controls */}
             <div className="flex items-center gap-4">
               {/* Telemetry Status Indicator */}
-              <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 font-semibold text-[10px] tracking-tight uppercase">
+              <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-muted border border-border font-semibold text-[10px] tracking-tight uppercase">
                 <span className="relative flex h-2 w-2">
                   <span
                     className={cn(
@@ -127,7 +127,7 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
 
               {/* User Dropdown Profile */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-2 p-1 rounded-lg hover:bg-white/5 outline-none transition-colors">
+                <DropdownMenuTrigger className="flex items-center gap-2 p-1 rounded-lg hover:bg-muted outline-none transition-colors">
                   <Avatar name={user.name} size={28} />
                   <ChevronDown className="w-4 h-4 text-on-surface-variant/40 hover:text-on-surface" />
                 </DropdownMenuTrigger>
@@ -157,7 +157,7 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
         </header>
 
         {/* ── MOBILE SYSTEM NAV ── */}
-        <nav className="md:hidden border-b border-white/5 bg-black/20 flex items-center justify-around py-2 shrink-0 z-10">
+        <nav className="md:hidden border-b border-border bg-muted flex items-center justify-around py-2 shrink-0 z-10">
           {links.map((link) => (
             <button
               key={link.label}
@@ -165,7 +165,7 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
               className={cn(
                 "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
                 link.isActive
-                  ? "bg-white/5 text-primary"
+                  ? "bg-muted text-primary"
                   : "text-on-surface-variant/40 hover:text-on-surface"
               )}
             >
@@ -175,18 +175,18 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
         </nav>
 
         {/* ── CONTENT BODY ── */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 z-10 overflow-y-auto">
-          {children}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 z-10 overflow-y-auto">
+          <div className="flex flex-col gap-8 lg:gap-10">{children}</div>
         </main>
 
         {/* ── SECURE FOOTER (Premium Layout standard) ── */}
-        <footer className="border-t border-white/5 bg-black/40 backdrop-blur-xl py-8 shrink-0 z-10">
+        <footer className="border-t border-border bg-card py-8 shrink-0 z-10">
           <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Brand details */}
             <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-primary opacity-60" />
-              <div className="text-[10px] font-semibold text-on-surface-variant/30 uppercase tracking-widest">
-                © {new Date().getFullYear()} WARDSEAL SECURITY SYSTEMS Inc. All rights reserved.
+              <ShieldCheck className="w-5 h-5 text-secondary" />
+              <div className="text-xs font-medium text-muted-foreground">
+                © {new Date().getFullYear()} WardSeal. All rights reserved.
               </div>
             </div>
 
@@ -207,7 +207,7 @@ PortalLayout.displayName = "PortalLayout";
 // Small localized helper component for compliance items
 function ComplianceBadge({ label, icon }: { label: string; icon: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/5 border border-white/5 text-[9px] font-bold tracking-wider text-on-surface-variant/60 uppercase">
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-muted border border-border text-[9px] font-bold tracking-wider text-on-surface-variant/60 uppercase">
       {icon}
       <span>{label}</span>
     </div>
