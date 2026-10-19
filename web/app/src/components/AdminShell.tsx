@@ -32,8 +32,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import BoringAvatar from 'boring-avatars';
+import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
@@ -122,7 +121,7 @@ const AdminShell: React.FC = () => {
                 </div>
 
                 <nav className="flex-1 overflow-y-auto py-8 px-4 space-y-1 custom-scrollbar">
-                    <div className="text-[12px] font-bold text-on-surface-variant/40 mb-4 px-4 tracking-tight">Main Menu</div>
+                    <div className="text-[12px] font-bold text-muted-foreground mb-4 px-4 tracking-tight">Main Menu</div>
                     {menuItems.slice(0, 8).map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
                         const Icon = item.icon;
@@ -145,7 +144,7 @@ const AdminShell: React.FC = () => {
                     })}
 
                     <div className="h-8" />
-                    <div className="text-[12px] font-bold text-on-surface-variant/40 mb-4 px-4 tracking-tight">System Settings</div>
+                    <div className="text-[12px] font-bold text-muted-foreground mb-4 px-4 tracking-tight">System Settings</div>
                     {menuItems.slice(8).map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
                         const Icon = item.icon;
@@ -170,14 +169,7 @@ const AdminShell: React.FC = () => {
 
                 <div className="p-6 border-t bg-surface-container-low/30">
                     <div className="flex items-center gap-3 group cursor-pointer" onClick={handleLogout}>
-                        <Avatar className="h-10 w-10 border shadow-sm transition-transform group-hover:scale-105">
-                            <BoringAvatar
-                                size={40}
-                                name={userId}
-                                variant="marble"
-                                colors={["#00FF9E", "#17171C", "#8B5CF6", "#06B6D4", "#10B981"]}
-                            />
-                        </Avatar>
+                        <Avatar name={userId} size={40} className="h-10 w-10 border shadow-sm transition-transform group-hover:scale-105" />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
                                 {userName}
@@ -196,15 +188,15 @@ const AdminShell: React.FC = () => {
                 <header className="h-20 border-b bg-card/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-10">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm font-medium">
-                            <span className="text-on-surface-variant/40">System</span>
-                            <ChevronRight className="w-4 h-4 text-on-surface-variant/20" />
+                            <span className="text-muted-foreground">System</span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             <span className="text-primary font-semibold">{activeItem?.label || 'Dashboard'}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="relative w-72 hidden lg:block group">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant/40 group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <Input
                                 type="search"
                                 placeholder="Search everywhere..."
@@ -242,7 +234,7 @@ const AdminShell: React.FC = () => {
                                 <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                                 System Status: Online
                             </div>
-                            <span className="text-[11px] font-bold text-on-surface-variant/20 italic">v4.2.0-stable</span>
+                            <span className="text-[11px] font-bold text-muted-foreground italic">v4.2.0-stable</span>
                         </div>
                         <div className="flex items-center gap-8 text-[11px] font-semibold text-on-surface-variant">
                             <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Privacy</a>

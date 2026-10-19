@@ -35,7 +35,7 @@ export const PortalAccessRequestRow: React.FC<PortalAccessRequestRowProps> = ({
                     </div>
                      <div className="flex flex-col">
                         <span className="text-lg font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">{req.requester_id}</span>
-                        <span className="text-[9px] font-bold font-mono tracking-tight text-on-surface-variant/30 mt-1 italic">ID: {req.id.substring(0, 8).toLowerCase()}</span>
+                        <span className="text-[9px] font-bold font-mono tracking-tight text-muted-foreground mt-1 italic">ID: {req.id.substring(0, 8).toLowerCase()}</span>
                     </div>
                 </div>
             </TableCell>
@@ -43,12 +43,12 @@ export const PortalAccessRequestRow: React.FC<PortalAccessRequestRowProps> = ({
                 <div className="flex flex-col gap-2">
                      <div className="flex items-center gap-2">
                         <Badge className="bg-surface-container text-on-surface-variant border-none rounded-lg font-bold text-[9px] px-2.5 py-1 tracking-tight">{req.resource_type}</Badge>
-                        <span className="text-[11px] font-bold text-on-surface-variant/60 tracking-tight flex items-center gap-2 italic">
+                        <span className="text-[11px] font-bold text-muted-foreground tracking-tight flex items-center gap-2 italic">
                             <Terminal className="w-3.5 h-3.5" />
                             {req.resource_id}
                         </span>
                     </div>
-                    <span className="text-[10px] font-medium text-on-surface-variant/40 truncate max-w-[200px]" title={req.reason}>
+                    <span className="text-[10px] font-medium text-muted-foreground truncate max-w-[200px]" title={req.reason}>
                         {req.reason}
                     </span>
                 </div>
@@ -60,7 +60,7 @@ export const PortalAccessRequestRow: React.FC<PortalAccessRequestRowProps> = ({
                         {req.duration}
                     </div>
                 ) : (
-                    <span className="text-[10px] font-bold text-on-surface-variant/20 tracking-tight italic">Permanent</span>
+                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight italic">Permanent</span>
                 )}
             </TableCell>
             <TableCell className="py-8">

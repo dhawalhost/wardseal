@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { User, Mail, Shield, Key, Save, Loader2, Fingerprint, Lock, Activity } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { User, Mail, Shield, Key, Save, Loader2, Fingerprint, Lock, Activity } from 'lucide-react';
 import { api } from '../api';
-import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassCardDescription } from '@/components/layout';
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent } from '@/components/layout';
 
 const PortalProfile = () => {
+    const navigate = useNavigate();
     const [isSaving, setIsSaving] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [saveMessage, setSaveMessage] = useState('');
@@ -17,16 +19,16 @@ const PortalProfile = () => {
         const fetchProfile = async () => {
             try {
                 const res = await api.get('/api/v1/user/profile');
-                const nameParts = (res.data.name || "").split(" ");
-                const firstName = nameParts[0] || "";
-                const lastName = nameParts.slice(1).join(" ") || "";
+                const nameParts = (res.data.name || '').split(' ');
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
                 setUserProfile({
-                    email: res.data.email || "",
+                    email: res.data.email || '',
                     firstName,
-                    lastName
+                    lastName,
                 });
             } catch (error) {
-                console.error("Failed to fetch profile", error);
+                console.error('Failed to fetch profile', error);
             }
         };
         fetchProfile();
@@ -52,141 +54,151 @@ const PortalProfile = () => {
     };
 
     return (
-        <div className="space-y-12 max-w-4xl animate-in fade-in duration-700">
-            {/* Header */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-4 text-primary">
-                    <div className="p-3 bg-primary/10 rounded-2xl">
-                        <Fingerprint className="w-8 h-8" />
+        <div className="space-y-page max-w-4xl animate-in fade-in duration-500">
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Fingerprint className="w-5 h-5" />
                     </div>
-                    <span className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 uppercase">Identity Profile</span>
+                    <span className="text-xs font-semibold text-muted-foreground">Profile</span>
                 </div>
-                <h1 className="text-5xl font-bold tracking-tight text-on-surface">Subject Attributes</h1>
-                <p className="text-on-surface-variant/40 font-medium tracking-tight text-sm max-w-xl">
-                    Managed identity parameters and security credentials for your authorized persona.
+                <h1 className="text-3xl font-bold tracking-tight text-on-surface">Account settings</h1>
+                <p className="text-sm text-muted-foreground max-w-xl">
+                    Manage your profile details, password, and MFA settings.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-                <div className="lg:col-span-12 space-y-10">
-                    <GlassCard className="border-none shadow-2xl shadow-on-surface/5 overflow-hidden rounded-[32px] bg-card">
-                        <GlassCardHeader className="bg-surface-container/50 border-b border-on-surface/5 py-10 px-10">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary rounded-2xl text-primary-foreground shadow-lg shadow-primary/20">
-                                    <User className="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <GlassCardTitle className="text-3xl font-bold tracking-tight text-on-surface leading-none">Entity Lineage</GlassCardTitle>
-                                    <p className="text-on-surface-variant/40 font-semibold tracking-tight text-[12px] mt-3">Static and dynamic user primitives.</p>
-                                </div>
+            <div className="grid grid-cols-1 gap-card items-start">
+                <GlassCard className="shadow-sm border-border overflow-hidden rounded-xl bg-card">
+                    <GlassCardHeader className="bg-muted/40 border-b border-border py-5 px-6">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2 bg-primary rounded-lg text-primary-foreground shadow-sm">
+                                <User className="w-5 h-5" />
                             </div>
-                        </GlassCardHeader>
-                        <GlassCardContent key={userProfile?.email || 'loading'} className="p-10 space-y-12">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-3">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Given Name</Label>
-                                    <Input
-                                        defaultValue={userProfile?.firstName || ''}
-                                        className="h-14 border-none rounded-2xl font-semibold text-sm bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20"
-                                        placeholder="Given Name"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Family Name</Label>
-                                    <Input
-                                        defaultValue={userProfile?.lastName || ''}
-                                        className="h-14 border-none rounded-2xl font-semibold text-sm bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20"
-                                        placeholder="Family Name"
-                                    />
-                                </div>
+                            <div>
+                                <GlassCardTitle className="text-lg font-bold tracking-tight text-on-surface leading-none">
+                                    Profile
+                                </GlassCardTitle>
+                                <p className="text-sm text-muted-foreground mt-1.5">Your name and email address.</p>
                             </div>
+                        </div>
+                    </GlassCardHeader>
+                    <GlassCardContent key={userProfile?.email || 'loading'} className="p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-muted-foreground">First name</Label>
+                                <Input
+                                    defaultValue={userProfile?.firstName || ''}
+                                    className="h-10 rounded-lg border-border bg-background shadow-xs text-sm"
+                                    placeholder="First name"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-muted-foreground">Last name</Label>
+                                <Input
+                                    defaultValue={userProfile?.lastName || ''}
+                                    className="h-10 rounded-lg border-border bg-background shadow-xs text-sm"
+                                    placeholder="Last name"
+                                />
+                            </div>
+                        </div>
 
-                            <div className="space-y-3">
-                                <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Communication Vector Email</Label>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-muted-foreground">Email</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    type="email"
+                                    className="h-10 pl-10 rounded-lg border-border bg-muted/40 text-sm cursor-not-allowed"
+                                    defaultValue={userProfile?.email || ''}
+                                    disabled
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Email is managed by your organization.</p>
+                        </div>
+                    </GlassCardContent>
+                </GlassCard>
+
+                <GlassCard className="shadow-sm border-border overflow-hidden rounded-xl bg-card">
+                    <GlassCardHeader className="bg-secondary text-secondary-foreground py-5 px-6 relative overflow-hidden border-b-0">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                            <Shield className="w-16 h-16" />
+                        </div>
+                        <div className="relative z-10 flex items-center gap-4">
+                            <div className="p-2 bg-secondary-foreground/10 rounded-lg border border-secondary-foreground/10">
+                                <Lock className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <GlassCardTitle className="text-lg font-bold tracking-tight text-secondary-foreground leading-none">
+                                    Security
+                                </GlassCardTitle>
+                                <p className="text-secondary-foreground/80 text-sm mt-1.5">Password and MFA settings</p>
+                            </div>
+                        </div>
+                    </GlassCardHeader>
+                    <GlassCardContent className="p-6 space-y-6">
+                        <div className="flex flex-col md:flex-row items-center gap-4 p-5 rounded-lg bg-muted/40 border border-dashed border-border">
+                            <div className="flex-1 space-y-2 w-full">
+                                <Label className="text-sm font-semibold text-muted-foreground">New password</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20" />
+                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <Input
-                                        type="email"
-                                        className="h-14 pl-14 border-none rounded-2xl font-semibold text-sm bg-surface-container/30 ring-1 ring-on-surface/5 text-on-surface opacity-50 cursor-not-allowed"
-                                        defaultValue={userProfile?.email || ''}
-                                        disabled
+                                        type="password"
+                                        placeholder="Enter a new password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="h-10 pl-10 rounded-lg border-border bg-card shadow-xs text-sm"
                                     />
                                 </div>
-                                <p className="text-[11px] font-semibold tracking-tight opacity-40 italic ml-1">Vector locked by administrative policy infrastructure.</p>
                             </div>
-                        </GlassCardContent>
-                    </GlassCard>
+                            <Button
+                                onClick={handleSaveProfile}
+                                disabled={isSaving}
+                                className="h-10 bg-primary text-primary-foreground hover:opacity-90 rounded-lg px-6 font-semibold text-sm shadow-sm"
+                            >
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                                Update password
+                            </Button>
+                        </div>
 
-                    <GlassCard className="border-none shadow-2xl shadow-on-surface/5 overflow-hidden rounded-[32px] bg-card">
-                        <GlassCardHeader className="bg-inverse text-on-inverse py-10 px-10 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
-                                <Shield className="w-32 h-32" />
+                        {saveMessage && (
+                            <div
+                                className={`p-4 rounded-lg text-sm font-medium flex items-center gap-3 ${
+                                    saveMessage.includes('successful')
+                                        ? 'bg-success-subtle text-success border border-success/20'
+                                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+                                }`}
+                            >
+                                <Activity className="h-4 w-4" />
+                                {saveMessage}
                             </div>
-                            <div className="relative z-10 flex items-center gap-6">
-                                <div className="p-4 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-on-inverse/10">
-                                    <Lock className="w-8 h-8" />
+                        )}
+
+                        <Separator className="bg-border" />
+
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-lg border border-dashed border-border">
+                            <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 flex items-center justify-center bg-muted rounded-lg">
+                                    <Shield className="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-3xl font-bold tracking-tight text-on-inverse leading-none">Security Stack</GlassCardTitle>
-                                    <p className="text-primary font-bold tracking-tight text-[12px] mt-4 opacity-80 leading-none uppercase">Protection Protocol Management</p>
+                                    <h4 className="text-sm font-semibold text-on-surface">Multi-factor authentication</h4>
+                                    <p className="text-xs text-muted-foreground mt-0.5">Add a second verification step at sign-in</p>
                                 </div>
                             </div>
-                        </GlassCardHeader>
-                        <GlassCardContent className="p-10 space-y-10">
-                            <div className="flex flex-col md:flex-row items-center gap-8 p-10 rounded-[32px] bg-surface-container/50 border-2 border-dashed border-on-surface/5">
-                                <div className="flex-1 space-y-3">
-                                    <Label className="text-[12px] font-bold tracking-tight text-on-surface-variant/40 ml-1">Credential Rotation</Label>
-                                    <div className="relative">
-                                        <Key className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20" />
-                                        <Input
-                                            type="password"
-                                            placeholder="Enter new entropy string..."
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            className="h-14 pl-14 border-none rounded-2xl font-mono text-sm bg-card ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20"
-                                        />
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={handleSaveProfile}
-                                    disabled={isSaving}
-                                    className="h-14 bg-primary text-primary-foreground hover:opacity-90 rounded-2xl px-12 font-bold text-[14px] tracking-tight shadow-xl shadow-primary/20 transition-all font-semibold"
-                                >
-                                    {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5 mr-3" />}
-                                    Commit Rotation
-                                </Button>
-                            </div>
-
-                            {saveMessage && (
-                                <div className={`p-6 rounded-2xl font-bold text-[11px] tracking-tight flex items-center gap-4 animate-in slide-in-from-bottom-4 duration-500 ${saveMessage.includes('successful') ? 'bg-success-subtle text-success ring-1 ring-emerald-100' : 'bg-destructive/10 text-destructive ring-1 ring-red-100'}`}>
-                                    <Activity className="h-4 w-4 animate-pulse" />
-                                    {saveMessage.toUpperCase()}
-                                </div>
-                            )}
-
-                            <Separator className="h-px bg-on-surface/5" />
-
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-10 p-10 rounded-[32px] border-2 border-dashed border-on-surface/5 opacity-60 hover:opacity-100 transition-opacity group">
-                                <div className="flex items-center gap-8">
-                                    <div className="h-16 w-16 flex items-center justify-center bg-surface-container rounded-2xl group-hover:bg-primary/20 transition-colors">
-                                        <Shield className="h-8 w-8 opacity-40 group-hover:opacity-100 group-hover:text-primary transition-all" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-xl font-bold tracking-tight text-on-surface">Multi Factor Authentication</h4>
-                                        <p className="text-[11px] font-bold tracking-tight text-on-surface-variant/40 mt-1 uppercase">Secondary Identity Proofing</p>
-                                    </div>
-                                </div>
-                                <Button variant="outline" className="h-12 border-none ring-1 ring-on-surface/10 font-bold text-[11px] tracking-tight rounded-xl px-8 hover:bg-surface-container transition-all">
-                                    Configure MFA
-                                </Button>
-                            </div>
-                        </GlassCardContent>
-                    </GlassCard>
-                </div>
+                            <Button
+                                variant="outline"
+                                className="h-9 border-border font-semibold text-sm rounded-lg px-5"
+                                onClick={() => navigate('/mfa')}
+                            >
+                                Configure MFA
+                            </Button>
+                        </div>
+                    </GlassCardContent>
+                </GlassCard>
             </div>
         </div>
     );
 };
 
 export default PortalProfile;
-

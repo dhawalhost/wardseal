@@ -28,7 +28,7 @@ const LoginRedirect: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="wardseal-app-theme">
+    <ThemeProvider defaultTheme="light" storageKey="wardseal-app-theme">
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

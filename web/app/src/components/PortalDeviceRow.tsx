@@ -49,19 +49,19 @@ export const PortalDeviceRow: React.FC<PortalDeviceRowProps> = ({
                      <div className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
                         <User className="w-4 h-4 opacity-40 group-hover:opacity-100" />
                     </div>
-                    <span className="text-[11px] font-bold text-on-surface-variant/60 tracking-tight">{device.user_id.substring(0, 16)}...</span>
+                    <span className="text-[11px] font-bold text-muted-foreground tracking-tight">{device.user_id.substring(0, 16)}...</span>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                  <div className="flex flex-col">
                     <span className="text-sm font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">{device.platform}</span>
-                    <span className="text-[10px] font-bold text-on-surface-variant/30 tracking-tight mt-1 italic">{device.os_version}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight mt-1 italic">{device.os_version}</span>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                 {getStatusBadge(device.trust_status)}
             </TableCell>
-             <TableCell className="py-8 text-[11px] font-medium text-on-surface-variant/40 italic tracking-tight">
+             <TableCell className="py-8 text-[11px] font-medium text-muted-foreground italic tracking-tight">
                 {new Date(device.last_scan_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </TableCell>
             <TableCell className="py-8 text-right pr-10">
@@ -69,10 +69,10 @@ export const PortalDeviceRow: React.FC<PortalDeviceRowProps> = ({
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-surface-container transition-all">
-                                <MoreHorizontal className="h-5 w-5 text-on-surface-variant/60" />
+                                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[200px] rounded-[24px] border-none shadow-2xl shadow-on-surface/10 p-2 bg-card">
+                        <DropdownMenuContent align="end" className="w-[200px] rounded-xl border-none shadow-2xl shadow-on-surface/10 p-2 bg-card">
                              <DropdownMenuItem 
                                  className="font-bold text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-success-subtle focus:text-success transition-colors"
                                  onClick={() => handleUpdateStatus(device.id, 'trusted')}
