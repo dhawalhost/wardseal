@@ -309,6 +309,7 @@ func (env *TestEnv) setupServers(t *testing.T) {
 type HTTPClient struct {
 	BaseURL  string
 	TenantID string
+	Token    string
 	client   *http.Client
 }
 
@@ -317,6 +318,7 @@ func NewHTTPClient(baseURL, tenantID string) *HTTPClient {
 	return &HTTPClient{
 		BaseURL:  baseURL,
 		TenantID: tenantID,
+		Token:    "test-integration-token",
 		client:   &http.Client{Timeout: 10 * time.Second},
 	}
 }
@@ -329,6 +331,9 @@ func (c *HTTPClient) Get(t *testing.T, path string) *http.Response {
 		t.Fatalf("Failed to create GET request: %v", err)
 	}
 	req.Header.Set("X-Tenant-ID", c.TenantID)
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		t.Fatalf("GET request failed: %v", err)
@@ -349,6 +354,9 @@ func (c *HTTPClient) Post(t *testing.T, path string, body interface{}) *http.Res
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", c.TenantID)
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		t.Fatalf("POST request failed: %v", err)
@@ -369,6 +377,9 @@ func (c *HTTPClient) Put(t *testing.T, path string, body interface{}) *http.Resp
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-ID", c.TenantID)
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		t.Fatalf("PUT request failed: %v", err)
@@ -384,6 +395,9 @@ func (c *HTTPClient) Delete(t *testing.T, path string) *http.Response {
 		t.Fatalf("Failed to create DELETE request: %v", err)
 	}
 	req.Header.Set("X-Tenant-ID", c.TenantID)
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		t.Fatalf("DELETE request failed: %v", err)
