@@ -2,6 +2,8 @@
 
 export type AuthSessionPayload = {
   token?: string;
+  /** Some endpoints (WebAuthn finish) return access_token instead of token. */
+  access_token?: string;
   tenant_id?: string;
   tenantID?: string;
   tenant_slug?: string;
@@ -14,18 +16,34 @@ export type AuthSessionPayload = {
   roles?: string[] | { name?: string }[];
 };
 
-function decodeTokenUserId(token: string | null | undefined): string {
-  if (!token) return '';
+function decodeJwtPayload(token: string | null | undefined): Record<string, unknown> | null {
+  if (!token) return null;
   try {
     const [, payload] = token.split('.');
-    if (!payload) return '';
+    if (!payload) return null;
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
     const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-    const parsed = JSON.parse(atob(padded)) as { sub?: string; user_id?: string };
-    return parsed.sub || parsed.user_id || '';
+    return JSON.parse(atob(padded)) as Record<string, unknown>;
   } catch {
-    return '';
+    return null;
   }
+}
+
+function decodeTokenUserId(token: string | null | undefined): string {
+  const parsed = decodeJwtPayload(token);
+  if (!parsed) return '';
+  return (
+    (typeof parsed.sub === 'string' && parsed.sub) ||
+    (typeof parsed.user_id === 'string' && parsed.user_id) ||
+    ''
+  );
+}
+
+/** Roles claim from access token (works when RBAC user-roles API is unreachable). */
+export function rolesFromAccessToken(token: string | null | undefined): string[] {
+  const parsed = decodeJwtPayload(token);
+  if (!parsed || !Array.isArray(parsed.roles)) return [];
+  return parsed.roles.filter((r): r is string => typeof r === 'string');
 }
 
 function roleNames(roles: AuthSessionPayload['roles']): string[] {
@@ -35,13 +53,24 @@ function roleNames(roles: AuthSessionPayload['roles']): string[] {
     .filter((name): name is string => typeof name === 'string');
 }
 
+/** Org founders get `super-admin`; some tenants use `admin`. */
+export function roleGrantsAdminConsole(roleName: string): boolean {
+  const n = roleName.toLowerCase();
+  return n === 'admin' || n === 'super-admin';
+}
+
+export function rolesGrantAdminConsole(roles: AuthSessionPayload['roles']): boolean {
+  return roleNames(roles).some(roleGrantsAdminConsole);
+}
+
 /** Persist auth response fields used by MFEs (tenant headers, admin CTA). */
 export function seedSessionFromAuthResponse(
   data: AuthSessionPayload,
   fallbackUserId = ''
 ): void {
-  if (data.token) {
-    localStorage.setItem('token', data.token);
+  const accessToken = data.token || data.access_token || '';
+  if (accessToken) {
+    localStorage.setItem('token', accessToken);
   }
 
   const tenantID = data.tenant_id || data.tenantID || '';
@@ -58,7 +87,7 @@ export function seedSessionFromAuthResponse(
     data.user_id ||
     data.userID ||
     data.id ||
-    decodeTokenUserId(data.token) ||
+    decodeTokenUserId(accessToken) ||
     fallbackUserId;
   if (userId) {
     localStorage.setItem('userId', userId);
@@ -70,8 +99,7 @@ export function seedSessionFromAuthResponse(
     localStorage.setItem('userName', data.email);
   }
 
-  const names = roleNames(data.roles);
-  if (names.some((r) => r.toLowerCase() === 'admin')) {
+  if (rolesGrantAdminConsole(data.roles)) {
     localStorage.setItem('isAdmin', 'true');
   }
 }
@@ -84,10 +112,7 @@ export function seedSessionFromProfile(
   seedSessionFromAuthResponse(profile);
   const names = roleNames(roles ?? profile.roles);
   if (names.length > 0) {
-    localStorage.setItem(
-      'isAdmin',
-      names.some((r) => r.toLowerCase() === 'admin') ? 'true' : 'false'
-    );
+    localStorage.setItem('isAdmin', rolesGrantAdminConsole(names) ? 'true' : 'false');
   }
 }
 
