@@ -3,10 +3,10 @@ package email
 import (
 	"context"
 	"fmt"
-	"net/smtp"
 	"os"
-	"strings"
+	"strconv"
 
+	"github.com/dhawalhost/gokit/notify"
 	"go.uber.org/zap"
 )
 
@@ -16,19 +16,17 @@ type Service interface {
 	SendPasswordSetupLink(ctx context.Context, email, name, link, mode string) error
 }
 
-type smtpService struct {
-	host     string
-	port     string
-	username string
-	password string
+type notifierService struct {
+	notifier *notify.Notifier
 	from     string
 	logger   *zap.Logger
 }
 
 // NewService creates a new email service based on environment variables.
+// If SMTP_HOST is not configured, it falls back to an in-memory sender.
 func NewService(logger *zap.Logger) Service {
 	host := os.Getenv("SMTP_HOST")
-	port := os.Getenv("SMTP_PORT")
+	portStr := os.Getenv("SMTP_PORT")
 	username := os.Getenv("SMTP_USERNAME")
 	password := os.Getenv("SMTP_PASSWORD")
 	from := os.Getenv("SMTP_FROM")
@@ -37,38 +35,54 @@ func NewService(logger *zap.Logger) Service {
 		from = "no-reply@wardseal.io"
 	}
 
+	var sender notify.EmailSender
 	if host == "" {
-		logger.Warn("SMTP_HOST not set, using mock email service")
-		return &mockService{logger: logger, from: from}
+		logger.Warn("SMTP_HOST not set, using mock in-memory email sender")
+		sender = notify.NewMemorySender()
+	} else {
+		port := 587
+		if p, err := strconv.Atoi(portStr); err == nil && p > 0 {
+			port = p
+		}
+
+		var opts []notify.SMTPOption
+		if username != "" || password != "" {
+			opts = append(opts, notify.WithSMTPCredentials(username, password))
+		}
+		sender = notify.NewSMTPSender(host, port, opts...)
 	}
 
-	return &smtpService{
-		host:     host,
-		port:     port,
-		username: username,
-		password: password,
+	return NewServiceWithSender(sender, from, logger)
+}
+
+// NewServiceWithSender constructs a Service with an explicit notify.EmailSender (e.g. for testing).
+func NewServiceWithSender(sender notify.EmailSender, from string, logger *zap.Logger) Service {
+	if from == "" {
+		from = "no-reply@wardseal.io"
+	}
+	n := notify.NewNotifier(
+		notify.WithEmailSender(sender),
+		notify.WithDefaultFrom(from),
+		notify.WithLogger(logger),
+	)
+	return &notifierService{
+		notifier: n,
 		from:     from,
 		logger:   logger,
 	}
 }
 
-func (s *smtpService) SendEmail(ctx context.Context, to []string, subject, body string) error {
-	msg := []byte(fmt.Sprintf("To: %s\r\n"+
-		"From: %s\r\n"+
-		"Subject: %s\r\n"+
-		"MIME-version: 1.0;\r\n"+
-		"Content-Type: text/html; charset=\"UTF-8\";\r\n"+
-		"\r\n"+
-		"%s\r\n", strings.Join(to, ","), s.from, subject, body))
-
-	auth := smtp.PlainAuth("", s.username, s.password, s.host)
-	addr := fmt.Sprintf("%s:%s", s.host, s.port)
-
+func (s *notifierService) SendEmail(ctx context.Context, to []string, subject, body string) error {
 	s.logger.Info("Sending email", zap.Strings("to", to), zap.String("subject", subject))
-	return smtp.SendMail(addr, auth, s.from, to, msg)
+	return s.notifier.SendEmail(ctx, notify.Email{
+		From:     s.from,
+		To:       to,
+		Subject:  subject,
+		HTMLBody: body,
+	})
 }
 
-func (s *smtpService) SendPasswordSetupLink(ctx context.Context, email, name, link, mode string) error {
+func (s *notifierService) SendPasswordSetupLink(ctx context.Context, email, name, link, mode string) error {
 	subject := "Set up your WardSeal password"
 	action := "set up your account"
 	if mode == "reset" {
@@ -91,33 +105,4 @@ func (s *smtpService) SendPasswordSetupLink(ctx context.Context, email, name, li
 	`, name, action, link, subject)
 
 	return s.SendEmail(ctx, []string{email}, subject, body)
-}
-
-type mockService struct {
-	logger *zap.Logger
-	from   string
-}
-
-func (s *mockService) SendEmail(ctx context.Context, to []string, subject, body string) error {
-	s.logger.Info("MOCK EMAIL SENT",
-		zap.String("from", s.from),
-		zap.Strings("to", to),
-		zap.String("subject", subject),
-		zap.String("body_preview", body[:min(100, len(body))]))
-	return nil
-}
-
-func (s *mockService) SendPasswordSetupLink(ctx context.Context, email, name, link, mode string) error {
-	s.logger.Info("MOCK PASSWORD SETUP LINK SENT",
-		zap.String("email", email),
-		zap.String("link", link),
-		zap.String("mode", mode))
-	return nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

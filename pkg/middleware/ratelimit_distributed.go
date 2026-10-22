@@ -76,7 +76,7 @@ func buildTenantScope(c *gin.Context, useTenant bool) string {
 }
 
 func distributedFallbackAllow(fallback *IPRateLimiter, scopeKey string) bool {
-	return fallback.GetLimiter(scopeKey).Allow()
+	return fallback.Allow(scopeKey)
 }
 
 // DistributedRateLimitMiddleware applies Redis-backed fixed-window rate limiting.

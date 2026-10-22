@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/dhawalhost/gokit/bulkhead"
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -119,7 +120,27 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 		graph.GET("/traverse", h.require("roles", "read"), h.traverseGraph)
 	}
 
-	tenantGroup.POST("/governance/ask", h.require("applications", "read"), h.askAI)
+	aiBulkhead := middleware.Bulkhead(bulkhead.NewPartitionedBulkhead(bulkhead.Config{
+		MaxConcurrent: 5,
+		MaxQueue:      10,
+	}), func(r *http.Request) string {
+		tenant := r.Header.Get("X-Tenant-ID")
+		if tenant == "" {
+			parts := strings.Split(r.URL.Path, "/")
+			for i, p := range parts {
+				if p == "tenants" && i+1 < len(parts) {
+					tenant = parts[i+1]
+					break
+				}
+			}
+		}
+		if tenant == "" {
+			return "global"
+		}
+		return tenant
+	})
+
+	tenantGroup.POST("/governance/ask", h.require("applications", "read"), aiBulkhead, h.askAI)
 
 	// Registered combined routes
 	h.orgHandler.RegisterRoutes(tenantGroup)

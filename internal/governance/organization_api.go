@@ -3,7 +3,6 @@ package governance
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -69,10 +68,7 @@ func (h *OrganizationHandler) listOrganizations(c *gin.Context) {
 		return
 	}
 
-	limitStr := c.DefaultQuery("limit", "50")
-	offsetStr := c.DefaultQuery("offset", "0")
-	limit, _ := strconv.Atoi(limitStr)
-	offset, _ := strconv.Atoi(offsetStr)
+	limit, offset, _ := middleware.ParsePagination(c.Request)
 
 	orgs, err := h.svc.ListOrganizations(c.Request.Context(), tenantID, limit, offset)
 	if err != nil {

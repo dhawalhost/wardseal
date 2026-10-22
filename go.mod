@@ -4,7 +4,7 @@ go 1.26.10
 
 require (
 	github.com/crewjam/saml v0.5.1
-	github.com/dhawalhost/gokit v0.5.0
+	github.com/dhawalhost/gokit v0.6.0
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-ldap/ldap/v3 v3.4.12

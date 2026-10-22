@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dhawalhost/gokit/cache"
+	gokitmultitenancy "github.com/dhawalhost/gokit/multitenancy"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -98,7 +99,7 @@ func NewEngine(repo Repository, log *zap.Logger, rc redis.UniversalClient) *Engi
 // Check determines if a subject has a specific relation to an object.
 func (e *Engine) Check(ctx context.Context, tenantID, subID, subType, rel, ns, objID string) (bool, error) {
 	// 1. Check two-tier cache (sub-microsecond L1 hit, falls back to L2 Redis)
-	cacheKey := fmt.Sprintf("authz:cache:%s:%s:%s:%s:%s:%s", tenantID, subID, subType, rel, ns, objID)
+	cacheKey := gokitmultitenancy.ScopedKey(tenantID, fmt.Sprintf("authz:%s:%s:%s:%s:%s", subID, subType, rel, ns, objID))
 	if val, err := e.twoTier.Get(ctx, cacheKey); err == nil {
 		return val == "true", nil
 	}
@@ -117,7 +118,7 @@ func (e *Engine) InvalidateByTuple(ctx context.Context, tenantID string, tuple R
 	if e.redisClient != nil {
 		// Use SCAN to find keys involving this tenant and either the object or subject
 		// Note: SCAN is preferred over KEYS for performance in production.
-		matchPrefix := fmt.Sprintf("authz:cache:%s:*", tenantID)
+		matchPrefix := gokitmultitenancy.ScopedKey(tenantID, "authz:*")
 		var cursor uint64
 		for {
 			var keys []string

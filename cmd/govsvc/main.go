@@ -223,6 +223,9 @@ func main() {
 
 	// Register standardized health checks
 	healthHandler := health.NewHandler()
+	if db != nil {
+		healthHandler.Register("database", middleware.SQLHealthChecker(db.DB))
+	}
 	router.GET("/healthz", gin.WrapF(healthHandler.LiveHandler()))
 	router.GET("/gov/healthz", gin.WrapF(healthHandler.LiveHandler()))
 	router.GET("/readyz", gin.WrapF(healthHandler.ReadyHandler()))

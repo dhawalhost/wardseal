@@ -1,63 +1,51 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
-	"sync"
 	"time"
 
+	"github.com/dhawalhost/gokit/ratelimit"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )
 
-// IPRateLimiter manages rate limiters for each IP address.
+// IPRateLimiter manages rate limiters for each IP address backed by gokit/ratelimit.
 type IPRateLimiter struct {
-	ips map[string]*rate.Limiter
-	mu  *sync.RWMutex
-	r   rate.Limit
-	b   int
+	store ratelimit.Store
+	r     rate.Limit
+	b     int
 }
 
-// NewIPRateLimiter creates a new rate limiter.
+// NewIPRateLimiter creates a new rate limiter backed by gokit/ratelimit.InMemoryStore
+// with automatic TTL-based cleanup of inactive keys.
 // r is the rate of events (requests per second).
 // b is the burst size (max concurrent requests).
 func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
-	i := &IPRateLimiter{
-		ips: make(map[string]*rate.Limiter),
-		mu:  &sync.RWMutex{},
-		r:   r,
-		b:   b,
-	}
-
-	// Simple cleanup routine (in production use a better cache like Redis)
-	go func() {
-		for {
-			time.Sleep(1 * time.Minute)
-			i.mu.Lock()
-			// This is a naive cleanup. A better approach tracks last seen time.
-			// For now, we just reset the map to prevent unbounded growth in dev.
-			// In production, use Redis with TTL.
-			if len(i.ips) > 10000 {
-				i.ips = make(map[string]*rate.Limiter)
-			}
-			i.mu.Unlock()
-		}
-	}()
-
-	return i
+	return NewIPRateLimiterWithStore(ratelimit.NewInMemoryStoreWithTTL(1*time.Hour), r, b)
 }
 
-// GetLimiter returns the rate limiter for the given IP.
-func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
-	limiter, exists := i.ips[ip]
-	if !exists {
-		limiter = rate.NewLimiter(i.r, i.b)
-		i.ips[ip] = limiter
+// NewIPRateLimiterWithStore creates a rate limiter with a custom ratelimit.Store (e.g. Redis or custom TTL).
+func NewIPRateLimiterWithStore(store ratelimit.Store, r rate.Limit, b int) *IPRateLimiter {
+	return &IPRateLimiter{
+		store: store,
+		r:     r,
+		b:     b,
 	}
+}
 
-	return limiter
+// Allow reports whether a request for the given key is permitted under the limiter rate and burst.
+func (i *IPRateLimiter) Allow(key string) bool {
+	allowed, err := i.store.Allow(context.Background(), key, float64(i.r), i.b)
+	if err != nil {
+		return false
+	}
+	return allowed
+}
+
+// GetLimiter is preserved for backwards compatibility with callers expecting a *rate.Limiter.
+func (i *IPRateLimiter) GetLimiter(_ string) *rate.Limiter {
+	return rate.NewLimiter(i.r, i.b)
 }
 
 // RateLimitMiddleware creates a Gin middleware for rate limiting.
@@ -66,7 +54,7 @@ func RateLimitMiddleware(limit rate.Limit, burst int) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
-		if !limiter.GetLimiter(ip).Allow() {
+		if !limiter.Allow(ip) {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 				"error": "Too many requests",
 			})

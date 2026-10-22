@@ -278,19 +278,9 @@ func (h *HTTPHandler) listUsers(c *gin.Context) {
 	}
 
 	// Otherwise, it's a List request
-	var req ListUsersRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if req.Limit <= 0 {
-		req.Limit = 10
-	}
-	if req.Offset < 0 {
-		req.Offset = 0
-	}
+	limit, offset, _ := middleware.ParsePagination(c.Request)
 
-	users, total, err := h.svc.ListUsers(c.Request.Context(), tenantID, req.Limit, req.Offset)
+	users, total, err := h.svc.ListUsers(c.Request.Context(), tenantID, limit, offset)
 	if err != nil {
 		h.logger.Error("List users failed", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -409,19 +399,9 @@ func (h *HTTPHandler) listGroups(c *gin.Context) {
 		return
 	}
 
-	var req ListGroupsRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if req.Limit <= 0 {
-		req.Limit = 10
-	}
-	if req.Offset < 0 {
-		req.Offset = 0
-	}
+	limit, offset, _ := middleware.ParsePagination(c.Request)
 
-	groups, total, err := h.svc.ListGroups(c.Request.Context(), tenantID, req.Limit, req.Offset)
+	groups, total, err := h.svc.ListGroups(c.Request.Context(), tenantID, limit, offset)
 	if err != nil {
 		h.logger.Error("List groups failed", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

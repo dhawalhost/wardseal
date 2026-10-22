@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -32,6 +31,7 @@ import (
 	"github.com/dhawalhost/gokit/cache"
 	"github.com/dhawalhost/gokit/circuitbreaker"
 	gokitclient "github.com/dhawalhost/gokit/client"
+	gokitcrypto "github.com/dhawalhost/gokit/crypto"
 	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/email"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -1646,20 +1646,14 @@ func (s *authorizationCodeRepository) Delete(ctx context.Context, code string) e
 }
 
 func generateAuthorizationCode() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
+	return gokitcrypto.GenerateCodeVerifier()
 }
 
 func verifyCodeChallenge(challenge, method, verifier string) error {
 	if method != "S256" {
 		return ErrInvalidCodeChallengeMethod
 	}
-	sum := sha256.Sum256([]byte(verifier))
-	computed := base64.RawURLEncoding.EncodeToString(sum[:])
-	if subtle.ConstantTimeCompare([]byte(computed), []byte(challenge)) != 1 {
+	if !gokitcrypto.VerifyCodeChallenge(verifier, challenge) {
 		return ErrInvalidCodeVerifier
 	}
 	return nil

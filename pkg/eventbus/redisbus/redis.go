@@ -2,113 +2,64 @@ package redisbus
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"sync"
-	"time"
 
+	gokitbus "github.com/dhawalhost/gokit/eventbus"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	"github.com/dhawalhost/wardseal/pkg/eventbus"
 )
 
-// redisBus implements eventbus.EventBus using Redis Pub/Sub.
+// redisBus implements eventbus.EventBus using gokit/eventbus backed by Redis Streams.
 type redisBus struct {
-	client redis.UniversalClient
+	bus    gokitbus.Bus
 	logger *zap.Logger
-	mu     sync.Mutex
-	subs   map[string]*redis.PubSub
 }
 
-// NewRedisEventBus creates a new EventBus backed by Redis Pub/Sub.
+// NewRedisEventBus creates a new EventBus backed by Redis Streams (or MemoryBus if client is nil).
 func NewRedisEventBus(client redis.UniversalClient, logger *zap.Logger) eventbus.EventBus {
+	if client == nil {
+		logger.Warn("Redis client is nil, using in-memory event bus")
+		return &redisBus{
+			bus:    gokitbus.NewMemoryBus(),
+			logger: logger,
+		}
+	}
+
+	rb, err := gokitbus.NewRedisBus(gokitbus.RedisBusConfig{
+		Client:       client,
+		StreamPrefix: "events:",
+		DefaultGroup: "wardseal-workers",
+	})
+	if err != nil {
+		logger.Error("failed to create redis streams bus, falling back to in-memory bus", zap.Error(err))
+		return &redisBus{
+			bus:    gokitbus.NewMemoryBus(),
+			logger: logger,
+		}
+	}
+
 	return &redisBus{
-		client: client,
+		bus:    rb,
 		logger: logger,
-		subs:   make(map[string]*redis.PubSub),
 	}
 }
 
-// Publish sends an event to the Redis channel (topic).
+// Publish sends an event to the topic.
 func (r *redisBus) Publish(ctx context.Context, topic string, payload []byte) error {
-	return r.client.Publish(ctx, topic, payload).Err()
+	msg := gokitbus.NewMessage(topic, payload)
+	return r.bus.Publish(ctx, msg)
 }
 
-// Subscribe registers a handler and starts listening to a Redis channel in a background goroutine.
+// Subscribe registers a handler to consume events from the given topic.
 func (r *redisBus) Subscribe(ctx context.Context, topic string, handler eventbus.Handler) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, exists := r.subs[topic]; exists {
-		return fmt.Errorf("already subscribed to topic: %s", topic)
-	}
-
-	pubsub := r.client.Subscribe(ctx, topic)
-	r.subs[topic] = pubsub
-
-	go func(ctx context.Context) {
-		// G118: Use WithoutCancel to satisfy gosec while maintaining background persistence.
-		consumerCtx := context.WithoutCancel(ctx)
-
-		r.logger.Info("started consuming events", zap.String("topic", topic))
-		ch := pubsub.Channel()
-		for msg := range ch {
-			payload := []byte(msg.Payload)
-
-			// Retry loop
-			maxRetries := 3
-			var lastErr error
-			success := false
-
-			for i := 0; i < maxRetries; i++ {
-				if err := handler(consumerCtx, payload); err != nil {
-					lastErr = err
-					r.logger.Warn("event handler failed, retrying...",
-						zap.String("topic", topic),
-						zap.Int("attempt", i+1),
-						zap.Error(err),
-					)
-					time.Sleep(time.Duration(i+1) * 100 * time.Millisecond) // Linear backoff
-					continue
-				}
-				success = true
-				break
-			}
-
-			if !success {
-				r.logger.Error("event handler exhausted retries, pushing to DLQ",
-					zap.String("topic", topic),
-					zap.Error(lastErr),
-				)
-
-				// Publish to DLQ
-				dlqPayload, _ := json.Marshal(map[string]interface{}{
-					"original_topic": topic,
-					"payload":        string(payload),
-					"error":          lastErr.Error(),
-					"failed_at":      time.Now().Format(time.RFC3339),
-				})
-				_ = r.Publish(consumerCtx, "dlq:failed_events", dlqPayload)
-			}
-		}
-		r.logger.Info("stopped consuming events", zap.String("topic", topic))
-	}(ctx)
-
-	return nil
+	_, err := r.bus.Subscribe(ctx, topic, func(ctx context.Context, msg *gokitbus.Message) error {
+		return handler(ctx, msg.Payload)
+	})
+	return err
 }
 
-// Close unsubscribes from all channels and cleans up.
+// Close gracefully terminates subscriptions and connections.
 func (r *redisBus) Close() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	var firstErr error
-	for topic, pubsub := range r.subs {
-		if err := pubsub.Close(); err != nil && firstErr == nil {
-			firstErr = err
-		}
-		delete(r.subs, topic)
-	}
-	return firstErr
+	return r.bus.Close()
 }

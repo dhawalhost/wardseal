@@ -79,16 +79,9 @@ func (h *HTTPHandler) queryLogs(c *gin.Context) {
 			params.EndTime = &t
 		}
 	}
-	if v := c.Query("limit"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			params.Limit = n
-		}
-	}
-	if v := c.Query("offset"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			params.Offset = n
-		}
-	}
+	limit, offset, _ := middleware.ParsePagination(c.Request)
+	params.Limit = limit
+	params.Offset = offset
 
 	events, total, err := h.svc.Query(c.Request.Context(), params)
 	if err != nil {

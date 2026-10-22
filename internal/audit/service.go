@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"github.com/dhawalhost/gokit/jobqueue"
 )
 
 // Service defines audit service operations.
@@ -24,13 +27,65 @@ type Service interface {
 	GetStats(ctx context.Context, tenantID string, lookbackDays int) (Stats, error)
 }
 
-type service struct {
-	store Repository
+// BatchingService extends Service with micro-batching flush and lifecycle controls.
+type BatchingService interface {
+	Service
+	Flush(ctx context.Context) error
+	Close() error
 }
 
-// NewService creates a new audit service.
+type service struct {
+	store   Repository
+	batcher *jobqueue.Batcher[Event]
+}
+
+// NewService creates a synchronous audit service.
 func NewService(store Repository) Service {
 	return &service{store: store}
+}
+
+// NewBatchingService creates a high-throughput audit service backed by gokit/jobqueue.Batcher.
+func NewBatchingService(store Repository, batchSize int, linger time.Duration) BatchingService {
+	if batchSize <= 0 {
+		batchSize = 50
+	}
+	if linger <= 0 {
+		linger = 50 * time.Millisecond
+	}
+
+	batcher := jobqueue.NewBatcher(jobqueue.BatcherConfig[Event]{
+		BatchSize:   batchSize,
+		Linger:      linger,
+		BufferSize:  1000,
+		BlockOnFull: true,
+		FlushFunc: func(ctx context.Context, batch []Event) error {
+			for _, e := range batch {
+				if _, err := store.Log(ctx, e); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	})
+
+	return &service{
+		store:   store,
+		batcher: batcher,
+	}
+}
+
+func (s *service) Close() error {
+	if s.batcher != nil {
+		return s.batcher.Close()
+	}
+	return nil
+}
+
+func (s *service) Flush(ctx context.Context) error {
+	if s.batcher != nil {
+		return s.batcher.Flush(ctx)
+	}
+	return nil
 }
 
 func (s *service) Log(ctx context.Context, input LogInput) error {
@@ -73,6 +128,10 @@ func (s *service) Log(ctx context.Context, input LogInput) error {
 		IPAddress:    input.IPAddress,
 		UserAgent:    input.UserAgent,
 		Outcome:      input.Outcome,
+	}
+
+	if s.batcher != nil {
+		return s.batcher.Push(ctx, e)
 	}
 
 	_, err := s.store.Log(ctx, e)

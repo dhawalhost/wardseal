@@ -3,9 +3,6 @@ package event
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
+	gokitcrypto "github.com/dhawalhost/gokit/crypto"
 	"github.com/dhawalhost/wardseal/internal/webhook"
 )
 
@@ -240,10 +238,7 @@ func (d *Dispatcher) deliverRaw(ctx context.Context, url, secret string, payload
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-WardSeal-Event-ID", eventID)
-
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write(payload)
-	req.Header.Set("X-WardSeal-Signature", "sha256="+hex.EncodeToString(mac.Sum(nil)))
+	req.Header.Set("X-WardSeal-Signature", "sha256="+gokitcrypto.HMACSHA256(payload, []byte(secret)))
 
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
