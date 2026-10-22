@@ -325,3 +325,27 @@ func validateAbsoluteURL(raw string, requireHTTPS bool) error {
 	}
 	return nil
 }
+
+// ResolvePort resolves the network listen address given a default port and optional specific env vars.
+// It checks envVarNames first, then "PORT", and falls back to defaultPort.
+// It ensures the returned address starts with ":".
+func ResolvePort(defaultPort string, envVarNames ...string) string {
+	for _, envVar := range envVarNames {
+		if val := os.Getenv(envVar); val != "" {
+			return formatPort(val)
+		}
+	}
+	if val := os.Getenv("PORT"); val != "" {
+		return formatPort(val)
+	}
+	return formatPort(defaultPort)
+}
+
+func formatPort(p string) string {
+	p = strings.TrimSpace(p)
+	if !strings.HasPrefix(p, ":") {
+		return ":" + p
+	}
+	return p
+}
+

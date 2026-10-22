@@ -29,7 +29,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/go-jose/go-jose.v2"
 
+	"github.com/dhawalhost/gokit/cache"
 	"github.com/dhawalhost/gokit/circuitbreaker"
+	gokitclient "github.com/dhawalhost/gokit/client"
 	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/email"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -109,9 +111,14 @@ type LookupResult struct {
 	TenantSlug      string `json:"tenant_slug,omitempty"`
 }
 
+// HTTPDoer defines the interface for executing outbound HTTP requests.
+type HTTPDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type authService struct {
 	directoryServiceURL string
-	httpClient          *http.Client
+	httpClient          HTTPDoer
 	signer              kms.Signer
 	serviceAuthHeader   string
 	serviceAuthToken    string
@@ -147,8 +154,10 @@ type authService struct {
 	cookieDomain        string
 	loginAttemptStore   LoginAttemptRepository
 	redisClient         redis.UniversalClient
-	localRevCache       sync.Map
 	emailService        email.Service
+	revStore            cache.Cache
+	coalescer           *cache.Coalescer
+	revMu               sync.Mutex
 }
 
 func (s *authService) SendPasswordSetupEmail(ctx context.Context, tenantID, userID, mode string, expiresHours int) error {
@@ -329,7 +338,12 @@ func NewService(cfg Config) (Service, error) {
 
 	return &authService{
 		directoryServiceURL: cfg.DirectoryServiceURL,
-		httpClient:          &http.Client{Timeout: 5 * time.Second},
+		httpClient: gokitclient.New(
+			gokitclient.WithTimeout(5*time.Second),
+			gokitclient.WithMaxRetries(2),
+			gokitclient.WithTracePropagation(true),
+			gokitclient.WithRequestIDPropagation(true),
+		),
 		signer:              signer,
 		serviceAuthHeader:   header,
 		serviceAuthToken:    cfg.ServiceAuthToken,
@@ -364,6 +378,7 @@ func NewService(cfg Config) (Service, error) {
 		loginAttemptStore:   cfg.LoginAttemptStore,
 		redisClient:         cfg.RedisClient,
 		emailService:        emailService,
+		coalescer:           cache.NewCoalescer(),
 		dbCB: circuitbreaker.New(circuitbreaker.Config{
 			Name:             "auth-db",
 			MaxFailures:      5,
@@ -1995,9 +2010,75 @@ func (s *authService) UpdateUserSelf(ctx context.Context, tenantID, userID strin
 	return nil
 }
 
-type cacheEntry struct {
-	value     bool
-	expiresAt time.Time
+type authMemCache struct {
+	mu   sync.RWMutex
+	data map[string]string
+}
+
+func newAuthMemCache() *authMemCache {
+	return &authMemCache{data: make(map[string]string)}
+}
+
+func (m *authMemCache) Get(ctx context.Context, key string) (string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	val, ok := m.data[key]
+	if !ok {
+		return "", cache.ErrNotFound
+	}
+	return val, nil
+}
+
+func (m *authMemCache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data[key] = fmt.Sprintf("%v", value)
+	return nil
+}
+
+func (m *authMemCache) Delete(ctx context.Context, keys ...string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, k := range keys {
+		delete(m.data, k)
+	}
+	return nil
+}
+
+func (m *authMemCache) Exists(ctx context.Context, key string) (bool, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	_, ok := m.data[key]
+	return ok, nil
+}
+
+func (m *authMemCache) Flush(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data = make(map[string]string)
+	return nil
+}
+
+func (s *authService) getRevStore() cache.Cache {
+	s.revMu.Lock()
+	defer s.revMu.Unlock()
+	if s.revStore == nil {
+		if s.redisClient != nil {
+			s.revStore = cache.NewRedisFromClient(s.redisClient)
+		} else {
+			s.revStore = newAuthMemCache()
+		}
+	}
+	return s.revStore
+}
+
+func (s *authService) getCoalescer() *cache.Coalescer {
+	s.revMu.Lock()
+	defer s.revMu.Unlock()
+	if s.coalescer == nil {
+		s.coalescer = cache.NewCoalescer()
+	}
+	return s.coalescer
 }
 
 func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
@@ -2054,57 +2135,25 @@ func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
 		if s.revokedTokens != nil {
 			cacheKey := "auth:revocation:" + fmt.Sprintf("%x", sha256.Sum256([]byte(tokenString)))
 
-			// 1. Check Cache
-			if s.redisClient != nil {
-				val, err := s.redisClient.Get(context.Background(), cacheKey).Result()
-				if err == nil {
-					if val == "true" {
-						return nil, fmt.Errorf("token revoked (cached)")
-					}
-					return claims, nil
-				}
-			} else {
-				if val, ok := s.localRevCache.Load(cacheKey); ok {
-					if entry, ok := val.(cacheEntry); ok && time.Now().Before(entry.expiresAt) {
-						if entry.value {
-							return nil, fmt.Errorf("token revoked (cached)")
-						}
-						return claims, nil
-					}
-				}
-			}
+			// Coalesce concurrent queries into a single execution to prevent thundering herd / cache stampede
+			revStore := s.getRevStore()
+			coalescer := s.getCoalescer()
+			ttl := cache.JitterTTL(5*time.Minute, 0.10)
 
-			// 2. Fallback to DB with Timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-			revoked, err := s.revokedTokens.IsRevoked(ctx, tokenString)
-			cancel()
-
+			revokedStr, err := coalescer.Do(context.Background(), revStore, cacheKey, ttl, func(fetchCtx context.Context) (string, error) {
+				ctx, cancel := context.WithTimeout(fetchCtx, 1*time.Second)
+				defer cancel()
+				revoked, err := s.revokedTokens.IsRevoked(ctx, tokenString)
+				if err != nil {
+					return "", err
+				}
+				return fmt.Sprintf("%t", revoked), nil
+			})
 			if err != nil {
-				// Graceful Degradation: If DB fails/timeouts, rely on Cache even if expired
-				if s.redisClient == nil {
-					if val, ok := s.localRevCache.Load(cacheKey); ok {
-						if entry, ok := val.(cacheEntry); ok {
-							if entry.value {
-								return nil, fmt.Errorf("token revoked (cached fallback)")
-							}
-							return claims, nil
-						}
-					}
-				}
 				return nil, fmt.Errorf("failed to check token revocation: %w", err)
 			}
 
-			// 3. Update Cache
-			if s.redisClient != nil {
-				s.redisClient.Set(context.Background(), cacheKey, revoked, 5*time.Minute)
-			} else {
-				s.localRevCache.Store(cacheKey, cacheEntry{
-					value:     revoked,
-					expiresAt: time.Now().Add(5 * time.Minute),
-				})
-			}
-
-			if revoked {
+			if revokedStr == "true" {
 				return nil, fmt.Errorf("token revoked")
 			}
 		}

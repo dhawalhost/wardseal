@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 
+	gokitmiddleware "github.com/dhawalhost/gokit/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,3 +24,19 @@ func Wrap(middleware func(http.Handler) http.Handler) gin.HandlerFunc {
 		wrappedHandler.ServeHTTP(c.Writer, c.Request)
 	}
 }
+
+// CacheControl adapts gokit/middleware.CacheControl to Gin.
+func CacheControl(cfg gokitmiddleware.CacheControlConfig) gin.HandlerFunc {
+	return Wrap(gokitmiddleware.CacheControl(cfg))
+}
+
+// SecureHeaders adapts gokit/middleware.SecureHeaders (OWASP) to Gin.
+func SecureHeaders() gin.HandlerFunc {
+	return Wrap(gokitmiddleware.SecureHeaders())
+}
+
+// RequestID adapts gokit/middleware.RequestID to Gin.
+func RequestID() gin.HandlerFunc {
+	return Wrap(gokitmiddleware.RequestID())
+}
+

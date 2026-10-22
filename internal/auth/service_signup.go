@@ -3,7 +3,6 @@ package auth
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
+	"github.com/dhawalhost/gokit/idgen"
 	"github.com/dhawalhost/wardseal/internal/rbac"
 	"github.com/dhawalhost/wardseal/pkg/middleware"
 	passwordpkg "github.com/dhawalhost/wardseal/pkg/password"
@@ -34,11 +34,14 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName, 
 	}
 
 	// 0.1 Check if email already exists globally
-	respDisc, err := s.httpClient.Get(fmt.Sprintf("%s/internal/discover?email=%s", s.directoryServiceURL, url.QueryEscape(email)))
+	reqDisc, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/internal/discover?email=%s", s.directoryServiceURL, url.QueryEscape(email)), nil)
 	if err == nil {
-		defer func() { _ = respDisc.Body.Close() }()
-		if respDisc.StatusCode == http.StatusOK {
-			return "", "", "", errors.New("an account with this email already exists; please log in to your existing organization")
+		respDisc, doErr := s.httpClient.Do(reqDisc)
+		if doErr == nil {
+			defer func() { _ = respDisc.Body.Close() }()
+			if respDisc.StatusCode == http.StatusOK {
+				return "", "", "", ErrUserAlreadyExists
+			}
 		}
 	}
 
@@ -94,7 +97,7 @@ func (s *authService) SignUp(ctx context.Context, email, password, companyName, 
 			continue
 		}
 
-		return "", "", "", fmt.Errorf("directory service create tenant failed: status %d", respTenant.StatusCode)
+		return "", "", "", fmt.Errorf("%w: directory service create tenant failed: status %d", ErrTenantConflict, respTenant.StatusCode)
 	}
 
 TenantCreated:
@@ -248,7 +251,7 @@ func (s *authService) PerformSystemSetup(ctx context.Context, email, password st
 		return "", err
 	}
 	if !required {
-		return "", errors.New("system setup not required (or already completed)")
+		return "", ErrSystemSetupUnavailable
 	}
 
 	systemTenantID, err := s.ResolveTenantSlug(ctx, "admin")
@@ -425,14 +428,11 @@ func (s *authService) ensureTenantAdminRoleAssignment(ctx context.Context, tenan
 	return nil
 }
 func generateShortID() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, 10)
-	_, _ = rand.Read(b)
-	result := make([]byte, len(b))
-	for i := range b {
-		result[i] = charset[int(b[i])%len(charset)]
+	id, err := idgen.NewNanoIDSize(10)
+	if err != nil {
+		return "ws-" + idgen.NewUUID()[:10]
 	}
-	return "ws-" + string(result)
+	return "ws-" + id
 }
 
 func (s *authService) GeneratePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error) {

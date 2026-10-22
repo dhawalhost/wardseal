@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dhawalhost/gokit/cache"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -20,43 +21,93 @@ type Engine struct {
 	repo        Repository
 	log         *zap.Logger
 	redisClient redis.UniversalClient
-	localCache  sync.Map // Fallback when Redis is unavailable
+	twoTier     *cache.TwoTierCache
+}
+
+// memoryL2Fallback is used when Redis is not provided (e.g. in standalone tests).
+type memoryL2Fallback struct {
+	mu   sync.RWMutex
+	data map[string]string
+}
+
+func newMemoryL2Fallback() *memoryL2Fallback {
+	return &memoryL2Fallback{data: make(map[string]string)}
+}
+
+func (m *memoryL2Fallback) Get(ctx context.Context, key string) (string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	val, ok := m.data[key]
+	if !ok {
+		return "", cache.ErrNotFound
+	}
+	return val, nil
+}
+
+func (m *memoryL2Fallback) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data[key] = fmt.Sprintf("%v", value)
+	return nil
+}
+
+func (m *memoryL2Fallback) Delete(ctx context.Context, keys ...string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, k := range keys {
+		delete(m.data, k)
+	}
+	return nil
+}
+
+func (m *memoryL2Fallback) Exists(ctx context.Context, key string) (bool, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	_, ok := m.data[key]
+	return ok, nil
+}
+
+func (m *memoryL2Fallback) Flush(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data = make(map[string]string)
+	return nil
 }
 
 func NewEngine(repo Repository, log *zap.Logger, rc redis.UniversalClient) *Engine {
+	var l2 cache.Cache
+	if rc != nil {
+		l2 = cache.NewRedisFromClient(rc)
+	} else {
+		l2 = newMemoryL2Fallback()
+	}
+
+	tt := cache.NewTwoTier(l2, cache.TwoTierConfig{
+		L1TTL:        10 * time.Second,
+		L1MaxEntries: 20000,
+	})
+
 	return &Engine{
 		repo:        repo,
 		log:         log,
 		redisClient: rc,
+		twoTier:     tt,
 	}
 }
 
 // Check determines if a subject has a specific relation to an object.
 func (e *Engine) Check(ctx context.Context, tenantID, subID, subType, rel, ns, objID string) (bool, error) {
-	// 1. Check cache first
+	// 1. Check two-tier cache (sub-microsecond L1 hit, falls back to L2 Redis)
 	cacheKey := fmt.Sprintf("authz:cache:%s:%s:%s:%s:%s:%s", tenantID, subID, subType, rel, ns, objID)
-
-	if e.redisClient != nil {
-		val, err := e.redisClient.Get(ctx, cacheKey).Result()
-		if err == nil {
-			return val == "true", nil
-		}
-	} else {
-		if val, ok := e.localCache.Load(cacheKey); ok {
-			if b, ok := val.(bool); ok {
-				return b, nil
-			}
-		}
+	if val, err := e.twoTier.Get(ctx, cacheKey); err == nil {
+		return val == "true", nil
 	}
 
 	// 2. Perform recursive check
 	allowed, err := e.checkRecursive(ctx, tenantID, subID, subType, rel, ns, objID, 0)
 	if err == nil {
-		if e.redisClient != nil {
-			e.redisClient.Set(ctx, cacheKey, allowed, 5*time.Minute)
-		} else {
-			e.localCache.Store(cacheKey, allowed)
-		}
+		ttl := cache.JitterTTL(5*time.Minute, 0.10)
+		_ = e.twoTier.Set(ctx, cacheKey, fmt.Sprintf("%t", allowed), ttl)
 	}
 	return allowed, err
 }
@@ -83,27 +134,15 @@ func (e *Engine) InvalidateByTuple(ctx context.Context, tenantID string, tuple R
 				}
 			}
 			if len(keysToDelete) > 0 {
-				e.redisClient.Del(ctx, keysToDelete...)
+				_ = e.twoTier.Delete(ctx, keysToDelete...)
 			}
 			if cursor == 0 {
 				break
 			}
 		}
+	} else {
+		_ = e.twoTier.Flush(ctx)
 	}
-
-	// Also clear local fallback cache
-	e.localCache.Range(func(key, value interface{}) bool {
-		k, ok := key.(string)
-		if !ok {
-			return true
-		}
-		if strings.HasPrefix(k, fmt.Sprintf("authz:cache:%s:", tenantID)) {
-			if strings.Contains(k, tuple.ObjectID) || strings.Contains(k, tuple.SubjectID) {
-				e.localCache.Delete(key)
-			}
-		}
-		return true
-	})
 }
 
 func (e *Engine) ListTuples(ctx context.Context, tenantID string, query Query) ([]RelationTuple, error) {

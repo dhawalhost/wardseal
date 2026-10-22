@@ -122,6 +122,13 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// Enforce CDN and proxy cache controls (prevents PII & directory identity edge cache poisoning)
+	router.Use(middleware.CacheControl(gokitmiddleware.CacheControlConfig{
+		Public: false,
+		MaxAge: 0,
+		Vary:   []string{"Origin", "Authorization", "X-Tenant-ID", "Accept-Encoding"},
+	}))
+
 	// Initialize OpenTelemetry tracing
 	shutdownTracer, err := observability.InitTracer(context.Background(), gokitconfig.TelemetryConfig{
 		Enabled:      cfg.Observability.OTELEndpoint != "",
@@ -231,8 +238,9 @@ func main() {
 	scimHandlers.RegisterRoutes(router)
 
 	// Server Configuration with Graceful Shutdown
+	listenAddr := config.ResolvePort(":8081", "DIRSVC_PORT")
 	srv := &http.Server{
-		Addr:         ":8081",
+		Addr:         listenAddr,
 		Handler:      router,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -246,7 +254,7 @@ func main() {
 	directory.StartAccountErasureWorker(workerCtx, svc, log, 24*time.Hour, 30*24*time.Hour)
 
 	go func() {
-		log.Info("Directory service starting", zap.String("addr", ":8081"))
+		log.Info("Directory service starting", zap.String("addr", listenAddr))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("Directory service failed", zap.Error(err))
 			os.Exit(1)

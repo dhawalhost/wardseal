@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	jwtlib "github.com/golang-jwt/jwt/v5"
@@ -16,7 +17,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/dhawalhost/wardseal/pkg/config"
-	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 var (
@@ -183,7 +184,7 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 				c.Abort()
 				return
 			}
-			ctx := middleware.InjectTenantID(c.Request.Context(), tenantID)
+			ctx := types.InjectTenantID(c.Request.Context(), tenantID)
 			c.Request = c.Request.WithContext(ctx)
 			c.Next()
 			return
@@ -213,7 +214,7 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 						scimForbidden(c, "insufficient privileges for SCIM")
 						return
 					}
-					ctx := middleware.InjectTenantID(c.Request.Context(), jwtTenantID)
+					ctx := types.InjectTenantID(c.Request.Context(), jwtTenantID)
 					c.Request = c.Request.WithContext(ctx)
 					c.Next()
 					return
@@ -265,11 +266,18 @@ func RequireSCIMBearerToken(repo Repository, log *zap.Logger, internalServiceTok
 			return
 		}
 
-		go func(kid, tid string) {
-			_ = repo.UpdateAPIKeyLastUsed(context.Background(), kid, tid)
-		}(matchedKeyID, matchedTenantID)
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 5*time.Second)
+		go func(ctx context.Context, kid, tid string) {
+			defer cancel()
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error("Panic recovered in UpdateAPIKeyLastUsed goroutine", zap.Any("panic", r))
+				}
+			}()
+			_ = repo.UpdateAPIKeyLastUsed(ctx, kid, tid)
+		}(bgCtx, matchedKeyID, matchedTenantID)
 
-		ctx := middleware.InjectTenantID(c.Request.Context(), matchedTenantID)
+		ctx := types.InjectTenantID(c.Request.Context(), matchedTenantID)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()

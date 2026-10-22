@@ -343,7 +343,7 @@ func (h *HTTPHandler) performSetup(c *gin.Context) {
 	token, err := h.svc.PerformSystemSetup(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		h.logger.Error("Setup failed", zap.Error(err))
-		if strings.Contains(err.Error(), "not required") {
+		if errors.Is(err, ErrSystemSetupUnavailable) || strings.Contains(err.Error(), "not required") {
 			c.JSON(http.StatusForbidden, gin.H{"error": "System setup is not available"})
 			return
 		}
@@ -392,12 +392,19 @@ func (h *HTTPHandler) createPasswordSetupLink(c *gin.Context) {
 	})
 
 	if req.SendEmail {
-		go func() {
-			err := h.svc.SendPasswordSetupEmail(context.Background(), tenantID, req.UserID, req.Mode, req.ExpiresHours)
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 30*time.Second)
+		go func(ctx context.Context) {
+			defer cancel()
+			defer func() {
+				if r := recover(); r != nil {
+					h.logger.Error("Panic recovered in SendPasswordSetupEmail goroutine", zap.Any("panic", r))
+				}
+			}()
+			err := h.svc.SendPasswordSetupEmail(ctx, tenantID, req.UserID, req.Mode, req.ExpiresHours)
 			if err != nil {
 				h.logger.Error("Failed to send password setup email", zap.Error(err))
 			}
-		}()
+		}(bgCtx)
 	}
 }
 
@@ -979,7 +986,7 @@ func (h *HTTPHandler) signup(c *gin.Context) {
 	token, tenantID, tenantSlug, err := h.svc.SignUp(c.Request.Context(), req.Email, req.Password, req.CompanyName, req.Plan)
 	if err != nil {
 		h.logger.Error("Signup failed", zap.Error(err))
-		if strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "exists") {
+		if errors.Is(err, ErrUserAlreadyExists) || errors.Is(err, ErrTenantConflict) || strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "exists") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Signup failed, possibly duplicate data"})
 			return
 		}

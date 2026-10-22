@@ -10,15 +10,13 @@ import (
 
 	"github.com/dhawalhost/wardseal/pkg/eventbus"
 	"github.com/dhawalhost/wardseal/pkg/password"
+	"github.com/lib/pq"
 
 	"github.com/jmoiron/sqlx"
 )
 
-// Service defines the interface for the directory service.
-type Service interface {
-	HealthCheck(ctx context.Context) (bool, error)
-
-	// User management
+// UserManager defines operations on user identities.
+type UserManager interface {
 	CreateUser(ctx context.Context, tenantID string, user User) (string, error)
 	GetUserByID(ctx context.Context, tenantID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, tenantID, email string) (User, error)
@@ -26,34 +24,49 @@ type Service interface {
 	ListPendingDeletions(ctx context.Context, olderThan time.Time) ([]User, error)
 	UpdateUser(ctx context.Context, tenantID, id string, user User) error
 	DeleteUser(ctx context.Context, tenantID, id string) error
+}
 
-	// Group management
+// GroupManager defines operations on groups and group memberships.
+type GroupManager interface {
 	CreateGroup(ctx context.Context, tenantID string, group Group) (string, error)
 	GetGroupByID(ctx context.Context, tenantID, id string) (Group, error)
 	ListGroups(ctx context.Context, tenantID string, limit, offset int) ([]Group, int, error)
 	UpdateGroup(ctx context.Context, tenantID, id string, group Group) error
 	DeleteGroup(ctx context.Context, tenantID, id string) error
 
-	// Group membership
 	AddUserToGroup(ctx context.Context, tenantID, userID, groupID string) error
 	RemoveUserFromGroup(ctx context.Context, tenantID, userID, groupID string) error
 	ListGroupMembers(ctx context.Context, tenantID, groupID string) ([]User, error)
 	ListUserGroups(ctx context.Context, tenantID, userID string) ([]Group, error)
+}
 
-	// Credential validation
+// CredentialVerifier handles credential verification.
+type CredentialVerifier interface {
 	VerifyCredentials(ctx context.Context, tenantID, email, password string) (User, error)
+}
 
-	// Discovery
-	GetTenantByEmail(ctx context.Context, email string) (string, error)
-
-	// User-Organization mapping
+// OrganizationManager defines operations on user-organization mappings.
+type OrganizationManager interface {
 	AddUserToOrganization(ctx context.Context, tenantID, userID, orgID, role string) error
 	RemoveUserFromOrganization(ctx context.Context, tenantID, userID, orgID string) error
 	ListUserOrganizations(ctx context.Context, tenantID, userID string) ([]string, error)
+}
 
-	// Tenant Management
+// TenantManager defines operations for tenant lifecycle and discovery.
+type TenantManager interface {
+	GetTenantByEmail(ctx context.Context, email string) (string, error)
 	CreateTenant(ctx context.Context, id, name, slug, plan string) error
 	GetTenantIDBySlug(ctx context.Context, slug string) (string, error)
+}
+
+// Service defines the unified interface for the directory service, composed of focused sub-interfaces.
+type Service interface {
+	HealthCheck(ctx context.Context) (bool, error)
+	UserManager
+	GroupManager
+	CredentialVerifier
+	OrganizationManager
+	TenantManager
 }
 
 type directoryService struct {
@@ -96,14 +109,22 @@ func (s *directoryService) CreateUser(ctx context.Context, tenantID string, user
 	var userID string
 	err = s.repo.WithTransaction(ctx, func(tx *sqlx.Tx) error {
 		var err error
-		userID, err = s.repo.CreateIdentity(ctx, tx, tenantID, user.DisplayName, user.ExternalID, user.PhoneNumbers, user.Department, user.Title, user.Timezone)
+		userID, err = s.repo.CreateIdentity(ctx, tx, CreateIdentityParams{
+			TenantID:     tenantID,
+			DisplayName:  user.DisplayName,
+			ExternalID:   user.ExternalID,
+			PhoneNumbers: user.PhoneNumbers,
+			Department:   user.Department,
+			Title:        user.Title,
+			Timezone:     user.Timezone,
+		})
 		if err != nil {
 			return err
 		}
 
 		err = s.repo.CreateAccount(ctx, tx, userID, tenantID, user.Email, hashedPassword)
 		if err != nil {
-			if strings.Contains(err.Error(), "unique constraint") && strings.Contains(err.Error(), "accounts_login_key") {
+			if isAccountLoginUniqueViolation(err) {
 				return ErrEmailAlreadyExistsGlobally
 			}
 			return err
@@ -169,7 +190,18 @@ func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, 
 			passwordHash = hp
 		}
 
-		if err := s.repo.UpdateIdentity(ctx, tx, tenantID, id, user.Status, user.DisplayName, user.ExternalID, user.PhoneNumbers, user.Department, user.Title, user.Timezone, user.MFAEnforced); err != nil {
+		if err := s.repo.UpdateIdentity(ctx, tx, UpdateIdentityParams{
+			TenantID:     tenantID,
+			ID:           id,
+			Status:       user.Status,
+			DisplayName:  user.DisplayName,
+			ExternalID:   user.ExternalID,
+			PhoneNumbers: user.PhoneNumbers,
+			Department:   user.Department,
+			Title:        user.Title,
+			Timezone:     user.Timezone,
+			MFAEnforced:  user.MFAEnforced,
+		}); err != nil {
 			return err
 		}
 
@@ -285,11 +317,41 @@ func (s *directoryService) GetTenantByEmail(ctx context.Context, email string) (
 func (s *directoryService) CreateTenant(ctx context.Context, id, name, slug, plan string) error {
 	err := s.repo.CreateTenant(ctx, id, name, slug, plan)
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+		if isPostgresUniqueViolation(err) {
 			return ErrAlreadyExists
 		}
 	}
 	return err
+}
+
+// isPostgresUniqueViolation checks if an error represents a Postgres unique constraint violation (code 23505),
+// with a string-based fallback for mocked drivers or sqlite.
+func isPostgresUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		return pqErr.Code == "23505"
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unique constraint") || strings.Contains(msg, "duplicate key")
+}
+
+// isAccountLoginUniqueViolation checks if an error is a unique constraint violation on accounts_login_key.
+func isAccountLoginUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23505" {
+			return pqErr.Constraint == "accounts_login_key" || strings.Contains(pqErr.Message, "accounts_login_key") || strings.Contains(pqErr.Detail, "accounts_login_key")
+		}
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return (strings.Contains(msg, "unique constraint") || strings.Contains(msg, "duplicate key")) && strings.Contains(msg, "accounts_login_key")
 }
 
 func (s *directoryService) GetTenantIDBySlug(ctx context.Context, slug string) (string, error) {

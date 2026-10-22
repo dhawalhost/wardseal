@@ -12,6 +12,7 @@ import (
 	"time"
 
 	gokitconfig "github.com/dhawalhost/gokit/config"
+	"github.com/dhawalhost/gokit/distlock"
 	"github.com/dhawalhost/gokit/health"
 	"github.com/dhawalhost/gokit/logger"
 	gokitmiddleware "github.com/dhawalhost/gokit/middleware"
@@ -149,6 +150,9 @@ func main() {
 	chatOpsHandlers := chatops.NewHTTPHandler(chatOpsRepo, log)
 
 	svc := governance.NewService(clientRepo, reqRepo, orgRepo, endpointRepo, workloadRepo, dirClient, policyEngine, rbacSvc, authzEngine, bus)
+	if redisClient != nil {
+		svc = svc.WithLocker(distlock.NewRedisLocker(redisClient))
+	}
 
 	router := gin.Default()
 
@@ -165,6 +169,13 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin", "X-Service-Auth"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
+	}))
+
+	// Enforce CDN and proxy cache controls (prevents PII & auth token edge cache poisoning)
+	router.Use(middleware.CacheControl(gokitmiddleware.CacheControlConfig{
+		Public: false,
+		MaxAge: 0,
+		Vary:   []string{"Origin", "Authorization", "X-Tenant-ID", "Accept-Encoding"},
 	}))
 
 	// Initialize OpenTelemetry tracing
@@ -400,8 +411,9 @@ func main() {
 	// We rely on "lazy" loading or manual toggle in UI for this MVP.
 
 	// Server Configuration with Graceful Shutdown
+	listenAddr := config.ResolvePort(":8082", "GOVSVC_PORT")
 	srv := &http.Server{
-		Addr:         ":8082",
+		Addr:         listenAddr,
 		Handler:      router,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -470,7 +482,7 @@ func main() {
 	}()
 
 	go func() {
-		log.Info("Governance service starting", zap.String("addr", ":8082"))
+		log.Info("Governance service starting", zap.String("addr", listenAddr))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("Governance service failed", zap.Error(err))
 			os.Exit(1)

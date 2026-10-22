@@ -239,6 +239,13 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// Enforce CDN and proxy cache controls (prevents PII & auth token edge cache poisoning)
+	router.Use(middleware.CacheControl(gokitmiddleware.CacheControlConfig{
+		Public: false,
+		MaxAge: 0,
+		Vary:   []string{"Origin", "Authorization", "X-Tenant-ID", "Accept-Encoding"},
+	}))
+
 	// Initialize OpenTelemetry tracing
 	shutdownTracer, err := observability.InitTracer(context.Background(), gokitconfig.TelemetryConfig{
 		Enabled:      cfg.Observability.OTELEndpoint != "",
@@ -375,8 +382,9 @@ func main() {
 	// Register IdP-initiated endpoint logic is handled inside authHandlers.RegisterRoutes -> svc.SAML()
 
 	// Server Configuration with Graceful Shutdown
+	listenAddr := config.ResolvePort(":8080", "AUTHSVC_PORT")
 	srv := &http.Server{
-		Addr:         ":8080",
+		Addr:         listenAddr,
 		Handler:      router,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -384,7 +392,7 @@ func main() {
 	}
 
 	go func() {
-		log.Info("Auth service starting", zap.String("addr", ":8080"))
+		log.Info("Auth service starting", zap.String("addr", listenAddr))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("Auth service failed", zap.Error(err))
 			os.Exit(1)

@@ -18,13 +18,13 @@ type Repository interface {
 	WithTransaction(ctx context.Context, fn func(tx *sqlx.Tx) error) error
 
 	// User operations
-	CreateIdentity(ctx context.Context, tx *sqlx.Tx, tenantID string, displayName, externalID *string, phoneNumbers PhoneNumbers, department, title, timezone *string) (string, error)
+	CreateIdentity(ctx context.Context, tx *sqlx.Tx, params CreateIdentityParams) (string, error)
 	CreateAccount(ctx context.Context, tx *sqlx.Tx, userID, tenantID, email, passwordHash string) error
 	GetUserByID(ctx context.Context, tenantID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, tenantID, email string) (User, error)
 	ListUsers(ctx context.Context, tenantID string, limit, offset int) ([]User, int, error)
 	ListPendingDeletions(ctx context.Context, olderThan time.Time) ([]User, error)
-	UpdateIdentity(ctx context.Context, tx *sqlx.Tx, tenantID, id, status string, displayName, externalID *string, phoneNumbers PhoneNumbers, department, title, timezone *string, mfaEnforced *bool) error
+	UpdateIdentity(ctx context.Context, tx *sqlx.Tx, params UpdateIdentityParams) error
 	UpdateAccount(ctx context.Context, tx *sqlx.Tx, tenantID, id, email, passwordHash string) error
 	DeleteIdentity(ctx context.Context, tenantID, id string) error
 
@@ -54,6 +54,31 @@ type Repository interface {
 	// API Keys (for SCIM/Integrations)
 	GetAPIKeyByPrefix(ctx context.Context, prefix string) ([]APIKeyCandidate, error)
 	UpdateAPIKeyLastUsed(ctx context.Context, id, tenantID string) error
+}
+
+// CreateIdentityParams contains input attributes for creating an identity in the repository.
+type CreateIdentityParams struct {
+	TenantID     string
+	DisplayName  *string
+	ExternalID   *string
+	PhoneNumbers PhoneNumbers
+	Department   *string
+	Title        *string
+	Timezone     *string
+}
+
+// UpdateIdentityParams contains input attributes for updating an identity in the repository.
+type UpdateIdentityParams struct {
+	TenantID     string
+	ID           string
+	Status       string
+	DisplayName  *string
+	ExternalID   *string
+	PhoneNumbers PhoneNumbers
+	Department   *string
+	Title        *string
+	Timezone     *string
+	MFAEnforced  *bool
 }
 
 type APIKeyCandidate struct {
@@ -98,14 +123,14 @@ func (r *sqlRepository) WithTransaction(ctx context.Context, fn func(tx *sqlx.Tx
 	return tx.Commit()
 }
 
-func (r *sqlRepository) CreateIdentity(ctx context.Context, tx *sqlx.Tx, tenantID string, displayName, externalID *string, phoneNumbers PhoneNumbers, department, title, timezone *string) (string, error) {
+func (r *sqlRepository) CreateIdentity(ctx context.Context, tx *sqlx.Tx, params CreateIdentityParams) (string, error) {
 	var id string
 	query := `INSERT INTO identities (tenant_id, status, display_name, external_id, phone_numbers, department, title, timezone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 	var err error
 	if tx != nil {
-		err = tx.QueryRowxContext(ctx, query, tenantID, "active", displayName, externalID, phoneNumbers, department, title, timezone).Scan(&id)
+		err = tx.QueryRowxContext(ctx, query, params.TenantID, "active", params.DisplayName, params.ExternalID, params.PhoneNumbers, params.Department, params.Title, params.Timezone).Scan(&id)
 	} else {
-		err = r.db.QueryRowxContext(ctx, query, tenantID, "active", displayName, externalID, phoneNumbers, department, title, timezone).Scan(&id)
+		err = r.db.QueryRowxContext(ctx, query, params.TenantID, "active", params.DisplayName, params.ExternalID, params.PhoneNumbers, params.Department, params.Title, params.Timezone).Scan(&id)
 	}
 	return id, err
 }
@@ -177,13 +202,13 @@ func (r *sqlRepository) ListPendingDeletions(ctx context.Context, olderThan time
 	return users, err
 }
 
-func (r *sqlRepository) UpdateIdentity(ctx context.Context, tx *sqlx.Tx, tenantID, id, status string, displayName, externalID *string, phoneNumbers PhoneNumbers, department, title, timezone *string, mfaEnforced *bool) error {
+func (r *sqlRepository) UpdateIdentity(ctx context.Context, tx *sqlx.Tx, params UpdateIdentityParams) error {
 	query := `UPDATE identities SET status = $1, display_name = $2, external_id = $3, phone_numbers = $4, department = $5, title = $6, timezone = $7, mfa_enforced = $8, updated_at = NOW() WHERE id = $9 AND tenant_id = $10`
 	var err error
 	if tx != nil {
-		_, err = tx.ExecContext(ctx, query, status, displayName, externalID, phoneNumbers, department, title, timezone, mfaEnforced, id, tenantID)
+		_, err = tx.ExecContext(ctx, query, params.Status, params.DisplayName, params.ExternalID, params.PhoneNumbers, params.Department, params.Title, params.Timezone, params.MFAEnforced, params.ID, params.TenantID)
 	} else {
-		_, err = r.db.ExecContext(ctx, query, status, displayName, externalID, phoneNumbers, department, title, timezone, mfaEnforced, id, tenantID)
+		_, err = r.db.ExecContext(ctx, query, params.Status, params.DisplayName, params.ExternalID, params.PhoneNumbers, params.Department, params.Title, params.Timezone, params.MFAEnforced, params.ID, params.TenantID)
 	}
 	return err
 }

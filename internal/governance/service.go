@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/dhawalhost/gokit/distlock"
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -21,26 +22,27 @@ import (
 	"github.com/dhawalhost/wardseal/pkg/eventbus"
 )
 
-// Service defines the interface for the governance service.
-type Service interface {
-	HealthCheck(ctx context.Context) (bool, error)
+// OAuthClientManager defines operations on OAuth clients.
+type OAuthClientManager interface {
 	ListOAuthClients(ctx context.Context, tenantID string) ([]oauthclient.Client, error)
 	GetOAuthClient(ctx context.Context, tenantID, clientID string) (oauthclient.Client, error)
 	CreateOAuthClient(ctx context.Context, tenantID string, input CreateOAuthClientInput) (oauthclient.Client, error)
 	UpdateOAuthClient(ctx context.Context, tenantID, clientID string, input UpdateOAuthClientInput) (oauthclient.Client, error)
 	DeleteOAuthClient(ctx context.Context, tenantID, clientID string) error
+}
 
-	// Access Requests
+// AccessRequestManager defines operations on user and agent access requests.
+type AccessRequestManager interface {
 	CreateAccessRequest(ctx context.Context, tenantID string, input CreateAccessRequest) (AccessRequest, error)
 	CreateAgentAccessRequest(ctx context.Context, tenantID string, workloadID string, scopes []string, reason string, duration string) (AccessRequest, error)
 	GetAccessRequest(ctx context.Context, tenantID, id string) (AccessRequest, error)
 	ListAccessRequests(ctx context.Context, tenantID, status string) ([]AccessRequest, error)
 	ApproveAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error
 	RejectAccessRequest(ctx context.Context, tenantID, requestID, approverID, comment string) error
+}
 
-	ResolveTenantSlug(ctx context.Context, slug string) (string, error)
-
-	// Organizations
+// OrganizationGovernance defines operations for managing tenant organizations and memberships.
+type OrganizationGovernance interface {
 	ListOrganizations(ctx context.Context, tenantID string, limit, offset int) ([]Organization, error)
 	CreateOrganization(ctx context.Context, org *Organization) error
 	GetOrganization(ctx context.Context, tenantID, orgID string) (*Organization, error)
@@ -48,53 +50,66 @@ type Service interface {
 	UpdateOrganization(ctx context.Context, org *Organization) error
 	DeleteOrganization(ctx context.Context, tenantID, orgID string) error
 
-	// Organization memberships
 	AddUserToOrganization(ctx context.Context, tenantID, userID, orgID, role string) error
 	RemoveUserFromOrganization(ctx context.Context, tenantID, userID, orgID string) error
 	ListUserOrganizations(ctx context.Context, tenantID, userID string) ([]string, error)
+}
 
-	// IP Access Policies
+// PolicyGovernance defines operations on IP policies and general policy evaluation.
+type PolicyGovernance interface {
 	CreateIPPolicy(ctx context.Context, tenantID string, req CreateIPPolicyRequest) (IPPolicy, error)
 	ListIPPolicies(ctx context.Context, tenantID string) ([]IPPolicy, error)
 	DeleteIPPolicy(ctx context.Context, tenantID, id string) error
+	EvaluatePolicy(ctx context.Context, input policy.Input) (bool, string, error)
+}
 
-	// Safety Actions
+// SafetyActionManager defines operations on safety actions.
+type SafetyActionManager interface {
 	ProposeSafetyAction(ctx context.Context, tenantID string, input ProposeSafetyActionInput) (SafetyAction, error)
 	ListSafetyActions(ctx context.Context, tenantID, status string) ([]SafetyAction, error)
 	ConfirmSafetyAction(ctx context.Context, tenantID, actionID, approverID, comment string) error
 	RejectSafetyAction(ctx context.Context, tenantID, actionID, approverID, comment string) error
+}
 
-	// Identity Graph Explorer
+// IdentityGraphService defines operations on relation tuples, graph traversal, and audit context.
+type IdentityGraphService interface {
 	ListRelationships(ctx context.Context, tenantID string, query authz.Query) ([]authz.RelationTuple, error)
+	TraverseGraph(ctx context.Context, tenantID, subjectID string) ([]authz.RelationTuple, error)
+	GatherAuditContext(ctx context.Context, tenantID string) (string, error)
+}
 
-	// Endpoints (Device Trust)
+// DeviceTrustService defines operations on enrolled endpoints/devices.
+type DeviceTrustService interface {
 	RegisterDevice(ctx context.Context, tenantID string, d Device) (string, error)
 	ListDevices(ctx context.Context, tenantID string) ([]Device, error)
 	GetDevice(ctx context.Context, tenantID, id string) (Device, error)
 	UpdateDeviceStatus(ctx context.Context, tenantID, id, status string) error
+}
 
-	// Non-Human Identities (Workloads)
+// WorkloadGovernance defines operations on non-human/machine workloads.
+type WorkloadGovernance interface {
 	ListWorkloads(ctx context.Context, tenantID string) ([]auth.Workload, error)
 	CreateWorkload(ctx context.Context, tenantID string, workload auth.Workload) (string, error)
-
-	// Dashboard & Stats
-	GetDashboardStats(ctx context.Context, tenantID string) (DashboardStats, error)
-
-	// Graph Traversal
-	TraverseGraph(ctx context.Context, tenantID, subjectID string) ([]authz.RelationTuple, error)
-
-	// AI Audit Context
-	GatherAuditContext(ctx context.Context, tenantID string) (string, error)
-
-	// Machine Identity Support
 	GetApprovedScopes(ctx context.Context, tenantID, workloadID string) ([]string, time.Duration, error)
+}
 
-	// Directory Integration
+// Service defines the unified interface for the governance service, composed of focused sub-interfaces.
+type Service interface {
+	WithLocker(l distlock.Locker) Service
+	HealthCheck(ctx context.Context) (bool, error)
+	ResolveTenantSlug(ctx context.Context, slug string) (string, error)
+	GetDashboardStats(ctx context.Context, tenantID string) (DashboardStats, error)
 	ListUsers(ctx context.Context, tenantID string) ([]User, error)
 	ListGroups(ctx context.Context, tenantID string) ([]Group, error)
 
-	// Policy Integration
-	EvaluatePolicy(ctx context.Context, input policy.Input) (bool, string, error)
+	OAuthClientManager
+	AccessRequestManager
+	OrganizationGovernance
+	PolicyGovernance
+	SafetyActionManager
+	IdentityGraphService
+	DeviceTrustService
+	WorkloadGovernance
 }
 
 type CreateOAuthClientInput struct {
@@ -127,6 +142,7 @@ type governanceService struct {
 	workloadStore auth.WorkloadRepository
 	engine        *authz.Engine
 	bus           eventbus.EventBus
+	locker        distlock.Locker
 }
 
 // NewService creates a new governance service.
@@ -143,6 +159,11 @@ func NewService(clientStore oauthclient.Repository, reqStore Repository, orgStor
 		engine:        engine,
 		bus:           bus,
 	}
+}
+
+func (s *governanceService) WithLocker(l distlock.Locker) Service {
+	s.locker = l
+	return s
 }
 
 func (s *governanceService) HealthCheck(ctx context.Context) (bool, error) {
@@ -352,10 +373,24 @@ func (s *governanceService) ApproveAccessRequest(ctx context.Context, tenantID, 
 	if err := requireTenant(tenantID); err != nil {
 		return err
 	}
+
+	// Distributed Lock to prevent concurrent double-approvals
+	if s.locker != nil {
+		lockKey := fmt.Sprintf("gov:lock:access_req:%s:%s", tenantID, requestID)
+		lock, err := s.locker.Obtain(ctx, lockKey, 10*time.Second, distlock.WithRetry(3, 50*time.Millisecond))
+		if err != nil {
+			return fmt.Errorf("concurrent approval in progress for request %s: %w", requestID, err)
+		}
+		defer func() { _ = lock.Unlock(context.Background()) }()
+	}
+
 	// Fetch the request to get resource details
 	req, err := s.reqStore.GetRequest(ctx, tenantID, requestID)
 	if err != nil {
 		return fmt.Errorf("failed to get request: %w", err)
+	}
+	if req.Status != "pending" {
+		return fmt.Errorf("access request is already %s", req.Status)
 	}
 
 	// Evaluate policy with Device Posture context
@@ -427,6 +462,24 @@ func (s *governanceService) RejectAccessRequest(ctx context.Context, tenantID, r
 	if err := requireTenant(tenantID); err != nil {
 		return err
 	}
+
+	if s.locker != nil {
+		lockKey := fmt.Sprintf("gov:lock:access_req:%s:%s", tenantID, requestID)
+		lock, err := s.locker.Obtain(ctx, lockKey, 10*time.Second, distlock.WithRetry(3, 50*time.Millisecond))
+		if err != nil {
+			return fmt.Errorf("concurrent operation in progress for request %s: %w", requestID, err)
+		}
+		defer func() { _ = lock.Unlock(context.Background()) }()
+	}
+
+	req, err := s.reqStore.GetRequest(ctx, tenantID, requestID)
+	if err != nil {
+		return fmt.Errorf("failed to get request: %w", err)
+	}
+	if req.Status != "pending" {
+		return fmt.Errorf("access request is already %s", req.Status)
+	}
+
 	if err := s.reqStore.UpdateRequestStatus(ctx, requestID, "rejected"); err != nil {
 		return err
 	}

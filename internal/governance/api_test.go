@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
+	"github.com/dhawalhost/gokit/distlock"
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -380,6 +381,10 @@ func (s *stubService) GetAccessRequest(ctx context.Context, tenantID, id string)
 		return s.getAccessRequestFn(ctx, tenantID, id)
 	}
 	return AccessRequest{}, nil
+}
+
+func (s *stubService) WithLocker(l distlock.Locker) Service {
+	return s
 }
 
 func (s *stubService) HealthCheck(ctx context.Context) (bool, error) {

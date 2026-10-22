@@ -3,9 +3,6 @@ package chatops
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
+	gokitcrypto "github.com/dhawalhost/gokit/crypto"
 	"github.com/dhawalhost/wardseal/internal/governance"
 	"github.com/dhawalhost/wardseal/pkg/llm"
 )
@@ -125,7 +123,17 @@ func (h *SlackHandler) HandleCommand(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		question := strings.Join(parts[1:], " ")
-		go h.HandleAskCommand(context.Background(), tenantID, question, r.FormValue("response_url"))
+		responseURL := r.FormValue("response_url")
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Minute)
+		go func() {
+			defer cancel()
+			defer func() {
+				if rec := recover(); rec != nil {
+					h.log.Error("Panic recovered in HandleAskCommand goroutine", zap.Any("panic", rec))
+				}
+			}()
+			h.HandleAskCommand(bgCtx, tenantID, question, responseURL)
+		}()
 		h.sendEphemeralResponse(w, "⌛ _Analyzing the identity graph..._")
 		return
 	}
@@ -657,23 +665,21 @@ func (h *SlackHandler) verifySignature(r *http.Request, body []byte, secret stri
 		return fmt.Errorf("missing slack signature headers")
 	}
 
-	// Prevent replay attacks (5 minute window)
+	// Prevent replay attacks (strictly bounded tolerance window)
 	ts, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid timestamp")
 	}
-	if time.Now().Unix()-ts > 300 {
-		return fmt.Errorf("timestamp too old (replay attack?)")
+	diff := time.Now().Unix() - ts
+	if diff < -60 || diff > 300 {
+		return fmt.Errorf("timestamp out of acceptable window (clock drift or replay attack)")
 	}
 
 	// Construction base string: v0:timestamp:payload
 	baseString := fmt.Sprintf("v0:%s:%s", timestamp, string(body))
+	expected := "v0=" + gokitcrypto.HMACSHA256([]byte(baseString), []byte(secret))
 
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(baseString))
-	expected := "v0=" + hex.EncodeToString(mac.Sum(nil))
-
-	if !hmac.Equal([]byte(signature), []byte(expected)) {
+	if !gokitcrypto.EqualHMAC([]byte(signature), []byte(expected)) {
 		return fmt.Errorf("signature mismatch")
 	}
 

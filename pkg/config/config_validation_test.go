@@ -111,3 +111,26 @@ func TestValidate_RejectsCORSOriginWithPath(t *testing.T) {
 		t.Fatal("expected validation error for CORS origin containing a path")
 	}
 }
+
+func TestResolvePort(t *testing.T) {
+	// 1. Default port fallback
+	if got := ResolvePort("8080"); got != ":8080" {
+		t.Errorf("expected :8080, got %s", got)
+	}
+	if got := ResolvePort(":8081"); got != ":8081" {
+		t.Errorf("expected :8081, got %s", got)
+	}
+
+	// 2. PORT env var
+	t.Setenv("PORT", "9000")
+	if got := ResolvePort(":8080"); got != ":9000" {
+		t.Errorf("expected :9000, got %s", got)
+	}
+
+	// 3. Service specific env var precedence over PORT
+	t.Setenv("AUTHSVC_PORT", "9001")
+	if got := ResolvePort(":8080", "AUTHSVC_PORT"); got != ":9001" {
+		t.Errorf("expected :9001, got %s", got)
+	}
+}
+
