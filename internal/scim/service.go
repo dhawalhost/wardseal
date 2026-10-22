@@ -658,7 +658,7 @@ func mapDirPhonesToSCIM(dirPhones directory.PhoneNumbers) []PhoneNumber {
 	if len(dirPhones) == 0 {
 		return nil
 	}
-	var scimPhones []PhoneNumber
+	scimPhones := make([]PhoneNumber, 0, len(dirPhones))
 	for _, p := range dirPhones {
 		scimPhones = append(scimPhones, PhoneNumber{
 			Value:   p.Value,

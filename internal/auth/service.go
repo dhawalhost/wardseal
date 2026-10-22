@@ -36,7 +36,7 @@ import (
 	"github.com/dhawalhost/wardseal/internal/rbac"
 	"github.com/dhawalhost/wardseal/internal/saml"
 	"github.com/dhawalhost/wardseal/pkg/kms"
-	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // Service defines the interface for the auth service.
@@ -86,12 +86,14 @@ type Service interface {
 	ResolveTenantSlug(ctx context.Context, slug string) (string, error)
 	GetTenantSlug(ctx context.Context, tenantID string) (string, error)
 	UIURL() string
-	ValidateToken(tokenString string) (*middleware.Claims, error)
-	ValidateStepUpToken(tokenString string) (*middleware.Claims, error)
+	ValidateToken(tokenString string) (*types.Claims, error)
+	ValidateStepUpToken(tokenString string) (*types.Claims, error)
 	GetUserByID(ctx context.Context, tenantID, userID string) (UserProfile, error)
 	ListSSOProviders(ctx context.Context, tenantID string) ([]SSOProvider, error)
 	GetSSOAuthorizeURL(ctx context.Context, tenantID, providerName, redirectURI string) (string, error)
 	SendPasswordSetupEmail(ctx context.Context, tenantID, userID, mode string, expiresHours int) error
+	GeneratePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error)
+	SetPasswordWithSetupToken(ctx context.Context, tokenString, password string) error
 }
 
 type UserProfile struct {
@@ -247,7 +249,7 @@ func NewService(cfg Config) (Service, error) {
 	}
 	header := cfg.ServiceAuthHeader
 	if header == "" {
-		header = middleware.DefaultServiceAuthHeader
+		header = types.DefaultServiceAuthHeader
 	}
 
 	samlProvider, err := saml.NewProvider(saml.Config{
@@ -398,7 +400,7 @@ func (s *authService) executeWithCBAndRetry(f func() error) error {
 }
 
 func (s *authService) Login(ctx context.Context, username, password, deviceID, userAgent, ip, clientOSVersion string) (string, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -416,7 +418,7 @@ func (s *authService) Login(ctx context.Context, username, password, deviceID, u
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
 	if s.serviceAuthToken != "" {
 		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
 	}
@@ -736,7 +738,7 @@ func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (L
 	req.URL.RawQuery = q.Encode()
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
 	if s.serviceAuthToken != "" {
 		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
 	}
@@ -843,7 +845,7 @@ func (s *authService) GetTenantSlug(ctx context.Context, tenantID string) (strin
 }
 
 func (s *authService) Authorize(ctx context.Context, userID string, req AuthorizeRequest) (AuthorizeResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return AuthorizeResponse{}, err
 	}
@@ -896,7 +898,7 @@ func (s *authService) Authorize(ctx context.Context, userID string, req Authoriz
 }
 
 func (s *authService) Token(ctx context.Context, req TokenRequest) (TokenResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return TokenResponse{}, err
 	}
@@ -1866,7 +1868,7 @@ func (s *authService) FinishWebAuthnRegistration(ctx context.Context, userID str
 
 	// Store credential
 	// Using TenantID from context? registration usually requires auth, so yes.
-	_, _ = middleware.TenantIDFromContext(ctx)
+	_, _ = types.TenantIDFromContext(ctx)
 	tenantID := SystemTenantID // Fallback to System Tenant
 
 	return s.webAuthnStore.SaveCredential(ctx, tenantID, userID, credential)
@@ -1921,7 +1923,7 @@ func (s *authService) FinishWebAuthnLogin(ctx context.Context, userID string, se
 	}
 
 	// 3. Issue Token (MFA success)
-	tenantID, _ := middleware.TenantIDFromContext(ctx)
+	tenantID, _ := types.TenantIDFromContext(ctx)
 	if tenantID == "" {
 		tenantID = SystemTenantID
 	}
@@ -1975,7 +1977,7 @@ func (s *authService) UpdateUserSelf(ctx context.Context, tenantID, userID strin
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
 	if s.serviceAuthToken != "" {
 		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
 	}
@@ -1998,12 +2000,12 @@ type cacheEntry struct {
 	expiresAt time.Time
 }
 
-func (s *authService) ValidateToken(tokenString string) (*middleware.Claims, error) {
+func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
 	// If the signer is a LocalSigner or VaultSigner, we can use its PublicKey to verify
 	// But the signer interface doesn't have a generic verify yet in a way that returns Claims.
 	// However, we can use jwt.ParseWithClaims with the public key.
 
-	token, err := jwt.ParseWithClaims(tokenString, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &types.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Verify the algorithm matches
 		if token.Method.Alg() != s.signer.Algorithm() {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -2015,7 +2017,7 @@ func (s *authService) ValidateToken(tokenString string) (*middleware.Claims, err
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*middleware.Claims); ok && token.Valid {
+	if claims, ok := token.Claims.(*types.Claims); ok && token.Valid {
 		// Enforce that this is not a step-up token
 		for _, aud := range claims.Audience {
 			if aud == "wardseal-mfa-stepup" {
@@ -2126,8 +2128,8 @@ func (s *authService) generateStepUpToken(tenantID, userID, email string) (strin
 	return s.signer.Sign(claims)
 }
 
-func (s *authService) ValidateStepUpToken(tokenString string) (*middleware.Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
+func (s *authService) ValidateStepUpToken(tokenString string) (*types.Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &types.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if token.Method.Alg() != s.signer.Algorithm() {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -2138,7 +2140,7 @@ func (s *authService) ValidateStepUpToken(tokenString string) (*middleware.Claim
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*middleware.Claims); ok && token.Valid {
+	if claims, ok := token.Claims.(*types.Claims); ok && token.Valid {
 		validAudience := false
 		for _, aud := range claims.Audience {
 			if aud == "wardseal-mfa-stepup" {
@@ -2238,7 +2240,7 @@ func (s *authService) GetUserByID(ctx context.Context, tenantID, userID string) 
 	if err != nil {
 		return UserProfile{}, err
 	}
-	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
 	if s.serviceAuthToken != "" {
 		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken)
 	}

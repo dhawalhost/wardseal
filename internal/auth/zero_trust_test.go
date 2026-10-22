@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/rsa"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
 	"github.com/dhawalhost/wardseal/internal/rbac"
-	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // Mock RBAC Store
@@ -62,6 +63,9 @@ func (m *mockRBACRepo) RemovePermissionFromRole(ctx context.Context, roleID, per
 	return nil
 }
 func (m *mockRBACRepo) AssignRoleToUser(ctx context.Context, tenantID, userID, roleID string, assignedBy *string) error {
+	return nil
+}
+func (m *mockRBACRepo) AssignRoleWithExpiration(ctx context.Context, tenantID, userID, roleID string, assignedBy *string, expiresAt time.Time) error {
 	return nil
 }
 func (m *mockRBACRepo) RemoveRoleFromUser(ctx context.Context, userID, roleID string) error {
@@ -135,7 +139,7 @@ func TestZeroTrust_AdaptiveMFATrigger(t *testing.T) {
 
 	engine := NewRiskEngine(nil, nil, nil).WithIPPolicy(repo, nil)
 
-	ctx := middleware.InjectTenantID(context.Background(), tenantID)
+	ctx := types.InjectTenantID(context.Background(), tenantID)
 
 	res, err := engine.Evaluate(ctx, uuid.New().String(), "", blockedIP)
 	if err != nil {

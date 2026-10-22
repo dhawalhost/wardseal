@@ -307,11 +307,7 @@ func (h *HTTPHandler) tenantSlugForID(ctx context.Context, tenantID string) stri
 	if tenantID == "" {
 		return ""
 	}
-	impl, ok := h.svc.(*authService)
-	if !ok || impl.tenantStore == nil {
-		return ""
-	}
-	slug, err := impl.tenantStore.GetSlugByID(ctx, tenantID)
+	slug, err := h.svc.GetTenantSlug(ctx, tenantID)
 	if err != nil {
 		h.logger.Warn("Failed to resolve tenant slug", zap.String("tenant_id", tenantID), zap.Error(err))
 		return ""
@@ -379,14 +375,7 @@ func (h *HTTPHandler) createPasswordSetupLink(c *gin.Context) {
 		return
 	}
 
-	impl, ok := h.svc.(*authService)
-	if !ok {
-		h.logger.Error("service type assertion failed for password setup link")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal service error"})
-		return
-	}
-
-	token, expiresAt, err := impl.generatePasswordSetupToken(tenantID, req.UserID, req.Mode, req.ExpiresHours)
+	token, expiresAt, err := h.svc.GeneratePasswordSetupToken(tenantID, req.UserID, req.Mode, req.ExpiresHours)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -419,14 +408,7 @@ func (h *HTTPHandler) completePasswordSetup(c *gin.Context) {
 		return
 	}
 
-	impl, ok := h.svc.(*authService)
-	if !ok {
-		h.logger.Error("service type assertion failed for complete password setup")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal service error"})
-		return
-	}
-
-	if err := impl.setPasswordWithSetupToken(c.Request.Context(), req.Token, req.Password); err != nil {
+	if err := h.svc.SetPasswordWithSetupToken(c.Request.Context(), req.Token, req.Password); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

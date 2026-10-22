@@ -8,16 +8,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // DefaultTenantHeader is the HTTP header used to carry the tenant identifier when no
 // custom header name is provided.
-const DefaultTenantHeader = "X-Tenant-ID"
+const DefaultTenantHeader = types.DefaultTenantHeader
 
-// tenantContextKey is an unexported key type to avoid collisions in the Gin context store.
-type tenantContextKey string
-
-const tenantIDContextKey tenantContextKey = "wardseal.tenantID"
+const tenantIDContextKey = types.TenantIDContextKey
 
 var tenantIDRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
@@ -94,8 +93,8 @@ func TenantExtractor(cfg TenantConfig) gin.HandlerFunc {
 			return
 		}
 
-		c.Set(string(tenantIDContextKey), tenantID)
-		ctx := context.WithValue(c.Request.Context(), tenantIDContextKey, tenantID)
+		c.Set(types.TenantContextKeyString(), tenantID)
+		ctx := types.InjectTenantID(c.Request.Context(), tenantID)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
@@ -103,7 +102,7 @@ func TenantExtractor(cfg TenantConfig) gin.HandlerFunc {
 
 // TenantIDFromGinContext extracts the tenant identifier previously stored by TenantExtractor.
 func TenantIDFromGinContext(c *gin.Context) (string, error) {
-	if value, ok := c.Get(string(tenantIDContextKey)); ok {
+	if value, ok := c.Get(types.TenantContextKeyString()); ok {
 		if tenantID, ok := value.(string); ok && tenantID != "" {
 			return tenantID, nil
 		}
@@ -112,16 +111,7 @@ func TenantIDFromGinContext(c *gin.Context) (string, error) {
 }
 
 // TenantIDFromContext extracts the tenant identifier from a standard context.
-func TenantIDFromContext(ctx context.Context) (string, error) {
-	if value := ctx.Value(tenantIDContextKey); value != nil {
-		if tenantID, ok := value.(string); ok && tenantID != "" {
-			return tenantID, nil
-		}
-	}
-	return "", errors.New("tenant id not found in context")
-}
+var TenantIDFromContext = types.TenantIDFromContext
 
 // InjectTenantID injects the tenant identifier into a standard context.
-func InjectTenantID(ctx context.Context, tenantID string) context.Context {
-	return context.WithValue(ctx, tenantIDContextKey, tenantID)
-}
+var InjectTenantID = types.InjectTenantID

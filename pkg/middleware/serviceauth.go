@@ -7,13 +7,15 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // DefaultServiceAuthHeader is the header name used to transmit the internal service token.
-const DefaultServiceAuthHeader = "X-Service-Auth"
+const DefaultServiceAuthHeader = types.DefaultServiceAuthHeader
 
 // DevServiceAuthToken is the local-only fallback when SERVICE_AUTH_TOKEN is unset.
-const DevServiceAuthToken = "dev-internal-token"
+const DevServiceAuthToken = "dev-internal-token" //nolint:gosec // G101: intentional default for local dev only
 
 // ServiceAuthConfig controls how the service authentication middleware behaves.
 type ServiceAuthConfig struct {

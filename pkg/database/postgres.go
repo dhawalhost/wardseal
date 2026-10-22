@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dhawalhost/wardseal/pkg/middleware"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // postgres driver
+
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // Config holds the configuration for the database connection.
@@ -59,7 +60,7 @@ func NewConnection(config Config) (*sqlx.DB, error) { // Use sqlx.DB
 
 // RunInTenantTx executes a callback within a transaction where the tenant ID is set for RLS.
 func RunInTenantTx(ctx context.Context, db *sqlx.DB, fn func(tx *sqlx.Tx) error) error {
-	tenantID, _ := middleware.TenantIDFromContext(ctx)
+	tenantID, _ := types.TenantIDFromContext(ctx)
 	tx, err := db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err

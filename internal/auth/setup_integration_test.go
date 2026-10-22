@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -138,6 +139,12 @@ func (m *MockService) GetUserByID(ctx context.Context, tenantID, userID string) 
 }
 func (m *MockService) GetTenantSlug(ctx context.Context, tenantID string) (string, error) {
 	return "", nil
+}
+func (m *MockService) GeneratePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error) {
+	return "test-token", time.Now().Add(time.Hour), nil
+}
+func (m *MockService) SetPasswordWithSetupToken(ctx context.Context, tokenString, password string) error {
+	return nil
 }
 
 // Simple test to verify the HTTP wiring for Setup and Login

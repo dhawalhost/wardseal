@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // PermissionChecker evaluates whether a user may perform an action on a resource.
@@ -63,7 +65,7 @@ func RequireUserAuth(validator TokenValidator) gin.HandlerFunc {
 			if _, exists := c.Get("wardseal.tenantID"); !exists {
 				c.Set("wardseal.tenantID", claims.Tenant)
 				// Also update request context for compatibility with TenantIDFromContext
-				ctx := context.WithValue(c.Request.Context(), tenantIDContextKey, claims.Tenant)
+				ctx := types.InjectTenantID(c.Request.Context(), claims.Tenant)
 				c.Request = c.Request.WithContext(ctx)
 			}
 		}
@@ -105,14 +107,8 @@ func RequireUserAuth(validator TokenValidator) gin.HandlerFunc {
 	}
 }
 
-// Claims represents the JWT claims we care about.
-type Claims struct {
-	jwt.RegisteredClaims
-	Roles  []string               `json:"roles,omitempty"`
-	Tenant string                 `json:"tenant,omitempty"`
-	Scope  string                 `json:"scope,omitempty"`
-	CNF    map[string]interface{} `json:"cnf,omitempty"`
-}
+// Claims represents the JWT claims we care about, aliased to pkg/types.Claims.
+type Claims = types.Claims
 
 // ValidateToken parses and validates a JWT token string.
 func ValidateToken(tokenString, secret string) (*Claims, error) {

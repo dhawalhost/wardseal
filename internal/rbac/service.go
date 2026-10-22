@@ -144,17 +144,7 @@ func (s *service) AssignRoleWithExpiration(ctx context.Context, tenantID, userID
 	}
 	expiresAt := time.Now().Add(d)
 
-	// We use the direct Exec in the store for this specialized case
-	sqlRepo, ok := s.store.(*sqlRepository)
-	if !ok {
-		return fmt.Errorf("underlying store does not support direct SQL execution")
-	}
-	_, err = sqlRepo.db.ExecContext(ctx,
-		`INSERT INTO user_roles (user_id, role_id, tenant_id, assigned_by, expires_at) 
-		 VALUES ($1, $2, $3, $4, $5) 
-		 ON CONFLICT (user_id, role_id) DO UPDATE SET assigned_at = NOW(), assigned_by = $4, expires_at = $5`,
-		userID, roleID, tenantID, assignedBy, expiresAt)
-	return err
+	return s.store.AssignRoleWithExpiration(ctx, tenantID, userID, roleID, assignedBy, expiresAt)
 }
 
 func (s *service) ListExpiredAssignments(ctx context.Context) ([]UserRole, error) {

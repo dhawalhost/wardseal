@@ -435,7 +435,7 @@ func generateShortID() string {
 	return "ws-" + string(result)
 }
 
-func (s *authService) generatePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error) {
+func (s *authService) GeneratePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error) {
 	if tenantID == "" || userID == "" {
 		return "", time.Time{}, fmt.Errorf("tenant and user are required")
 	}
@@ -471,7 +471,11 @@ func (s *authService) generatePasswordSetupToken(tenantID, userID, mode string, 
 	return token, expiresAt, nil
 }
 
-func (s *authService) setPasswordWithSetupToken(ctx context.Context, tokenString, password string) error {
+func (s *authService) generatePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error) {
+	return s.GeneratePasswordSetupToken(tenantID, userID, mode, expiresHours)
+}
+
+func (s *authService) SetPasswordWithSetupToken(ctx context.Context, tokenString, password string) error {
 	if err := passwordpkg.ValidatePolicy(password); err != nil {
 		return err
 	}

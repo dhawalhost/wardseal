@@ -167,6 +167,9 @@ func decodeArgon2id(encodedHash string) (argonParams, []byte, []byte, error) {
 	if err != nil {
 		return argonParams{}, nil, nil, ErrInvalidHash
 	}
-	p.keyLen = uint32(len(key))
+	if len(key) > 1024 {
+		return argonParams{}, nil, nil, ErrInvalidHash
+	}
+	p.keyLen = uint32(len(key)) //nolint:gosec // key length bounded above
 	return p, salt, key, nil
 }

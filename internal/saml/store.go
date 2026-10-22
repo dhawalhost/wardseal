@@ -15,7 +15,7 @@ import (
 	"github.com/crewjam/saml/samlidp"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/dhawalhost/wardseal/pkg/middleware"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // Store implements samlidp.Store interface.
@@ -56,7 +56,7 @@ type ServiceProvider struct {
 
 // GetServiceProvider retrieves a service provider by EntityID with tenant isolation.
 func (s *Store) GetServiceProvider(ctx context.Context, entityID string) (*saml2.ServiceProvider, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("tenant identification failed: %w", err)
 	}
@@ -87,7 +87,7 @@ func (s *Store) GetServiceProvider(ctx context.Context, entityID string) (*saml2
 
 // GetUser retrieves a user from the central directory service.
 func (s *Store) GetUser(ctx context.Context, email string) (*samlidp.User, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("tenant identification failed: %w", err)
 	}
@@ -102,7 +102,7 @@ func (s *Store) GetUser(ctx context.Context, email string) (*samlidp.User, error
 	req.URL.RawQuery = q.Encode()
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
 	if s.serviceAuthToken != "" {
 		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
 	}

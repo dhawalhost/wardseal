@@ -58,6 +58,7 @@ type Repository interface {
 
 	// User-Role mapping
 	AssignRoleToUser(ctx context.Context, tenantID, userID, roleID string, assignedBy *string) error
+	AssignRoleWithExpiration(ctx context.Context, tenantID, userID, roleID string, assignedBy *string, expiresAt time.Time) error
 	RemoveRoleFromUser(ctx context.Context, userID, roleID string) error
 	GetUserRoles(ctx context.Context, tenantID, userID string) ([]Role, error)
 	GetUserPermissions(ctx context.Context, tenantID, userID string) ([]Permission, error)
@@ -155,13 +156,19 @@ func (s *sqlRepository) RemovePermissionFromRole(ctx context.Context, roleID, pe
 }
 
 func (s *sqlRepository) AssignRoleToUser(ctx context.Context, tenantID, userID, roleID string, assignedBy *string) error {
-	// By default, no expiration. Specific duration is set via specialized wrapper if needed,
-	// but here we allow it to be updated separately or we could add it to params.
-	// For simplicity in the repository, we'll add an internal method or just Exec direct.
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO user_roles (user_id, role_id, tenant_id, assigned_by) 
 		 VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, role_id) DO UPDATE SET assigned_at = NOW(), assigned_by = $4`,
 		userID, roleID, tenantID, assignedBy)
+	return err
+}
+
+func (s *sqlRepository) AssignRoleWithExpiration(ctx context.Context, tenantID, userID, roleID string, assignedBy *string, expiresAt time.Time) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO user_roles (user_id, role_id, tenant_id, assigned_by, expires_at) 
+		 VALUES ($1, $2, $3, $4, $5) 
+		 ON CONFLICT (user_id, role_id) DO UPDATE SET assigned_at = NOW(), assigned_by = $4, expires_at = $5`,
+		userID, roleID, tenantID, assignedBy, expiresAt)
 	return err
 }
 
