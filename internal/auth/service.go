@@ -1129,9 +1129,9 @@ func (s *authService) handleWorkloadAuthentication(ctx context.Context, tenantID
 			}
 		}()
 		now := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 		defer cancel()
-		_ = s.workloadStore.Update(ctx, workload.ID, map[string]interface{}{"last_used_at": now})
+		_ = s.workloadStore.Update(bgCtx, workload.ID, map[string]interface{}{"last_used_at": now})
 	}()
 
 	return TokenResponse{
@@ -1981,7 +1981,7 @@ func (s *authService) UpdateUserSelf(ctx context.Context, tenantID, userID strin
 		userPayload.Status = status
 	}
 
-	body, err := json.Marshal(userPayload)
+	body, err := json.Marshal(userPayload) //nolint:gosec // G117: password field required for directory provisioning payload
 	if err != nil {
 		return err
 	}

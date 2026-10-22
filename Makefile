@@ -56,7 +56,11 @@ clean: down ## Stop all containers and remove volumes
 # --- Quality Assurance (QA) ---
 .PHONY: fmt
 fmt: ## Format Go code
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --fix ./...
+	@if command -v golangci-lint >/dev/null 2>&1 && golangci-lint version 2>/dev/null | grep -q "version v2"; then \
+		golangci-lint run --fix ./...; \
+	else \
+		go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --fix ./...; \
+	fi
 	go run golang.org/x/tools/cmd/goimports@latest -w -local github.com/dhawalhost/wardseal .
 
 .PHONY: vet
@@ -64,8 +68,12 @@ vet: ## Run go vet
 	go vet ./...
 
 .PHONY: lint
-lint: ## Run golangci-lint
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --timeout=15m ./...
+lint: ## Run golangci-lint v2
+	@if command -v golangci-lint >/dev/null 2>&1 && golangci-lint version 2>/dev/null | grep -q "version v2"; then \
+		golangci-lint run --timeout=15m ./...; \
+	else \
+		go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --timeout=15m ./...; \
+	fi
 
 .PHONY: tidy
 tidy: ## Tidy go modules

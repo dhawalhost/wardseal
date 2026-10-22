@@ -649,7 +649,7 @@ func (h *SlackHandler) sendDelayedResponse(responseURL, text string) {
 		"text":             text,
 	}
 	body, _ := json.Marshal(payload)
-	resp, err := h.client.Post(responseURL, "application/json", bytes.NewBuffer(body))
+	resp, err := h.client.Post(responseURL, "application/json", bytes.NewBuffer(body)) //nolint:gosec // G704: responseURL is external webhook callback provided by Slack
 	if err != nil {
 		h.log.Error("failed to send delayed slack response", zap.Error(err))
 		return

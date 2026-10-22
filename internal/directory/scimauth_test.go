@@ -174,7 +174,7 @@ func TestSCIMAllowsSessionCookie(t *testing.T) {
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/scim/v2/Users", nil)
-	req.AddCookie(&http.Cookie{Name: "wardseal_access_token", Value: token})
+	req.AddCookie(&http.Cookie{Name: "wardseal_access_token", Value: token, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 	resp := httptest.NewRecorder()
 	r.ServeHTTP(resp, req)
 

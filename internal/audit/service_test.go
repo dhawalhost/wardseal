@@ -2,6 +2,7 @@ package audit
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ func (m *mockRepository) Log(ctx context.Context, e Event) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.events = append(m.events, e)
-	return "event-" + string(rune(len(m.events))), nil
+	return fmt.Sprintf("event-%d", len(m.events)), nil
 }
 
 func (m *mockRepository) Query(ctx context.Context, params QueryParams) ([]Event, int, error) {
