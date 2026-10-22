@@ -1123,6 +1123,11 @@ func (s *authService) handleWorkloadAuthentication(ctx context.Context, tenantID
 
 	// Async update of last used timestamp
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				zap.L().Error("Panic recovered in update workload last_used_at", zap.Any("panic", r))
+			}
+		}()
 		now := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()

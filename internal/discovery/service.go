@@ -72,6 +72,11 @@ func (s *discoveryService) Start(ctx context.Context) {
 
 			// Run the job in a background goroutine to not block the subscriber
 			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						s.log.Error("Panic recovered in RunDiscoveryJob goroutine", zap.Any("panic", r))
+					}
+				}()
 				// Use a fresh context for the background job that doesn't cancel when the event handler returns
 				jobCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Minute)
 				defer cancel()

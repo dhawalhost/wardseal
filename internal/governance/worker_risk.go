@@ -46,12 +46,17 @@ func (g *RiskGovernor) Start(ctx context.Context) {
 
 	ticker := time.NewTicker(g.interval)
 	go func() {
+		defer ticker.Stop()
+		defer func() {
+			if r := recover(); r != nil {
+				g.logger.Error("Panic recovered in RiskGovernor worker", zap.Any("panic", r))
+			}
+		}()
 		for {
 			select {
 			case <-ticker.C:
 				g.performSweep(ctx)
 			case <-ctx.Done():
-				ticker.Stop()
 				return
 			}
 		}

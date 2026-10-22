@@ -32,12 +32,17 @@ func (p *PruningGovernor) Start(ctx context.Context) {
 
 	ticker := time.NewTicker(p.interval)
 	go func() {
+		defer ticker.Stop()
+		defer func() {
+			if r := recover(); r != nil {
+				p.logger.Error("Panic recovered in PruningGovernor worker", zap.Any("panic", r))
+			}
+		}()
 		for {
 			select {
 			case <-ticker.C:
 				p.performPruningSweep(ctx)
 			case <-ctx.Done():
-				ticker.Stop()
 				return
 			}
 		}

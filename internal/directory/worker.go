@@ -14,6 +14,11 @@ func StartAccountErasureWorker(ctx context.Context, svc Service, log *zap.Logger
 	ticker := time.NewTicker(checkInterval)
 	go func() {
 		defer ticker.Stop()
+		defer func() {
+			if r := recover(); r != nil {
+				log.Error("Panic recovered in Account erasure worker", zap.Any("panic", r))
+			}
+		}()
 		log.Info("Account erasure worker started", zap.Duration("check_interval", checkInterval), zap.Duration("retention_period", retentionPeriod))
 		for {
 			select {

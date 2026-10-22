@@ -57,6 +57,12 @@ func (s *sqlProvisioningService) Start(ctx context.Context) {
 	ticker := time.NewTicker(time.Second * 5)
 
 	go func() {
+		defer ticker.Stop()
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Error("Panic recovered in Provisioning worker", zap.Any("panic", r))
+			}
+		}()
 		for {
 			select {
 			case <-ticker.C:
@@ -71,7 +77,6 @@ func (s *sqlProvisioningService) Start(ctx context.Context) {
 					}
 				}
 			case <-ctx.Done():
-				ticker.Stop()
 				return
 			}
 		}
