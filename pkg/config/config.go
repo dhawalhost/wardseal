@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/subosito/gotenv"
 
+	"github.com/dhawalhost/wardseal/pkg/database"
 	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
@@ -43,14 +44,32 @@ type DatabaseConfig struct {
 	Port     int          `mapstructure:"port"`
 	User     string       `mapstructure:"user"`
 	Password types.Secret `mapstructure:"password"` // Populated by Vault or Env
-	Name     string       `mapstructure:"name"`
-	SSLMode  string       `mapstructure:"sslmode"`
+	Name            string        `mapstructure:"name"`
+	SSLMode         string        `mapstructure:"sslmode"`
+	MaxOpenConns    int           `mapstructure:"max_open_conns"`
+	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
 }
 
 // ConnectionString returns the PostgreSQL connection string.
 func (d DatabaseConfig) ConnectionString() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		d.User, d.Password.Raw(), d.Host, d.Port, d.Name, d.SSLMode)
+}
+
+// ConnectionConfig returns a database.Config populated with connection and pool parameters.
+func (d DatabaseConfig) ConnectionConfig() database.Config {
+	return database.Config{
+		Host:            d.Host,
+		Port:            d.Port,
+		User:            d.User,
+		Password:        d.Password.Raw(),
+		DBName:          d.Name,
+		SSLMode:         d.SSLMode,
+		MaxOpenConns:    d.MaxOpenConns,
+		MaxIdleConns:    d.MaxIdleConns,
+		ConnMaxLifetime: d.ConnMaxLifetime,
+	}
 }
 
 // AuthConfig holds auth service settings.
@@ -76,6 +95,11 @@ type AuthConfig struct {
 	RateLimitSetup      RateLimitProfile `mapstructure:"rate_limit_setup"`
 	RateLimitWebhook    RateLimitProfile `mapstructure:"rate_limit_webhook"`
 	RateLimitDegraded   RateLimitProfile `mapstructure:"rate_limit_degraded"`
+}
+
+// RedisAddrs returns the parsed list of Redis addresses configured in AuthConfig.
+func (a AuthConfig) RedisAddrs() []string {
+	return ParseAddresses(a.RedisAddr)
 }
 
 type RateLimitProfile struct {
@@ -140,6 +164,9 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("database.user", "user")
 	v.SetDefault("database.name", "identity_platform")
 	v.SetDefault("database.sslmode", "disable")
+	v.SetDefault("database.max_open_conns", 25)
+	v.SetDefault("database.max_idle_conns", 25)
+	v.SetDefault("database.conn_max_lifetime", 5*time.Minute)
 
 	v.SetDefault("auth.base_url", "http://localhost:8080")
 	v.SetDefault("auth.directory_service_url", "http://localhost:8081")
@@ -347,5 +374,17 @@ func formatPort(p string) string {
 		return ":" + p
 	}
 	return p
+}
+
+// ParseAddresses splits a comma-separated list of network host:port addresses,
+// trimming whitespace and ignoring empty elements.
+func ParseAddresses(s string) []string {
+	var res []string
+	for _, part := range strings.Split(s, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			res = append(res, trimmed)
+		}
+	}
+	return res
 }
 

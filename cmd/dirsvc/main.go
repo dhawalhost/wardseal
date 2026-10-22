@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 	"time"
+
+	gokitserver "github.com/dhawalhost/gokit/server"
 
 	gokitconfig "github.com/dhawalhost/gokit/config"
 	"github.com/dhawalhost/gokit/health"
@@ -47,16 +45,7 @@ func main() {
 	defer func() { _ = log.Sync() }()
 
 	// Database connection
-	dbConfig := database.Config{
-		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password.Raw(), // Securely injected by Vault if configured
-		DBName:   cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-	}
-
-	db, err := database.NewConnection(dbConfig)
+	db, err := database.NewConnection(cfg.Database.ConnectionConfig())
 	if err != nil {
 		log.Error("Failed to connect to database", zap.Error(err))
 		os.Exit(1)
@@ -64,18 +53,8 @@ func main() {
 
 	var bus eventbus.EventBus
 	if cfg.Auth.RedisAddr != "" {
-		importStrings := func(s string) []string {
-			var res []string
-			for _, part := range strings.Split(s, ",") {
-				if trimmed := strings.TrimSpace(part); trimmed != "" {
-					res = append(res, trimmed)
-				}
-			}
-			return res
-		}
-
 		redisClient := redis.NewUniversalClient(&redis.UniversalOptions{
-			Addrs:    importStrings(cfg.Auth.RedisAddr),
+			Addrs:    cfg.Auth.RedisAddrs(),
 			Password: cfg.Auth.RedisPassword.Raw(),
 			DB:       cfg.Auth.RedisDB,
 		})
@@ -152,18 +131,8 @@ func main() {
 
 	var rateLimitRedisClient redis.UniversalClient
 	if cfg.Auth.RedisAddr != "" {
-		importStrings := func(s string) []string {
-			var res []string
-			for _, part := range strings.Split(s, ",") {
-				if trimmed := strings.TrimSpace(part); trimmed != "" {
-					res = append(res, trimmed)
-				}
-			}
-			return res
-		}
-
 		rateLimitRedisClient = redis.NewUniversalClient(&redis.UniversalOptions{
-			Addrs:    importStrings(cfg.Auth.RedisAddr),
+			Addrs:    cfg.Auth.RedisAddrs(),
 			Password: cfg.Auth.RedisPassword.Raw(),
 			DB:       cfg.Auth.RedisDB,
 		})
@@ -237,40 +206,27 @@ func main() {
 	scimHandlers := scim.NewHTTPHandler(scimSvc, repo, serviceToken.Raw(), log)
 	scimHandlers.RegisterRoutes(router)
 
-	// Server Configuration with Graceful Shutdown
-	listenAddr := config.ResolvePort(":8081", "DIRSVC_PORT")
-	srv := &http.Server{
-		Addr:         listenAddr,
-		Handler:      router,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
-	}
-
 	// Start DPDP Account Erasure Background Worker
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
 	// Run checks daily, purging accounts that have been soft-deleted for 30 days
 	directory.StartAccountErasureWorker(workerCtx, svc, log, 24*time.Hour, 30*24*time.Hour)
 
-	go func() {
-		log.Info("Directory service starting", zap.String("addr", listenAddr))
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("Directory service failed", zap.Error(err))
-			os.Exit(1)
-		}
-	}()
+	// Server Configuration with Graceful Shutdown using gokit/server
+	listenAddr := config.ResolvePort(":8081", "DIRSVC_PORT")
+	srv := gokitserver.New(
+		gokitserver.WithAddr(listenAddr),
+		gokitserver.WithReadTimeout(30*time.Second),
+		gokitserver.WithWriteTimeout(30*time.Second),
+		gokitserver.WithIdleTimeout(120*time.Second),
+		gokitserver.WithShutdownTimeout(30*time.Second),
+	)
+	srv.Mount("/", router)
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Info("Shutting down directory service...")
-	workerCancel() // Cancel background jobs
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("Directory service forced to shutdown", zap.Error(err))
+	log.Info("Directory service starting", zap.String("addr", listenAddr))
+	if err := srv.Run(context.Background()); err != nil {
+		log.Error("Directory service terminated with error", zap.Error(err))
 	}
+	workerCancel() // Cancel background worker upon graceful HTTP shutdown
 	log.Info("Directory service exited gracefully")
 }

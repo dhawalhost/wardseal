@@ -111,7 +111,7 @@ func TestCAE_ValidateToken_Revocation(t *testing.T) {
 	_ = signalStore.Ingest(context.Background(), event)
 
 	// 4. Validate Token again (should fail due to CAE)
-	_, err = svc.ValidateToken(tokenString)
+	_, err = svc.ValidateTokenContext(context.Background(), tokenString)
 	if err == nil {
 		t.Fatalf("expected token validation to fail after critical event, but it succeeded")
 	}

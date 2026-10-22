@@ -128,6 +128,9 @@ func (m *MockService) UpdateUserSelf(ctx context.Context, tenantID, userID strin
 func (m *MockService) ValidateToken(tokenString string) (*middleware.Claims, error) {
 	return nil, nil
 }
+func (m *MockService) ValidateTokenContext(ctx context.Context, tokenString string) (*middleware.Claims, error) {
+	return nil, nil
+}
 func (m *MockService) ValidateStepUpToken(tokenString string) (*middleware.Claims, error) {
 	return nil, nil
 }

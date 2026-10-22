@@ -68,18 +68,8 @@ func main() {
 	// Initialize Redis Client
 	var globalRedisClient redis.UniversalClient
 	if cfg.Auth.RedisAddr != "" {
-		importStrings := func(s string) []string {
-			var res []string
-			for _, part := range strings.Split(s, ",") {
-				if trimmed := strings.TrimSpace(part); trimmed != "" {
-					res = append(res, trimmed)
-				}
-			}
-			return res
-		}
-
 		globalRedisClient = redis.NewUniversalClient(&redis.UniversalOptions{
-			Addrs:    importStrings(cfg.Auth.RedisAddr),
+			Addrs:    cfg.Auth.RedisAddrs(),
 			Password: cfg.Auth.RedisPassword.Raw(),
 			DB:       cfg.Auth.RedisDB,
 		})

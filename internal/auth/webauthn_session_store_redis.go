@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/dhawalhost/wardseal/pkg/config"
 )
 
 type RedisWebAuthnSessionStoreConfig struct {
@@ -36,18 +37,8 @@ func NewRedisWebAuthnSessionRepository(cfg RedisWebAuthnSessionStoreConfig) (Web
 		cfg.KeyPrefix = "webauthn:session:"
 	}
 
-	importStrings := func(s string) []string {
-		var res []string
-		for _, part := range strings.Split(s, ",") {
-			if trimmed := strings.TrimSpace(part); trimmed != "" {
-				res = append(res, trimmed)
-			}
-		}
-		return res
-	}
-
 	client := redis.NewUniversalClient(&redis.UniversalOptions{
-		Addrs:    importStrings(cfg.Addr),
+		Addrs:    config.ParseAddresses(cfg.Addr),
 		Password: cfg.Password,
 		DB:       cfg.DB,
 	})

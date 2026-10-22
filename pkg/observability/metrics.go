@@ -3,6 +3,7 @@ package observability
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -10,59 +11,68 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// NewMetrics returns a new set of Prometheus metrics.
+var (
+	defaultMetrics  *Metrics
+	metricsInitOnce sync.Once
+)
+
+// NewMetrics returns the singleton Prometheus metrics instance.
+// Metric registration is performed once to prevent panics on multiple invocations.
 func NewMetrics() *Metrics {
-	m := &Metrics{
-		RequestsTotal: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "http_requests_total",
-				Help: "Total number of HTTP requests.",
-			},
-			[]string{"code", "method", "path"},
-		),
-		RequestDuration: prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name:    "http_request_duration_seconds",
-				Help:    "Histogram of latencies for HTTP requests.",
-				Buckets: prometheus.DefBuckets,
-			},
-			[]string{"code", "method", "path"},
-		),
-		TokensIssued: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "auth_tokens_issued_total",
-				Help: "Total number of tokens issued.",
-			},
-			[]string{"grant_type", "tenant_id"},
-		),
-		TokenErrors: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "auth_token_errors_total",
-				Help: "Total number of token issuance errors.",
-			},
-			[]string{"error_type", "grant_type"},
-		),
-		TokenIntrospections: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "auth_token_introspections_total",
-				Help: "Total number of token introspection requests.",
-			},
-			[]string{"active", "token_type"},
-		),
-		TokenRevocations: prometheus.NewCounter(
-			prometheus.CounterOpts{
-				Name: "auth_token_revocations_total",
-				Help: "Total number of token revocation requests.",
-			},
-		),
-	}
-	prometheus.MustRegister(m.RequestsTotal)
-	prometheus.MustRegister(m.RequestDuration)
-	prometheus.MustRegister(m.TokensIssued)
-	prometheus.MustRegister(m.TokenErrors)
-	prometheus.MustRegister(m.TokenIntrospections)
-	prometheus.MustRegister(m.TokenRevocations)
-	return m
+	metricsInitOnce.Do(func() {
+		m := &Metrics{
+			RequestsTotal: prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "http_requests_total",
+					Help: "Total number of HTTP requests.",
+				},
+				[]string{"code", "method", "path"},
+			),
+			RequestDuration: prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "http_request_duration_seconds",
+					Help:    "Histogram of latencies for HTTP requests.",
+					Buckets: prometheus.DefBuckets,
+				},
+				[]string{"code", "method", "path"},
+			),
+			TokensIssued: prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "auth_tokens_issued_total",
+					Help: "Total number of tokens issued.",
+				},
+				[]string{"grant_type", "tenant_id"},
+			),
+			TokenErrors: prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "auth_token_errors_total",
+					Help: "Total number of token issuance errors.",
+				},
+				[]string{"error_type", "grant_type"},
+			),
+			TokenIntrospections: prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "auth_token_introspections_total",
+					Help: "Total number of token introspection requests.",
+				},
+				[]string{"active", "token_type"},
+			),
+			TokenRevocations: prometheus.NewCounter(
+				prometheus.CounterOpts{
+					Name: "auth_token_revocations_total",
+					Help: "Total number of token revocation requests.",
+				},
+			),
+		}
+		prometheus.MustRegister(m.RequestsTotal)
+		prometheus.MustRegister(m.RequestDuration)
+		prometheus.MustRegister(m.TokensIssued)
+		prometheus.MustRegister(m.TokenErrors)
+		prometheus.MustRegister(m.TokenIntrospections)
+		prometheus.MustRegister(m.TokenRevocations)
+		defaultMetrics = m
+	})
+	return defaultMetrics
 }
 
 // Metrics holds the Prometheus metrics.

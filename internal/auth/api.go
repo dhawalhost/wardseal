@@ -228,7 +228,7 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	// These rely on the wardseal_access_token cookie/Authorization header
 	// and extract the tenant context from the JWT itself.
 	sessionProtected := router.Group("/")
-	sessionProtected.Use(middleware.RequireUserAuth(h.svc.ValidateToken))
+	sessionProtected.Use(middleware.RequireUserAuthWithContext(h.svc.ValidateTokenContext))
 	{
 		// User Portal API
 		userAPI := sessionProtected.Group("/api/v1/user")
@@ -527,7 +527,7 @@ func (h *HTTPHandler) login(c *gin.Context) {
 	h.setAuthCookies(c, token, "")
 
 	// Extract roles for the response
-	claims, _ := h.svc.ValidateToken(token)
+	claims, _ := h.svc.ValidateTokenContext(c.Request.Context(), token)
 	roles := []string{}
 	if claims != nil {
 		roles = claims.Roles
@@ -690,7 +690,7 @@ func (h *HTTPHandler) completeMFALogin(c *gin.Context) {
 	h.setAuthCookies(c, finalToken, "")
 
 	// Extract roles for the response
-	claims, _ := h.svc.ValidateToken(finalToken)
+	claims, _ := h.svc.ValidateTokenContext(c.Request.Context(), finalToken)
 	roles := []string{}
 	if claims != nil {
 		roles = claims.Roles
@@ -737,7 +737,7 @@ func (h *HTTPHandler) authorize(c *gin.Context) {
 	// 2. Validate the token to extract the UserID
 	var userID string
 	// Check for proper token
-	claims, err := h.svc.ValidateToken(cookie)
+	claims, err := h.svc.ValidateTokenContext(c.Request.Context(), cookie)
 	if err == nil {
 		userID = claims.Subject
 	}

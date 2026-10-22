@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 
+	gokiterrors "github.com/dhawalhost/gokit/errors"
 	gokitmiddleware "github.com/dhawalhost/gokit/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -38,5 +39,17 @@ func SecureHeaders() gin.HandlerFunc {
 // RequestID adapts gokit/middleware.RequestID to Gin.
 func RequestID() gin.HandlerFunc {
 	return Wrap(gokitmiddleware.RequestID())
+}
+
+// AbortWithAppError aborts the current Gin context and writes a standardized JSON error
+// using gokit/errors.WriteError.
+func AbortWithAppError(c *gin.Context, err error) {
+	c.Abort()
+	gokiterrors.WriteError(c.Writer, c.Request, err)
+}
+
+// WriteAppError writes a standardized JSON error using gokit/errors.WriteError without aborting.
+func WriteAppError(c *gin.Context, err error) {
+	gokiterrors.WriteError(c.Writer, c.Request, err)
 }
 

@@ -47,7 +47,7 @@ func (h *HTTPHandler) RequireMFAAuth() gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		claims, err := h.svc.ValidateToken(tokenString)
+		claims, err := h.svc.ValidateTokenContext(c.Request.Context(), tokenString)
 		if err == nil {
 			c.Set("user_id", claims.Subject)
 			c.Set("claims", claims)

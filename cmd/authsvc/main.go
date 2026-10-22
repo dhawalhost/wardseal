@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 	"time"
+
+	gokitserver "github.com/dhawalhost/gokit/server"
 
 	gokitconfig "github.com/dhawalhost/gokit/config"
 	"github.com/dhawalhost/gokit/health"
@@ -87,16 +85,7 @@ func main() {
 	serviceToken := types.Secret(resolvedToken)
 	serviceHeader := cfg.Auth.ServiceAuthHeader
 
-	dbConfig := database.Config{
-		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password.Raw(), // Securely injected by Vault if configured
-		DBName:   cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-	}
-
-	db, err := database.NewConnection(dbConfig)
+	db, err := database.NewConnection(cfg.Database.ConnectionConfig())
 	if err != nil {
 		log.Error("Failed to connect to database", zap.Error(err))
 		os.Exit(1)
@@ -116,18 +105,8 @@ func main() {
 	// Initialize Redis Client
 	var globalRedisClient redis.UniversalClient
 	if cfg.Auth.RedisAddr != "" {
-		importStrings := func(s string) []string {
-			var res []string
-			for _, part := range strings.Split(s, ",") {
-				if trimmed := strings.TrimSpace(part); trimmed != "" {
-					res = append(res, trimmed)
-				}
-			}
-			return res
-		}
-
 		globalRedisClient = redis.NewUniversalClient(&redis.UniversalOptions{
-			Addrs:    importStrings(cfg.Auth.RedisAddr),
+			Addrs:    cfg.Auth.RedisAddrs(),
 			Password: cfg.Auth.RedisPassword.Raw(),
 			DB:       cfg.Auth.RedisDB,
 		})
@@ -381,33 +360,20 @@ func main() {
 
 	// Register IdP-initiated endpoint logic is handled inside authHandlers.RegisterRoutes -> svc.SAML()
 
-	// Server Configuration with Graceful Shutdown
+	// Server Configuration with Graceful Shutdown using gokit/server
 	listenAddr := config.ResolvePort(":8080", "AUTHSVC_PORT")
-	srv := &http.Server{
-		Addr:         listenAddr,
-		Handler:      router,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
-	}
+	srv := gokitserver.New(
+		gokitserver.WithAddr(listenAddr),
+		gokitserver.WithReadTimeout(30*time.Second),
+		gokitserver.WithWriteTimeout(30*time.Second),
+		gokitserver.WithIdleTimeout(120*time.Second),
+		gokitserver.WithShutdownTimeout(30*time.Second),
+	)
+	srv.Mount("/", router)
 
-	go func() {
-		log.Info("Auth service starting", zap.String("addr", listenAddr))
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("Auth service failed", zap.Error(err))
-			os.Exit(1)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Info("Shutting down auth service...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("Auth service forced to shutdown", zap.Error(err))
+	log.Info("Auth service starting", zap.String("addr", listenAddr))
+	if err := srv.Run(context.Background()); err != nil {
+		log.Error("Auth service terminated with error", zap.Error(err))
 	}
 	log.Info("Auth service exited gracefully")
 }

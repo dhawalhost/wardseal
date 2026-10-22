@@ -89,6 +89,7 @@ type Service interface {
 	GetTenantSlug(ctx context.Context, tenantID string) (string, error)
 	UIURL() string
 	ValidateToken(tokenString string) (*types.Claims, error)
+	ValidateTokenContext(ctx context.Context, tokenString string) (*types.Claims, error)
 	ValidateStepUpToken(tokenString string) (*types.Claims, error)
 	GetUserByID(ctx context.Context, tenantID, userID string) (UserProfile, error)
 	ListSSOProviders(ctx context.Context, tenantID string) ([]SSOProvider, error)
@@ -2082,6 +2083,14 @@ func (s *authService) getCoalescer() *cache.Coalescer {
 }
 
 func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
+	return s.ValidateTokenContext(context.Background(), tokenString)
+}
+
+func (s *authService) ValidateTokenContext(ctx context.Context, tokenString string) (*types.Claims, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	// If the signer is a LocalSigner or VaultSigner, we can use its PublicKey to verify
 	// But the signer interface doesn't have a generic verify yet in a way that returns Claims.
 	// However, we can use jwt.ParseWithClaims with the public key.
@@ -2126,7 +2135,7 @@ func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
 			} else {
 				tokenIssuedAt = time.Now()
 			}
-			event, err := s.signalStore.GetLatestCriticalEvent(context.Background(), claims.Subject, tokenIssuedAt)
+			event, err := s.signalStore.GetLatestCriticalEvent(ctx, claims.Subject, tokenIssuedAt)
 			if err == nil && event != nil {
 				return nil, fmt.Errorf("token revoked due to critical security event: %s", event.Reason)
 			}
@@ -2140,10 +2149,10 @@ func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
 			coalescer := s.getCoalescer()
 			ttl := cache.JitterTTL(5*time.Minute, 0.10)
 
-			revokedStr, err := coalescer.Do(context.Background(), revStore, cacheKey, ttl, func(fetchCtx context.Context) (string, error) {
-				ctx, cancel := context.WithTimeout(fetchCtx, 1*time.Second)
+			revokedStr, err := coalescer.Do(ctx, revStore, cacheKey, ttl, func(fetchCtx context.Context) (string, error) {
+				fetchTimeoutCtx, cancel := context.WithTimeout(fetchCtx, 1*time.Second)
 				defer cancel()
-				revoked, err := s.revokedTokens.IsRevoked(ctx, tokenString)
+				revoked, err := s.revokedTokens.IsRevoked(fetchTimeoutCtx, tokenString)
 				if err != nil {
 					return "", err
 				}

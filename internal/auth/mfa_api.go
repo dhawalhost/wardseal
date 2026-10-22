@@ -14,7 +14,7 @@ func (h *HTTPHandler) RegisterWebAuthnRoutes(rg *gin.RouterGroup) {
 	rg.POST("/webauthn/login/finish", h.finishWebAuthnLogin)
 
 	protected := rg.Group("/webauthn")
-	protected.Use(middleware.RequireUserAuth(h.svc.ValidateToken))
+	protected.Use(middleware.RequireUserAuthWithContext(h.svc.ValidateTokenContext))
 	{
 		protected.POST("/register/begin", h.beginWebAuthnRegistration)
 		protected.POST("/register/finish", h.finishWebAuthnRegistration)

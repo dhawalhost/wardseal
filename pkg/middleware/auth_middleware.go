@@ -20,8 +20,18 @@ type PermissionChecker interface {
 // TokenValidator defines a function that validates a token and returns claims.
 type TokenValidator func(token string) (*Claims, error)
 
+// ContextTokenValidator defines a function that validates a token within a request context and returns claims.
+type ContextTokenValidator func(ctx context.Context, token string) (*Claims, error)
+
 // RequireUserAuth validates the JWT token and populates user context.
 func RequireUserAuth(validator TokenValidator) gin.HandlerFunc {
+	return RequireUserAuthWithContext(func(ctx context.Context, token string) (*Claims, error) {
+		return validator(token)
+	})
+}
+
+// RequireUserAuthWithContext validates the JWT token using the request context and populates user context.
+func RequireUserAuthWithContext(validator ContextTokenValidator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		fromHeader := authHeader != ""
@@ -41,13 +51,13 @@ func RequireUserAuth(validator TokenValidator) gin.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		claims, err := validator(tokenString)
+		claims, err := validator(c.Request.Context(), tokenString)
 		// Browsers often keep a stale localStorage Bearer (old key / MFA pending)
 		// while wardseal_access_token is the real session. Prefer the cookie when
 		// the Authorization token fails verification.
 		if err != nil && fromHeader {
 			if cookieToken, cookieErr := c.Cookie("wardseal_access_token"); cookieErr == nil && cookieToken != "" && cookieToken != tokenString {
-				claims, err = validator(cookieToken)
+				claims, err = validator(c.Request.Context(), cookieToken)
 			}
 		}
 		if err != nil {
