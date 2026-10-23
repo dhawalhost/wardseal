@@ -1,0 +1,109 @@
+version: "2"
+run:
+  modules-download-mode: readonly
+  tests: true
+linters:
+  enable:
+    - bodyclose
+    - copyloopvar
+    - durationcheck
+    - errorlint
+    - exhaustive
+    - gosec
+    - misspell
+    - nilerr
+    - prealloc
+    - sqlclosecheck
+    - unconvert
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+      exclude-functions:
+        - io.Copy
+        - io.WriteString
+        - (io.Closer).Close
+        - (*os.File).Close
+        - (*net/http.Response.Body).Close
+        - (net/http.ResponseWriter).Write
+        - (*bytes.Buffer).WriteString
+        - (*bytes.Buffer).Write
+        - (*strings.Builder).WriteString
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - (crypto/rand).Read
+        - (*database/sql.Rows).Close
+        - (*encoding/json.Decoder).Decode
+        - (*encoding/json.Encoder).Encode
+    gocritic:
+      disabled-checks:
+        - hugeParam
+        - ifElseChain
+        - commentedOutCode
+      enabled-tags:
+        - diagnostic
+        - performance
+    gosec:
+      excludes:
+        - G101
+        - G104
+        - G115
+        - G117
+        - G118
+        - G304
+        - G401
+        - G501
+        - G704
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+      enable-all: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gocritic
+          - gosec
+        path: _test\.go
+      - linters:
+          - errcheck
+          - gocyclo
+        path: cmd/.*/main\.go
+      - linters:
+          - all
+        path: \.pb\.go$
+      - linters:
+          - errcheck
+        text: Error return value of .*.Close
+      - linters:
+          - errcheck
+        text: Error return value of `rows.Close`
+      - linters:
+          - errcheck
+        text: Error return value of `rand.Read`
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 5
+formatters:
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/dhawalhost/wardseal
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

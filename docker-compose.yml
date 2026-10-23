@@ -1,90 +1,83 @@
-version: '3.8'
+# WardSeal Infrastructure Layer 
+# ===========================
+# This file contains only the core infrastructure components.
 
 services:
+  traefik:
+    image: traefik:v2.11
+    container_name: wardseal-traefik
+    user: root
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --log.level=DEBUG
+    ports:
+      - "80:80"
+      - "8088:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DOCKER_API_VERSION=1.41
+    labels:
+      - traefik.enable=true
+    networks:
+      - wardseal-net
+
   postgres:
-    image: postgres:14-alpine
-    container_name: identity_platform_postgres
+    image: postgres:17-alpine
+    container_name: wardseal-postgres
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=identity_platform
+      - POSTGRES_USER=${APP_DATABASE_USER:-user}
+      - POSTGRES_PASSWORD=${APP_DATABASE_PASSWORD:-password}
+      - POSTGRES_DB=${APP_DATABASE_NAME:-identity_platform}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d identity_platform"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DATABASE_USER:-user} -d ${APP_DATABASE_NAME:-identity_platform}"]
+      interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - wardseal-net
 
   redis:
-    image: redis:7-alpine
-    container_name: identity_platform_redis
+    image: redis:7.4-alpine
+    container_name: wardseal-redis
     ports:
       - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      interval: 5s
+      timeout: 3s
       retries: 5
+    networks:
+      - wardseal-net
 
-  authsvc:
-    build:
-      context: .
-      dockerfile: cmd/authsvc/Dockerfile
-    ports:
-      - "8080:8080"
+  # Migration runner
+  migrate:
+    image: migrate/migrate:v4.18.2
+    container_name: wardseal-migrate
     depends_on:
       postgres:
         condition: service_healthy
-      dirsvc:
-        condition: service_started # a proper healthcheck should be added to dirsvc
-    environment:
-      - DIRECTORY_SERVICE_URL=http://dirsvc:8081
+    volumes:
+      - ./migrations:/migrations:ro
+    command: 
+      - -path=/migrations/
+      - -database=postgres://${APP_DATABASE_USER:-user}:${APP_DATABASE_PASSWORD:-password}@postgres:5432/${APP_DATABASE_NAME:-identity_platform}?sslmode=disable
+      - up
+    networks:
+      - wardseal-net
 
-  dirsvc:
-    build:
-      context: .
-      dockerfile: cmd/dirsvc/Dockerfile
-    ports:
-      - "8081:8081"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - DB_HOST=postgres
-
-  govsvc:
-    build:
-      context: .
-      dockerfile: cmd/govsvc/Dockerfile
-    ports:
-      - "8082:8082"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  policysvc:
-    build:
-      context: .
-      dockerfile: cmd/policysvc/Dockerfile
-    ports:
-      - "8083:8083"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  provsvc:
-    build:
-      context: .
-      dockerfile: cmd/provsvc/Dockerfile
-    ports:
-      - "8084:8084"
-    depends_on:
-      postgres:
-        condition: service_healthy
+networks:
+  wardseal-net:
+    name: wardseal-net
+    driver: bridge
 
 volumes:
   postgres_data:
-    driver: local
+    name: wardseal-postgres-data

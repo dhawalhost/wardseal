@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const testTenantUUID = "11111111-1111-1111-1111-111111111111"
+
 func TestTenantExtractorSuccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -18,14 +20,14 @@ func TestTenantExtractorSuccess(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected tenant id, got error: %v", err)
 		}
-		if tenantID != "tenant-123" {
+		if tenantID != testTenantUUID {
 			t.Fatalf("unexpected tenant id: %s", tenantID)
 		}
 		c.Status(http.StatusOK)
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
-	req.Header.Set(DefaultTenantHeader, "tenant-123")
+	req.Header.Set(DefaultTenantHeader, testTenantUUID)
 	res := httptest.NewRecorder()
 
 	r.ServeHTTP(res, req)
@@ -53,13 +55,32 @@ func TestTenantExtractorMissingHeader(t *testing.T) {
 	}
 }
 
+func TestTenantExtractorInvalidUUID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(TenantExtractor(TenantConfig{}))
+	r.GET("/ping", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
+	req.Header.Set(DefaultTenantHeader, "invalid-tenant-id")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid UUID, got %d", res.Code)
+	}
+}
+
 func TestTenantIDFromContext(t *testing.T) {
-	ctx := context.WithValue(context.Background(), tenantIDContextKey, "tenant-abc")
+	ctx := context.WithValue(context.Background(), tenantIDContextKey, testTenantUUID)
 	tenantID, err := TenantIDFromContext(ctx)
 	if err != nil {
 		t.Fatalf("expected tenant id, got error: %v", err)
 	}
-	if tenantID != "tenant-abc" {
+	if tenantID != testTenantUUID {
 		t.Fatalf("unexpected tenant id: %s", tenantID)
 	}
 }

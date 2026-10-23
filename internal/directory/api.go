@@ -1,14 +1,21 @@
 package directory
 
 import (
+	"crypto/subtle"
+	"database/sql"
 	"errors"
 	"net/http"
+	"strings"
 
-	"github.com/dhawalhost/velverify/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	jwtlib "github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
+
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
+
+const serviceAuthContextKey = "wardseal.service_auth"
 
 // HTTPHandler represents the HTTP API handlers for the directory service.
 type HTTPHandler struct {
@@ -16,6 +23,7 @@ type HTTPHandler struct {
 	logger      *zap.Logger
 	validate    *validator.Validate
 	serviceAuth middleware.ServiceAuthConfig
+	perms       middleware.PermissionChecker
 }
 
 // NewHTTPHandler creates a new HTTPHandler.
@@ -24,13 +32,94 @@ func NewHTTPHandler(svc Service, logger *zap.Logger, cfg HTTPHandlerConfig) *HTT
 		HeaderName: cfg.ServiceAuthHeader,
 		Token:      cfg.ServiceAuthToken,
 	}
-	return &HTTPHandler{svc: svc, logger: logger, validate: validator.New(), serviceAuth: serviceAuth}
+	return &HTTPHandler{
+		svc:         svc,
+		logger:      logger,
+		validate:    validator.New(),
+		serviceAuth: serviceAuth,
+		perms:       cfg.Perms,
+	}
 }
 
 // HTTPHandlerConfig controls optional behavior for the HTTP handler.
 type HTTPHandlerConfig struct {
 	ServiceAuthToken  string
 	ServiceAuthHeader string
+	Perms             middleware.PermissionChecker
+}
+
+func (h *HTTPHandler) requirePerm(resource, action string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetBool(serviceAuthContextKey) {
+			c.Next()
+			return
+		}
+		middleware.RequirePermission(h.perms, resource, action)(c)
+	}
+}
+
+func (h *HTTPHandler) requireUserOrServiceAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		serviceHeaderName := h.serviceAuth.HeaderName
+		if serviceHeaderName == "" {
+			serviceHeaderName = middleware.DefaultServiceAuthHeader
+		}
+		providedServiceToken := c.GetHeader(serviceHeaderName)
+		if h.serviceAuth.Token != "" && providedServiceToken != "" &&
+			subtle.ConstantTimeCompare([]byte(providedServiceToken), []byte(h.serviceAuth.Token)) == 1 {
+			c.Set(serviceAuthContextKey, true)
+			c.Next()
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			token, err := c.Cookie("wardseal_access_token")
+			if err == nil {
+				authHeader = "Bearer " + token
+			}
+		}
+
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			if strings.Count(tokenString, ".") == 2 {
+				loadPublicKey(h.logger)
+				if jwtPublicKey != nil {
+					claims := jwtlib.MapClaims{}
+					parsedToken, err := jwtlib.ParseWithClaims(tokenString, claims, func(t *jwtlib.Token) (interface{}, error) {
+						if _, ok := t.Method.(*jwtlib.SigningMethodRSA); !ok {
+							return nil, errors.New("unexpected signing method")
+						}
+						return jwtPublicKey, nil
+					})
+
+					if err == nil && parsedToken.Valid {
+						var jwtTenantID string
+						if tid, ok := claims["tenant_id"].(string); ok && tid != "" {
+							jwtTenantID = tid
+						} else if tid, ok := claims["tenant"].(string); ok && tid != "" {
+							jwtTenantID = tid
+						}
+
+						tenantID, _ := middleware.TenantIDFromGinContext(c)
+						if tenantID != "" && jwtTenantID != "" && jwtTenantID != tenantID {
+							c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "tenant context mismatch"})
+							return
+						}
+
+						if sub, ok := claims["sub"].(string); ok && sub != "" {
+							c.Set("user_id", sub)
+						}
+						c.Next()
+						return
+					}
+					h.logger.Warn("User token verification failed", zap.Error(err))
+				}
+			}
+		}
+
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+	}
 }
 
 // RegisterRoutes registers the directory routes.
@@ -39,37 +128,55 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	router.GET("/health", h.healthCheck)
 
 	tenantProtected := router.Group("/")
-	tenantProtected.Use(middleware.TenantExtractor(middleware.TenantConfig{}))
+	tenantProtected.Use(middleware.TenantExtractor(middleware.TenantConfig{
+		SlugResolver: h.svc.GetTenantIDBySlug,
+	}))
+	tenantProtected.Use(h.requireUserOrServiceAuth())
 
 	internalRoutes := router.Group("/internal")
 	internalRoutes.Use(middleware.ServiceAuthenticator(h.serviceAuth))
-	internalRoutes.Use(middleware.TenantExtractor(middleware.TenantConfig{}))
+	internalRoutes.Use(middleware.TenantExtractor(middleware.TenantConfig{
+		SlugResolver: h.svc.GetTenantIDBySlug,
+	}))
 	internalRoutes.POST("/credentials/verify", h.verifyCredentials)
 
-	// User routes
+	// Global internal routes (no tenant context required)
+	globalInternalRoutes := router.Group("/internal")
+	globalInternalRoutes.Use(middleware.ServiceAuthenticator(h.serviceAuth))
+	globalInternalRoutes.GET("/discover", h.discoverTenant)
+	globalInternalRoutes.GET("/tenants/resolve", h.resolveTenantSlug)
+	globalInternalRoutes.POST("/tenants", h.createTenant)
+
 	users := tenantProtected.Group("/users")
 	{
-		users.POST("", h.createUser)
-		users.GET("/:id", h.getUserByID)
-		users.GET("", h.getUserByEmail) // /users?email=...
-		users.PUT("/:id", h.updateUser)
-		users.DELETE("/:id", h.deleteUser)
+		users.POST("", h.requirePerm("users", "write"), h.createUser)
+		users.GET("/:id", h.requirePerm("users", "read"), h.getUserByID)
+		users.GET("", h.requirePerm("users", "read"), h.listUsers)
+		users.PUT("/:id", h.requirePerm("users", "write"), h.updateUser)
+		users.DELETE("/:id", h.requirePerm("users", "delete"), h.deleteUser)
 	}
 
-	// Group routes
 	groups := tenantProtected.Group("/groups")
 	{
-		groups.POST("", h.createGroup)
-		groups.GET("/:id", h.getGroupByID)
-		groups.PUT("/:id", h.updateGroup)
-		groups.DELETE("/:id", h.deleteGroup)
+		groups.POST("", h.requirePerm("groups", "write"), h.createGroup)
+		groups.GET("", h.requirePerm("groups", "read"), h.listGroups)
+		groups.GET("/:id", h.requirePerm("groups", "read"), h.getGroupByID)
+		groups.PUT("/:id", h.requirePerm("groups", "write"), h.updateGroup)
+		groups.DELETE("/:id", h.requirePerm("groups", "delete"), h.deleteGroup)
 	}
 
-	// Group membership routes
 	groupMembership := groups.Group(":id/users")
 	{
-		groupMembership.POST("", h.addUserToGroup)
-		groupMembership.DELETE("/:userID", h.removeUserFromGroup)
+		groupMembership.GET("", h.requirePerm("groups", "read"), h.listGroupMembers)
+		groupMembership.POST("", h.requirePerm("groups", "write"), h.addUserToGroup)
+		groupMembership.DELETE("/:userID", h.requirePerm("groups", "write"), h.removeUserFromGroup)
+	}
+
+	userOrgs := tenantProtected.Group("/users/:id/organizations")
+	{
+		userOrgs.POST("/:orgID", h.requirePerm("users", "write"), h.addUserToOrganization)
+		userOrgs.DELETE("/:orgID", h.requirePerm("users", "delete"), h.removeUserFromOrganization)
+		userOrgs.GET("", h.requirePerm("users", "read"), h.listUserOrganizations)
 	}
 }
 
@@ -105,6 +212,10 @@ func (h *HTTPHandler) createUser(c *gin.Context) {
 	userID, err := h.svc.CreateUser(c.Request.Context(), tenantID, req.User)
 	if err != nil {
 		h.logger.Error("Create user failed", zap.Error(err))
+		if errors.Is(err, ErrEmailAlreadyExistsGlobally) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -125,6 +236,10 @@ func (h *HTTPHandler) getUserByID(c *gin.Context) {
 
 	user, err := h.svc.GetUserByID(c.Request.Context(), tenantID, req.ID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
 		h.logger.Error("Get user by ID failed", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -132,25 +247,47 @@ func (h *HTTPHandler) getUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, GetUserByIDResponse{User: user})
 }
 
-func (h *HTTPHandler) getUserByEmail(c *gin.Context) {
+func (h *HTTPHandler) listUsers(c *gin.Context) {
 	tenantID, ok := h.tenantID(c)
 	if !ok {
 		return
 	}
-	req := GetUserByEmailRequest{Email: c.Query("email")} // Extract email from query
-	if err := h.validate.Struct(req); err != nil {
-		h.logger.Error("Get user by email request validation failed", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+	// Check if this is a GetByEmail request
+	email := c.Query("email")
+	if email != "" {
+		req := GetUserByEmailRequest{Email: email}
+		if err := h.validate.Struct(req); err != nil {
+			h.logger.Error("Get user by email request validation failed", zap.Error(err))
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		user, err := h.svc.GetUserByEmail(c.Request.Context(), tenantID, req.Email)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+				return
+			}
+			h.logger.Error("Get user by email failed", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, GetUserByEmailResponse{User: user})
 		return
 	}
 
-	user, err := h.svc.GetUserByEmail(c.Request.Context(), tenantID, req.Email)
+	// Otherwise, it's a List request
+	limit, offset, _ := middleware.ParsePagination(c.Request)
+
+	users, total, err := h.svc.ListUsers(c.Request.Context(), tenantID, limit, offset)
 	if err != nil {
-		h.logger.Error("Get user by email failed", zap.Error(err))
+		h.logger.Error("List users failed", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, GetUserByEmailResponse{User: user})
+
+	c.JSON(http.StatusOK, ListUsersResponse{Users: users, Total: total})
 }
 
 func (h *HTTPHandler) updateUser(c *gin.Context) {
@@ -245,11 +382,33 @@ func (h *HTTPHandler) getGroupByID(c *gin.Context) {
 
 	group, err := h.svc.GetGroupByID(c.Request.Context(), tenantID, req.ID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
+			return
+		}
 		h.logger.Error("Get group by ID failed", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, GetGroupByIDResponse{Group: group})
+}
+
+func (h *HTTPHandler) listGroups(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+
+	limit, offset, _ := middleware.ParsePagination(c.Request)
+
+	groups, total, err := h.svc.ListGroups(c.Request.Context(), tenantID, limit, offset)
+	if err != nil {
+		h.logger.Error("List groups failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ListGroupsResponse{Groups: groups, Total: total})
 }
 
 func (h *HTTPHandler) updateGroup(c *gin.Context) {
@@ -353,6 +512,23 @@ func (h *HTTPHandler) removeUserFromGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *HTTPHandler) listGroupMembers(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+	groupID := c.Param("id")
+
+	users, err := h.svc.ListGroupMembers(c.Request.Context(), tenantID, groupID)
+	if err != nil {
+		h.logger.Error("List group members failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ListGroupMembersResponse{Users: users})
+}
+
 func (h *HTTPHandler) verifyCredentials(c *gin.Context) {
 	tenantID, ok := h.tenantID(c)
 	if !ok {
@@ -385,6 +561,27 @@ func (h *HTTPHandler) verifyCredentials(c *gin.Context) {
 	c.JSON(http.StatusOK, VerifyCredentialsResponse{User: user})
 }
 
+func (h *HTTPHandler) discoverTenant(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email required"})
+		return
+	}
+
+	tenantID, err := h.svc.GetTenantByEmail(c.Request.Context(), email)
+	if err != nil {
+		h.logger.Error("Discover tenant failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if tenantID == "" {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tenant_id": tenantID})
+}
+
 func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
 	tenantID, err := middleware.TenantIDFromGinContext(c)
 	if err != nil {
@@ -393,4 +590,97 @@ func (h *HTTPHandler) tenantID(c *gin.Context) (string, bool) {
 		return "", false
 	}
 	return tenantID, true
+}
+
+type CreateTenantRequest struct {
+	ID   string `json:"id" binding:"required"`
+	Name string `json:"name" binding:"required"`
+	Slug string `json:"slug" binding:"required"`
+	Plan string `json:"plan"`
+}
+
+func (h *HTTPHandler) createTenant(c *gin.Context) {
+	var req CreateTenantRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	plan := req.Plan
+	if plan == "" {
+		plan = "default" // or "free"
+	}
+
+	if err := h.svc.CreateTenant(c.Request.Context(), req.ID, req.Name, req.Slug, plan); err != nil {
+		if errors.Is(err, ErrAlreadyExists) {
+			c.JSON(http.StatusConflict, gin.H{"error": "tenant already exists"})
+			return
+		}
+		h.logger.Error("Failed to create tenant", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tenant"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "tenant created successfully"})
+}
+
+func (h *HTTPHandler) resolveTenantSlug(c *gin.Context) {
+	slug := c.Query("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "slug is required"})
+		return
+	}
+	tenantID, err := h.svc.GetTenantIDBySlug(c.Request.Context(), slug)
+	if err != nil {
+		h.logger.Error("Failed to resolve tenant slug", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to resolve tenant slug"})
+		return
+	}
+	if tenantID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "tenant not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"tenant_id": tenantID})
+}
+func (h *HTTPHandler) addUserToOrganization(c *gin.Context) {
+	tenantID, _ := h.tenantID(c)
+	userID := c.Param("id")
+	orgID := c.Param("orgID")
+	var req struct {
+		Role string `json:"role"`
+	}
+	_ = c.ShouldBindJSON(&req)
+
+	if err := h.svc.AddUserToOrganization(c.Request.Context(), tenantID, userID, orgID, req.Role); err != nil {
+		h.logger.Error("Add user to organization failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add user to organization"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "user added to organization"})
+}
+
+func (h *HTTPHandler) removeUserFromOrganization(c *gin.Context) {
+	tenantID, _ := h.tenantID(c)
+	userID := c.Param("id")
+	orgID := c.Param("orgID")
+
+	if err := h.svc.RemoveUserFromOrganization(c.Request.Context(), tenantID, userID, orgID); err != nil {
+		h.logger.Error("Remove user from organization failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove user from organization"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "user removed from organization"})
+}
+
+func (h *HTTPHandler) listUserOrganizations(c *gin.Context) {
+	tenantID, _ := h.tenantID(c)
+	userID := c.Param("id")
+
+	orgIDs, err := h.svc.ListUserOrganizations(c.Request.Context(), tenantID, userID)
+	if err != nil {
+		h.logger.Error("List user organizations failed", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list user organizations"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"organization_ids": orgIDs})
 }

@@ -4,41 +4,207 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/dhawalhost/velverify/internal/oauthclients"
-	"github.com/dhawalhost/velverify/pkg/middleware"
+	"github.com/redis/go-redis/v9"
+
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/golang-jwt/jwt/v5"
-	"gopkg.in/square/go-jose.v2"
+	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/go-jose/go-jose.v2"
+
+	"github.com/dhawalhost/gokit/cache"
+	"github.com/dhawalhost/gokit/circuitbreaker"
+	gokitclient "github.com/dhawalhost/gokit/client"
+	gokitcrypto "github.com/dhawalhost/gokit/crypto"
+	"github.com/dhawalhost/wardseal/internal/authz"
+	"github.com/dhawalhost/wardseal/internal/email"
+	"github.com/dhawalhost/wardseal/internal/oauthclient"
+	"github.com/dhawalhost/wardseal/internal/rbac"
+	"github.com/dhawalhost/wardseal/internal/saml"
+	"github.com/dhawalhost/wardseal/pkg/kms"
+	"github.com/dhawalhost/wardseal/pkg/types"
 )
 
 // Service defines the interface for the auth service.
 type Service interface {
-	Login(ctx context.Context, username, password string) (string, error)
-	Authorize(ctx context.Context, req AuthorizeRequest) (AuthorizeResponse, error)
+	Login(ctx context.Context, username, password, deviceID, userAgent, ip, clientOSVersion string) (string, error)
+	Authorize(ctx context.Context, userID string, req AuthorizeRequest) (AuthorizeResponse, error)
 	Token(ctx context.Context, req TokenRequest) (TokenResponse, error)
+	Introspect(ctx context.Context, req IntrospectRequest) (IntrospectResponse, error)
+	Revoke(ctx context.Context, req RevokeRequest) error
+	SAML() *saml.Provider
 	JWKS() jose.JSONWebKeySet
+	Device() DeviceRepository
+	Signal() SignalRepository
+	WebAuthn() *webauthn.WebAuthn
+	// WebAuthn Methods
+	BeginWebAuthnRegistration(ctx context.Context, userID string) (*protocol.CredentialCreation, *webauthn.SessionData, error)
+	FinishWebAuthnRegistration(ctx context.Context, userID string, session webauthn.SessionData, req *http.Request) error
+	BeginWebAuthnLogin(ctx context.Context, userID string) (*protocol.CredentialAssertion, *webauthn.SessionData, error)
+	FinishWebAuthnLogin(ctx context.Context, userID string, session webauthn.SessionData, req *http.Request) (string, error)
+	// Social Login
+	SocialLogin(ctx context.Context, req SocialLoginRequest) (TokenResponse, error)
+	// Branding
+	GetBranding(ctx context.Context, tenantID string) (BrandingConfig, error)
+	UpdateBranding(ctx context.Context, config BrandingConfig) error
+	GetOIDCConfiguration() OpenIDConfiguration
+	LoginWithMFAStepUp(ctx context.Context, stepUpToken, totpCode string) (string, error)
+
+	// Client Management for Portal
+	ListClients(ctx context.Context, tenantID string) ([]oauthclient.Client, error)
+
+	// User Self-Update
+	UpdateUserSelf(ctx context.Context, tenantID, userID string, updates map[string]interface{}) error
+
+	// TOTP MFA
+	TOTP() TOTPRepository
+
+	// User Lookup
+	LookupUser(ctx context.Context, tenantID, email string) (LookupResult, error)
+	// SignUp
+	SignUp(ctx context.Context, email, password, companyName, plan string) (string, string, string, error)
+
+	// System Setup
+	CookieDomain() string
+	GetSystemSetupStatus(ctx context.Context) (bool, error)
+	PerformSystemSetup(ctx context.Context, email, password string) (string, error)
+
+	ResolveTenantSlug(ctx context.Context, slug string) (string, error)
+	GetTenantSlug(ctx context.Context, tenantID string) (string, error)
+	UIURL() string
+	ValidateToken(tokenString string) (*types.Claims, error)
+	ValidateTokenContext(ctx context.Context, tokenString string) (*types.Claims, error)
+	ValidateStepUpToken(tokenString string) (*types.Claims, error)
+	GetUserByID(ctx context.Context, tenantID, userID string) (UserProfile, error)
+	ListSSOProviders(ctx context.Context, tenantID string) ([]SSOProvider, error)
+	GetSSOAuthorizeURL(ctx context.Context, tenantID, providerName, redirectURI string) (string, error)
+	SendPasswordSetupEmail(ctx context.Context, tenantID, userID, mode string, expiresHours int) error
+	GeneratePasswordSetupToken(tenantID, userID, mode string, expiresHours int) (string, time.Time, error)
+	SetPasswordWithSetupToken(ctx context.Context, tokenString, password string) error
+}
+
+type UserProfile struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+type LookupResult struct {
+	UserID          string `json:"user_id"`
+	WebAuthnEnabled bool   `json:"webauthn_enabled"`
+	TenantID        string `json:"tenant_id,omitempty"`
+	TenantSlug      string `json:"tenant_slug,omitempty"`
+}
+
+// HTTPDoer defines the interface for executing outbound HTTP requests.
+type HTTPDoer interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 type authService struct {
 	directoryServiceURL string
-	httpClient          *http.Client
-	privateKey          *rsa.PrivateKey
+	httpClient          HTTPDoer
+	signer              kms.Signer
 	serviceAuthHeader   string
 	serviceAuthToken    string
-	codeStore           *authorizationCodeStore
+	codeStore           AuthorizationCodeRepository
+	refreshTokenStore   RefreshTokenRepository
+	revokedTokens       RevocationRepository
 	clients             map[clientKey]ClientConfig
-	clientStore         oauthclients.Store
+	clientStore         oauthclient.Repository
+	samlProvider        *saml.Provider
+	deviceStore         DeviceRepository
+	signalStore         SignalRepository
+	riskEngine          *RiskEngine
+	webAuthn            *webauthn.WebAuthn
+	webAuthnStore       WebAuthnRepository
+	brandingStore       BrandingRepository
+	federationStore     FederationRepository
+	totpStore           TOTPRepository
+	ssoProviderStore    SSOProviderRepository
+	tenantStore         TenantRepository
+	appStore            DeveloperAppRepository
+	rbacStore           rbac.Repository
+	ipPolicyStore       IPPolicyRepository
+	samlIdPRepo         saml.IdPRepository
+	cipher              kms.Cipher
+	graphEngine         *authz.Engine
+	workloadStore       WorkloadRepository
+	agentAccessStore    AgentAccessStore
+	deploymentMode      string
+	baseURL             string
+	dbCB                *circuitbreaker.CircuitBreaker
+	httpCB              *circuitbreaker.CircuitBreaker
+	uiURL               string
+	cookieDomain        string
+	loginAttemptStore   LoginAttemptRepository
+	redisClient         redis.UniversalClient
+	emailService        email.Service
+	revStore            cache.Cache
+	coalescer           *cache.Coalescer
+	revMu               sync.Mutex
+}
+
+func (s *authService) SendPasswordSetupEmail(ctx context.Context, tenantID, userID, mode string, expiresHours int) error {
+	user, err := s.GetUserByID(ctx, tenantID, userID)
+	if err != nil {
+		return err
+	}
+
+	token, _, err := s.generatePasswordSetupToken(tenantID, userID, mode, expiresHours)
+	if err != nil {
+		return err
+	}
+
+	baseUIURL := strings.TrimRight(s.uiURL, "/")
+	setupURL := fmt.Sprintf("%s/set-password?token=%s&mode=%s", baseUIURL, url.QueryEscape(token), url.QueryEscape(mode))
+
+	if s.emailService == nil {
+		return errors.New("email service not configured")
+	}
+
+	return s.emailService.SendPasswordSetupLink(ctx, user.Email, user.Name, setupURL, mode)
+}
+
+// AuthorizationCodeRepository defines the interface for storing authorization codes.
+type AuthorizationCodeRepository interface {
+	Save(ctx context.Context, code authorizationCode) error
+	Get(ctx context.Context, code string) (authorizationCode, bool, error)
+	Delete(ctx context.Context, code string) error
+}
+
+// RefreshTokenRepository defines the interface for storing refresh tokens.
+type RefreshTokenRepository interface {
+	Save(ctx context.Context, entry refreshTokenEntry) error
+	Get(ctx context.Context, token string) (refreshTokenEntry, bool, error)
+	Delete(ctx context.Context, token string) error
+}
+
+// RevocationRepository defines the interface for token revocation.
+type RevocationRepository interface {
+	Revoke(ctx context.Context, token string) error
+	IsRevoked(ctx context.Context, token string) (bool, error)
+}
+
+// AgentAccessStore defines the interface for checking approved workload access.
+type AgentAccessStore interface {
+	GetApprovedScopes(ctx context.Context, tenantID, workloadID string) ([]string, time.Duration, error)
 }
 
 // Config captures the settings for the auth service.
@@ -47,20 +213,79 @@ type Config struct {
 	ServiceAuthToken    string
 	ServiceAuthHeader   string
 	Clients             []ClientConfig
-	ClientStore         oauthclients.Store
+	ClientStore         oauthclient.Repository
+	SAMLStore           *saml.Store
+	DeviceStore         DeviceRepository
+	SignalStore         SignalRepository
+	WebAuthnStore       WebAuthnRepository
+	BrandingStore       BrandingRepository
+	FederationStore     FederationRepository
+	BaseURL             string
+	// Persistent stores (optional, defaults to in-memory if not provided)
+	CodeStore         AuthorizationCodeRepository
+	RefreshStore      RefreshTokenRepository
+	RevocationStore   RevocationRepository
+	TOTPStore         TOTPRepository
+	SSOProviderStore  SSOProviderRepository
+	TenantStore       TenantRepository
+	AppStore          DeveloperAppRepository
+	IPPolicyStore     IPPolicyRepository
+	RBACStore         rbac.Repository
+	SAMLIdPRepo       saml.IdPRepository
+	Cipher            kms.Cipher
+	GraphEngine       *authz.Engine
+	WorkloadStore     WorkloadRepository
+	AgentAccessStore  AgentAccessStore
+	UIURL             string
+	LoginAttemptStore LoginAttemptRepository
+	// KMS Signer (optional, defaults to ephemeral local signer)
+	Signer kms.Signer
+	// Deployment Mode: "saas" or "selfhost" (default)
+	DeploymentMode string
+	// Centralized Cache
+	RedisClient redis.UniversalClient
+	// Cookie Domain for SSO across subdomains
+	CookieDomain string
+	EmailService email.Service
 }
 
 // NewService creates a new auth service.
 func NewService(cfg Config) (Service, error) {
+	if cfg.BaseURL == "" {
+		return nil, errors.New("base URL is required")
+	}
 	if cfg.DirectoryServiceURL == "" {
 		return nil, errors.New("directory service URL is required")
 	}
 	header := cfg.ServiceAuthHeader
 	if header == "" {
-		header = middleware.DefaultServiceAuthHeader
+		header = types.DefaultServiceAuthHeader
 	}
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	samlProvider, err := saml.NewProvider(saml.Config{
+		BaseURL: cfg.BaseURL,
+		Logger:  zap.L(),
+		Cipher:  cfg.Cipher,
+		Repo:    cfg.SAMLIdPRepo,
+		Store:   cfg.SAMLStore,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	rpID := "localhost"
+	if parsedBaseURL, parseErr := url.Parse(cfg.BaseURL); parseErr == nil {
+		if host := parsedBaseURL.Hostname(); host != "" {
+			rpID = host
+		}
+	}
+
+	// WebAuthn Init
+	w, err := webauthn.New(&webauthn.Config{
+		RPDisplayName: "WardSeal Identity",
+		RPID:          rpID,
+		RPOrigins:     []string{cfg.BaseURL, "http://localhost:5173"}, // Admin UI origin
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -76,27 +301,129 @@ func NewService(cfg Config) (Service, error) {
 		return nil, errors.New("both ClientStore and static Clients provided; choose one source")
 	}
 
+	// Initialize stores - use SQL if provided, otherwise fall back to in-memory
+	var codeStore AuthorizationCodeRepository = newAuthorizationCodeRepository()
+	if cfg.CodeStore != nil {
+		codeStore = cfg.CodeStore
+	}
+	var refreshStore RefreshTokenRepository = newRefreshTokenRepository()
+	if cfg.RefreshStore != nil {
+		refreshStore = cfg.RefreshStore
+	}
+	var revocationStore RevocationRepository = newTokenRevocationRepository()
+	if cfg.RevocationStore != nil {
+		revocationStore = cfg.RevocationStore
+	}
+	webAuthnStore := cfg.WebAuthnStore
+	totpStore := cfg.TOTPStore
+
+	// Initialize KMS Signer - use provided signer or create ephemeral local signer
+	signer := cfg.Signer
+	if signer == nil {
+		var err error
+		signer, err = kms.NewLocalSigner("", "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ephemeral signer: %w", err)
+		}
+	}
+
+	deploymentMode := cfg.DeploymentMode
+	if deploymentMode == "" {
+		deploymentMode = "selfhost"
+	}
+
+	emailService := cfg.EmailService
+	if emailService == nil {
+		emailService = email.NewService(zap.L())
+	}
+
 	return &authService{
 		directoryServiceURL: cfg.DirectoryServiceURL,
-		httpClient:          &http.Client{Timeout: 5 * time.Second},
-		privateKey:          privateKey,
+		httpClient: gokitclient.New(
+			gokitclient.WithTimeout(5*time.Second),
+			gokitclient.WithMaxRetries(2),
+			gokitclient.WithTracePropagation(true),
+			gokitclient.WithRequestIDPropagation(true),
+		),
+		signer:              signer,
 		serviceAuthHeader:   header,
 		serviceAuthToken:    cfg.ServiceAuthToken,
-		codeStore:           newAuthorizationCodeStore(),
+		codeStore:           codeStore,
+		refreshTokenStore:   refreshStore,
+		revokedTokens:       revocationStore,
 		clients:             clientMap,
 		clientStore:         cfg.ClientStore,
+		samlProvider:        samlProvider,
+		deviceStore:         cfg.DeviceStore,
+		signalStore:         cfg.SignalStore,
+		riskEngine:          NewRiskEngine(cfg.DeviceStore, cfg.SignalStore, zap.L()).WithIPPolicy(cfg.IPPolicyStore, nil),
+		webAuthn:            w,
+		webAuthnStore:       webAuthnStore,
+		brandingStore:       cfg.BrandingStore,
+		federationStore:     cfg.FederationStore,
+		totpStore:           totpStore,
+		ssoProviderStore:    cfg.SSOProviderStore,
+		tenantStore:         cfg.TenantStore,
+		appStore:            cfg.AppStore,
+		rbacStore:           cfg.RBACStore,
+		ipPolicyStore:       cfg.IPPolicyStore,
+		samlIdPRepo:         cfg.SAMLIdPRepo,
+		cipher:              cfg.Cipher,
+		graphEngine:         cfg.GraphEngine,
+		workloadStore:       cfg.WorkloadStore,
+		agentAccessStore:    cfg.AgentAccessStore,
+		deploymentMode:      deploymentMode,
+		baseURL:             cfg.BaseURL,
+		uiURL:               cfg.UIURL,
+		cookieDomain:        cfg.CookieDomain,
+		loginAttemptStore:   cfg.LoginAttemptStore,
+		redisClient:         cfg.RedisClient,
+		emailService:        emailService,
+		coalescer:           cache.NewCoalescer(),
+		dbCB: circuitbreaker.New(circuitbreaker.Config{
+			Name:             "auth-db",
+			MaxFailures:      5,
+			ResetTimeout:     30 * time.Second,
+			ExecutionTimeout: 5 * time.Second,
+		}),
+		httpCB: circuitbreaker.New(circuitbreaker.Config{
+			Name:             "auth-http",
+			MaxFailures:      5,
+			ResetTimeout:     30 * time.Second,
+			ExecutionTimeout: 10 * time.Second,
+		}),
 	}, nil
 }
 
-func (s *authService) Login(ctx context.Context, username, password string) (string, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+func retry(attempts int, sleep time.Duration, f func() error) error {
+	var err error
+	for i := 0; i < attempts; i++ {
+		if err = f(); err == nil {
+			return nil
+		}
+		time.Sleep(sleep)
+	}
+	return err
+}
+
+func (s *authService) executeWithCBAndRetry(f func() error) error {
+	if s.dbCB == nil {
+		return retry(3, 10*time.Millisecond, f)
+	}
+	return s.dbCB.Execute(func() error {
+		return retry(3, 10*time.Millisecond, f)
+	})
+}
+
+func (s *authService) Login(ctx context.Context, username, password, deviceID, userAgent, ip, clientOSVersion string) (string, error) {
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	payload := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}{Email: username, Password: password}
+	payload := map[string]string{
+		"email":    username,
+		"password": password,
+	}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return "", err
@@ -107,15 +434,22 @@ func (s *authService) Login(ctx context.Context, username, password string) (str
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(middleware.DefaultTenantHeader, tenantID)
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
 	if s.serviceAuthToken != "" {
 		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
 	}
-	resp, err := s.httpClient.Do(req)
+	var resp *http.Response
+	err = s.httpCB.Execute(func() error {
+		var doErr error
+		resp, doErr = s.httpClient.Do(req) //nolint:bodyclose // closed in outer scope
+		return doErr
+	})
+	if resp != nil && resp.Body != nil {
+		defer func() { _ = resp.Body.Close() }()
+	}
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return "", ErrInvalidCredentials
@@ -126,15 +460,154 @@ func (s *authService) Login(ctx context.Context, username, password string) (str
 
 	var userResp struct {
 		User struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
+			ID          string `json:"id"`
+			Email       string `json:"email"`
+			MFAEnforced bool   `json:"mfa_enforced"`
 		} `json:"user"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
 		return "", err
 	}
 
-	// 2. Generate a JWT.
+	// 2. Evaluate Risk
+	risk, err := s.riskEngine.Evaluate(ctx, userResp.User.ID, deviceID, ip)
+	if err != nil {
+		zap.L().Warn("Risk evaluation failed; proceeding with caution", zap.Error(err))
+	} else {
+		// Persist risk score for autonomous governance
+		factorsJSON, _ := json.Marshal(risk.Factors)
+		err := s.signalStore.UpdateUserRisk(ctx, UserRisk{
+			UserID:          userResp.User.ID,
+			TenantID:        tenantID,
+			Score:           risk.Score,
+			Level:           string(risk.Level),
+			Factors:         string(factorsJSON),
+			LastEvaluatedAt: time.Now(),
+		})
+		if err != nil {
+			zap.L().Warn("Failed to update user risk", zap.Error(err))
+			return "", err
+		}
+
+		if risk.Level == RiskLevelHigh {
+			zap.L().Warn("Login blocked due to high risk",
+				zap.String("user_id", userResp.User.ID),
+				zap.Int("score", risk.Score),
+				zap.Strings("factors", risk.Factors))
+			return "", &Error{"access_denied", "login blocked due to security risk"}
+		}
+		if risk.Level == RiskLevelMedium && !strings.EqualFold(os.Getenv("ENVIRONMENT"), "local") {
+			zap.L().Info("MFA step-up required due to medium risk",
+				zap.String("user_id", userResp.User.ID),
+				zap.Int("score", risk.Score),
+				zap.Strings("factors", risk.Factors))
+			// Generate a short-lived step-up token
+			stepUpToken, err := s.generateStepUpToken(tenantID, userResp.User.ID, userResp.User.Email)
+			if err != nil {
+				return "", err
+			}
+			return stepUpToken, ErrMFARequired
+		}
+	}
+
+	// 3. Register/Update Device
+	if deviceID != "" {
+		osName, osVersion := parseUserAgent(userAgent)
+		if clientOSVersion != "" {
+			// Trust the client's high-entropy version if provided
+			// Note: We might want to normalize it, but detailed version is better than generic
+			osVersion = clientOSVersion
+		}
+		if err := s.deviceStore.Register(ctx, &Device{
+			TenantID:         tenantID,
+			UserID:           userResp.User.ID,
+			DeviceIdentifier: deviceID,
+			OS:               osName,
+			OSVersion:        osVersion,
+			IsManaged:        false,
+			IsCompliant:      true, // Default
+		}); err != nil {
+			// Don't block login on device reg failure, just log
+			zap.L().Warn("Failed to register device during login", zap.Error(err))
+		}
+	}
+
+	// 4. Ingest Success Signal for Historical Risk (Impossible Travel)
+	if s.signalStore != nil {
+		_ = s.signalStore.IngestLogin(ctx, &LoginSignal{
+			TenantID:  tenantID,
+			SubjectID: userResp.User.ID,
+			IPAddress: ip,
+			Timestamp: time.Now(),
+		})
+	}
+	// 4.5 Fetch roles and permissions early for policy enforcement
+	var roleNames []string
+	var permList []string
+	if s.rbacStore != nil {
+		roles, err := s.rbacStore.GetUserRoles(ctx, tenantID, userResp.User.ID)
+		if err == nil {
+			roleNames = make([]string, len(roles))
+			for i, r := range roles {
+				roleNames[i] = r.Name
+			}
+		}
+		perms, err := s.rbacStore.GetUserPermissions(ctx, tenantID, userResp.User.ID)
+		if err == nil {
+			permList = make([]string, len(perms))
+			for i, p := range perms {
+				permList[i] = fmt.Sprintf("%s:%s", p.Resource, p.Action)
+			}
+		}
+	}
+
+	// Check if user is admin
+	isAdmin := false
+	for _, r := range roleNames {
+		if r == "admin" || r == "organization-admin" || r == "super-admin" {
+			isAdmin = true
+			break
+		}
+	}
+
+	orgMFAEnforced := false
+	if s.tenantStore != nil {
+		var err error
+		orgMFAEnforced, err = s.tenantStore.IsMFAEnforcedForUserOrganizations(ctx, tenantID, userResp.User.ID)
+		if err != nil {
+			return "", fmt.Errorf("failed to check org MFA status: %w", err)
+		}
+	}
+
+	// 4.6 Check if TOTP is enabled OR required for admins/orgs.
+	// Local k8s skips MFA so password login can reach manage without an authenticator.
+	skipMFA := strings.EqualFold(os.Getenv("ENVIRONMENT"), "local")
+	if s.totpStore != nil && !skipMFA {
+		totpSecret, err := s.totpStore.GetByIdentity(ctx, tenantID, userResp.User.ID)
+		if err != nil {
+			return "", fmt.Errorf("failed to check TOTP status: %w", err)
+		}
+
+		// Enforce MFA if enabled OR if user is admin OR if explicitly enforced per-user OR per-org (Zero Trust)
+		if (totpSecret != nil && totpSecret.Verified) || isAdmin || userResp.User.MFAEnforced || orgMFAEnforced {
+			// If NOT set up yet, return ErrMFASetupRequired
+			if totpSecret == nil || !totpSecret.Verified {
+				stepUpToken, err := s.generateStepUpToken(tenantID, userResp.User.ID, userResp.User.Email)
+				if err != nil {
+					return "", err
+				}
+				return stepUpToken, ErrMFASetupRequired
+			}
+
+			stepUpToken, err := s.generateStepUpToken(tenantID, userResp.User.ID, userResp.User.Email)
+			if err != nil {
+				return "", err
+			}
+			return stepUpToken, ErrMFARequired
+		}
+	}
+
+	// 5. Generate a JWT.
 	claims := jwt.MapClaims{
 		"sub":    userResp.User.ID,
 		"iss":    "identity-platform",
@@ -145,10 +618,14 @@ func (s *authService) Login(ctx context.Context, username, password string) (str
 		"tenant": tenantID,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	token.Header["kid"] = "dummy-key-id"
+	if len(roleNames) > 0 {
+		claims["roles"] = roleNames
+	}
+	if len(permList) > 0 {
+		claims["permissions"] = permList
+	}
 
-	signedToken, err := token.SignedString(s.privateKey)
+	signedToken, err := s.signer.Sign(claims)
 	if err != nil {
 		return "", err
 	}
@@ -156,22 +633,235 @@ func (s *authService) Login(ctx context.Context, username, password string) (str
 	return signedToken, nil
 }
 
+func parseUserAgent(ua string) (string, string) {
+	uaLower := strings.ToLower(ua)
+
+	if strings.Contains(uaLower, "macintosh") || strings.Contains(uaLower, "mac os") {
+		re := regexp.MustCompile(`mac os x ([\d_]+)`)
+		matches := re.FindStringSubmatch(uaLower)
+		version := "Unknown"
+		if len(matches) > 1 {
+			version = strings.ReplaceAll(matches[1], "_", ".")
+		}
+		return "macOS", version
+	}
+
+	if strings.Contains(uaLower, "windows") {
+		re := regexp.MustCompile(`windows nt ([\d.]+)`)
+		matches := re.FindStringSubmatch(uaLower)
+		version := "Unknown"
+		if len(matches) > 1 {
+			version = matches[1]
+		}
+		return "Windows", version
+	}
+
+	if strings.Contains(uaLower, "iphone") || strings.Contains(uaLower, "ipad") {
+		re := regexp.MustCompile(`os ([\d_]+) like mac os x`)
+		matches := re.FindStringSubmatch(uaLower)
+		version := "Unknown"
+		if len(matches) > 1 {
+			version = strings.ReplaceAll(matches[1], "_", ".")
+		}
+		return "iOS", version
+	}
+
+	if strings.Contains(uaLower, "android") {
+		re := regexp.MustCompile(`android ([\d.]+)`)
+		matches := re.FindStringSubmatch(uaLower)
+		version := "Unknown"
+		if len(matches) > 1 {
+			version = matches[1]
+		}
+		return "Android", version
+	}
+
+	if strings.Contains(uaLower, "linux") {
+		return "Linux", "Unknown"
+	}
+
+	return "Unknown", "Unknown"
+}
+
+func slugifyTenantName(name string) string {
+	name = strings.ToLower(strings.TrimSpace(name))
+	re := regexp.MustCompile(`[^a-z0-9]+`)
+	slug := re.ReplaceAllString(name, "-")
+	slug = strings.Trim(slug, "-")
+	if slug == "" {
+		slug = "tenant"
+	}
+	if len(slug) > 48 {
+		slug = strings.Trim(slug[:48], "-")
+		if slug == "" {
+			slug = "tenant"
+		}
+	}
+	return slug
+}
+
+func (s *authService) LookupUser(ctx context.Context, tenantID, email string) (LookupResult, error) {
+	// 0. Tenant Discovery (if not provided)
+	if tenantID == "" {
+		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/internal/discover", s.directoryServiceURL), nil)
+		if err != nil {
+			return LookupResult{}, err
+		}
+		q := req.URL.Query()
+		q.Add("email", email)
+		req.URL.RawQuery = q.Encode()
+
+		if s.serviceAuthToken != "" {
+			req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+		}
+
+		var resp *http.Response
+		err = s.httpCB.Execute(func() error {
+			var doErr error
+			resp, doErr = s.httpClient.Do(req) //nolint:bodyclose // closed in outer scope
+			return doErr
+		})
+		if resp != nil && resp.Body != nil {
+			defer func() { _ = resp.Body.Close() }()
+		}
+		if err != nil {
+			return LookupResult{}, fmt.Errorf("failed to discover tenant: %w", err)
+		}
+
+		if resp.StatusCode == http.StatusNotFound {
+			return LookupResult{}, errors.New("user not found (or tenant could not be discovered)")
+		}
+		if resp.StatusCode != http.StatusOK {
+			return LookupResult{}, fmt.Errorf("directory discovery returned status %d", resp.StatusCode)
+		}
+
+		var discoveryResp struct {
+			TenantID string `json:"tenant_id"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&discoveryResp); err != nil {
+			return LookupResult{}, fmt.Errorf("failed to decode discovery response: %w", err)
+		}
+		tenantID = discoveryResp.TenantID
+	}
+
+	// 1. Call Directory Service to resolve email to UserID
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/users", s.directoryServiceURL), nil)
+	if err != nil {
+		return LookupResult{}, err
+	}
+	q := req.URL.Query()
+	q.Add("email", email)
+	req.URL.RawQuery = q.Encode()
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
+	if s.serviceAuthToken != "" {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	}
+
+	var resp *http.Response
+	err = s.httpCB.Execute(func() error {
+		var doErr error
+		resp, doErr = s.httpClient.Do(req) //nolint:bodyclose // closed in outer scope
+		return doErr
+	})
+	if resp != nil && resp.Body != nil {
+		defer func() { _ = resp.Body.Close() }()
+	}
+	if err != nil {
+		return LookupResult{}, err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return LookupResult{}, errors.New("user not found")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return LookupResult{}, fmt.Errorf("directory service returned status %d", resp.StatusCode)
+	}
+
+	var userResp struct {
+		User struct {
+			ID string `json:"id"`
+		} `json:"user"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
+		return LookupResult{}, err
+	}
+
+	// 2. Check if WebAuthn credentials exist
+	creds, err := s.webAuthnStore.ListCredentials(ctx, userResp.User.ID)
+	if err != nil {
+		// Log error but assume false? Or fail?
+		zap.L().Warn("Failed to list webauthn credentials during lookup", zap.Error(err))
+		// default to false
+	}
+
+	return LookupResult{
+		UserID:          userResp.User.ID,
+		WebAuthnEnabled: len(creds) > 0,
+		TenantID:        tenantID,
+		TenantSlug: func() string {
+			if s.tenantStore == nil {
+				return ""
+			}
+			slug, err := s.tenantStore.GetSlugByID(ctx, tenantID)
+			if err != nil {
+				zap.L().Warn("Failed to resolve tenant slug", zap.String("tenant_id", tenantID), zap.Error(err))
+				return ""
+			}
+			return slug
+		}(),
+	}, nil
+}
+
 // JWKS returns the JSON Web Key Set.
 func (s *authService) JWKS() jose.JSONWebKeySet {
 	return jose.JSONWebKeySet{
 		Keys: []jose.JSONWebKey{
 			{
-				Key:       &s.privateKey.PublicKey,
-				KeyID:     "dummy-key-id",
-				Algorithm: "RS256",
+				Key:       s.signer.PublicKey(),
+				KeyID:     s.signer.KeyID(),
+				Algorithm: s.signer.Algorithm(),
 				Use:       "sig",
 			},
 		},
 	}
 }
 
-func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (AuthorizeResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+func (s *authService) GetOIDCConfiguration() OpenIDConfiguration {
+	return OpenIDConfiguration{
+		Issuer:                            s.baseURL,
+		AuthorizationEndpoint:             fmt.Sprintf("%s/oauth2/authorize", s.baseURL),
+		TokenEndpoint:                     fmt.Sprintf("%s/oauth2/token", s.baseURL),
+		UserinfoEndpoint:                  fmt.Sprintf("%s/api/v1/user/profile", s.baseURL),
+		JwksURI:                           fmt.Sprintf("%s/.well-known/jwks.json", s.baseURL),
+		ScopesSupported:                   []string{"openid", "profile", "email", "offline_access"},
+		ResponseTypesSupported:            []string{"code"},
+		GrantTypesSupported:               []string{"authorization_code", "refresh_token", "client_credentials"},
+		SubjectTypesSupported:             []string{"public"},
+		IDTokenSigningAlgValuesSupported:  []string{"RS256"},
+		TokenEndpointAuthMethodsSupported: []string{"client_secret_basic", "client_secret_post"},
+		CodeChallengeMethodsSupported:     []string{"S256"},
+		ClaimsSupported:                   []string{"sub", "iss", "aud", "exp", "iat", "email", "name", "tenant"},
+	}
+}
+
+func (s *authService) ResolveTenantSlug(ctx context.Context, slug string) (string, error) {
+	if s.tenantStore == nil {
+		return "", errors.New("tenant store not configured")
+	}
+	return s.tenantStore.GetIDBySlug(ctx, slug)
+}
+
+func (s *authService) GetTenantSlug(ctx context.Context, tenantID string) (string, error) {
+	if s.tenantStore == nil {
+		return "", errors.New("tenant store not configured")
+	}
+	return s.tenantStore.GetSlugByID(ctx, tenantID)
+}
+
+func (s *authService) Authorize(ctx context.Context, userID string, req AuthorizeRequest) (AuthorizeResponse, error) {
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return AuthorizeResponse{}, err
 	}
@@ -209,11 +899,13 @@ func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (Auth
 		RedirectURI:         req.RedirectURI,
 		Scope:               req.Scope,
 		TenantID:            tenantID,
+		UserID:              userID,
+		Nonce:               req.Nonce,
 		CodeChallenge:       req.CodeChallenge,
 		CodeChallengeMethod: method,
 		ExpiresAt:           expiresAt,
 	}
-	s.codeStore.Save(entry)
+	_ = s.codeStore.Save(ctx, entry)
 	redirectURI, err := buildAuthorizationRedirect(req.RedirectURI, code, req.State)
 	if err != nil {
 		return AuthorizeResponse{}, err
@@ -222,21 +914,71 @@ func (s *authService) Authorize(ctx context.Context, req AuthorizeRequest) (Auth
 }
 
 func (s *authService) Token(ctx context.Context, req TokenRequest) (TokenResponse, error) {
-	tenantID, err := middleware.TenantIDFromContext(ctx)
+	tenantID, err := types.TenantIDFromContext(ctx)
 	if err != nil {
 		return TokenResponse{}, err
 	}
-	if req.GrantType != "authorization_code" {
+
+	switch req.GrantType {
+	case "authorization_code":
+		return s.handleAuthorizationCodeGrant(ctx, tenantID, req)
+	case "client_credentials":
+		return s.handleClientCredentialsGrant(ctx, tenantID, req)
+	case "refresh_token":
+		return s.handleRefreshTokenGrant(ctx, tenantID, req)
+	default:
 		return TokenResponse{}, ErrUnsupportedGrantType
 	}
+}
+
+func (s *authService) handleAuthorizationCodeGrant(ctx context.Context, tenantID string, req TokenRequest) (TokenResponse, error) {
+	if req.ClientID == "" || req.Code == "" || req.RedirectURI == "" || req.CodeVerifier == "" {
+		return TokenResponse{}, &Error{"invalid_request", "missing required parameters for authorization_code grant"}
+	}
+
 	client, err := s.resolveClient(ctx, tenantID, req.ClientID)
 	if err != nil {
 		return TokenResponse{}, err
 	}
+	if client.ClientType == "confidential" {
+		if req.ClientSecret == "" {
+			return TokenResponse{}, &Error{"invalid_request", "client_secret is required for confidential clients"}
+		}
+		if s.clientStore == nil {
+			return TokenResponse{}, &Error{"invalid_client", "client verification requires database-backed clients"}
+		}
+		var record oauthclient.Client
+		err := s.executeWithCBAndRetry(func() error {
+			var getErr error
+			record, getErr = s.clientStore.GetClient(ctx, tenantID, req.ClientID)
+			return getErr
+		})
+		if err != nil {
+			return TokenResponse{}, ErrInvalidClient
+		}
+		if len(record.ClientSecretHash) == 0 {
+			return TokenResponse{}, &Error{"invalid_client", "client has no secret configured"}
+		}
+		if err := verifyClientSecret(req.ClientSecret, record.ClientSecretHash); err != nil {
+			return TokenResponse{}, &Error{"invalid_client", "invalid client secret"}
+		}
+	}
+	if !client.allowsGrant("authorization_code") {
+		return TokenResponse{}, &Error{"unauthorized_client", "authorization_code grant is not enabled for this client"}
+	}
 	if !client.allowsRedirect(req.RedirectURI) {
 		return TokenResponse{}, ErrInvalidRedirectURI
 	}
-	code, found := s.codeStore.Get(req.Code)
+	var code authorizationCode
+	var found bool
+	err = s.executeWithCBAndRetry(func() error {
+		var getErr error
+		code, found, getErr = s.codeStore.Get(ctx, req.Code)
+		return getErr
+	})
+	if err != nil {
+		return TokenResponse{}, err
+	}
 	if !found || time.Now().After(code.ExpiresAt) {
 		return TokenResponse{}, ErrInvalidAuthorizationCode
 	}
@@ -246,36 +988,603 @@ func (s *authService) Token(ctx context.Context, req TokenRequest) (TokenRespons
 	if err := verifyCodeChallenge(code.CodeChallenge, code.CodeChallengeMethod, req.CodeVerifier); err != nil {
 		return TokenResponse{}, err
 	}
-	s.codeStore.Delete(req.Code)
+	_ = s.executeWithCBAndRetry(func() error {
+		return s.codeStore.Delete(ctx, req.Code)
+	})
 
-	// Generate a JWT.
-	claims := jwt.MapClaims{
-		"sub":    code.ClientID,
-		"iss":    "identity-platform",
-		"aud":    "client-app",
-		"exp":    time.Now().Add(time.Hour * 1).Unix(),
-		"iat":    time.Now().Unix(),
-		"scope":  code.Scope,
-		"tenant": tenantID,
+	return s.issueTokens(ctx, tenantID, req.ClientID, code.Scope, code.UserID, code.Nonce)
+}
+
+func (s *authService) handleClientCredentialsGrant(ctx context.Context, tenantID string, req TokenRequest) (TokenResponse, error) {
+	if req.ClientID == "" {
+		return TokenResponse{}, &Error{"invalid_request", "client_id is required"}
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	token.Header["kid"] = "dummy-key-id"
+	// 1. Attempt Workload Authentication (Non-Human Identity)
+	if s.workloadStore != nil {
+		workload, err := s.workloadStore.GetByClientID(ctx, req.ClientID)
+		if err == nil {
+			// Found a workload, verify secret
+			if req.ClientSecret == "" {
+				return TokenResponse{}, &Error{"invalid_request", "client_secret is required for workload authentication"}
+			}
+			return s.handleWorkloadAuthentication(ctx, tenantID, workload, req.Scope, req.ClientSecret)
+		}
+	}
 
-	signedToken, err := token.SignedString(s.privateKey)
+	// 2. Fallback to Standard OAuth2 Client Authentication
+	client, err := s.resolveClient(ctx, tenantID, req.ClientID)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	if !client.allowsGrant("client_credentials") {
+		return TokenResponse{}, &Error{"unauthorized_client", "client_credentials grant is not enabled for this client"}
+	}
+
+	// Client credentials flow requires a confidential client
+	if client.ClientType != "confidential" {
+		return TokenResponse{}, &Error{"unauthorized_client", "client_credentials grant requires a confidential client"}
+	}
+
+	// Validate client secret
+	if req.ClientSecret == "" {
+		return TokenResponse{}, &Error{"invalid_request", "client_secret is required for confidential clients"}
+	}
+
+	// Get secret hash from store and verify
+	if s.clientStore != nil {
+		record, err := s.clientStore.GetClient(ctx, tenantID, req.ClientID)
+		if err != nil {
+			return TokenResponse{}, ErrInvalidClient
+		}
+		if len(record.ClientSecretHash) == 0 {
+			return TokenResponse{}, &Error{"invalid_client", "client has no secret configured"}
+		}
+		if err := verifyClientSecret(req.ClientSecret, record.ClientSecretHash); err != nil {
+			return TokenResponse{}, &Error{"invalid_client", "invalid client secret"}
+		}
+	} else {
+		// Static clients don't have secrets in this implementation
+		return TokenResponse{}, &Error{"invalid_client", "client_credentials requires database-backed clients"}
+	}
+
+	// Determine scopes - use requested or default to client's allowed scopes
+	scope := req.Scope
+	if scope == "" {
+		scope = strings.Join(client.AllowedScopes, " ")
+	} else {
+		if err := client.validateScopes(scope); err != nil {
+			return TokenResponse{}, newInvalidScopeError(err.Error())
+		}
+	}
+
+	// Issue access token only
+	accessToken, err := s.generateAccessToken(ctx, tenantID, req.ClientID, scope, "")
 	if err != nil {
 		return TokenResponse{}, err
 	}
 
 	return TokenResponse{
-		AccessToken: signedToken,
+		AccessToken: accessToken,
 		TokenType:   "Bearer",
 		ExpiresIn:   3600,
+		Scope:       scope,
 	}, nil
 }
 
+func (s *authService) handleWorkloadAuthentication(ctx context.Context, tenantID string, workload Workload, requestedScope, secret string) (TokenResponse, error) {
+	if err := verifyClientSecret(secret, []byte(workload.ClientSecretHash)); err != nil {
+		return TokenResponse{}, &Error{"invalid_client", "invalid workload secret"}
+	}
+
+	if workload.Status != "active" {
+		return TokenResponse{}, &Error{"unauthorized_client", "workload is not active"}
+	}
+
+	// AGENTIC GOVERNANCE: Check for approved access requests
+	finalScope := requestedScope
+	ttl := 1 * time.Hour
+
+	if s.agentAccessStore != nil {
+		approvedScopes, approvedTTL, err := s.agentAccessStore.GetApprovedScopes(ctx, tenantID, workload.ClientID)
+		if err == nil && len(approvedScopes) > 0 {
+			// If we have an approved request, it overrides the standard requested scope
+			finalScope = strings.Join(approvedScopes, " ")
+			if approvedTTL > 0 {
+				ttl = approvedTTL
+			}
+			zap.L().Info("Issued agentic token via approved access request",
+				zap.String("workload", workload.ClientID),
+				zap.String("scopes", finalScope),
+				zap.Duration("ttl", ttl))
+		}
+	}
+
+	// Default to workload metadata if no active access request exists
+	if finalScope == "" {
+		// Use workload's own default scopes if any
+		if val, ok := workload.Metadata["default_scopes"].(string); ok {
+			finalScope = val
+		}
+	}
+
+	// Determine TTL from metadata if not explicitly set by governance
+	if ttl == 1*time.Hour {
+		if val, ok := workload.Metadata["token_ttl"].(float64); ok {
+			ttl = time.Duration(val) * time.Second
+		}
+	}
+
+	// Generate token with specific TTL
+	token, err := s.generateAccessTokenWithTTL(ctx, tenantID, workload.ClientID, finalScope, workload.ServiceHandle, ttl)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	// Async update of last used timestamp
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				zap.L().Error("Panic recovered in update workload last_used_at", zap.Any("panic", r))
+			}
+		}()
+		now := time.Now()
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+		defer cancel()
+		_ = s.workloadStore.Update(bgCtx, workload.ID, map[string]interface{}{"last_used_at": now})
+	}()
+
+	return TokenResponse{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		ExpiresIn:   int(ttl.Seconds()),
+		Scope:       finalScope,
+	}, nil
+}
+
+func (s *authService) handleRefreshTokenGrant(ctx context.Context, tenantID string, req TokenRequest) (TokenResponse, error) {
+	if req.RefreshToken == "" {
+		return TokenResponse{}, &Error{"invalid_request", "refresh_token is required"}
+	}
+
+	// Parse familyID and tokenID
+	parts := strings.Split(req.RefreshToken, ".")
+	var familyID string
+	if len(parts) == 2 {
+		familyID = parts[0]
+	}
+
+	// Check if family is revoked
+	if s.revokedTokens != nil && familyID != "" {
+		var familyRevoked bool
+		err := s.executeWithCBAndRetry(func() error {
+			var getErr error
+			familyRevoked, getErr = s.revokedTokens.IsRevoked(ctx, "family-"+familyID)
+			return getErr
+		})
+		if err != nil {
+			return TokenResponse{}, err
+		}
+		if familyRevoked {
+			return TokenResponse{}, &Error{"invalid_grant", "refresh token family has been revoked"}
+		}
+	}
+
+	// Check if refresh token is revoked
+	var revoked bool
+	err := s.executeWithCBAndRetry(func() error {
+		var getErr error
+		revoked, getErr = s.revokedTokens.IsRevoked(ctx, req.RefreshToken)
+		return getErr
+	})
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	if revoked {
+		// REUSE DETECTED!
+		if s.revokedTokens != nil && familyID != "" {
+			_ = s.executeWithCBAndRetry(func() error {
+				return s.revokedTokens.Revoke(ctx, "family-"+familyID)
+			})
+		}
+		return TokenResponse{}, &Error{"invalid_grant", "refresh token has been revoked (reuse detected)"}
+	}
+
+	// Retrieve stored refresh token
+	var stored refreshTokenEntry
+	var found bool
+	err = s.executeWithCBAndRetry(func() error {
+		var getErr error
+		stored, found, getErr = s.refreshTokenStore.Get(ctx, req.RefreshToken)
+		return getErr
+	})
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	if !found || time.Now().After(stored.ExpiresAt) {
+		return TokenResponse{}, &Error{"invalid_grant", "refresh token is invalid or expired"}
+	}
+
+	// Verify tenant matches
+	if stored.TenantID != tenantID {
+		return TokenResponse{}, &Error{"invalid_grant", "refresh token tenant mismatch"}
+	}
+
+	client, err := s.resolveClient(ctx, tenantID, stored.ClientID)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+	if client.ClientType == "confidential" {
+		if req.ClientSecret == "" {
+			return TokenResponse{}, &Error{"invalid_request", "client_secret is required for confidential clients"}
+		}
+		if s.clientStore == nil {
+			return TokenResponse{}, &Error{"invalid_client", "client verification requires database-backed clients"}
+		}
+		var record oauthclient.Client
+		err := s.executeWithCBAndRetry(func() error {
+			var getErr error
+			record, getErr = s.clientStore.GetClient(ctx, tenantID, stored.ClientID)
+			return getErr
+		})
+		if err != nil {
+			return TokenResponse{}, ErrInvalidClient
+		}
+		if len(record.ClientSecretHash) == 0 {
+			return TokenResponse{}, &Error{"invalid_client", "client has no secret configured"}
+		}
+		if err := verifyClientSecret(req.ClientSecret, record.ClientSecretHash); err != nil {
+			return TokenResponse{}, &Error{"invalid_client", "invalid client secret"}
+		}
+	}
+	if !client.allowsGrant("refresh_token") {
+		return TokenResponse{}, &Error{"unauthorized_client", "refresh_token grant is not enabled for this client"}
+	}
+
+	// Rotate refresh token - delete old and issue new
+	_ = s.executeWithCBAndRetry(func() error {
+		return s.refreshTokenStore.Delete(ctx, req.RefreshToken)
+	})
+	if s.revokedTokens != nil {
+		_ = s.executeWithCBAndRetry(func() error {
+			return s.revokedTokens.Revoke(ctx, req.RefreshToken)
+		})
+	}
+
+	if familyID == "" {
+		familyID = uuid.New().String()
+	}
+	ctx = context.WithValue(ctx, familyIDKey, familyID)
+	return s.issueTokens(ctx, tenantID, stored.ClientID, stored.Scope, stored.SubjectType, "")
+}
+
+func (s *authService) issueTokens(ctx context.Context, tenantID, clientID, scope, userID, nonce string) (TokenResponse, error) {
+	accessToken, err := s.generateAccessToken(ctx, tenantID, clientID, scope, userID)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	refreshToken, err := s.generateRefreshToken(ctx, tenantID, clientID, scope, userID)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	resp := TokenResponse{
+		AccessToken:  accessToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    3600,
+		RefreshToken: refreshToken,
+		Scope:        scope,
+	}
+
+	if hasScope(scope, "openid") {
+		idToken, err := s.generateIDToken(ctx, tenantID, clientID, userID, scope, nonce)
+		if err != nil {
+			return TokenResponse{}, err
+		}
+		resp.IDToken = idToken
+	}
+
+	return resp, nil
+}
+
+func (s *authService) issueTokensWithoutRefresh(ctx context.Context, tenantID, clientID, scope, userID, nonce string) (TokenResponse, error) {
+	accessToken, err := s.generateAccessToken(ctx, tenantID, clientID, scope, userID)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	resp := TokenResponse{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+		ExpiresIn:   3600,
+		Scope:       scope,
+	}
+
+	if hasScope(scope, "openid") {
+		idToken, err := s.generateIDToken(ctx, tenantID, clientID, userID, scope, nonce)
+		if err != nil {
+			return TokenResponse{}, err
+		}
+		resp.IDToken = idToken
+	}
+
+	return resp, nil
+}
+
+func (s *authService) generateAccessToken(ctx context.Context, tenantID, clientID, scope, userID string) (string, error) {
+	return s.generateAccessTokenWithTTL(ctx, tenantID, clientID, scope, userID, time.Hour*1)
+}
+
+func (s *authService) generateAccessTokenWithTTL(ctx context.Context, tenantID, clientID, scope, userID string, ttl time.Duration) (string, error) {
+	subject := clientID
+	if userID != "" {
+		subject = userID
+	}
+	claims := jwt.MapClaims{
+		"sub":    subject,
+		"iss":    "identity-platform",
+		"aud":    []string{"client-app", clientID},
+		"exp":    time.Now().Add(ttl).Unix(),
+		"iat":    time.Now().Unix(),
+		"scope":  scope,
+		"tenant": tenantID,
+	}
+	if userID != "" {
+		claims["user_id"] = userID
+		// Add RBAC claims
+		if s.rbacStore != nil {
+			roles, err := s.rbacStore.GetUserRoles(ctx, tenantID, userID)
+			if err == nil {
+				roleNames := make([]string, len(roles))
+				for i, r := range roles {
+					roleNames[i] = r.Name
+				}
+				claims["roles"] = roleNames
+			}
+		}
+	}
+
+	return s.signer.Sign(claims)
+}
+
+func (s *authService) generateIDToken(ctx context.Context, tenantID, clientID, userID, scope, nonce string) (string, error) {
+	subject := userID
+	if subject == "" {
+		subject = clientID
+	}
+
+	claims := jwt.MapClaims{
+		"sub":    subject,
+		"iss":    fmt.Sprintf("%s/t/%s", s.baseURL, tenantID),
+		"aud":    clientID,
+		"exp":    time.Now().Add(time.Hour).Unix(),
+		"iat":    time.Now().Unix(),
+		"tenant": tenantID,
+	}
+	if nonce != "" {
+		claims["nonce"] = nonce
+	}
+
+	if userID != "" {
+		// Fetch user profile for identity claims
+		profile, err := s.GetUserByID(ctx, tenantID, userID)
+		if err == nil {
+			if hasScope(scope, "email") {
+				claims["email"] = profile.Email
+				claims["email_verified"] = true
+			}
+			if hasScope(scope, "profile") {
+				claims["name"] = profile.Name
+				claims["preferred_username"] = profile.Email
+			}
+		} else {
+			// Log the error for debugging
+			fmt.Printf("Failed to fetch user profile for ID Token: %v\n", err)
+		}
+
+		// Add RBAC claims for OIDC
+		if s.rbacStore != nil {
+			roles, err := s.rbacStore.GetUserRoles(ctx, tenantID, userID)
+			if err == nil {
+				roleNames := make([]string, len(roles))
+				for i, r := range roles {
+					roleNames[i] = r.Name
+				}
+				claims["roles"] = roleNames
+			}
+
+			// Permissions in ID token if profile scope is requested
+			if hasScope(scope, "profile") {
+				perms, err := s.rbacStore.GetUserPermissions(ctx, tenantID, userID)
+				if err == nil {
+					permList := make([]string, len(perms))
+					for i, p := range perms {
+						permList[i] = fmt.Sprintf("%s:%s", p.Resource, p.Action)
+					}
+					claims["permissions"] = permList
+				}
+			}
+		}
+	}
+
+	return s.signer.Sign(claims)
+}
+
+func hasScope(scope, target string) bool {
+	for _, value := range strings.Fields(scope) {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+type contextKey string
+
+const familyIDKey contextKey = "family_id"
+
+func (s *authService) generateRefreshToken(ctx context.Context, tenantID, clientID, scope, subjectType string) (string, error) {
+	familyID, _ := ctx.Value(familyIDKey).(string)
+	if familyID == "" {
+		familyID = uuid.New().String()
+	}
+
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", err
+	}
+	tokenID := base64.RawURLEncoding.EncodeToString(tokenBytes)
+	refreshToken := familyID + "." + tokenID
+
+	// Store refresh token with 7-day expiry
+	err := s.executeWithCBAndRetry(func() error {
+		return s.refreshTokenStore.Save(ctx, refreshTokenEntry{
+			Token:       refreshToken,
+			ClientID:    clientID,
+			TenantID:    tenantID,
+			Scope:       scope,
+			SubjectType: subjectType,
+			ExpiresAt:   time.Now().Add(7 * 24 * time.Hour),
+		})
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return refreshToken, nil
+}
+
+func (s *authService) Introspect(ctx context.Context, req IntrospectRequest) (IntrospectResponse, error) {
+	// Check if token is revoked
+	var revoked bool
+	err := s.executeWithCBAndRetry(func() error {
+		var getErr error
+		revoked, getErr = s.revokedTokens.IsRevoked(ctx, req.Token)
+		return getErr
+	})
+	if err != nil {
+		return IntrospectResponse{}, err
+	}
+	if revoked {
+		return IntrospectResponse{Active: false}, nil
+	}
+
+	// Try to parse as JWT (access token)
+	token, err := jwt.Parse(req.Token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.signer.PublicKey(), nil
+	})
+
+	if err != nil || !token.Valid {
+		// Not a valid access token, check if it's a refresh token
+		var stored refreshTokenEntry
+		var found bool
+		getErr := s.executeWithCBAndRetry(func() error {
+			var err error
+			stored, found, err = s.refreshTokenStore.Get(ctx, req.Token)
+			return err
+		})
+		if getErr == nil && found && time.Now().Before(stored.ExpiresAt) {
+			return IntrospectResponse{
+				Active:    true,
+				Scope:     stored.Scope,
+				ClientID:  stored.ClientID,
+				TokenType: "refresh_token",
+				Exp:       stored.ExpiresAt.Unix(),
+				TenantID:  stored.TenantID,
+			}, nil
+		}
+		return IntrospectResponse{Active: false}, nil
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return IntrospectResponse{Active: false}, nil
+	}
+
+	exp, _ := claims["exp"].(float64)
+	iat, _ := claims["iat"].(float64)
+	sub, _ := claims["sub"].(string)
+	scope, _ := claims["scope"].(string)
+	tenant, _ := claims["tenant"].(string)
+	aud, _ := claims["aud"].(string)
+	iss, _ := claims["iss"].(string)
+
+	// Check for CAE (Critical Access Evaluation)
+	// If the token is valid, we check if any revocation events occurred AFTER the token was issued (iat).
+	// We convert iat to time.Time
+	tokenIssuedAt := time.Unix(int64(iat), 0)
+
+	// Query signal store
+	if s.signalStore != nil {
+		event, err := s.signalStore.GetLatestCriticalEvent(ctx, sub, tokenIssuedAt)
+		if err == nil && event != nil {
+			// A critical event happened after token issuance! Revoke access.
+			return IntrospectResponse{
+				Active: false,
+				// We can't easily return custom reason fields in standard Introspect,
+				// but 'active: false' is the enforcement.
+			}, nil
+		}
+	}
+
+	return IntrospectResponse{
+		Active:    true,
+		Scope:     scope,
+		ClientID:  sub,
+		TokenType: "access_token",
+		Exp:       int64(exp),
+		Iat:       int64(iat),
+		Sub:       sub,
+		Aud:       aud,
+		Iss:       iss,
+		TenantID:  tenant,
+	}, nil
+}
+
+func (s *authService) Signal() SignalRepository {
+	return s.signalStore
+}
+
+func (s *authService) Revoke(ctx context.Context, req RevokeRequest) error {
+	// Add token to revocation list
+	if err := s.revokedTokens.Revoke(ctx, req.Token); err != nil {
+		return err
+	}
+
+	// Also delete from refresh token store if it exists there
+	_ = s.refreshTokenStore.Delete(ctx, req.Token)
+
+	return nil
+}
+
+func (s *authService) SAML() *saml.Provider {
+	return s.samlProvider
+}
+
+func (s *authService) Device() DeviceRepository {
+	return s.deviceStore
+}
+
+func (s *authService) TOTP() TOTPRepository {
+	return s.totpStore
+}
+
+// ErrMFARequired is returned when login requires a second factor.
+var ErrMFARequired = &Error{"mfa_required", "additional authentication required"}
+var ErrMFASetupRequired = &Error{"mfa_setup_required", "mfa setup required"}
+
 // ErrInvalidCredentials is returned when login fails.
 var ErrInvalidCredentials = &Error{"invalid_credentials", "invalid username or password"}
+
+const (
+	SystemTenantID  = "admin-system"
+	AnonymousUserID = "00000000-0000-0000-0000-000000000000"
+)
+
 var ErrMissingCodeChallenge = &Error{"invalid_request", "code_challenge is required"}
 var ErrInvalidCodeChallengeMethod = &Error{"invalid_request", "only S256 code_challenge_method is supported"}
 var ErrInvalidAuthorizationCode = &Error{"invalid_grant", "authorization code is invalid or expired"}
@@ -299,59 +1608,57 @@ func newInvalidScopeError(detail string) *Error {
 }
 
 type authorizationCode struct {
-	Code                string
-	ClientID            string
-	RedirectURI         string
-	Scope               string
-	TenantID            string
-	CodeChallenge       string
-	CodeChallengeMethod string
-	ExpiresAt           time.Time
+	Code                string    `db:"code"`
+	ClientID            string    `db:"client_id"`
+	RedirectURI         string    `db:"redirect_uri"`
+	Scope               string    `db:"scope"`
+	TenantID            string    `db:"tenant_id"`
+	UserID              string    `db:"user_id"`
+	Nonce               string    `db:"nonce"`
+	CodeChallenge       string    `db:"code_challenge"`
+	CodeChallengeMethod string    `db:"code_challenge_method"`
+	ExpiresAt           time.Time `db:"expires_at"`
 }
 
-type authorizationCodeStore struct {
+type authorizationCodeRepository struct {
 	mu    sync.RWMutex
 	codes map[string]authorizationCode
 }
 
-func newAuthorizationCodeStore() *authorizationCodeStore {
-	return &authorizationCodeStore{codes: make(map[string]authorizationCode)}
+func newAuthorizationCodeRepository() *authorizationCodeRepository {
+	return &authorizationCodeRepository{codes: make(map[string]authorizationCode)}
 }
 
-func (s *authorizationCodeStore) Save(code authorizationCode) {
+func (s *authorizationCodeRepository) Save(ctx context.Context, code authorizationCode) error {
 	s.mu.Lock()
 	s.codes[code.Code] = code
 	s.mu.Unlock()
+	return nil
 }
 
-func (s *authorizationCodeStore) Get(code string) (authorizationCode, bool) {
+func (s *authorizationCodeRepository) Get(ctx context.Context, code string) (authorizationCode, bool, error) {
 	s.mu.RLock()
 	entry, ok := s.codes[code]
 	s.mu.RUnlock()
-	return entry, ok
+	return entry, ok, nil
 }
 
-func (s *authorizationCodeStore) Delete(code string) {
+func (s *authorizationCodeRepository) Delete(ctx context.Context, code string) error {
 	s.mu.Lock()
 	delete(s.codes, code)
 	s.mu.Unlock()
+	return nil
 }
 
 func generateAuthorizationCode() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
+	return gokitcrypto.GenerateCodeVerifier()
 }
 
 func verifyCodeChallenge(challenge, method, verifier string) error {
 	if method != "S256" {
 		return ErrInvalidCodeChallengeMethod
 	}
-	sum := sha256.Sum256([]byte(verifier))
-	computed := base64.RawURLEncoding.EncodeToString(sum[:])
-	if subtle.ConstantTimeCompare([]byte(computed), []byte(challenge)) != 1 {
+	if !gokitcrypto.VerifyCodeChallenge(verifier, challenge) {
 		return ErrInvalidCodeVerifier
 	}
 	return nil
@@ -371,21 +1678,67 @@ func buildAuthorizationRedirect(baseURI, code, state string) (string, error) {
 	return parsed.String(), nil
 }
 
+func (s *authService) UIURL() string {
+	return s.uiURL
+}
+
+func (s *authService) CookieDomain() string {
+	return s.cookieDomain
+}
+
 func (s *authService) resolveClient(ctx context.Context, tenantID, clientID string) (ClientConfig, error) {
 	if s.clientStore != nil {
-		record, err := s.clientStore.GetClient(ctx, tenantID, clientID)
-		if err != nil {
-			if errors.Is(err, oauthclients.ErrNotFound) {
+		var record oauthclient.Client
+		err := s.executeWithCBAndRetry(func() error {
+			var getErr error
+			record, getErr = s.clientStore.GetClient(ctx, tenantID, clientID)
+			return getErr
+		})
+		if err == nil {
+			cfg := clientConfigFromRecord(record)
+			if err := cfg.validate(); err == nil {
+				return cfg, nil
+			}
+		}
+	}
+
+	// Fallback to Developer Portal apps
+	if s.appStore != nil {
+		var app *DeveloperApp
+		err := s.executeWithCBAndRetry(func() error {
+			var getErr error
+			app, getErr = s.appStore.GetByClientID(ctx, clientID)
+			return getErr
+		})
+		if err == nil && app != nil {
+			// Ensure tenant mismatch is caught if needed, though for public/developer apps
+			// we might allow it depending on policy.
+			// But usually we want to enforce it.
+			if app.TenantID != tenantID {
 				return ClientConfig{}, ErrInvalidClient
 			}
-			return ClientConfig{}, err
+
+			var redirectURIs []string
+			_ = json.Unmarshal(app.RedirectURIs, &redirectURIs)
+
+			var allowedScopes []string
+			_ = json.Unmarshal(app.Scopes, &allowedScopes)
+
+			var grantTypes []string
+			_ = json.Unmarshal(app.GrantTypes, &grantTypes)
+
+			return ClientConfig{
+				ID:            app.ClientID,
+				TenantID:      app.TenantID,
+				Name:          app.Name,
+				ClientType:    app.AppType,
+				RedirectURIs:  redirectURIs,
+				AllowedScopes: allowedScopes,
+				GrantTypes:    grantTypes,
+			}.withDefaults(), nil
 		}
-		cfg := clientConfigFromRecord(record)
-		if err := cfg.validate(); err != nil {
-			return ClientConfig{}, err
-		}
-		return cfg, nil
 	}
+
 	if s.clients == nil {
 		return ClientConfig{}, ErrInvalidClient
 	}
@@ -396,7 +1749,7 @@ func (s *authService) resolveClient(ctx context.Context, tenantID, clientID stri
 	return client, nil
 }
 
-func clientConfigFromRecord(record oauthclients.Client) ClientConfig {
+func clientConfigFromRecord(record oauthclient.Client) ClientConfig {
 	description := ""
 	if record.Description.Valid {
 		description = record.Description.String
@@ -413,5 +1766,573 @@ func clientConfigFromRecord(record oauthclients.Client) ClientConfig {
 		ClientType:    clientType,
 		RedirectURIs:  append([]string(nil), record.RedirectURIs...),
 		AllowedScopes: append([]string(nil), record.AllowedScopes...),
+	}.withDefaults()
+}
+
+// refreshTokenEntry represents a stored refresh token.
+type refreshTokenEntry struct {
+	Token       string    `db:"token"`
+	ClientID    string    `db:"client_id"`
+	TenantID    string    `db:"tenant_id"`
+	Scope       string    `db:"scope"`
+	SubjectType string    `db:"subject_type"`
+	ExpiresAt   time.Time `db:"expires_at"`
+}
+
+// refreshTokenRepository provides in-memory storage for refresh tokens.
+type refreshTokenRepository struct {
+	mu     sync.RWMutex
+	tokens map[string]refreshTokenEntry
+}
+
+func newRefreshTokenRepository() *refreshTokenRepository {
+	return &refreshTokenRepository{tokens: make(map[string]refreshTokenEntry)}
+}
+
+func (s *refreshTokenRepository) Save(ctx context.Context, entry refreshTokenEntry) error {
+	s.mu.Lock()
+	hashed := hashToken(entry.Token)
+	entry.Token = hashed
+	s.tokens[hashed] = entry
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *refreshTokenRepository) Get(ctx context.Context, token string) (refreshTokenEntry, bool, error) {
+	s.mu.RLock()
+	entry, ok := s.tokens[hashToken(token)]
+	s.mu.RUnlock()
+	return entry, ok, nil
+}
+
+func (s *refreshTokenRepository) Delete(ctx context.Context, token string) error {
+	s.mu.Lock()
+	delete(s.tokens, hashToken(token))
+	s.mu.Unlock()
+	return nil
+}
+
+// tokenRevocationRepository provides in-memory storage for revoked tokens.
+type tokenRevocationRepository struct {
+	mu      sync.RWMutex
+	revoked map[string]time.Time
+}
+
+func newTokenRevocationRepository() *tokenRevocationRepository {
+	return &tokenRevocationRepository{revoked: make(map[string]time.Time)}
+}
+
+func (s *tokenRevocationRepository) Revoke(ctx context.Context, token string) error {
+	s.mu.Lock()
+	s.revoked[token] = time.Now()
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *tokenRevocationRepository) IsRevoked(ctx context.Context, token string) (bool, error) {
+	s.mu.RLock()
+	_, exists := s.revoked[token]
+	s.mu.RUnlock()
+	return exists, nil
+}
+
+// verifyClientSecret compares a plaintext secret against a bcrypt hash.
+func verifyClientSecret(secret string, hash []byte) error {
+	return bcrypt.CompareHashAndPassword(hash, []byte(secret))
+}
+
+func (s *authService) BeginWebAuthnRegistration(ctx context.Context, userID string) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
+	if s.webAuthnStore == nil {
+		return nil, nil, errors.New("webauthn store not configured")
 	}
+	if s.webAuthn == nil {
+		return nil, nil, errors.New("webauthn provider not initialized")
+	}
+
+	user := &WebAuthnUser{
+		ID:          userID,
+		Name:        userID, // ideally email
+		DisplayName: "User",
+	}
+
+	// 2. Load existing credentials to prevent re-registration
+	creds, err := s.webAuthnStore.ListCredentials(ctx, userID)
+	if err == nil {
+		user.Credentials = creds
+	}
+
+	return s.webAuthn.BeginRegistration(user)
+}
+
+func (s *authService) FinishWebAuthnRegistration(ctx context.Context, userID string, session webauthn.SessionData, req *http.Request) error {
+	if s.webAuthn == nil {
+		return errors.New("webauthn provider not initialized")
+	}
+	if s.webAuthnStore == nil {
+		return errors.New("webauthn store not configured")
+	}
+
+	user := &WebAuthnUser{
+		ID: userID,
+	}
+
+	credential, err := s.webAuthn.FinishRegistration(user, session, req)
+	if err != nil {
+		return err
+	}
+
+	// Store credential
+	// Using TenantID from context? registration usually requires auth, so yes.
+	_, _ = types.TenantIDFromContext(ctx)
+	tenantID := SystemTenantID // Fallback to System Tenant
+
+	return s.webAuthnStore.SaveCredential(ctx, tenantID, userID, credential)
+}
+
+func (s *authService) BeginWebAuthnLogin(ctx context.Context, userID string) (*protocol.CredentialAssertion, *webauthn.SessionData, error) {
+	if s.webAuthnStore == nil {
+		return nil, nil, errors.New("webauthn store not configured")
+	}
+	if s.webAuthn == nil {
+		return nil, nil, errors.New("webauthn provider not initialized")
+	}
+
+	// 1. Fetch user and credentials
+	// Login might be "usernameless" (discoverable credentials) or username-first.
+	// We are doing username-first for now implies we know userID.
+	creds, err := s.webAuthnStore.ListCredentials(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(creds) == 0 {
+		return nil, nil, errors.New("no credentials found for user")
+	}
+
+	user := &WebAuthnUser{
+		ID:          userID,
+		Credentials: creds,
+	}
+
+	return s.webAuthn.BeginLogin(user)
+}
+
+func (s *authService) FinishWebAuthnLogin(ctx context.Context, userID string, session webauthn.SessionData, req *http.Request) (string, error) {
+	// 1. Re-fetch user credential options
+	creds, err := s.webAuthnStore.ListCredentials(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	user := &WebAuthnUser{
+		ID:          userID,
+		Credentials: creds,
+	}
+
+	credential, err := s.webAuthn.FinishLogin(user, session, req)
+	if err != nil {
+		return "", err
+	}
+
+	// 2. Update sign count
+	if err := s.webAuthnStore.UpdateCredential(ctx, credential); err != nil {
+		zap.L().Error("Failed to update credential sign count", zap.Error(err))
+	}
+
+	// 3. Issue Token (MFA success)
+	tenantID, _ := types.TenantIDFromContext(ctx)
+	if tenantID == "" {
+		tenantID = SystemTenantID
+	}
+
+	// Scopes? Default.
+	return s.generateAccessToken(ctx, tenantID, "", "openid", userID)
+}
+
+func (s *authService) WebAuthn() *webauthn.WebAuthn {
+	return s.webAuthn
+}
+
+func (s *authService) ListClients(ctx context.Context, tenantID string) ([]oauthclient.Client, error) {
+	if s.clientStore == nil {
+		return nil, errors.New("client store not configured")
+	}
+	return s.clientStore.ListClientsByTenant(ctx, tenantID)
+}
+
+func (s *authService) UpdateUserSelf(ctx context.Context, tenantID, userID string, updates map[string]interface{}) error {
+	profile, err := s.GetUserByID(ctx, tenantID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Construct the payload for directory service
+	type User struct {
+		Email    string `json:"email"`
+		Password string `json:"password,omitempty"`
+		Status   string `json:"status,omitempty"`
+	}
+
+	userPayload := User{
+		Email: profile.Email,
+	}
+	if pw, ok := updates["password"].(string); ok && pw != "" {
+		userPayload.Password = pw
+	}
+	if status, ok := updates["status"].(string); ok && status != "" {
+		userPayload.Status = status
+	}
+
+	body, err := json.Marshal(userPayload) //nolint:gosec // G117: password field required for directory provisioning payload
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("%s/users/%s", s.directoryServiceURL, userID)
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
+	if s.serviceAuthToken != "" {
+		req.Header.Set(s.serviceAuthHeader, s.serviceAuthToken)
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("directory service update failed with status %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+type authMemCache struct {
+	mu   sync.RWMutex
+	data map[string]string
+}
+
+func newAuthMemCache() *authMemCache {
+	return &authMemCache{data: make(map[string]string)}
+}
+
+func (m *authMemCache) Get(ctx context.Context, key string) (string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	val, ok := m.data[key]
+	if !ok {
+		return "", cache.ErrNotFound
+	}
+	return val, nil
+}
+
+func (m *authMemCache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data[key] = fmt.Sprintf("%v", value)
+	return nil
+}
+
+func (m *authMemCache) Delete(ctx context.Context, keys ...string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, k := range keys {
+		delete(m.data, k)
+	}
+	return nil
+}
+
+func (m *authMemCache) Exists(ctx context.Context, key string) (bool, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	_, ok := m.data[key]
+	return ok, nil
+}
+
+func (m *authMemCache) Flush(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data = make(map[string]string)
+	return nil
+}
+
+func (s *authService) getRevStore() cache.Cache {
+	s.revMu.Lock()
+	defer s.revMu.Unlock()
+	if s.revStore == nil {
+		if s.redisClient != nil {
+			s.revStore = cache.NewRedisFromClient(s.redisClient)
+		} else {
+			s.revStore = newAuthMemCache()
+		}
+	}
+	return s.revStore
+}
+
+func (s *authService) getCoalescer() *cache.Coalescer {
+	s.revMu.Lock()
+	defer s.revMu.Unlock()
+	if s.coalescer == nil {
+		s.coalescer = cache.NewCoalescer()
+	}
+	return s.coalescer
+}
+
+func (s *authService) ValidateToken(tokenString string) (*types.Claims, error) {
+	return s.ValidateTokenContext(context.Background(), tokenString)
+}
+
+func (s *authService) ValidateTokenContext(ctx context.Context, tokenString string) (*types.Claims, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// If the signer is a LocalSigner or VaultSigner, we can use its PublicKey to verify
+	// But the signer interface doesn't have a generic verify yet in a way that returns Claims.
+	// However, we can use jwt.ParseWithClaims with the public key.
+
+	token, err := jwt.ParseWithClaims(tokenString, &types.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		// Verify the algorithm matches
+		if token.Method.Alg() != s.signer.Algorithm() {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.signer.PublicKey(), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*types.Claims); ok && token.Valid {
+		// Enforce that this is not a step-up token
+		for _, aud := range claims.Audience {
+			if aud == "wardseal-mfa-stepup" {
+				return nil, fmt.Errorf("step-up token cannot be used for API access")
+			}
+		}
+
+		// Validate audience
+		validAudience := false
+		for _, aud := range claims.Audience {
+			if aud == "client-app" {
+				validAudience = true
+				break
+			}
+		}
+		if !validAudience {
+			return nil, fmt.Errorf("invalid token audience")
+		}
+
+		// Check for CAE (Continuous Access Evaluation)
+		if s.signalStore != nil {
+			var tokenIssuedAt time.Time
+			if claims.IssuedAt != nil {
+				tokenIssuedAt = claims.IssuedAt.Time
+			} else {
+				tokenIssuedAt = time.Now()
+			}
+			event, err := s.signalStore.GetLatestCriticalEvent(ctx, claims.Subject, tokenIssuedAt)
+			if err == nil && event != nil {
+				return nil, fmt.Errorf("token revoked due to critical security event: %s", event.Reason)
+			}
+		}
+
+		if s.revokedTokens != nil {
+			cacheKey := "auth:revocation:" + fmt.Sprintf("%x", sha256.Sum256([]byte(tokenString)))
+
+			// Coalesce concurrent queries into a single execution to prevent thundering herd / cache stampede
+			revStore := s.getRevStore()
+			coalescer := s.getCoalescer()
+			ttl := cache.JitterTTL(5*time.Minute, 0.10)
+
+			revokedStr, err := coalescer.Do(ctx, revStore, cacheKey, ttl, func(fetchCtx context.Context) (string, error) {
+				fetchTimeoutCtx, cancel := context.WithTimeout(fetchCtx, 1*time.Second)
+				defer cancel()
+				revoked, err := s.revokedTokens.IsRevoked(fetchTimeoutCtx, tokenString)
+				if err != nil {
+					return "", err
+				}
+				return fmt.Sprintf("%t", revoked), nil
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to check token revocation: %w", err)
+			}
+
+			if revokedStr == "true" {
+				return nil, fmt.Errorf("token revoked")
+			}
+		}
+		return claims, nil
+	}
+
+	return nil, fmt.Errorf("invalid token")
+}
+
+func (s *authService) generateStepUpToken(tenantID, userID, email string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub":     userID,
+		"email":   email,
+		"iss":     s.baseURL,
+		"aud":     "wardseal-mfa-stepup",
+		"tenant":  tenantID,
+		"purpose": "mfa_stepup",
+		"iat":     time.Now().Unix(),
+		"exp":     time.Now().Add(5 * time.Minute).Unix(),
+	}
+	return s.signer.Sign(claims)
+}
+
+func (s *authService) ValidateStepUpToken(tokenString string) (*types.Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &types.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if token.Method.Alg() != s.signer.Algorithm() {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.signer.PublicKey(), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*types.Claims); ok && token.Valid {
+		validAudience := false
+		for _, aud := range claims.Audience {
+			if aud == "wardseal-mfa-stepup" {
+				validAudience = true
+				break
+			}
+		}
+		if !validAudience {
+			return nil, fmt.Errorf("invalid token audience")
+		}
+		return claims, nil
+	}
+
+	return nil, fmt.Errorf("invalid token")
+}
+
+func (s *authService) LoginWithMFAStepUp(ctx context.Context, stepUpToken, totpCode string) (string, error) {
+	token, err := jwt.Parse(stepUpToken, func(token *jwt.Token) (interface{}, error) {
+		if token.Method.Alg() != s.signer.Algorithm() {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.signer.PublicKey(), nil
+	})
+	if err != nil || !token.Valid {
+		return "", fmt.Errorf("invalid step-up token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", fmt.Errorf("invalid token claims")
+	}
+
+	if aud, _ := claims["aud"].(string); aud != "wardseal-mfa-stepup" {
+		return "", fmt.Errorf("invalid token audience")
+	}
+
+	if purpose, _ := claims["purpose"].(string); purpose != "mfa_stepup" {
+		return "", fmt.Errorf("invalid token purpose")
+	}
+
+	userID, _ := claims["sub"].(string)
+	tenantID, _ := claims["tenant"].(string)
+	email, _ := claims["email"].(string)
+
+	if userID == "" || tenantID == "" {
+		return "", fmt.Errorf("missing user or tenant in token")
+	}
+
+	if email != "" && s.loginAttemptStore != nil {
+		locked, lockedUntil, _ := s.loginAttemptStore.IsLocked(ctx, tenantID, email)
+		if locked {
+			return "", fmt.Errorf("account locked due to too many failed MFA attempts. Try again after %s", lockedUntil.Format(time.RFC3339))
+		}
+	}
+
+	// Verify TOTP
+	if s.totpStore == nil {
+		return "", fmt.Errorf("TOTP store not configured")
+	}
+	secret, err := s.totpStore.GetByIdentity(ctx, tenantID, userID)
+	if err != nil || secret == nil {
+		return "", fmt.Errorf("TOTP not enrolled")
+	}
+
+	if !totp.Validate(totpCode, secret.Secret) {
+		if email != "" && s.loginAttemptStore != nil {
+			_ = s.loginAttemptStore.RecordAttempt(ctx, tenantID, email, "", false)
+			failures, _ := s.loginAttemptStore.GetRecentFailures(ctx, tenantID, email)
+			if failures >= MaxFailedAttempts {
+				_ = s.loginAttemptStore.LockAccount(ctx, tenantID, email)
+			}
+		}
+		return "", fmt.Errorf("invalid TOTP code")
+	}
+
+	if email != "" && s.loginAttemptStore != nil {
+		_ = s.loginAttemptStore.RecordAttempt(ctx, tenantID, email, "", true)
+		_ = s.loginAttemptStore.UnlockAccount(ctx, tenantID, email)
+	}
+
+	return s.generateAccessToken(ctx, tenantID, "", "openid profile email", userID)
+}
+
+func (s *authService) GetUserByID(ctx context.Context, tenantID, userID string) (UserProfile, error) {
+	if s.directoryServiceURL == "" {
+		return UserProfile{}, fmt.Errorf("directory service URL not configured")
+	}
+
+	client := s.httpClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+
+	u := fmt.Sprintf("%s/scim/v2/Users/%s", s.directoryServiceURL, userID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+	if err != nil {
+		return UserProfile{}, err
+	}
+	req.Header.Set(types.DefaultTenantHeader, tenantID)
+	if s.serviceAuthToken != "" {
+		req.Header.Set("Authorization", "Bearer "+s.serviceAuthToken)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return UserProfile{}, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return UserProfile{}, fmt.Errorf("directory service returned status %d", resp.StatusCode)
+	}
+
+	var scimUser struct {
+		ID       string `json:"id"`
+		UserName string `json:"userName"`
+		Name     struct {
+			Formatted string `json:"formatted"`
+		} `json:"name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&scimUser); err != nil {
+		return UserProfile{}, err
+	}
+
+	return UserProfile{
+		ID:    scimUser.ID,
+		Email: scimUser.UserName,
+		Name:  scimUser.Name.Formatted,
+	}, nil
+}
+
+func (s *authService) ListSSOProviders(ctx context.Context, tenantID string) ([]SSOProvider, error) {
+	if s.ssoProviderStore == nil {
+		return nil, nil
+	}
+	return s.ssoProviderStore.ListEnabledProviders(ctx, tenantID)
 }

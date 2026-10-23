@@ -1,0 +1,240 @@
+import React, { useEffect, useState } from 'react';
+import { getWebhooks, createWebhook, deleteWebhook } from '../api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { TableBody } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import {
+    Loader2,
+    Plus,
+    Webhook as WebhookIcon,
+    Check,
+    Activity,
+    Globe,
+    ShieldCheck,
+    Lock,
+    Binary
+} from 'lucide-react';
+import { PageHeader, GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassTable, GlassTableHeader, GlassTableHead, GlassTableRow } from '@/components/layout';
+import { WebhookTableRow } from '../components/WebhookTableRow';
+
+interface Webhook {
+    id: string;
+    url: string;
+    events: string[];
+    active: boolean;
+    created_at: string;
+}
+
+const Webhooks: React.FC = () => {
+    const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+    const [newUrl, setNewUrl] = useState('');
+    const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [creating, setCreating] = useState(false);
+
+    const availableEvents = ['user.created', 'user.deleted', 'access.requested', 'access.approved'];
+
+    const fetchData = async () => {
+        try {
+            const data = await getWebhooks();
+            if (data && data.webhooks) {
+                setWebhooks(data.webhooks);
+            } else if (Array.isArray(data)) {
+                setWebhooks(data);
+            } else {
+                setWebhooks([]);
+            }
+        } catch (err) {
+            console.error("Failed to fetch webhooks", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleCreate = async () => {
+        if (!newUrl) {
+            setError('URL is required');
+            return;
+        }
+        if (selectedEvents.length === 0) {
+            setError('Select at least one event');
+            return;
+        }
+        setCreating(true);
+        try {
+            await createWebhook(newUrl, selectedEvents);
+            setNewUrl('');
+            setSelectedEvents([]);
+            setError('');
+            fetchData();
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to create webhook');
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Delete this webhook?")) return;
+        try {
+            await deleteWebhook(id);
+            fetchData();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const toggleEvent = (e: string) => {
+        if (selectedEvents.includes(e)) {
+            setSelectedEvents(selectedEvents.filter(ev => ev !== e));
+        } else {
+            setSelectedEvents([...selectedEvents, e]);
+        }
+    };
+
+    if (loading && webhooks.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" /></div>;
+
+    return (
+        <div className="space-y-6 animate-in fade-in duration-700">
+            <PageHeader
+                icon={<WebhookIcon className="w-6 h-6 text-primary" />}
+                title="Event Tunnels"
+                description="Synchronous and asynchronous outbound data pipelines."
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="lg:col-span-4 space-y-4">
+                    <GlassCard className="border border-border shadow-sm shadow-on-surface/10 bg-card overflow-hidden rounded-xl">
+                        <GlassCardHeader className="bg-surface-container/10 border-b border-on-surface/5 py-3 px-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary rounded-lg text-primary-foreground shadow-sm">
+                                    <Activity className="w-4 h-4" />
+                                </div>
+                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Provision Tunnel</GlassCardTitle>
+                            </div>
+                        </GlassCardHeader>
+                        <GlassCardContent className="p-4 space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-bold tracking-tight text-muted-foreground ml-1">Endpoint vector</Label>
+                                <div className="relative">
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                        <Globe className="h-4 w-4" />
+                                    </div>
+                                    <Input
+                                        placeholder="https://api.external.service/hook"
+                                        className="h-9 border-none rounded-lg bg-surface-container/50 border border-border focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-mono text-[10px] pl-9"
+                                        value={newUrl}
+                                        onChange={(e) => setNewUrl(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-bold tracking-tight text-muted-foreground ml-1">Subscription</Label>
+                                <div className="grid grid-cols-1 gap-1.5 bg-surface-container/30 rounded-lg p-3 border border-border">
+                                    {availableEvents.map(ev => (
+                                        <div key={ev} className="flex items-center space-x-3 group cursor-pointer select-none" onClick={() => toggleEvent(ev)}>
+                                            <div
+                                                className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedEvents.includes(ev) ? 'bg-primary border-primary' : 'border-on-surface/10 bg-card group-hover:border-primary/50'}`}
+                                            >
+                                                {selectedEvents.includes(ev) && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                                            </div>
+                                            <span className={`text-[11px] font-bold tracking-tight transition-colors ${selectedEvents.includes(ev) ? 'text-on-surface' : 'text-muted-foreground'}`}>{ev.replace('.', ' ')}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="text-destructive text-[10px] font-bold tracking-tight bg-destructive/5 p-2 rounded-lg border border-destructive/10">
+                                    {error}
+                                </div>
+                            )}
+
+                            <Button
+                                onClick={handleCreate}
+                                className="w-full h-9 rounded-lg font-bold text-xs tracking-tight shadow-sm transition-all"
+                                disabled={creating}
+                            >
+                                {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                                Establish linkage
+                            </Button>
+                        </GlassCardContent>
+                    </GlassCard>
+
+                    <div className="bg-surface-container/30 p-4 rounded-xl border border-border flex items-start gap-4 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none transition-transform group-">
+                            <Binary className="w-12 h-12 -mr-2 -mt-2 text-primary" />
+                        </div>
+                        <div className="p-2 bg-card rounded-lg shadow-sm border border-border">
+                            <Lock className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="space-y-1">
+                            <h4 className="text-[11px] font-bold tracking-tight text-on-surface">Security protocol</h4>
+                            <p className="text-[10px] font-medium leading-relaxed text-muted-foreground tracking-tight">
+                                HMAC-SHA256 signed.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-8 space-y-4">
+                    <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
+                        <GlassCardHeader className="py-4 px-6 border-b border-on-surface/5">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2.5 bg-primary/5 rounded-xl">
+                                    <ShieldCheck className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Tunnel Registry</GlassCardTitle>
+                                    <p className="text-muted-foreground font-bold text-[10px] mt-0.5 tracking-tight">Active orchestration pipelines ({webhooks.length})</p>
+                                </div>
+                            </div>
+                        </GlassCardHeader>
+                        <GlassCardContent className="p-0">
+                            {webhooks.length === 0 ? (
+                                <div className="py-32 text-center text-muted-foreground flex flex-col items-center gap-6">
+                                    <div className="w-20 h-20 rounded-3xl bg-surface-container/50 flex items-center justify-center">
+                                        <WebhookIcon className="h-10 w-10 opacity-20" />
+                                    </div>
+                                    <span className="max-w-xs font-bold text-[11px] tracking-tight leading-relaxed opacity-60">System silence // Zero communication vectors established.</span>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <GlassTable>
+                                        <GlassTableHeader>
+                                            <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
+                                                <GlassTableHead className="py-3 pl-5 text-[10px]">Identity</GlassTableHead>
+                                                <GlassTableHead className="text-[10px]">Subscription</GlassTableHead>
+                                                <GlassTableHead className="text-[10px]">Status</GlassTableHead>
+                                                <GlassTableHead className="text-right pr-5 text-[10px]">Actions</GlassTableHead>
+                                            </GlassTableRow>
+                                        </GlassTableHeader>
+                                        <TableBody>
+                                            {webhooks.map(wh => (
+                                                <WebhookTableRow
+                                                    key={wh.id}
+                                                    webhook={wh}
+                                                    handleDelete={handleDelete}
+                                                />
+                                            ))}
+                                        </TableBody>
+                                    </GlassTable>
+                                </div>
+                            )}
+                        </GlassCardContent>
+                    </GlassCard>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Webhooks;

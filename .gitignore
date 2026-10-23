@@ -18,10 +18,15 @@
 # Go workspace file
 go.work
 
-# Environment variables
+# Environment variables (local .env files)
 .env
-*.env
-
+.env.local
+.env.*.local
+# Allow config/ env files except development secrets
+!config/.env.defaults
+!config/.env.staging
+!config/.env.production
+config/.env.development
 # Build outputs
 /build
 /bin
@@ -34,3 +39,18 @@ go.work
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# pem keys
+deploy/dev-keys
+
+web/app/node_modules
+web/admin/node_modules
+web/admin/dist
+web/landing/node_modules
+web/landing/dist
+web/help/node_modules
+web/help/dist
+tests/e2e/node_modules
+graphify-out
+web/ui/storybook-static
+.cursor

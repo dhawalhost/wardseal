@@ -1,0 +1,52 @@
+/* Brand tokens — SoT is wardseal-ui-kit (mirrored in web/ui for the workspace). */
+@import '@dhawalhost/wardseal-ui-kit/tokens.css';
+
+:root,
+.dark,
+.light {
+  --space-page: 40px;
+  --space-section: 32px;
+  --space-card: 24px;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-display);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply relative overflow-hidden rounded-lg border bg-card shadow-sm;
+    border-color: hsl(var(--border));
+  }
+
+  .glass-header {
+    @apply backdrop-blur-md border-b;
+    background: hsl(var(--background) / 0.9);
+    border-color: hsl(var(--border));
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+}

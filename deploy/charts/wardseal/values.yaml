@@ -1,0 +1,322 @@
+# Wardseal Identity Platform - Default Values
+# This file contains default values for all services.
+# Override these in environment-specific values files (values-staging.yaml, values-production.yaml)
+
+global:
+  # Image registry for all services
+  imageRegistry: ghcr.io/dhawalhost
+  # Image pull secrets
+  imagePullSecrets: []
+  # Common labels applied to all resources
+  commonLabels: {}
+
+# Database configuration (shared by all services)
+database:
+  host: postgres
+  port: 5432
+  name: identity_platform
+  sslMode: disable
+  # Credentials should be provided via secrets
+  existingSecret: wardseal-db-credentials
+  secretKeys:
+    username: username
+    password: password
+
+# Service-to-service authentication (mounted into each service Deployment)
+serviceAuth:
+  existingSecret: ""  # e.g. wardseal-service-auth-staging
+  tokenKey: token
+  header: X-Service-Auth
+
+# DB migrations Job (pre-install / pre-upgrade helm hook)
+migrations:
+  enabled: false
+  image: migrate/migrate:v4.18.2
+  configMapName: wardseal-migrations
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+
+# =====================
+# Auth Service
+# =====================
+authsvc:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-authsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  env:
+    DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
+    AUTH_SERVICE_URL: http://wardseal-authsvc:8080
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 80
+
+# =====================
+# Directory Service
+# =====================
+dirsvc:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-dirsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8081
+
+  env:
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# =====================
+# Governance Service
+# =====================
+govsvc:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-govsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8082
+
+  env:
+    DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# =====================
+# Policy Service
+# =====================
+policysvc:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-policysvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8083
+
+  env:
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# =====================
+# Provisioning Service
+# =====================
+provsvc:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-provsvc
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 8084
+
+  env:
+    LOG_LEVEL: info
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# =====================
+# Admin UI (manage.*)
+# =====================
+adminui:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-adminui
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 32Mi
+
+# =====================
+# Identity / Login UI (id.*) — required for login, set-password, signup
+# =====================
+idui:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-idui
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  nginx:
+    authServiceHost: wardseal-authsvc
+    authServicePort: 8080
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 64Mi
+    requests:
+      cpu: 20m
+      memory: 16Mi
+
+# =====================
+# Landing Site
+# NOT part of the core platform. Only deployed for WardSeal's own SaaS offering.
+# Enterprise / self-hosted installs should leave this disabled.
+# The landing site is designed to live in its own repo; web/landing/ is a
+# standalone project that can be extracted without any changes.
+# =====================
+landingui:
+  enabled: false   # <-- stays false for all enterprise / self-hosted deploys
+
+  image:
+    repository: ghcr.io/dhawalhost/wardseal-landingui
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    limits:
+      cpu: 50m
+      memory: 32Mi
+    requests:
+      cpu: 10m
+      memory: 16Mi
+
+# =====================
+# Ingress Configuration
+# =====================
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: auth.wardseal.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+    - host: api.wardseal.com
+      paths:
+        - path: /api/v1/users
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/groups
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/oauth
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/governance
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/policy
+          pathType: Prefix
+          service: policysvc
+          port: 8083
+        - path: /api/v1/provisioning
+          pathType: Prefix
+          service: provsvc
+          port: 8084
+    - host: manage.wardseal.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: adminui
+          port: 80
+    - host: id.wardseal.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: idui
+          port: 80
+  tls:
+    - secretName: wardseal-tls
+      hosts:
+        - auth.wardseal.com
+        - api.wardseal.com
+        - manage.wardseal.com
+        - id.wardseal.com

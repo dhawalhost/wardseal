@@ -4,13 +4,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
-	"github.com/dhawalhost/velverify/pkg/middleware"
 	"github.com/gin-gonic/gin"
+
+	"github.com/dhawalhost/wardseal/internal/saml"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
 func TestAuthorizationCodePkceFlow(t *testing.T) {
@@ -20,12 +23,12 @@ func TestAuthorizationCodePkceFlow(t *testing.T) {
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
 	challenge := pkceChallenge(verifier)
 
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "admin-system")
 
-	authResp, err := as.Authorize(ctx, AuthorizeRequest{
+	authResp, err := as.Authorize(ctx, "", AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "test-client",
-		RedirectURI:         "https://app.example.com/callback",
+		RedirectURI:         "https://app.wardseal.com/callback",
 		Scope:               "openid profile",
 		State:               "xyz",
 		CodeChallenge:       challenge,
@@ -39,7 +42,7 @@ func TestAuthorizationCodePkceFlow(t *testing.T) {
 	tokenResp, err := as.Token(ctx, TokenRequest{
 		GrantType:    "authorization_code",
 		Code:         code,
-		RedirectURI:  "https://app.example.com/callback",
+		RedirectURI:  "https://app.wardseal.com/callback",
 		ClientID:     "test-client",
 		CodeVerifier: verifier,
 	})
@@ -57,12 +60,12 @@ func TestTokenFailsWithInvalidVerifier(t *testing.T) {
 
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890abcd"
 	challenge := pkceChallenge(verifier)
-	ctx := contextWithTenant(t, "tenant-1")
+	ctx := contextWithTenant(t, "admin-system")
 
-	authResp, err := as.Authorize(ctx, AuthorizeRequest{
+	authResp, err := as.Authorize(ctx, "", AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "test-client",
-		RedirectURI:         "https://app.example.com/callback",
+		RedirectURI:         "https://app.wardseal.com/callback",
 		Scope:               "openid profile",
 		CodeChallenge:       challenge,
 		CodeChallengeMethod: "S256",
@@ -75,7 +78,7 @@ func TestTokenFailsWithInvalidVerifier(t *testing.T) {
 	_, err = as.Token(ctx, TokenRequest{
 		GrantType:    "authorization_code",
 		Code:         code,
-		RedirectURI:  "https://app.example.com/callback",
+		RedirectURI:  "https://app.wardseal.com/callback",
 		ClientID:     "test-client",
 		CodeVerifier: "wrong-verifier-string-that-will-not-match" + verifier,
 	})
@@ -86,48 +89,52 @@ func TestTokenFailsWithInvalidVerifier(t *testing.T) {
 
 func TestAuthorizeRejectsUnknownClient(t *testing.T) {
 	as := newTestService(t)
-	ctx := contextWithTenant(t, "tenant-1")
-	_, err := as.Authorize(ctx, AuthorizeRequest{
+	ctx := contextWithTenant(t, "admin-system")
+	_, err := as.Authorize(ctx, "", AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "unknown",
-		RedirectURI:         "https://app.example.com/callback",
+		RedirectURI:         "https://app.wardseal.com/callback",
 		Scope:               "openid",
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err != ErrInvalidClient {
+	if !errors.Is(err, ErrInvalidClient) {
 		t.Fatalf("expected ErrInvalidClient, got %v", err)
 	}
 }
 
 func TestAuthorizeRejectsInvalidRedirect(t *testing.T) {
 	as := newTestService(t)
-	ctx := contextWithTenant(t, "tenant-1")
-	_, err := as.Authorize(ctx, AuthorizeRequest{
+	ctx := contextWithTenant(t, "admin-system")
+	_, err := as.Authorize(ctx, "", AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "test-client",
-		RedirectURI:         "https://evil.example.com/callback",
+		RedirectURI:         "https://evil.wardseal.com/callback",
 		Scope:               "openid",
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err != ErrInvalidRedirectURI {
+	if !errors.Is(err, ErrInvalidRedirectURI) {
 		t.Fatalf("expected ErrInvalidRedirectURI, got %v", err)
 	}
 }
 
 func TestAuthorizeRejectsInvalidScope(t *testing.T) {
 	as := newTestService(t)
-	ctx := contextWithTenant(t, "tenant-1")
-	_, err := as.Authorize(ctx, AuthorizeRequest{
+	ctx := contextWithTenant(t, "admin-system")
+	_, err := as.Authorize(ctx, "", AuthorizeRequest{
 		ResponseType:        "code",
 		ClientID:            "test-client",
-		RedirectURI:         "https://app.example.com/callback",
+		RedirectURI:         "https://app.wardseal.com/callback",
 		Scope:               "admin",
 		CodeChallenge:       pkceChallenge("verifier"),
 		CodeChallengeMethod: "S256",
 	})
-	if err == nil || err.(*Error).Code != "invalid_scope" {
+	if err == nil || func() *Error {
+		target := &Error{}
+		_ = errors.As(err, &target)
+		return target
+	}().Code != "invalid_scope" {
 		t.Fatalf("expected invalid_scope error, got %v", err)
 	}
 }
@@ -157,7 +164,11 @@ func contextWithTenant(t *testing.T, tenant string) context.Context {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set(middleware.DefaultTenantHeader, tenant)
 	c.Request = req
-	middleware.TenantExtractor(middleware.TenantConfig{})(c)
+	middleware.TenantExtractor(middleware.TenantConfig{
+		SlugResolver: func(ctx context.Context, slug string) (string, error) {
+			return slug, nil
+		},
+	})(c)
 	if c.IsAborted() {
 		t.Fatalf("tenant extractor aborted request")
 	}
@@ -167,13 +178,15 @@ func contextWithTenant(t *testing.T, tenant string) context.Context {
 func newTestService(t *testing.T) *authService {
 	t.Helper()
 	svc, err := NewService(Config{
+		BaseURL:             "http://wardseal.com",
 		DirectoryServiceURL: "http://dirsvc",
+		SAMLStore:           saml.NewStore(nil, "", "", ""),
 		Clients: []ClientConfig{
 			{
 				ID:            "test-client",
-				TenantID:      "tenant-1",
+				TenantID:      "admin-system",
 				Name:          "Test Client",
-				RedirectURIs:  []string{"https://app.example.com/callback"},
+				RedirectURIs:  []string{"https://app.wardseal.com/callback"},
 				AllowedScopes: []string{"openid", "profile"},
 			},
 		},

@@ -1,0 +1,90 @@
+/**
+ * WardSeal base styles — loads tokens + Tailwind layers + shared utilities.
+ * Prefer importing `tokens.css` alone when the app already has its own Tailwind entry.
+ */
+
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 999px;
+  }
+
+  /* Solid elevated surface — name kept for backwards compat */
+  .glass-card {
+    @apply relative overflow-hidden rounded-lg border bg-card shadow-sm border-border;
+  }
+
+  .glass-header {
+    @apply backdrop-blur-md border-b border-border;
+    background: hsl(var(--background) / 0.9);
+  }
+
+  .theme-transition {
+    @apply transition-colors duration-200 ease-in-out;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .text-gradient-brand {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--primary)),
+      hsl(var(--secondary))
+    );
+  }
+
+  /* Modal / sheet scrim — theme-aware via --overlay */
+  .overlay-scrim {
+    background: hsl(var(--overlay) / var(--overlay-opacity));
+  }
+}

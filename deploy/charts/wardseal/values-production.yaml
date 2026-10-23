@@ -1,0 +1,561 @@
+# Wardseal Production Environment Values
+# This file contains production-specific configuration with ALL best practices enabled
+
+global:
+  imageRegistry: ghcr.io/dhawalhost
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+
+# KMS Configuration - Use Vault in production
+kms:
+  provider: vault
+  vaultSecretName: wardseal-vault-kms-production
+
+# Database - Production
+database:
+  sslMode: require
+  existingSecret: wardseal-db-credentials-production
+
+# Service auth - Production (ESO: wardseal-service-auth-production)
+serviceAuth:
+  existingSecret: wardseal-service-auth-production
+  tokenKey: token
+  header: X-Service-Auth
+
+# Migrations Job
+migrations:
+  enabled: true
+  image: migrate/migrate:v4.18.2
+  configMapName: wardseal-migrations
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+
+
+# ====================
+# Auth Service - Production
+# ====================
+authsvc:
+  enabled: true
+  serviceAuth:
+    existingSecret: wardseal-service-auth-production
+    tokenKey: token
+    header: X-Service-Auth
+  database:
+    existingSecret: wardseal-db-credentials-production
+    sslMode: require
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+  replicaCount: 3
+  
+  image:
+    tag: ""  # Overridden by values-production-versions.yaml in Argo CD
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  env:
+    ENVIRONMENT: production
+    COOKIE_SECURE: "true"
+    DB_SSLMODE: require
+    SERVICE_AUTH_HEADER: X-Service-Auth
+    AUTH_SERVICE_URL: https://auth.wardseal.com
+    DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
+    UI_URL: https://id.wardseal.com
+    KMS_PROVIDER: vault
+    LOG_LEVEL: warn
+    REDIS_ENABLED: "true"
+    REDIS_ADDR: redis-production.wardseal-production.svc.cluster.local:6379
+    WEBAUTHN_SESSION_TTL_SECONDS: "600"
+    RATE_LIMIT_USE_TENANT: "true"
+    RATE_LIMIT_KEY_PREFIX: wardseal:ratelimit
+    CORS_ALLOWED_ORIGINS: https://wardseal.com,https://manage.wardseal.com,https://id.wardseal.com,https://auth.wardseal.com
+
+  envFrom:
+    - secretRef:
+        name: wardseal-vault-kms-production
+
+  vaultAppRole:
+    existingSecret: wardseal-vault-kms-production
+  
+  # Security contexts
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  
+  # Health probes
+  livenessProbe:
+    httpGet:
+      path: /health/live
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+  
+  startupProbe:
+    httpGet:
+      path: /health/startup
+      port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 30
+  
+  # Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  # High availability
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  
+  # Security
+  networkPolicy:
+    enabled: true
+  
+  # Monitoring
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+  
+  # Pod anti-affinity for better distribution
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: authsvc
+            topologyKey: kubernetes.io/hostname
+
+# ====================
+# Directory Service - Production
+# ====================
+dirsvc:
+  enabled: true
+  serviceAuth:
+    existingSecret: wardseal-service-auth-production
+    tokenKey: token
+    header: X-Service-Auth
+  database:
+    existingSecret: wardseal-db-credentials-production
+    sslMode: require
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+  replicaCount: 3
+  
+  image:
+    tag: ""  # Overridden by values-production-versions.yaml in Argo CD
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  env:
+    ENVIRONMENT: production
+    COOKIE_SECURE: "true"
+    DB_SSLMODE: require
+    SERVICE_AUTH_HEADER: X-Service-Auth
+    LOG_LEVEL: warn
+    REDIS_ENABLED: "true"
+    REDIS_ADDR: redis-production.wardseal-production.svc.cluster.local:6379
+    RATE_LIMIT_USE_TENANT: "true"
+    RATE_LIMIT_KEY_PREFIX: wardseal:ratelimit
+    CORS_ALLOWED_ORIGINS: https://wardseal.com,https://manage.wardseal.com,https://id.wardseal.com,https://auth.wardseal.com
+  
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  
+  livenessProbe:
+    httpGet:
+      path: /health/live
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+  
+  startupProbe:
+    httpGet:
+      path: /health/startup
+      port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 30
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  
+  networkPolicy:
+    enabled: true
+  
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+  
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: dirsvc
+            topologyKey: kubernetes.io/hostname
+
+# ====================
+# Governance Service - Production
+# ====================
+govsvc:
+  enabled: true
+  serviceAuth:
+    existingSecret: wardseal-service-auth-production
+    tokenKey: token
+    header: X-Service-Auth
+  database:
+    existingSecret: wardseal-db-credentials-production
+    sslMode: require
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+  replicaCount: 3
+  
+  image:
+    tag: ""  # Overridden by values-production-versions.yaml in Argo CD
+    pullPolicy: IfNotPresent
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  env:
+    ENVIRONMENT: production
+    COOKIE_SECURE: "true"
+    DB_SSLMODE: require
+    SERVICE_AUTH_HEADER: X-Service-Auth
+    DIRECTORY_SERVICE_URL: http://wardseal-dirsvc:8081
+    LOG_LEVEL: warn
+    REDIS_ENABLED: "true"
+    REDIS_ADDR: redis-production.wardseal-production.svc.cluster.local:6379
+    RATE_LIMIT_USE_TENANT: "true"
+    RATE_LIMIT_KEY_PREFIX: wardseal:ratelimit
+    CORS_ALLOWED_ORIGINS: https://wardseal.com,https://manage.wardseal.com,https://id.wardseal.com,https://auth.wardseal.com
+  
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  
+  livenessProbe:
+    httpGet:
+      path: /health/live
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+  
+  startupProbe:
+    httpGet:
+      path: /health/startup
+      port: http
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 30
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  
+  networkPolicy:
+    enabled: true
+  
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+  
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: govsvc
+            topologyKey: kubernetes.io/hostname
+
+# ====================
+# Ingress - Production
+# ====================
+adminui:
+  enabled: true
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+  nginx:
+    authServiceHost: wardseal-authsvc
+    authServicePort: 8080
+    directoryServiceHost: wardseal-dirsvc
+    directoryServicePort: 8081
+    governanceServiceHost: wardseal-govsvc
+    governanceServicePort: 8082
+
+idui:
+  enabled: true
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+  nginx:
+    authServiceHost: wardseal-authsvc
+    authServicePort: 8080
+
+landingui:
+  enabled: true
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: auth.wardseal.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+    - host: api.wardseal.com
+      paths:
+        - path: /api/v1/users
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/groups
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/oauth
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/governance
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/policy
+          pathType: Prefix
+          service: policysvc
+          port: 8083
+        - path: /api/v1/provisioning
+          pathType: Prefix
+          service: provsvc
+          port: 8084
+    - host: manage.wardseal.com
+      paths:
+        - path: /login/lookup
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /t/
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /oauth2
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /.well-known
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/user
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/mfa
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/users
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/groups
+          pathType: Prefix
+          service: dirsvc
+          port: 8081
+        - path: /api/v1/organizations
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/audit
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/sso
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/governance
+          pathType: Prefix
+          service: govsvc
+          port: 8082
+        - path: /api/v1/policy
+          pathType: Prefix
+          service: policysvc
+          port: 8083
+        - path: /api/v1/provisioning
+          pathType: Prefix
+          service: provsvc
+          port: 8084
+        - path: /
+          pathType: Prefix
+          service: adminui
+          port: 80
+    - host: id.wardseal.com
+      paths:
+        - path: /login/lookup
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /t/
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /oauth2
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /.well-known
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /social/login
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /logout
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/signup
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/setup
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/mfa
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/user
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /api/v1/devices
+          pathType: Prefix
+          service: authsvc
+          port: 8080
+        - path: /
+          pathType: Prefix
+          service: idui
+          port: 80
+    - host: wardseal.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: landingui
+          port: 80
+  tls:
+    - secretName: wardseal-tls
+      hosts:
+        - auth.wardseal.com
+        - api.wardseal.com
+        - manage.wardseal.com
+        - id.wardseal.com
+        - wardseal.com

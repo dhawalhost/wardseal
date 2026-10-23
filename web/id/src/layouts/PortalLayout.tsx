@@ -1,0 +1,246 @@
+import { useEffect, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
+import { LayoutGrid, User, ShieldCheck, LogOut, Terminal, Activity, Globe } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    resolveManageConsoleUrl,
+    roleGrantsAdminConsole,
+    rolesFromAccessToken,
+    seedSessionFromProfile,
+} from '@wardseal/shared';
+import api, { getUserRoles } from '../api';
+import { useAuth } from '../hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
+import { Avatar } from '@/components/ui/avatar';
+
+type RBACRole = {
+    id?: string;
+    name?: string;
+};
+
+const PortalLayout = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+    const [canAccessAdmin, setCanAccessAdmin] = useState(false);
+    const [userName, setUserName] = useState(localStorage.getItem('userName') || "Authorized User");
+    const policyBaseUrl = window.location.hostname.endsWith('.local')
+        ? 'http://wardseal.local'
+        : 'https://wardseal.com';
+
+    useEffect(() => {
+        let mounted = true;
+
+        const loadAdminAccess = async () => {
+            let userID = localStorage.getItem('userId') || '';
+
+            try {
+                const profileRes = await api.get('/api/v1/user/profile');
+                seedSessionFromProfile(profileRes.data ?? {});
+                if (profileRes.data?.name) {
+                    if (mounted) setUserName(profileRes.data.name);
+                } else if (profileRes.data?.email) {
+                    if (mounted) setUserName(profileRes.data.email);
+                }
+                userID =
+                    profileRes.data?.user_id ||
+                    profileRes.data?.userID ||
+                    profileRes.data?.id ||
+                    userID;
+            } catch (e) {
+                console.error("Failed to fetch profile in PortalLayout", e);
+            }
+
+            if (!userID) {
+                if (mounted) setCanAccessAdmin(false);
+                return;
+            }
+
+            const applyAdmin = (names: string[]) => {
+                const isAdmin = names.some((role) => roleGrantsAdminConsole(role));
+                localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+                if (mounted) setCanAccessAdmin(isAdmin);
+                return isAdmin;
+            };
+
+            // Prefer JWT roles (always available after signup/login) so Admin CTA
+            // works even when /api/v1/users/... is shadowed by dirsvc ingress.
+            const jwtRoles = rolesFromAccessToken(localStorage.getItem('token'));
+            if (jwtRoles.length > 0 && applyAdmin(jwtRoles)) {
+                return;
+            }
+
+            try {
+                const response = await getUserRoles(userID);
+                const roles = Array.isArray(response?.roles) ? response.roles : [];
+                const roleNames = roles
+                    .map((role: RBACRole | string) => (typeof role === 'string' ? role : role?.name))
+                    .filter((name: any): name is string => typeof name === 'string');
+                if (roleNames.length > 0) {
+                    applyAdmin(roleNames);
+                } else if (mounted) {
+                    setCanAccessAdmin(localStorage.getItem('isAdmin') === 'true');
+                }
+            } catch {
+                if (jwtRoles.length > 0) {
+                    applyAdmin(jwtRoles);
+                } else if (mounted) {
+                    setCanAccessAdmin(localStorage.getItem('isAdmin') === 'true');
+                }
+            }
+        };
+
+        loadAdminAccess();
+        return () => {
+            mounted = false;
+        };
+    }, [location.pathname]);
+
+    const handleSignOut = () => {
+        navigate('/logout');
+    };
+
+    return (
+        <div className="min-h-screen bg-surface flex flex-col font-sans selection:bg-primary/10 selection:text-primary">
+            {/* Top Navigation Bar: Modernist */}
+            <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-md">
+                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+                    {/* Logo Area */}
+                    <div className="flex items-center gap-4">
+                        <Link to="/portal" className="flex items-center gap-3 group">
+                            <div className="w-8 h-8 flex items-center justify-center rounded-full">
+                                <img src='/wardseal.svg' height={16} width={16} alt='wardseal' className="w-8 h-8" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
+                                <span className="text-[9px] font-semibold tracking-tight text-on-surface-variant/50 leading-none mt-0.5">User portal</span>
+                            </div>
+                        </Link>
+                    </div>
+
+                    {/* Right Actions */}
+                    <div className="flex items-center gap-6">
+                        {canAccessAdmin && (
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    window.location.assign(resolveManageConsoleUrl());
+                                }}
+                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-semibold text-[10px] px-4 hover:bg-surface-container transition-all"
+                            >
+                                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                                <span>Admin Panel</span>
+                            </Button>
+                        )}
+
+                        <div className="flex items-center gap-4">
+                            <ModeToggle />
+
+                            {/* User Menu */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-surface-container transition-all">
+                                        <Avatar name={localStorage.getItem('userId') || userName || 'user'} size={32} className="h-8 w-8" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64 rounded-lg border p-1 shadow-lg overflow-hidden">
+                                    <DropdownMenuLabel className="p-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/50 mb-1">Authenticated Account</span>
+                                            <span className="text-sm font-bold text-on-surface truncate">{userName}</span>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <div className="p-1 space-y-1">
+                                        <DropdownMenuItem
+                                            onClick={() => navigate('/profile')}
+                                            className="rounded-lg focus:bg-primary/5 focus:text-primary font-medium text-sm px-3 py-2 cursor-pointer"
+                                        >
+                                            <User className="mr-2 h-4 w-4 opacity-50" />
+                                            Profile Settings
+                                        </DropdownMenuItem>
+                                        {canAccessAdmin && (
+                                            <DropdownMenuItem
+                                                onClick={() => {
+                                                    const adminUrl = window.location.hostname.endsWith('.local')
+                                                        ? 'http://manage.wardseal.local'
+                                                        : 'https://manage.wardseal.com';
+                                                    window.location.assign(adminUrl);
+                                                }}
+                                                className="rounded-lg focus:bg-primary/5 focus:text-primary font-medium text-sm px-3 py-2 cursor-pointer"
+                                            >
+                                                <Terminal className="mr-2 h-4 w-4 opacity-50" />
+                                                Switch to Admin
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className="rounded-lg focus:bg-destructive/10 focus:text-destructive text-destructive font-medium text-sm px-3 py-2 cursor-pointer"
+                                            onClick={handleSignOut}
+                                        >
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            Sign Out
+                                        </DropdownMenuItem>
+                                    </div>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content Area */}
+            <main className="flex-1 container mx-auto px-6 py-8 relative">
+                {/* Live Status Indicators */}
+                <div className="flex items-center justify-between mb-6 border-b pb-4">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 bg-success rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                            <span className="text-[11px] font-semibold tracking-tight text-on-surface">Secure connection</span>
+                        </div>
+                        <div className="flex items-center gap-3 opacity-40">
+                            <Activity className="w-3.5 h-3.5" />
+                            <span className="text-[11px] font-medium italic">End-to-end encrypted</span>
+                        </div>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-4">
+                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
+                    </div>
+                </div>
+
+                <Outlet />
+            </main>
+
+            <footer className="border-t py-8 bg-card">
+                <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                            <img src="/wardseal.svg" alt="WardSeal" height={16} width={16} className="w-3.5 h-3.5" />
+                            <p className="text-[10px] font-bold text-on-surface-variant">Secured by WardSeal</p>
+                        </div>
+                        <p className="text-[9px] font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-6">
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Terms</a>
+                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Security Policies</a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    );
+};
+
+export default PortalLayout;
+
+

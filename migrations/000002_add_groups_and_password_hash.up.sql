@@ -1,9 +1,14 @@
 -- 000002_add_groups_and_password_hash.up.sql
-ALTER TABLE accounts ADD COLUMN password_hash VARCHAR(255);
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid = 'accounts'::regclass AND attname = 'password_hash') THEN 
+        ALTER TABLE accounts ADD COLUMN password_hash VARCHAR(255); 
+    END IF; 
+END $$;
 
 CREATE TABLE IF NOT EXISTS groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL,
+    tenant_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -57,6 +57,8 @@ Core capabilities (MUST):
 - Authorization: RBAC, ABAC + policy engine
 - Identity Governance: access requests, certifications/attestation, role mining
 - Audit & compliance: immutable audit trails, reporting
+- Extensibility: Webhooks and event triggers
+- Customization: Per-tenant branding and hosted login pages
 - Admin portal & developer APIs/SDKs
 
 Advanced / optional:
@@ -147,6 +149,10 @@ Deployment:
 - Asynchronous jobs for long-running tasks (role mining, bulk provisioning)
 - Recovery & idempotent job semantics
 
+### Extensibility & Webhooks
+- Event system publishing `user.created`, `login.success`, etc.
+- Webhook dispatchers with retry logic and HMAC signing
+
 ---
 
 ## 5. Data model (canonical entities)
@@ -182,6 +188,15 @@ Suggested Postgres tables (simplified):
 
 - certifications
   - id, tenant_id, scope JSONB, owner, schedule, results JSONB
+
+- webhooks
+  - id, tenant_id, url, secret, events []string, active bool
+
+- branding
+  - tenant_id, logo_url, colors JSONB, css text, settings JSONB
+
+- federated_identities
+  - id, identity_id, provider_id, external_id, profile JSONB
 
 Use a migration tool (golang-migrate / Atlas / Flyway) and keep schema definitions in repo.
 
@@ -259,7 +274,7 @@ X-Tenant-ID: acme-prod
   "client_id": "admin-portal",
   "name": "Admin Portal",
   "client_type": "confidential",
-  "redirect_uris": ["https://admin.example.com/callback"],
+  "redirect_uris": ["https://manage.wardseal.com/callback"],
   "allowed_scopes": ["openid", "profile"],
   "client_secret": "replace-me"
 }
@@ -273,7 +288,7 @@ X-Tenant-ID: acme-prod
   "tenant_id": "acme-prod",
   "client_type": "confidential",
   "name": "Admin Portal",
-  "redirect_uris": ["https://admin.example.com/callback"],
+  "redirect_uris": ["https://manage.wardseal.com/callback"],
   "allowed_scopes": ["openid", "profile"]
 }
 ```
@@ -287,7 +302,7 @@ X-Tenant-ID: acme-prod
 
 #### Tooling
 
-- `cmd/admincli` provides a lightweight CLI: `go run ./cmd/admincli list -tenant demo-tenant` or `create` with flags for redirects/scopes/secret. Use this until the Admin UI wires the same APIs.
+- `cmd/admincli` provides a lightweight CLI: `go run ./cmd/admincli list -tenant admin-system` or `create` with flags for redirects/scopes/secret. Use this until the Admin UI wires the same APIs.
 
 ---
 

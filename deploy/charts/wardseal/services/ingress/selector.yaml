@@ -1,0 +1,26 @@
+ingress:
+  enabled: true
+
+authsvc:
+  enabled: false
+
+dirsvc:
+  enabled: false
+
+govsvc:
+  enabled: false
+
+policysvc:
+  enabled: false
+
+provsvc:
+  enabled: false
+
+adminui:
+  enabled: false
+
+idui:
+  enabled: false
+
+landingui:
+  enabled: false

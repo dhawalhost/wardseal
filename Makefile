@@ -1,79 +1,182 @@
-# Go parameters
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOCLEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
-GOGET=$(GOCMD) get
-BINARY_NAME=identity-platform
+# WardSeal Infrastructure & Deployment Makefile
+# ============================================
+# Senior DevOps authorized entrypoint for all platform operations.
 
-# Migration parameters
-MIGRATE_VERSION = v4.15.2
-MIGRATE_OS = $(shell go env GOOS)
-MIGRATE_ARCH = $(shell go env GOARCH)
-MIGRATE_PATH = ./scripts/migrate
-MIGRATE_CMD = $(MIGRATE_PATH)/migrate -path migrations -database 'postgres://user:password@localhost:5432/identity_platform?sslmode=disable'
+# Configuration
+SHELL := /bin/bash
+COMPOSE_INFRA := docker-compose.yml
+COMPOSE_APPS := docker-compose.apps.yml
+COMPOSE_UI := docker-compose.ui.yml
+COMPOSE_DEV := docker-compose.dev.yml
+COMPOSE_CE := docker-compose.community.yml
 
-.PHONY: all test clean deps build docker-up docker-down install-migrate migrate-create migrate-up migrate-down build-authsvc-image push-authsvc-image build-dirsvc-image push-dirsvc-image
+# Default target
+.PHONY: help
+help: ## Show this help message
+	@echo "WardSeal DevOps 2.0"
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-all: build
+# --- Initial Setup ---
+.PHONY: setup
+setup: ## Initialize local environment (.env, keys)
+	@if [ ! -f .env ]; then cp .env.example .env && echo "Created .env from .env.example"; fi
+	@mkdir -p deploy/dev-keys
+	@if [ ! -f deploy/dev-keys/private_key.pem ]; then \
+		echo "Generating development keys..."; \
+		openssl genrsa -out deploy/dev-keys/private_key.pem 2048; \
+		openssl rsa -in deploy/dev-keys/private_key.pem -pubout -out deploy/dev-keys/public_key.pem; \
+	fi
+	@echo "Setup complete. Please verify .env settings."
 
-# Build the application
-build:
-	$(GOBUILD) -o $(BINARY_NAME) ./cmd/...
+# --- Development Flow ---
+.PHONY: infra-up
+infra-up: ## Start only infrastructure (DB, Redis, Traefik)
+	docker compose -f $(COMPOSE_INFRA) up -d
+	@echo "Waiting for PostgreSQL to be healthy..."
+	@until docker exec wardseal-postgres pg_isready -U user -d identity_platform > /dev/null 2>&1; do sleep 1; done
+	@echo "Infrastructure is ready."
 
-# Run tests
-test:
-	$(GOTEST) -v ./...
+.PHONY: dev
+dev: infra-up ## Start infrastructure and build apps locally
+	docker compose -f $(COMPOSE_INFRA) -f $(COMPOSE_APPS) -f $(COMPOSE_UI) up --build -d
 
-# Clean build artifacts
-clean:
-	$(GOCLEAN)
-	rm -f $(BINARY_NAME)
+.PHONY: down
+down: ## Stop all containers
+	docker compose -f $(COMPOSE_INFRA) -f $(COMPOSE_APPS) -f $(COMPOSE_UI) down
 
-# Get dependencies
-deps:
-	$(GOGET) ./...
+.PHONY: clean
+clean: down ## Stop all containers and remove volumes
+	docker compose -f $(COMPOSE_INFRA) -f $(COMPOSE_APPS) -f $(COMPOSE_UI) down -v
+	rm -rf bin/
+	rm -f coverage.out coverage.html
 
-# Docker commands
-docker-up:
-	docker-compose up -d
+# --- Quality Assurance (QA) ---
+.PHONY: fmt
+fmt: ## Format Go code
+	@if command -v golangci-lint >/dev/null 2>&1 && golangci-lint version 2>/dev/null | grep -q "version v2"; then \
+		golangci-lint run --fix ./...; \
+	else \
+		go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --fix ./...; \
+	fi
+	go run golang.org/x/tools/cmd/goimports@latest -w -local github.com/dhawalhost/wardseal .
 
-docker-down:
-	docker-compose down
+.PHONY: vet
+vet: ## Run go vet
+	go vet ./...
 
-## Migration commands
-# Install migrate tool
-install-migrate:
-	@mkdir -p $(MIGRATE_PATH)
-	@echo "Downloading migrate..."
-	@curl -L https://github.com/golang-migrate/migrate/releases/download/$(MIGRATE_VERSION)/migrate.$(MIGRATE_OS)-$(MIGRATE_ARCH).tar.gz | tar xvz -C $(MIGRATE_PATH)
-	@mv $(MIGRATE_PATH)/migrate.$(MIGRATE_OS)-$(MIGRATE_ARCH) $(MIGRATE_PATH)/migrate
-	@chmod +x $(MIGRATE_PATH)/migrate
+.PHONY: lint
+lint: ## Run golangci-lint v2
+	@if command -v golangci-lint >/dev/null 2>&1 && golangci-lint version 2>/dev/null | grep -q "version v2"; then \
+		golangci-lint run --timeout=15m ./...; \
+	else \
+		go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --timeout=15m ./...; \
+	fi
 
-# Create a new migration file
-migrate-create:
-	@read -p "Enter migration name: " name; \
-	$(MIGRATE_CMD) create -ext sql -dir migrations -seq $$name
+.PHONY: tidy
+tidy: ## Tidy go modules
+	go mod tidy
 
-# Apply all up migrations
-migrate-up:
-	$(MIGRATE_CMD) up
+.PHONY: deps
+deps: ## Download dependencies
+	go mod download
+	go mod tidy
 
-# Roll back all down migrations
-migrate-down:
-	$(MIGRATE_CMD) down
+.PHONY: generate
+generate: ## Run go generate
+	go generate ./...
 
-## Docker Image commands
-BUILD_IMAGE_PREFIX?=your-docker-repo
+.PHONY: coverage
+coverage: ## Run tests with coverage report
+	go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
 
-build-authsvc-image:
-	docker build -t $(BUILD_IMAGE_PREFIX)/authsvc:latest -f cmd/authsvc/Dockerfile .
+# --- Validation & Config ---
+.PHONY: validate-env-config
+validate-env-config: ## Validate Helm chart environment consistency
+	./scripts/validate_env_config.sh
 
-push-authsvc-image:
-	docker push $(BUILD_IMAGE_PREFIX)/authsvc:latest
+.PHONY: config-lint
+config-lint: validate-env-config ## Alias for CI configuration linting
 
-build-dirsvc-image:
-	docker build -t $(BUILD_IMAGE_PREFIX)/dirsvc:latest -f cmd/dirsvc/Dockerfile .
+# --- Local Kubernetes (Rancher Desktop) ---
+.PHONY: sync-charts
+sync-charts: ## Sync local Helm sub-charts
+	bash scripts/deploy_local_k8s.sh --sync-charts-only
 
-push-dirsvc-image:
-	docker push $(BUILD_IMAGE_PREFIX)/dirsvc:latest
+.PHONY: deploy-local-k8s
+deploy-local-k8s: ## Full local Kubernetes deployment
+	bash scripts/deploy_local_k8s.sh
+
+.PHONY: destroy-local-k8s
+destroy-local-k8s: ## Tear down local Kubernetes resources
+	bash scripts/destroy_local_k8s.sh
+
+# --- Community Edition ---
+.PHONY: community
+community: infra-up ## Start pre-built Community Edition (Zero-Conf)
+	docker compose -f $(COMPOSE_INFRA) -f $(COMPOSE_CE) up -d
+	@echo "WardSeal Community Edition is starting at http://manage.wardseal.local"
+
+# --- Debugging & Logs ---
+.PHONY: logs
+logs: ## Stream all container logs
+	docker compose -f $(COMPOSE_INFRA) -f $(COMPOSE_APPS) -f $(COMPOSE_UI) logs -f
+
+.PHONY: debug-svc
+debug-svc: ## Run a specific service with Delve debugger (Usage: make debug-svc NAME=authsvc)
+	@if [ -z "$(NAME)" ]; then echo "Error: NAME is required (e.g., make debug-svc NAME=authsvc)"; exit 1; fi
+	@echo "Coming soon: Automated Delve orchestration for $(NAME)"
+
+# --- Build & Release ---
+.PHONY: build-all
+build-all: ## Build all backend service binaries and CLI tools locally
+	@mkdir -p bin
+	go build -o bin/authsvc ./cmd/authsvc
+	go build -o bin/dirsvc ./cmd/dirsvc
+	go build -o bin/govsvc ./cmd/govsvc
+	go build -o bin/policysvc ./cmd/policysvc
+	go build -o bin/provsvc ./cmd/provsvc
+	go build -o bin/wardseal ./cmd/wardseal
+	go build -o bin/mcpsvc ./cmd/mcpsvc
+	go build -o bin/migrate_patch ./cmd/migrate_patch
+
+.PHONY: mcp
+mcp: ## Run the MCP server locally
+	go run cmd/mcpsvc/main.go
+
+.PHONY: images
+images: ## Build all Docker images
+	docker compose -f $(COMPOSE_APPS) -f $(COMPOSE_UI) build
+
+# --- Testing ---
+.PHONY: test
+test: ## Run unit tests
+	go test -v -race -short ./...
+
+.PHONY: test-integration
+test-integration: infra-up ## Run integration tests against live infrastructure
+	APP_DATABASE_HOST=localhost \
+	APP_DATABASE_USER=user \
+	APP_DATABASE_PASSWORD=password \
+	APP_DATABASE_NAME=identity_platform \
+	TEST_DB_HOST=localhost \
+	TEST_DB_USER=user \
+	TEST_DB_PASSWORD=password \
+	TEST_DB_NAME=identity_platform \
+	go test -v -tags=integration ./tests/integration/...
+
+.PHONY: ui
+ui: ## Build and run the UI locally
+	cd web/admin && npm install && npm run dev
+
+.PHONY: build-ui
+build-ui: ## Build the UI for production
+	cd web/admin && npm install && npm run build
+
+.PHONY: build-all-images
+build-all-images: ## Build all Docker images
+	docker compose -f $(COMPOSE_APPS) -f $(COMPOSE_UI) build
