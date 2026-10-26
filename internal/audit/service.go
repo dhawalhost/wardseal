@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dhawalhost/gokit/jobqueue"
+	"github.com/dhawalhost/gokit/batcher"
 )
 
 // Service defines audit service operations.
@@ -36,7 +36,7 @@ type BatchingService interface {
 
 type service struct {
 	store   Repository
-	batcher *jobqueue.Batcher[Event]
+	batcher *batcher.Batcher[Event]
 }
 
 // NewService creates a synchronous audit service.
@@ -44,7 +44,7 @@ func NewService(store Repository) Service {
 	return &service{store: store}
 }
 
-// NewBatchingService creates a high-throughput audit service backed by gokit/jobqueue.Batcher.
+// NewBatchingService creates a high-throughput audit service backed by gokit/batcher.
 func NewBatchingService(store Repository, batchSize int, linger time.Duration) BatchingService {
 	if batchSize <= 0 {
 		batchSize = 50
@@ -53,12 +53,8 @@ func NewBatchingService(store Repository, batchSize int, linger time.Duration) B
 		linger = 50 * time.Millisecond
 	}
 
-	batcher := jobqueue.NewBatcher(jobqueue.BatcherConfig[Event]{
-		BatchSize:   batchSize,
-		Linger:      linger,
-		BufferSize:  1000,
-		BlockOnFull: true,
-		FlushFunc: func(ctx context.Context, batch []Event) error {
+	b := batcher.New(
+		func(ctx context.Context, batch []Event) error {
 			for _, e := range batch {
 				if _, err := store.Log(ctx, e); err != nil {
 					return err
@@ -66,17 +62,23 @@ func NewBatchingService(store Repository, batchSize int, linger time.Duration) B
 			}
 			return nil
 		},
-	})
+		batcher.WithMaxBatchSize(batchSize),
+		batcher.WithFlushInterval(linger),
+		batcher.WithQueueSize(1000),
+		batcher.WithWorkers(2),
+		batcher.WithRetries(3, 50*time.Millisecond),
+		batcher.WithBackpressure(batcher.BackpressureBlock),
+	)
 
 	return &service{
 		store:   store,
-		batcher: batcher,
+		batcher: b,
 	}
 }
 
 func (s *service) Close() error {
 	if s.batcher != nil {
-		return s.batcher.Close()
+		return s.batcher.Shutdown(context.Background())
 	}
 	return nil
 }
@@ -131,7 +133,7 @@ func (s *service) Log(ctx context.Context, input LogInput) error {
 	}
 
 	if s.batcher != nil {
-		return s.batcher.Push(ctx, e)
+		return s.batcher.Submit(ctx, e)
 	}
 
 	_, err := s.store.Log(ctx, e)

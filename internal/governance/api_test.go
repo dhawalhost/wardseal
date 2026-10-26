@@ -196,6 +196,10 @@ func (s *stubCampaignService) AddReviewItem(ctx context.Context, tenantID, campa
 	return CertificationItem{}, nil
 }
 
+func (s *stubCampaignService) AddReviewItemsBatch(ctx context.Context, tenantID, campaignID string, items []CertificationItem) error {
+	return nil
+}
+
 func (s *stubCampaignService) ListPendingItems(ctx context.Context, campaignID string) ([]CertificationItem, error) {
 	return []CertificationItem{}, nil
 }

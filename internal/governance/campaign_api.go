@@ -38,6 +38,7 @@ func (h *CampaignHTTPHandler) RegisterRoutes(rg *gin.RouterGroup) {
 		campaigns.DELETE("/:id", del, h.deleteCampaign)
 
 		campaigns.POST("/:id/items", write, h.addReviewItem)
+		campaigns.POST("/:id/items/batch", write, h.addReviewItemsBatch)
 		campaigns.GET("/:id/items", read, h.listPendingItems)
 		campaigns.GET("/items", read, h.listReviewItems)
 		campaigns.POST("/:id/items/:itemId/approve", write, h.approveItem)
@@ -188,6 +189,27 @@ func (h *CampaignHTTPHandler) addReviewItem(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, result)
+}
+
+func (h *CampaignHTTPHandler) addReviewItemsBatch(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+
+	campaignID := c.Param("id")
+	var items []CertificationItem
+	if err := c.ShouldBindJSON(&items); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.svc.AddReviewItemsBatch(c.Request.Context(), tenantID, campaignID, items); err != nil {
+		h.logger.Error("Failed to batch add review items", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"count": len(items), "status": "batched"})
 }
 
 func (h *CampaignHTTPHandler) listPendingItems(c *gin.Context) {

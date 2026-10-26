@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dhawalhost/gokit/batcher"
 	"github.com/dhawalhost/wardseal/pkg/eventbus"
 )
 
@@ -21,6 +22,7 @@ type CampaignService interface {
 
 	// Review items
 	AddReviewItem(ctx context.Context, tenantID, campaignID string, item CertificationItem) (CertificationItem, error)
+	AddReviewItemsBatch(ctx context.Context, tenantID, campaignID string, items []CertificationItem) error
 	ListPendingItems(ctx context.Context, campaignID string) ([]CertificationItem, error)
 	ListReviewItems(ctx context.Context, tenantID, reviewerID string) ([]CertificationItem, error)
 	ApproveItem(ctx context.Context, tenantID, itemID, comment string) error
@@ -160,6 +162,40 @@ func (s *campaignService) AddReviewItem(ctx context.Context, tenantID, campaignI
 	return item, nil
 }
 
+func (s *campaignService) AddReviewItemsBatch(ctx context.Context, tenantID, campaignID string, items []CertificationItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	b := batcher.New(
+		func(batchCtx context.Context, batch []CertificationItem) error {
+			for _, item := range batch {
+				if _, err := s.store.CreateItem(batchCtx, item); err != nil {
+					return fmt.Errorf("failed to insert certification item: %w", err)
+				}
+			}
+			return nil
+		},
+		batcher.WithMaxBatchSize(100),
+		batcher.WithFlushInterval(25*time.Millisecond),
+		batcher.WithQueueSize(2000),
+		batcher.WithWorkers(4),
+		batcher.WithRetries(3, 50*time.Millisecond),
+		batcher.WithBackpressure(batcher.BackpressureBlock),
+	)
+
+	for _, item := range items {
+		item.TenantID = tenantID
+		item.CampaignID = campaignID
+		if err := b.Submit(ctx, item); err != nil {
+			_ = b.Shutdown(ctx)
+			return fmt.Errorf("failed to submit review item: %w", err)
+		}
+	}
+
+	return b.Shutdown(ctx)
+}
+
 func (s *campaignService) ListPendingItems(ctx context.Context, campaignID string) ([]CertificationItem, error) {
 	return s.store.ListItems(ctx, campaignID, "")
 }
@@ -218,17 +254,18 @@ func (s *campaignService) GenerateRecertificationCampaign(ctx context.Context, t
 		return fmt.Errorf("failed to fetch users for campaign: %w", err)
 	}
 
+	items := make([]CertificationItem, 0, len(users))
 	for _, user := range users {
-		item := CertificationItem{
+		items = append(items, CertificationItem{
 			UserID:       user.ID,
 			ResourceType: "user_access",
 			ResourceID:   user.ID,
 			ResourceName: user.Email,
-		}
-		_, err := s.AddReviewItem(ctx, tenantID, campaign.ID, item)
-		if err != nil {
-			return fmt.Errorf("failed to add review item for user %s: %w", user.ID, err)
-		}
+		})
+	}
+
+	if err := s.AddReviewItemsBatch(ctx, tenantID, campaign.ID, items); err != nil {
+		return fmt.Errorf("failed to batch create review items for campaign: %w", err)
 	}
 
 	return s.StartCampaign(ctx, tenantID, campaign.ID)
