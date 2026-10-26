@@ -183,6 +183,8 @@ type mockDirectoryService struct {
 	verifyReturnUser        User
 	verifyTenantID          string
 	verifyCredentialsCalled bool
+	searchUsersReturn       []User
+	lastSearchQuery         string
 }
 
 // ListPendingDeletions implements [Service].
@@ -211,6 +213,11 @@ func (m *mockDirectoryService) GetUserByEmail(context.Context, string, string) (
 
 func (m *mockDirectoryService) ListUsers(context.Context, string, int, int) ([]User, int, error) {
 	return []User{}, 0, nil
+}
+
+func (m *mockDirectoryService) SearchUsers(ctx context.Context, tenantID, query string, limit int) ([]User, error) {
+	m.lastSearchQuery = query
+	return m.searchUsersReturn, nil
 }
 
 func (m *mockDirectoryService) UpdateUser(context.Context, string, string, User) error {
@@ -389,3 +396,44 @@ func TestCreateTenantPublicPathGone(t *testing.T) {
 		t.Fatalf("expected 404 for public /tenants, got %d", resp.Code)
 	}
 }
+
+func strPtr(s string) *string { return &s }
+
+func TestSearchUsersEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc := &mockDirectoryService{
+		searchUsersReturn: []User{
+			{ID: "u-101", Email: "alice@wardseal.com", DisplayName: strPtr("Alice Smith")},
+		},
+	}
+	handler := newHandler(svc)
+	r := gin.New()
+	handler.RegisterRoutes(r)
+
+	req := httptest.NewRequest(http.MethodGet, "/users/search?q=Alice", nil)
+	req.Header.Set(middleware.DefaultTenantHeader, "22222222-2222-2222-2222-222222222222")
+	req.Header.Set(middleware.DefaultServiceAuthHeader, testServiceToken)
+	resp := httptest.NewRecorder()
+
+	r.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", resp.Code, resp.Body.String())
+	}
+	if svc.lastSearchQuery != "Alice" {
+		t.Fatalf("expected query 'Alice', got %s", svc.lastSearchQuery)
+	}
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body["query"] != "Alice" {
+		t.Fatalf("expected response query Alice, got %v", body["query"])
+	}
+	users, ok := body["users"].([]interface{})
+	if !ok || len(users) != 1 {
+		t.Fatalf("expected 1 user in search results, got %v", users)
+	}
+}
+

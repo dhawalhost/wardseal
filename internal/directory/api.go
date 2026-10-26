@@ -150,6 +150,7 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 	users := tenantProtected.Group("/users")
 	{
 		users.POST("", h.requirePerm("users", "write"), h.createUser)
+		users.GET("/search", h.requirePerm("users", "read"), h.searchUsers)
 		users.GET("/:id", h.requirePerm("users", "read"), h.getUserByID)
 		users.GET("", h.requirePerm("users", "read"), h.listUsers)
 		users.PUT("/:id", h.requirePerm("users", "write"), h.updateUser)
@@ -288,6 +289,36 @@ func (h *HTTPHandler) listUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ListUsersResponse{Users: users, Total: total})
+}
+
+func (h *HTTPHandler) searchUsers(c *gin.Context) {
+	tenantID, ok := h.tenantID(c)
+	if !ok {
+		return
+	}
+
+	query := c.Query("q")
+	if query == "" {
+		query = c.Query("query")
+	}
+
+	limit, _, _ := middleware.ParsePagination(c.Request)
+	if limit <= 0 {
+		limit = 10
+	}
+
+	users, err := h.svc.SearchUsers(c.Request.Context(), tenantID, query, limit)
+	if err != nil {
+		h.logger.Error("Search users failed", zap.Error(err), zap.String("query", query))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"users": users,
+		"total": len(users),
+		"query": query,
+	})
 }
 
 func (h *HTTPHandler) updateUser(c *gin.Context) {

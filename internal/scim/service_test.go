@@ -60,6 +60,10 @@ func (f *fakeDirectoryService) ListUsers(_ context.Context, _ string, limit, off
 	return f.users, f.totalUsers, nil
 }
 
+func (f *fakeDirectoryService) SearchUsers(context.Context, string, string, int) ([]directory.User, error) {
+	return f.users, nil
+}
+
 func (f *fakeDirectoryService) UpdateUser(_ context.Context, _ string, id string, user directory.User) error {
 	f.lastUpdateID = id
 	f.lastUpdate = user

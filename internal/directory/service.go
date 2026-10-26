@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/dhawalhost/gokit/search"
 	"github.com/dhawalhost/wardseal/pkg/eventbus"
 	"github.com/dhawalhost/wardseal/pkg/password"
 	"github.com/lib/pq"
@@ -21,6 +23,7 @@ type UserManager interface {
 	GetUserByID(ctx context.Context, tenantID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, tenantID, email string) (User, error)
 	ListUsers(ctx context.Context, tenantID string, limit, offset int) ([]User, int, error)
+	SearchUsers(ctx context.Context, tenantID, query string, limit int) ([]User, error)
 	ListPendingDeletions(ctx context.Context, olderThan time.Time) ([]User, error)
 	UpdateUser(ctx context.Context, tenantID, id string, user User) error
 	DeleteUser(ctx context.Context, tenantID, id string) error
@@ -73,6 +76,7 @@ type directoryService struct {
 	repo            Repository
 	bus             eventbus.EventBus
 	passwordHistory map[string][]string
+	searchIndex     *search.MemoryIndex
 	mu              sync.RWMutex
 }
 
@@ -82,10 +86,19 @@ var ErrEmailAlreadyExistsGlobally = errors.New("email already in use globally")
 
 // NewService creates a new directory service.
 func NewService(repo Repository, bus eventbus.EventBus) Service {
+	idxCfg := search.IndexConfig{
+		DefaultAnalyzer: search.NewStandardAnalyzer(),
+		FieldAnalyzers: map[string]*search.Analyzer{
+			"display_name": search.NewAutocompleteAnalyzer(2, 15),
+			"email":        search.NewAutocompleteAnalyzer(2, 15),
+		},
+	}
+
 	return &directoryService{
 		repo:            repo,
 		bus:             bus,
 		passwordHistory: make(map[string][]string),
+		searchIndex:     search.NewMemoryIndex(idxCfg),
 	}
 }
 
@@ -132,13 +145,17 @@ func (s *directoryService) CreateUser(ctx context.Context, tenantID string, user
 		return nil
 	})
 
-	if err == nil && s.bus != nil {
-		payload, _ := json.Marshal(map[string]string{
-			"tenant_id": tenantID,
-			"user_id":   userID,
-			"email":     user.Email,
-		})
-		_ = s.bus.Publish(ctx, "UserCreated", payload)
+	if err == nil {
+		user.ID = userID
+		s.indexUserDoc(ctx, tenantID, user)
+		if s.bus != nil {
+			payload, _ := json.Marshal(map[string]string{
+				"tenant_id": tenantID,
+				"user_id":   userID,
+				"email":     user.Email,
+			})
+			_ = s.bus.Publish(ctx, "UserCreated", payload)
+		}
 	}
 	return userID, err
 }
@@ -208,17 +225,24 @@ func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, 
 		return s.repo.UpdateAccount(ctx, tx, tenantID, id, user.Email, passwordHash)
 	})
 
-	if err == nil && user.Password != "" {
-		s.mu.Lock()
-		history := s.passwordHistory[id]
-		if len(history) >= 5 {
-			history = history[1:]
+	if err == nil {
+		updatedUser, errGet := s.GetUserByID(ctx, tenantID, id)
+		if errGet == nil {
+			s.indexUserDoc(ctx, tenantID, updatedUser)
 		}
-		hp, hashErr := password.Hash(user.Password)
-		if hashErr == nil {
-			s.passwordHistory[id] = append(history, hp)
+
+		if user.Password != "" {
+			s.mu.Lock()
+			history := s.passwordHistory[id]
+			if len(history) >= 5 {
+				history = history[1:]
+			}
+			hp, hashErr := password.Hash(user.Password)
+			if hashErr == nil {
+				s.passwordHistory[id] = append(history, hp)
+			}
+			s.mu.Unlock()
 		}
-		s.mu.Unlock()
 	}
 
 	return err
@@ -226,14 +250,84 @@ func (s *directoryService) UpdateUser(ctx context.Context, tenantID, id string, 
 
 func (s *directoryService) DeleteUser(ctx context.Context, tenantID, id string) error {
 	err := s.repo.DeleteIdentity(ctx, tenantID, id)
-	if err == nil && s.bus != nil {
-		payload, _ := json.Marshal(map[string]string{
-			"tenant_id": tenantID,
-			"user_id":   id,
-		})
-		_ = s.bus.Publish(ctx, "UserDeactivated", payload)
+	if err == nil {
+		if s.searchIndex != nil {
+			_ = s.searchIndex.Delete(ctx, id)
+		}
+		if s.bus != nil {
+			payload, _ := json.Marshal(map[string]string{
+				"tenant_id": tenantID,
+				"user_id":   id,
+			})
+			_ = s.bus.Publish(ctx, "UserDeactivated", payload)
+		}
 	}
 	return err
+}
+
+func (s *directoryService) SearchUsers(ctx context.Context, tenantID, query string, limit int) ([]User, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	query = strings.TrimSpace(query)
+	if query == "" {
+		users, _, err := s.ListUsers(ctx, tenantID, limit, 0)
+		return users, err
+	}
+
+	if s.searchIndex == nil {
+		users, _, err := s.ListUsers(ctx, tenantID, limit, 0)
+		return users, err
+	}
+
+	boolQ := search.NewBoolQuery()
+	boolQ.FilterClause(search.NewTagQuery("tenant:" + tenantID))
+
+	mmQ := search.NewMultiMatchQuery(query, "display_name", "email", "department", "title")
+	mmQ.SetFieldBoost("display_name", 2.0)
+	mmQ.SetFieldBoost("email", 1.5)
+	boolQ.MustClause(mmQ)
+
+	res, err := s.searchIndex.Search(ctx, search.Request{
+		Query: boolQ,
+		Limit: limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("search failed: %w", err)
+	}
+
+	users := make([]User, 0, len(res.Hits))
+	for _, hit := range res.Hits {
+		u, err := s.GetUserByID(ctx, tenantID, hit.DocID)
+		if err != nil {
+			continue
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+func (s *directoryService) indexUserDoc(ctx context.Context, tenantID string, user User) {
+	if s.searchIndex == nil || user.ID == "" {
+		return
+	}
+	doc := search.NewDocument(user.ID)
+	doc.AddTag("tenant:" + tenantID)
+	doc.SetField("email", user.Email)
+	if user.DisplayName != nil {
+		doc.SetField("display_name", *user.DisplayName)
+	}
+	if user.Department != nil {
+		doc.SetField("department", *user.Department)
+	}
+	if user.Title != nil {
+		doc.SetField("title", *user.Title)
+	}
+	_ = s.searchIndex.Index(ctx, doc)
 }
 
 func (s *directoryService) CreateGroup(ctx context.Context, tenantID string, group Group) (string, error) {
