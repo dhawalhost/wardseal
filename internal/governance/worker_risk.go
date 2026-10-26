@@ -7,11 +7,14 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/dhawalhost/gokit/distlock"
+	"github.com/dhawalhost/gokit/scheduler"
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/connector"
 )
 
-// RiskGovernor monitors user risk levels and triggers autonomous mitigation.
+// RiskGovernor monitors user risk levels and triggers autonomous mitigation
+// using a distributed scheduler.
 type RiskGovernor struct {
 	signalStore auth.SignalRepository
 	provSvc     connector.ProvisioningService
@@ -19,6 +22,8 @@ type RiskGovernor struct {
 	interval    time.Duration
 	threshold   int
 	logger      *zap.Logger
+	sched       *scheduler.Scheduler
+	locker      distlock.Locker
 }
 
 // NewRiskGovernor creates a new autonomous risk governor.
@@ -27,7 +32,18 @@ func NewRiskGovernor(
 	provSvc connector.ProvisioningService,
 	govSvc Service,
 	logger *zap.Logger,
+	locker ...distlock.Locker,
 ) *RiskGovernor {
+	var l distlock.Locker
+	if len(locker) > 0 && locker[0] != nil {
+		l = locker[0]
+	}
+
+	var schedOpts []scheduler.Option
+	if l != nil {
+		schedOpts = append(schedOpts, scheduler.WithLocker(l))
+	}
+
 	return &RiskGovernor{
 		signalStore: signalStore,
 		provSvc:     provSvc,
@@ -35,32 +51,50 @@ func NewRiskGovernor(
 		interval:    5 * time.Minute, // Sweep every 5 minutes
 		threshold:   90,              // Critical threshold for autonomous action
 		logger:      logger,
+		sched:       scheduler.New(schedOpts...),
+		locker:      l,
 	}
 }
 
-// Start runs the risk governor in a background loop.
+// Start runs the risk governor distributed scheduler in the background.
 func (g *RiskGovernor) Start(ctx context.Context) {
-	g.logger.Info("Autonomous Risk Governor started",
+	g.logger.Info("Autonomous Risk Governor starting distributed scheduler",
 		zap.Duration("interval", g.interval),
 		zap.Int("threshold", g.threshold))
 
-	ticker := time.NewTicker(g.interval)
-	go func() {
-		defer ticker.Stop()
-		defer func() {
-			if r := recover(); r != nil {
-				g.logger.Error("Panic recovered in RiskGovernor worker", zap.Any("panic", r))
-			}
-		}()
-		for {
-			select {
-			case <-ticker.C:
-				g.performSweep(ctx)
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+	jobOpts := []scheduler.JobOption{
+		scheduler.WithJobName("governance:autonomous-risk-sweep"),
+		scheduler.WithJobTimeout(5 * time.Minute),
+		scheduler.WithJobOverlapPolicy(scheduler.OverlapSkip),
+		scheduler.WithJobRetries(2, 15*time.Second),
+	}
+	if g.locker != nil {
+		jobOpts = append(jobOpts, scheduler.WithJobLock("lock:wardseal:gov:risk-sweep", 5*time.Minute))
+	}
+
+	_, err := g.sched.RegisterFunc(fmt.Sprintf("@every %s", g.interval), func(jobCtx context.Context) error {
+		g.performSweep(jobCtx)
+		return nil
+	}, jobOpts...)
+	if err != nil {
+		g.logger.Error("Failed to register risk sweep job with scheduler", zap.Error(err))
+		return
+	}
+
+	g.sched.StartAsync(ctx)
+}
+
+// Stop gracefully shuts down the risk governor scheduler.
+func (g *RiskGovernor) Stop(ctx context.Context) error {
+	if g.sched != nil {
+		return g.sched.Stop(ctx)
+	}
+	return nil
+}
+
+// PerformSweep triggers a manual sweep run (useful for tests or manual invocations).
+func (g *RiskGovernor) PerformSweep(ctx context.Context) {
+	g.performSweep(ctx)
 }
 
 func (g *RiskGovernor) performSweep(ctx context.Context) {

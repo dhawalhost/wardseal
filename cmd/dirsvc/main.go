@@ -9,6 +9,7 @@ import (
 	gokitserver "github.com/dhawalhost/gokit/server"
 
 	gokitconfig "github.com/dhawalhost/gokit/config"
+	"github.com/dhawalhost/gokit/distlock"
 	"github.com/dhawalhost/gokit/health"
 	"github.com/dhawalhost/gokit/logger"
 	gokitmiddleware "github.com/dhawalhost/gokit/middleware"
@@ -210,11 +211,20 @@ func main() {
 	scimHandlers := scim.NewHTTPHandler(scimSvc, repo, serviceToken.Raw(), log)
 	scimHandlers.RegisterRoutes(router)
 
-	// Start DPDP Account Erasure Background Worker
+	// Start DPDP Account Erasure Background Worker with Distributed Scheduler
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
+	var erasureLocker distlock.Locker
+	if rateLimitRedisClient != nil {
+		erasureLocker = distlock.NewRedisLocker(rateLimitRedisClient)
+	}
 	// Run checks daily, purging accounts that have been soft-deleted for 30 days
-	directory.StartAccountErasureWorker(workerCtx, svc, log, 24*time.Hour, 30*24*time.Hour)
+	erasureSched := directory.StartAccountErasureWorker(workerCtx, svc, log, 24*time.Hour, 30*24*time.Hour, erasureLocker)
+	defer func() {
+		if erasureSched != nil {
+			_ = erasureSched.Stop(context.Background())
+		}
+	}()
 
 	// Server Configuration with Graceful Shutdown using gokit/server
 	listenAddr := config.ResolvePort(":8081", "DIRSVC_PORT")

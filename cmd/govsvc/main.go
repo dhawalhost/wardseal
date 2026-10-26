@@ -344,13 +344,20 @@ func main() {
 	provSvc := connector.NewProvisioningService(db, connRegistry, log)
 	provSvc.Start(context.Background()) // Start the worker loop
 
+	var govLocker distlock.Locker
+	if redisClient != nil {
+		govLocker = distlock.NewRedisLocker(redisClient)
+	}
+
 	// Autonomous Risk Response (The Edge)
-	riskGovernor := governance.NewRiskGovernor(signalStore, provSvc, svc, log)
+	riskGovernor := governance.NewRiskGovernor(signalStore, provSvc, svc, log, govLocker)
 	riskGovernor.Start(context.Background())
+	defer func() { _ = riskGovernor.Stop(context.Background()) }()
 
 	// Autonomous Least-Privilege Pruning
-	pruningGovernor := governance.NewPruningGovernor(svc, log)
+	pruningGovernor := governance.NewPruningGovernor(svc, log, govLocker)
 	pruningGovernor.Start(context.Background())
+	defer func() { _ = pruningGovernor.Stop(context.Background()) }()
 
 	// Resource Discovery Framework
 	discoveryRepo := discovery.NewRepository(db)
