@@ -6,9 +6,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"github.com/subosito/gotenv"
 
@@ -192,7 +194,7 @@ func Load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("database.host", "DB_HOST", "APP_DATABASE_HOST")
 	_ = v.BindEnv("database.port", "DB_PORT", "APP_DATABASE_PORT")
 	_ = v.BindEnv("database.user", "DB_USER", "APP_DATABASE_USER")
-	_ = v.BindEnv("database.password", "DB_PASSWORD", "APP_DATABASE_PASSWORD")
+	_ = v.BindEnv("database.password", "DB_PASSWORD", "DATABASE_PASSWORD", "APP_DATABASE_PASSWORD")
 	_ = v.BindEnv("database.name", "DB_NAME", "APP_DATABASE_NAME")
 	_ = v.BindEnv("database.sslmode", "DB_SSLMODE", "APP_DATABASE_SSLMODE")
 	_ = v.BindEnv("auth.base_url", "AUTH_SERVICE_URL", "APP_AUTH_BASE_URL")
@@ -204,6 +206,7 @@ func Load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("auth.jwt_private_key_path", "JWT_PRIVATE_KEY_PATH", "APP_AUTH_JWT_PRIVATE_KEY_PATH")
 	_ = v.BindEnv("auth.jwt_public_key_path", "JWT_PUBLIC_KEY_PATH", "APP_AUTH_JWT_PUBLIC_KEY_PATH")
 	_ = v.BindEnv("auth.redis_addr", "REDIS_ADDR", "APP_AUTH_REDIS_ADDR")
+	_ = v.BindEnv("auth.redis_password", "REDIS_PASSWORD", "APP_AUTH_REDIS_PASSWORD")
 	_ = v.BindEnv("auth.cookie_domain", "COOKIE_DOMAIN", "APP_AUTH_COOKIE_DOMAIN")
 	_ = v.BindEnv("directory.service_auth_token", "SERVICE_AUTH_TOKEN", "APP_DIRECTORY_SERVICE_AUTH_TOKEN")
 	_ = v.BindEnv("directory.service_auth_header", "SERVICE_AUTH_HEADER", "APP_DIRECTORY_SERVICE_AUTH_HEADER")
@@ -243,8 +246,15 @@ func Load(cfgFile string) (*Config, error) {
 		_ = gotenv.Load(".env")
 	}
 
+	decoderHook := mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+		mapstructure.TextUnmarshallerHookFunc(),
+		stringToSecretHookFunc(),
+	)
+
 	var cfg Config
-	if err := v.Unmarshal(&cfg); err != nil {
+	if err := v.Unmarshal(&cfg, viper.DecodeHook(decoderHook)); err != nil {
 		return nil, fmt.Errorf("config: unmarshal: %w", err)
 	}
 
@@ -386,5 +396,16 @@ func ParseAddresses(s string) []string {
 		}
 	}
 	return res
+}
+
+func stringToSecretHookFunc() mapstructure.DecodeHookFuncType {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf(types.Secret{}) {
+			if str, ok := data.(string); ok {
+				return types.NewSecret(str), nil
+			}
+		}
+		return data, nil
+	}
 }
 

@@ -134,3 +134,26 @@ func TestResolvePort(t *testing.T) {
 	}
 }
 
+func TestLoad_EnvWithSecret(t *testing.T) {
+	t.Setenv("DATABASE_PASSWORD", "super-secret-db-pass")
+	t.Setenv("KMS_MASTER_KEY", "12345678901234567890123456789012")
+	t.Setenv("REDIS_PASSWORD", "redis-pass-123")
+	t.Setenv("AUTH_SERVICE_URL", "http://auth.wardseal.local")
+	t.Setenv("UI_URL", "http://manage.wardseal.local")
+
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("unexpected error loading config with env secrets: %v", err)
+	}
+
+	if cfg.Database.Password.Raw() != "super-secret-db-pass" {
+		t.Errorf("expected database password 'super-secret-db-pass', got '%s'", cfg.Database.Password.Raw())
+	}
+	if cfg.KMS.MasterKey.Raw() != "12345678901234567890123456789012" {
+		t.Errorf("expected master key '12345678901234567890123456789012', got '%s'", cfg.KMS.MasterKey.Raw())
+	}
+	if cfg.Auth.RedisPassword.Raw() != "redis-pass-123" {
+		t.Errorf("expected redis password 'redis-pass-123', got '%s'", cfg.Auth.RedisPassword.Raw())
+	}
+}
+
