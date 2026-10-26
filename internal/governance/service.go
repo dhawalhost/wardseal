@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/dhawalhost/gokit/distlock"
+	"github.com/dhawalhost/gokit/workflow"
 	"github.com/dhawalhost/wardseal/internal/auth"
 	"github.com/dhawalhost/wardseal/internal/authz"
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -140,24 +141,35 @@ type governanceService struct {
 	rbacSvc       rbac.Service
 	endpointStore EndpointRepository
 	workloadStore auth.WorkloadRepository
-	engine        *authz.Engine
-	bus           eventbus.EventBus
-	locker        distlock.Locker
+	engine         *authz.Engine
+	bus            eventbus.EventBus
+	locker         distlock.Locker
+	workflowEngine *workflow.Engine
 }
 
 // NewService creates a new governance service.
 func NewService(clientStore oauthclient.Repository, reqStore Repository, orgStore OrganizationRepository, endpointStore EndpointRepository, workloadStore auth.WorkloadRepository, dirClient DirectoryClient, policyEngine policy.Engine, rbacSvc rbac.Service, engine *authz.Engine, bus eventbus.EventBus) Service {
+	wfEngine := workflow.NewEngine(workflow.NewMemoryStore())
+	def, err := workflow.NewBuilder("access_request", workflow.State("pending")).
+		AddTransition(workflow.Event("APPROVE"), []workflow.State{"pending"}, workflow.State("approved")).
+		AddTransition(workflow.Event("REJECT"), []workflow.State{"pending"}, workflow.State("rejected")).
+		Build()
+	if err == nil {
+		_ = wfEngine.RegisterDefinition(def)
+	}
+
 	return &governanceService{
-		clientStore:   clientStore,
-		reqStore:      reqStore,
-		orgStore:      orgStore,
-		endpointStore: endpointStore,
-		workloadStore: workloadStore,
-		dirClient:     dirClient,
-		policyEngine:  policyEngine,
-		rbacSvc:       rbacSvc,
-		engine:        engine,
-		bus:           bus,
+		clientStore:    clientStore,
+		reqStore:       reqStore,
+		orgStore:       orgStore,
+		endpointStore:  endpointStore,
+		workloadStore:  workloadStore,
+		dirClient:      dirClient,
+		policyEngine:   policyEngine,
+		rbacSvc:        rbacSvc,
+		engine:         engine,
+		bus:            bus,
+		workflowEngine: wfEngine,
 	}
 }
 
@@ -340,6 +352,19 @@ func (s *governanceService) CreateAccessRequest(ctx context.Context, tenantID st
 		return AccessRequest{}, err
 	}
 
+	if s.workflowEngine != nil {
+		_, _ = s.workflowEngine.CreateInstance(ctx, "access_request",
+			workflow.WithInstanceID(id),
+			workflow.WithInitialState(workflow.State("pending")),
+			workflow.WithMetadata(map[string]any{
+				"tenant_id":     tenantID,
+				"requester_id":  req.RequesterID,
+				"resource_type": req.ResourceType,
+				"resource_id":   req.ResourceID,
+			}),
+		)
+	}
+
 	s.publishEvent(ctx, "AccessRequestCreated", map[string]interface{}{
 		"tenant_id":     tenantID,
 		"request_id":    id,
@@ -389,7 +414,29 @@ func (s *governanceService) ApproveAccessRequest(ctx context.Context, tenantID, 
 	if err != nil {
 		return fmt.Errorf("failed to get request: %w", err)
 	}
-	if req.Status != "pending" {
+
+	// Enforce FSM state transition: pending -> approved
+	if s.workflowEngine != nil {
+		_, err := s.workflowEngine.Fire(ctx, requestID, workflow.Event("APPROVE"), map[string]any{
+			"approver_id": approverID,
+		})
+		if err != nil {
+			if errors.Is(err, workflow.ErrInstanceNotFound) {
+				if req.Status != "pending" {
+					return fmt.Errorf("access request is already %s", req.Status)
+				}
+				_, _ = s.workflowEngine.CreateInstance(ctx, "access_request",
+					workflow.WithInstanceID(requestID),
+					workflow.WithInitialState(workflow.State(req.Status)),
+				)
+				if _, fireErr := s.workflowEngine.Fire(ctx, requestID, workflow.Event("APPROVE"), map[string]any{"approver_id": approverID}); fireErr != nil {
+					return fmt.Errorf("workflow transition failed: %w", fireErr)
+				}
+			} else {
+				return fmt.Errorf("access request transition not allowed: %w", err)
+			}
+		}
+	} else if req.Status != "pending" {
 		return fmt.Errorf("access request is already %s", req.Status)
 	}
 
@@ -476,7 +523,29 @@ func (s *governanceService) RejectAccessRequest(ctx context.Context, tenantID, r
 	if err != nil {
 		return fmt.Errorf("failed to get request: %w", err)
 	}
-	if req.Status != "pending" {
+
+	// Enforce FSM state transition: pending -> rejected
+	if s.workflowEngine != nil {
+		_, err := s.workflowEngine.Fire(ctx, requestID, workflow.Event("REJECT"), map[string]any{
+			"approver_id": approverID,
+		})
+		if err != nil {
+			if errors.Is(err, workflow.ErrInstanceNotFound) {
+				if req.Status != "pending" {
+					return fmt.Errorf("access request is already %s", req.Status)
+				}
+				_, _ = s.workflowEngine.CreateInstance(ctx, "access_request",
+					workflow.WithInstanceID(requestID),
+					workflow.WithInitialState(workflow.State(req.Status)),
+				)
+				if _, fireErr := s.workflowEngine.Fire(ctx, requestID, workflow.Event("REJECT"), map[string]any{"approver_id": approverID}); fireErr != nil {
+					return fmt.Errorf("workflow transition failed: %w", fireErr)
+				}
+			} else {
+				return fmt.Errorf("access request transition not allowed: %w", err)
+			}
+		}
+	} else if req.Status != "pending" {
 		return fmt.Errorf("access request is already %s", req.Status)
 	}
 

@@ -172,6 +172,7 @@ func main() {
 	router.Use(otelgin.Middleware("govsvc"))
 	router.Use(wardsealobs.PrometheusMiddleware(metrics))
 	router.Use(middleware.Wrap(gokitmiddleware.RequestID())) // Inject tracing ID
+	router.Use(middleware.Compression())                   // Multi-codec response compression (zstd, brotli, gzip)
 
 	// Security Middleware
 	router.Use(middleware.Wrap(gokitmiddleware.SecureHeaders()))

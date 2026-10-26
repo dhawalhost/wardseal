@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/dhawalhost/gokit/bulkhead"
+	"github.com/dhawalhost/gokit/compression"
 	gokiterrors "github.com/dhawalhost/gokit/errors"
 	"github.com/dhawalhost/gokit/health"
 	gokitidempotency "github.com/dhawalhost/gokit/idempotency"
@@ -77,6 +78,12 @@ func SecureHeaders() gin.HandlerFunc {
 // RequestID adapts gokit/middleware.RequestID to Gin.
 func RequestID() gin.HandlerFunc {
 	return Wrap(gokitmiddleware.RequestID())
+}
+
+// Compression adapts gokit/compression.Middleware to Gin.
+// Supports Zstandard (zstd), Brotli (br), Gzip, and Deflate with sync.Pool buffer recycling.
+func Compression(opts ...compression.Option) gin.HandlerFunc {
+	return Wrap(compression.Middleware(opts...))
 }
 
 // AbortWithAppError aborts the current Gin context and writes a standardized JSON error

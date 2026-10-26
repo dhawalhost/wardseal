@@ -12,6 +12,7 @@ import (
 
 	"github.com/dhawalhost/wardseal/internal/provisioning"
 	"github.com/dhawalhost/wardseal/pkg/config"
+	"github.com/dhawalhost/wardseal/pkg/middleware"
 )
 
 func main() {
@@ -42,6 +43,7 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	router.Use(middleware.Compression())
 
 	provHandlers := provisioning.NewHTTPHandler(svc, log)
 	provHandlers.RegisterRoutes(router)

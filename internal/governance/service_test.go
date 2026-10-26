@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/dhawalhost/wardseal/internal/oauthclient"
@@ -249,4 +250,98 @@ func (f *fakeEndpointStore) UpdateDeviceStatus(ctx context.Context, tenantID, id
 }
 func (f *fakeEndpointStore) GetDevicesByUser(ctx context.Context, tenantID, userID string) ([]Device, error) {
 	return nil, nil
+}
+
+type fakeReqStore struct {
+	requests map[string]AccessRequest
+}
+
+func (f *fakeReqStore) CreateRequest(ctx context.Context, req AccessRequest) (string, error) {
+	if f.requests == nil {
+		f.requests = make(map[string]AccessRequest)
+	}
+	id := "req-1"
+	req.ID = id
+	req.Status = "pending"
+	f.requests[id] = req
+	return id, nil
+}
+
+func (f *fakeReqStore) GetRequest(ctx context.Context, tenantID, id string) (AccessRequest, error) {
+	if req, ok := f.requests[id]; ok {
+		return req, nil
+	}
+	return AccessRequest{}, errors.New("not found")
+}
+
+func (f *fakeReqStore) ListRequests(ctx context.Context, tenantID, status string) ([]AccessRequest, error) {
+	var out []AccessRequest
+	for _, r := range f.requests {
+		out = append(out, r)
+	}
+	return out, nil
+}
+
+func (f *fakeReqStore) UpdateRequestStatus(ctx context.Context, id, status string) error {
+	if req, ok := f.requests[id]; ok {
+		req.Status = status
+		f.requests[id] = req
+		return nil
+	}
+	return errors.New("not found")
+}
+
+func (f *fakeReqStore) CreateIPPolicy(ctx context.Context, p IPPolicy) (string, error)    { return "", nil }
+func (f *fakeReqStore) ListIPPolicies(ctx context.Context, tenantID string) ([]IPPolicy, error) {
+	return nil, nil
+}
+func (f *fakeReqStore) DeleteIPPolicy(ctx context.Context, tenantID, id string) error { return nil }
+func (f *fakeReqStore) CreateSafetyAction(ctx context.Context, action SafetyAction) (string, error) {
+	return "", nil
+}
+func (f *fakeReqStore) GetSafetyAction(ctx context.Context, tenantID, id string) (SafetyAction, error) {
+	return SafetyAction{}, nil
+}
+func (f *fakeReqStore) ListSafetyActions(ctx context.Context, tenantID, status string) ([]SafetyAction, error) {
+	return nil, nil
+}
+func (f *fakeReqStore) UpdateSafetyActionStatus(ctx context.Context, id, status string) error {
+	return nil
+}
+
+func TestAccessRequest_WorkflowFSM(t *testing.T) {
+	reqStore := &fakeReqStore{}
+	svc := NewService(&fakeStore{}, reqStore, &fakeOrgStore{}, &fakeEndpointStore{}, nil, &fakeDirClient{}, &fakePolicyEngine{}, &fakeRBACSvc{}, nil, nil)
+
+	// 1. Create access request
+	req, err := svc.CreateAccessRequest(ctx, "tenant-a", CreateAccessRequest{
+		RequesterID:  "user-1",
+		ResourceType: "group",
+		ResourceID:   "grp-1",
+		Reason:       "Need access for onboarding",
+	})
+	if err != nil {
+		t.Fatalf("failed to create access request: %v", err)
+	}
+	if req.Status != "pending" {
+		t.Fatalf("expected pending status, got %s", req.Status)
+	}
+
+	// 2. Approve access request (valid transition: pending -> approved)
+	err = svc.ApproveAccessRequest(ctx, "tenant-a", req.ID, "approver-1", "Approved")
+	if err != nil {
+		t.Fatalf("expected approve to succeed, got %v", err)
+	}
+
+	// 3. Attempt to approve again (invalid transition: approved -> approved is blocked by FSM)
+	err = svc.ApproveAccessRequest(ctx, "tenant-a", req.ID, "approver-2", "Double approve")
+	if err == nil {
+		t.Fatalf("expected second approve to fail, got nil")
+	}
+
+	// 4. Attempt to reject already approved request (invalid transition: approved -> rejected is blocked by FSM)
+	err = svc.RejectAccessRequest(ctx, "tenant-a", req.ID, "approver-2", "Reject approved")
+	if err == nil {
+		t.Fatalf("expected reject on approved request to fail, got nil")
+	}
 }

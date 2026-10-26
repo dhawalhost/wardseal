@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/dhawalhost/gokit/bulkhead"
+	"github.com/dhawalhost/gokit/compression"
 	gokiterrors "github.com/dhawalhost/gokit/errors"
 	"github.com/dhawalhost/gokit/loadshed"
 	gokitserver "github.com/dhawalhost/gokit/server"
@@ -267,6 +268,41 @@ func TestGokitAdapter_HealthCheckers(t *testing.T) {
 	err = sqlChecker.HealthCheck(ctx)
 	if err == nil {
 		t.Errorf("expected error for nil sql db, got nil")
+	}
+}
+
+func TestGokitAdapter_Compression(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(Compression(
+		compression.WithMinLength(50),
+	))
+
+	payload := strings.Repeat("Enterprise Identity Platform WardSeal Secure Data ", 10)
+	router.GET("/data", func(c *gin.Context) {
+		c.Data(http.StatusOK, "application/json", []byte(payload))
+	})
+
+	// 1. Request with Accept-Encoding: gzip
+	req := httptest.NewRequest(http.MethodGet, "/data", nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	enc := rec.Header().Get("Content-Encoding")
+	if enc != "gzip" {
+		t.Errorf("expected Content-Encoding gzip, got %s", enc)
+	}
+
+	decompressed, err := compression.DecompressBytes(compression.EncodingGzip, rec.Body.Bytes())
+	if err != nil {
+		t.Fatalf("failed to decompress response: %v", err)
+	}
+	if string(decompressed) != payload {
+		t.Errorf("decompressed content mismatch")
 	}
 }
 

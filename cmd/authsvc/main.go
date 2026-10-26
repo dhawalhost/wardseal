@@ -59,7 +59,7 @@ func main() {
 			log.Fatal("Failed to initialize license manager", zap.Error(err))
 		}
 
-		if cfg.License.Key == "" {
+		if cfg.License.Key.IsEmpty() {
 			log.Fatal("LICENSE_KEY environment variable/vault secret is required for enterprise edition")
 		}
 
@@ -82,7 +82,7 @@ func main() {
 	if cfg.Auth.ServiceAuthToken.IsEmpty() {
 		log.Warn("SERVICE_AUTH_TOKEN not set, using development default")
 	}
-	serviceToken := types.Secret(resolvedToken)
+	serviceToken := types.NewSecret(resolvedToken)
 	serviceHeader := cfg.Auth.ServiceAuthHeader
 
 	db, err := database.NewConnection(cfg.Database.ConnectionConfig())
@@ -241,6 +241,7 @@ func main() {
 	router.Use(otelgin.Middleware("authsvc"))
 	router.Use(wardsealobs.PrometheusMiddleware(metrics))
 	router.Use(middleware.Wrap(gokitmiddleware.RequestID())) // Inject tracing ID
+	router.Use(middleware.Compression())                   // Multi-codec response compression (zstd, brotli, gzip)
 
 	// Security Middleware
 	router.Use(middleware.Wrap(gokitmiddleware.SecureHeaders()))
