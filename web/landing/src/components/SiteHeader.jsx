@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react'
 import siteConfig from '../siteConfig'
 
 const { consoleBaseUrl, idBaseUrl } = siteConfig
@@ -17,12 +17,19 @@ export default function SiteHeader() {
   return (
     <header className="site-header">
       <div className="container header-inner">
-        <Link className="logo" to="/" onClick={closeMenu}>
-          <div className="logo-container">
-            <img src="/wardseal.svg" alt="WardSeal" className="logo-img" />
+        <div className="header-left">
+          <Link className="logo" to="/" onClick={closeMenu}>
+            <div className="logo-container">
+              <img src="/wardseal.svg" alt="WardSeal" className="logo-img" />
+            </div>
+            <span className="logo-text">WardSeal</span>
+          </Link>
+
+          <div className="system-status-pill hidden-sm">
+            <span className="status-dot-pulse" />
+            <span>Systems Normal</span>
           </div>
-          <span className="logo-text">WardSeal</span>
-        </Link>
+        </div>
 
         <button
           type="button"
@@ -35,24 +42,31 @@ export default function SiteHeader() {
         </button>
 
         <nav className={`nav-links ${isMenuOpen ? 'active' : ''}`} aria-label="Primary">
-          <a href="/#product" onClick={closeMenu}>Control plane</a>
+          <a href="/#architecture" onClick={closeMenu}>Architecture</a>
           <a href="/#capabilities" onClick={closeMenu}>Capabilities</a>
-          <a href="/#platform" onClick={closeMenu}>Platform</a>
+          <a href="/#protocols" onClick={closeMenu}>Standards</a>
           <Link to="/policies" className={pathname === '/policies' ? 'active' : ''} onClick={closeMenu}>
             Policies
           </Link>
           <a href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer" onClick={closeMenu}>
-            Documentation
+            Docs
           </a>
+
           <div className={`header-actions${isMenuOpen ? ' header-actions-mobile' : ''}`}>
             {localStorage.getItem('token') ? (
               <a className="btn btn-accent btn-sm" href={`${consoleBaseUrl}/dashboard`}>
-                Open console
+                Open Console
+                <ArrowRight size={14} />
               </a>
             ) : (
               <>
-                <a className="btn-text" href={`${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`}>Sign in</a>
-                <a className="btn btn-accent btn-sm" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>Request access</a>
+                <a className="btn btn-ghost btn-sm" href={`${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`}>
+                  Sign in
+                </a>
+                <a className="btn btn-accent btn-sm" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
+                  Request Access
+                  <ArrowRight size={14} />
+                </a>
               </>
             )}
           </div>

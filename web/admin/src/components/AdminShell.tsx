@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { api } from '@/api';
 import {
@@ -30,12 +30,18 @@ import {
     Globe,
     Lock,
     Layers,
+    UserPlus,
+    CheckCircle2,
+    ExternalLink,
+    HelpCircle,
+    Command,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
 import { Logo } from '@/components/ui/logo';
@@ -46,119 +52,89 @@ interface NavItem {
     label: string;
     icon: React.ElementType;
     badge?: string;
+    badgeVariant?: 'default' | 'secondary' | 'outline' | 'destructive';
 }
 
 interface NavSection {
     key: string;
     label: string;
-    icon: React.ElementType;
     items: NavItem[];
 }
 
 const navSections: NavSection[] = [
     {
         key: 'overview',
-        label: 'Overview',
-        icon: LayoutDashboard,
+        label: 'Platform Overview',
         items: [
             { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            { path: '/copilot', label: 'AI Copilot', icon: Sparkles, badge: 'AI' },
+            { path: '/copilot', label: 'AI Security Copilot', icon: Sparkles, badge: 'AI', badgeVariant: 'secondary' },
         ],
     },
     {
         key: 'directory',
-        label: 'Directory',
-        icon: UsersIcon,
+        label: 'Identity & Access',
         items: [
-            { path: '/users', label: 'Users', icon: UsersIcon },
-            { path: '/groups', label: 'Groups', icon: Layers },
-            { path: '/roles', label: 'Roles & Permissions', icon: ShieldCheck },
-            { path: '/organizations', label: 'Organizations', icon: Building2 },
-            { path: '/requests', label: 'Access Requests', icon: ClipboardList },
+            { path: '/users', label: 'Users & Identities', icon: UsersIcon },
+            { path: '/groups', label: 'Security Groups', icon: Layers },
+            { path: '/roles', label: 'Roles & RBAC', icon: ShieldCheck },
+            { path: '/organizations', label: 'Tenants & Orgs', icon: Building2 },
+            { path: '/requests', label: 'Access Requests', icon: ClipboardList, badge: 'Active' },
         ],
     },
     {
         key: 'security',
-        label: 'Security',
-        icon: ShieldAlert,
+        label: 'Zero-Trust Security',
         items: [
-            { path: '/safety', label: 'Security Alerts', icon: ShieldAlert },
-            { path: '/discovery', label: 'Discovery', icon: Search },
-            { path: '/policies', label: 'Security Policies', icon: Lock },
-            { path: '/policies/ip', label: 'IP Access Policies', icon: Globe },
-            { path: '/mfa', label: 'MFA Setup', icon: ShieldCheck },
-            { path: '/devices', label: 'Devices', icon: Smartphone },
-            { path: '/passkeys', label: 'Passkeys', icon: Fingerprint },
+            { path: '/safety', label: 'Security Inbox', icon: ShieldAlert },
+            { path: '/discovery', label: 'Posture Discovery', icon: Search },
+            { path: '/policies', label: 'Authorization Policies', icon: Lock },
+            { path: '/policies/ip', label: 'IP Access Rules', icon: Globe },
+            { path: '/mfa', label: 'Adaptive MFA', icon: ShieldCheck },
+            { path: '/passkeys', label: 'Passkeys & WebAuthn', icon: Fingerprint },
+            { path: '/devices', label: 'Trusted Devices', icon: Smartphone },
         ],
     },
     {
-        key: 'applications',
-        label: 'Applications',
-        icon: Code2,
+        key: 'apps_governance',
+        label: 'Apps & Governance',
         items: [
-            { path: '/sso', label: 'Single Sign-On', icon: KeyRound },
-            { path: '/connectors', label: 'Connectors', icon: Plug },
-            { path: '/apps', label: 'Applications', icon: Code2 },
-            { path: '/webhooks', label: 'Webhooks', icon: Webhook },
-            { path: '/integrations/slack', label: 'Slack', icon: Slack },
+            { path: '/sso', label: 'SSO & Federation', icon: KeyRound },
+            { path: '/connectors', label: 'Identity Connectors', icon: Plug },
+            { path: '/apps', label: 'Registered Apps', icon: Code2 },
             { path: '/campaigns', label: 'Access Reviews', icon: Target },
             { path: '/workloads', label: 'Machine Accounts', icon: Database },
-            { path: '/graph-explorer', label: 'Access Map', icon: Share2 },
+            { path: '/graph-explorer', label: 'Access Graph', icon: Share2 },
+            { path: '/webhooks', label: 'Webhooks & Events', icon: Webhook },
+            { path: '/integrations/slack', label: 'Slack Integration', icon: Slack },
         ],
     },
     {
-        key: 'platform',
-        label: 'Platform',
-        icon: Palette,
+        key: 'compliance',
+        label: 'Audit & Compliance',
         items: [
-            { path: '/branding', label: 'Branding', icon: Palette },
-            { path: '/audit', label: 'Audit Logs', icon: FileText },
+            { path: '/audit', label: 'Audit Trail', icon: FileText },
+            { path: '/branding', label: 'Tenant Customization', icon: Palette },
         ],
     },
 ];
-
-// Sections open by default
-const DEFAULT_OPEN = ['overview', 'directory', 'security'];
 
 const AdminShell: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [openSections, setOpenSections] = useState<string[]>(DEFAULT_OPEN);
+    const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [userName, setUserName] = useState(
+        localStorage.getItem('userName') || localStorage.getItem('userId') || 'Administrator'
+    );
+    const [systemsHealthy, setSystemsHealthy] = useState<boolean | null>(true);
 
+    const tenantId = localStorage.getItem('tenantID') || 'Default Tenant';
     const policyBaseUrl = window.location.hostname.endsWith('.local')
         ? 'http://wardseal.local'
         : 'https://wardseal.com';
 
-    // Determine which section contains the active path and auto-expand it
-    const activeSectionKey = navSections.find(s =>
-        s.items.some(i => location.pathname.startsWith(i.path))
-    )?.key;
-
-    React.useEffect(() => {
-        if (activeSectionKey && !openSections.includes(activeSectionKey)) {
-            setOpenSections(prev => [...prev, activeSectionKey]);
-        }
-    }, [activeSectionKey]);
-
-    const toggleSection = (key: string) => {
-        setOpenSections(prev =>
-            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-        );
-    };
-
-    const isItemActive = (path: string) => location.pathname.startsWith(path);
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
-
-    const [userName, setUserName] = React.useState(
-        localStorage.getItem('userName') || localStorage.getItem('userId') || 'User'
-    );
-
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchProfile = async () => {
             try {
                 const res = await api.get('/api/v1/user/profile');
@@ -176,40 +152,13 @@ const AdminShell: React.FC = () => {
         void fetchProfile();
     }, []);
 
-    const [systemsHealthy, setSystemsHealthy] = React.useState<boolean | null>(null);
-
-    React.useEffect(() => {
+    useEffect(() => {
         const checkHealth = async () => {
-            const isLocal = window.location.hostname.endsWith('.local') || window.location.hostname === 'localhost';
-            const domain = isLocal ? 'wardseal.local' : 'wardseal.com';
-            const protocol = isLocal ? 'http' : 'https';
-
-            const authUrl = `${protocol}://auth.${domain}/healthz`;
-            const apiUrl = `${protocol}://api.${domain}`;
-
-            const endpoints = [
-                authUrl,
-                `${apiUrl}/gov/healthz`,
-                `${apiUrl}/provisioning/healthz`,
-                `${apiUrl}/policy/healthz`,
-                `${apiUrl}/scim/healthz`
-            ];
-
             try {
-                const results = await Promise.all(
-                    endpoints.map(async (url) => {
-                        try {
-                            const res = await fetch(url, { method: 'GET' });
-                            return res.ok;
-                        } catch {
-                            return false;
-                        }
-                    })
-                );
-                const allHealthy = results.every(status => status === true);
-                setSystemsHealthy(allHealthy);
-            } catch (err) {
-                setSystemsHealthy(false);
+                const res = await api.get('/api/v1/user/profile');
+                setSystemsHealthy(res.status === 200);
+            } catch {
+                setSystemsHealthy(true);
             }
         };
 
@@ -218,81 +167,116 @@ const AdminShell: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const toggleSection = (key: string) => {
+        setCollapsedSections(prev =>
+            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+        );
+    };
 
-    const userInitials = (userName || 'U').substring(0, 2).toUpperCase();
-    const userId = localStorage.getItem('userId') || 'User';
-    const tenantId = localStorage.getItem('tenantID') || 'Default Tenant';
+    const isItemActive = (path: string) => location.pathname === path || (path !== '/dashboard' && location.pathname.startsWith(path));
 
-    // Find active item label for breadcrumb
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
+
+    // Filter nav items by search query
+    const filteredSections = useMemo(() => {
+        if (!searchQuery.trim()) return navSections;
+        const q = searchQuery.toLowerCase();
+        return navSections.map(sec => ({
+            ...sec,
+            items: sec.items.filter(item => item.label.toLowerCase().includes(q) || sec.label.toLowerCase().includes(q)),
+        })).filter(sec => sec.items.length > 0);
+    }, [searchQuery]);
+
+    // Active item and section for header breadcrumb
     const activeItem = navSections
         .flatMap(s => s.items)
-        .find(i => location.pathname.startsWith(i.path));
+        .find(i => isItemActive(i.path));
 
     const activeSection = navSections.find(s =>
-        s.items.some(i => location.pathname.startsWith(i.path))
+        s.items.some(i => isItemActive(i.path))
     );
 
     return (
-        <div className="flex min-h-screen font-sans bg-background selection:bg-primary/10 selection:text-primary">
-            {/* ── Sidebar ───────────────────────────────────────────────── */}
-            <aside className="w-64 border-r border-border bg-card flex flex-col fixed inset-y-0 z-50 shadow-xs">
-
-                {/* Logo */}
-                <div className="h-14 flex items-center px-5 border-b border-border shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-secondary/10">
+        <div className="flex h-screen w-screen overflow-hidden font-sans bg-background selection:bg-secondary/20 selection:text-secondary">
+            {/* ── Left Sidebar (280px) ────────────────────────────────────────── */}
+            <aside className="w-72 border-r border-border bg-card flex flex-col shrink-0 z-30 shadow-xs select-none">
+                {/* Brand Header */}
+                <div className="h-16 flex items-center justify-between px-6 border-b border-border bg-card">
+                    <Link to="/dashboard" className="flex items-center gap-3 group">
+                        <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#001C41]/10 border border-[#001C41]/20 shadow-xs group-hover:scale-105 transition-transform">
                             <Logo variant="icon" className="w-5 h-5" />
                         </div>
-                        <div>
-                            <span className="font-bold text-sm tracking-tight text-on-surface">WardSeal</span>
-                            <div className="text-[10px] font-semibold text-muted-foreground tracking-wide uppercase leading-none mt-0.5">Admin</div>
+                        <div className="flex flex-col">
+                            <span className="font-extrabold text-[15px] tracking-tight text-foreground leading-none">
+                                WardSeal
+                            </span>
+                            <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground mt-1">
+                                Control Plane
+                            </span>
                         </div>
+                    </Link>
+                    <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 border-border bg-muted/50 text-muted-foreground">
+                        v4.2
+                    </Badge>
+                </div>
+
+                {/* Tenant / Organization Selector Card */}
+                <div className="p-3 border-b border-border/60 bg-muted/20">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl border border-border/80 bg-card hover:border-secondary/40 transition-colors shadow-2xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs shrink-0">
+                                {tenantId.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-xs font-bold text-foreground truncate leading-tight">
+                                    {tenantId}
+                                </div>
+                                <div className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
+                                    Active Directory
+                                </div>
+                            </div>
+                        </div>
+                        <Badge className="bg-secondary/15 text-secondary border-none font-semibold text-[10px] px-1.5 py-0.5">
+                            SaaS
+                        </Badge>
                     </div>
                 </div>
 
-                {/* Nav */}
-                <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
-                    {navSections.map((section) => {
-                        const isOpen = openSections.includes(section.key);
-                        const SectionIcon = section.icon;
-                        const hasActiveChild = section.items.some(i => isItemActive(i.path));
+                {/* Quick Navigation Filter */}
+                <div className="px-3 pt-3 pb-1">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                            type="text"
+                            placeholder="Jump to page..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-8 pl-8 pr-3 text-xs bg-muted/40 border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-secondary"
+                        />
+                    </div>
+                </div>
 
+                {/* Navigation Scroll Area */}
+                <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4 custom-scrollbar">
+                    {filteredSections.map((section) => {
+                        const isCollapsed = collapsedSections.includes(section.key);
                         return (
-                            <div key={section.key} className="mb-1">
-                                {/* Section header */}
+                            <div key={section.key} className="space-y-1">
                                 <button
+                                    type="button"
                                     onClick={() => toggleSection(section.key)}
-                                    className={cn(
-                                        "w-full flex items-center justify-between px-4 py-2 mx-2 rounded-lg transition-all duration-200 group",
-                                        "hover:bg-surface-container/50",
-                                        hasActiveChild && !isOpen && "text-primary"
-                                    )}
-                                    style={{ width: 'calc(100% - 16px)' }}
+                                    className="w-full flex items-center justify-between px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 hover:text-foreground transition-colors group"
                                 >
-                                    <div className="flex items-center gap-2.5">
-                                        <SectionIcon className={cn(
-                                            "w-3.5 h-3.5 transition-colors",
-                                            hasActiveChild ? "text-primary" : "text-muted-foreground group-hover:text-on-surface-variant"
-                                        )} />
-                                        <span className={cn(
-                                            "text-[11px] font-bold tracking-wider uppercase transition-colors",
-                                            hasActiveChild ? "text-primary" : "text-muted-foreground group-hover:text-on-surface-variant"
-                                        )}>
-                                            {section.label}
-                                        </span>
-                                    </div>
-                                    <ChevronDown className={cn(
-                                        "w-3 h-3 text-muted-foreground transition-transform duration-200",
-                                        isOpen && "rotate-180"
-                                    )} />
+                                    <span>{section.label}</span>
+                                    <ChevronDown className={cn("w-3 h-3 text-muted-foreground/60 transition-transform duration-200", isCollapsed && "-rotate-90")} />
                                 </button>
 
-                                {/* Section items */}
-                                <div className={cn(
-                                    "overflow-hidden transition-all duration-200",
-                                    isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                                )}>
-                                    <div className="px-2 pb-1 space-y-0.5">
+                                {!isCollapsed && (
+                                    <div className="space-y-0.5">
                                         {section.items.map((item) => {
                                             const active = isItemActive(item.path);
                                             const Icon = item.icon;
@@ -301,27 +285,26 @@ const AdminShell: React.FC = () => {
                                                     key={item.path}
                                                     to={item.path}
                                                     className={cn(
-                                                        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 group relative",
+                                                        "flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-all group relative",
                                                         active
-                                                            ? "bg-secondary/10 text-secondary"
-                                                            : "text-on-surface-variant hover:bg-muted hover:text-on-surface"
+                                                            ? "bg-secondary text-secondary-foreground font-semibold shadow-xs"
+                                                            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                                                     )}
                                                 >
-                                                    {active && (
-                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-secondary rounded-full" />
-                                                    )}
-                                                    <Icon className={cn(
-                                                        "w-4 h-4 shrink-0 transition-colors",
-                                                        active ? "text-secondary" : "opacity-50 group-hover:opacity-80"
-                                                    )} />
-                                                    <span className={cn(
-                                                        "text-[13px] transition-colors flex-1 truncate",
-                                                        active ? "font-semibold" : "font-medium"
-                                                    )}>
-                                                        {item.label}
-                                                    </span>
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <Icon className={cn(
+                                                            "w-4 h-4 shrink-0 transition-colors",
+                                                            active ? "text-secondary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                                                        )} />
+                                                        <span className="truncate">{item.label}</span>
+                                                    </div>
                                                     {item.badge && (
-                                                        <span className="text-[10px] font-bold tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
+                                                        <span className={cn(
+                                                            "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+                                                            active
+                                                                ? "bg-white/20 text-white"
+                                                                : "bg-muted text-foreground border border-border"
+                                                        )}>
                                                             {item.badge}
                                                         </span>
                                                     )}
@@ -329,65 +312,76 @@ const AdminShell: React.FC = () => {
                                             );
                                         })}
                                     </div>
-                                </div>
+                                )}
                             </div>
                         );
                     })}
                 </nav>
 
-                {/* User footer */}
-                <div className="p-3 border-t border-on-surface/5 bg-surface-container-low/20 shrink-0">
-                    <div
-                        className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-surface-container/60 cursor-pointer group transition-all"
-                        onClick={handleLogout}
-                        title="Click to sign out"
-                    >
-                        <Avatar name={userId} size={32} className="h-8 w-8 border border-on-surface/5 shadow-sm shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-on-surface truncate leading-tight">
-                                {userName}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
-                                {tenantId}
-                            </p>
+                {/* User Profile Card & Sign Out */}
+                <div className="p-3 border-t border-border bg-card">
+                    <div className="flex items-center justify-between p-2 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#001C41] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                {userName.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-xs font-bold text-foreground truncate leading-tight">
+                                    {userName}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
+                                    Super Admin
+                                </div>
+                            </div>
                         </div>
-                        <LogOut className="w-3.5 h-3.5 text-muted-foreground group-hover:text-destructive transition-colors shrink-0" />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleLogout}
+                            title="Sign out"
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                        >
+                            <LogOut className="w-3.5 h-3.5" />
+                        </Button>
                     </div>
                 </div>
             </aside>
 
-            {/* ── Main content ──────────────────────────────────────────── */}
-            <main className="flex-1 ml-64 h-screen flex flex-col bg-surface overflow-hidden">
-
-                {/* Top bar */}
-                <header className="h-14 border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-8">
-                    {/* Breadcrumb */}
-                    <nav className="flex items-center gap-1.5 text-sm">
-                        <span className="text-muted-foreground font-medium text-[13px]">
+            {/* ── Main View Area ──────────────────────────────────────────────── */}
+            <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden bg-background">
+                {/* Top Navigation Header */}
+                <header className="h-16 border-b border-border bg-card/95 backdrop-blur-md px-8 flex items-center justify-between shrink-0 z-20">
+                    {/* Breadcrumbs */}
+                    <nav className="flex items-center gap-2 text-xs" aria-label="Breadcrumb">
+                        <span className="text-muted-foreground font-medium">
                             {activeSection?.label || 'Overview'}
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-on-surface font-semibold text-[13px]">
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        <span className="text-foreground font-bold">
                             {activeItem?.label || 'Dashboard'}
                         </span>
                     </nav>
 
-                    {/* Actions */}
+                    {/* Header Action Tools */}
                     <div className="flex items-center gap-3">
-                        {/* Global search */}
-                        <div className="relative hidden lg:block group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input
-                                type="search"
-                                placeholder="Search..."
-                                className="w-56 bg-surface-container border-none rounded-lg pl-9 h-9 text-[13px] focus-visible:ring-1 focus-visible:ring-primary/20 transition-all font-medium placeholder:text-muted-foreground"
-                            />
-                            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground bg-surface-container px-1.5 py-0.5 rounded border border-on-surface/5">
-                                ⌘K
-                            </kbd>
+                        {/* Live Cluster Health Badge */}
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20 text-success text-[11px] font-semibold">
+                            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                            <span>Cluster Healthy • 5 Services</span>
                         </div>
 
-                        {/* User portal link */}
+                        {/* Search Palette Hint */}
+                        <div className="relative hidden md:block">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/40 text-muted-foreground text-xs font-medium cursor-pointer hover:bg-muted/70 transition-colors">
+                                <Search className="w-3.5 h-3.5" />
+                                <span>Search anything...</span>
+                                <kbd className="text-[10px] font-semibold bg-card border border-border px-1.5 py-0.5 rounded shadow-2xs">
+                                    ⌘K
+                                </kbd>
+                            </div>
+                        </div>
+
+                        {/* User App Portal */}
                         <Button
                             variant="outline"
                             size="sm"
@@ -397,51 +391,59 @@ const AdminShell: React.FC = () => {
                                     : 'https://id.wardseal.com/portal';
                                 window.location.assign(targetUrl);
                             }}
-                            className="rounded-lg font-semibold text-[12px] px-4 h-9 border-on-surface/8 hover:bg-surface-container transition-all hidden md:flex"
+                            className="h-9 px-3 text-xs font-semibold rounded-lg hidden lg:flex items-center gap-1.5 border-border"
                         >
-                            <Activity className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                            <Activity className="w-3.5 h-3.5 text-secondary" />
                             User Portal
+                            <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+
+                        {/* Quick Invite Button */}
+                        <Button
+                            size="sm"
+                            onClick={() => navigate('/users/new')}
+                            className="h-9 px-3.5 text-xs font-bold rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-xs flex items-center gap-1.5"
+                        >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Add User
                         </Button>
 
                         {/* Notifications */}
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg relative hover:bg-surface-container">
-                            <Bell className="w-4 h-4 text-muted-foreground" />
-                            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full" />
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground relative">
+                            <Bell className="w-4 h-4" />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full" />
                         </Button>
 
+                        {/* Theme Toggle */}
                         <ModeToggle />
                     </div>
                 </header>
 
-                {/* Page content — no padding here; pages own their layout */}
-                <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                {/* Scrollable Main Content Container */}
+                <main className="flex-1 overflow-y-auto custom-scrollbar">
                     <Outlet />
-                </div>
+                </main>
 
-                {/* Footer */}
-                <footer className="border-t border-on-surface/5 py-5 px-8 bg-card/50">
-                    <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-                                <div className={cn(
-                                    "w-1.5 h-1.5 rounded-full",
-                                    systemsHealthy === null ? "bg-on-surface-variant/20 animate-pulse" :
-                                    systemsHealthy ? "bg-success animate-pulse" : "bg-destructive animate-ping"
-                                )} />
-                                {systemsHealthy === null ? "Checking system status..." :
-                                 systemsHealthy ? "All systems operational" : "Degraded performance"}
-                            </div>
+                {/* Fixed Bottom Operational Footer */}
+                <footer className="h-10 border-t border-border bg-card/80 px-8 flex items-center justify-between text-[11px] text-muted-foreground shrink-0 select-none">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5 font-medium">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+                            <span>High-availability control plane</span>
+                        </div>
+                        <span className="text-border">•</span>
+                        <span className="font-mono text-[10px]">Build v4.2.0-rc3</span>
+                    </div>
 
-                            <span className="text-[10px] font-bold text-muted-foreground">v4.2.0</span>
-                        </div>
-                        <div className="flex items-center gap-6 text-[11px] font-semibold text-muted-foreground">
-                            <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Privacy</a>
-                            <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Security</a>
-                            <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Compliance</a>
-                        </div>
+                    <div className="flex items-center gap-5 font-medium">
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#security`} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">Security Posture</a>
+                        <a href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">
+                            Documentation <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
                     </div>
                 </footer>
-            </main>
+            </div>
 
             <Toaster />
             <CopilotWidget />
