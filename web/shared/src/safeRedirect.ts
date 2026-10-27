@@ -26,6 +26,8 @@ export function siblingHostsFromIdHost(hostname: string): string[] {
       `developer.${rest}`,
       `status.${rest}`,
       `auth.${rest}`,
+      `wardseal.${rest}`,
+      rest,
     ];
   }
   if (hostname.startsWith('id-')) {
@@ -36,6 +38,7 @@ export function siblingHostsFromIdHost(hostname: string): string[] {
       `developer-${rest}`,
       `status-${rest}`,
       `auth-${rest}`,
+      rest,
     ];
   }
   return [];
@@ -132,15 +135,67 @@ export function navigateSafeRedirect(
   }
 }
 
+/** Identity / Login UI URL for the current environment (local / staging / production). */
+export function resolveIdUrl(
+  hostname: string = typeof window !== 'undefined' ? window.location.hostname : ''
+): string {
+  const explicit = (
+    typeof import.meta !== 'undefined'
+      ? (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_ID_URL
+      : undefined
+  )?.trim();
+  if (explicit) {
+    return explicit;
+  }
+  if (hostname.endsWith('.local')) {
+    return 'http://id.wardseal.local';
+  }
+  if (hostname.includes('-staging.') || hostname.startsWith('staging.')) {
+    return 'https://id-staging.wardseal.com';
+  }
+  if (
+    hostname.startsWith('manage.') ||
+    hostname.startsWith('app.') ||
+    hostname.startsWith('developer.') ||
+    hostname.startsWith('status.') ||
+    hostname.startsWith('wardseal.')
+  ) {
+    const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+    const rest = hostname.replace(/^(manage|app|developer|status|wardseal)\./, '');
+    return `${protocol}//id.${rest}`;
+  }
+  return 'https://id.wardseal.com';
+}
+
 /** Console URL for the current environment (local / staging / production). */
 export function resolveManageConsoleUrl(
   hostname: string = typeof window !== 'undefined' ? window.location.hostname : ''
 ): string {
+  const explicit = (
+    typeof import.meta !== 'undefined'
+      ? (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_CONSOLE_BASE_URL ||
+        (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_MANAGE_URL
+      : undefined
+  )?.trim();
+  if (explicit) {
+    return explicit;
+  }
   if (hostname.endsWith('.local')) {
     return 'http://manage.wardseal.local';
   }
   if (hostname.includes('-staging.') || hostname.startsWith('staging.')) {
     return 'https://manage-staging.wardseal.com';
+  }
+  if (
+    hostname.startsWith('id.') ||
+    hostname.startsWith('app.') ||
+    hostname.startsWith('developer.') ||
+    hostname.startsWith('status.') ||
+    hostname.startsWith('wardseal.')
+  ) {
+    const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+    const rest = hostname.replace(/^(id|app|developer|status|wardseal)\./, '');
+    return `${protocol}//manage.${rest}`;
   }
   return 'https://manage.wardseal.com';
 }

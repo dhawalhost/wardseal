@@ -29,6 +29,7 @@ import GraphExplorer from './pages/GraphExplorer';
 import WorkloadManagement from './pages/WorkloadManagement';
 import Copilot from './pages/Copilot';
 import AuthGuard from './components/AuthGuard';
+import { resolveIdUrl } from '@wardseal/shared';
 
 // Lazy load API docs page (heavy Redoc bundle)
 const Developer = React.lazy(() => import('./pages/Developer'));
@@ -52,11 +53,20 @@ const LoadingFallback = () => (
  * of web/id (id.wardseal.*).
  */
 const LoginRedirect: React.FC = () => {
-  const idUrl = import.meta.env.VITE_ID_URL ?? 'http://id.wardseal.local';
   React.useEffect(() => {
+    const idUrl = resolveIdUrl();
     const redirectUri = encodeURIComponent(`${window.location.origin}/dashboard`);
     window.location.href = `${idUrl}/login?redirect_uri=${redirectUri}`;
-  }, [idUrl]);
+  }, []);
+  return null;
+};
+
+const SignupRedirect: React.FC = () => {
+  React.useEffect(() => {
+    const idUrl = resolveIdUrl();
+    const redirectUri = encodeURIComponent(`${window.location.origin}/dashboard`);
+    window.location.href = `${idUrl}/signup?redirect_uri=${redirectUri}`;
+  }, []);
   return null;
 };
 
@@ -67,6 +77,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<LoginRedirect />} />
+          <Route path="/signup" element={<SignupRedirect />} />
 
           {/* All admin routes are protected — AuthGuard redirects to id.* if no session */}
           <Route element={<AuthGuard><AdminShell /></AuthGuard>}>

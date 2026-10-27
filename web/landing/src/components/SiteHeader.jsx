@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import siteConfig from '../siteConfig'
 
-const { consoleBaseUrl } = siteConfig
+const { consoleBaseUrl, idBaseUrl } = siteConfig
 
 export default function SiteHeader() {
   const { pathname } = useLocation()
@@ -11,6 +11,8 @@ export default function SiteHeader() {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
   const closeMenu = () => setIsMenuOpen(false)
+
+  const loginRedirectUri = encodeURIComponent(`${consoleBaseUrl}/dashboard`)
 
   return (
     <header className="site-header">
@@ -44,13 +46,13 @@ export default function SiteHeader() {
           </a>
           <div className={`header-actions${isMenuOpen ? ' header-actions-mobile' : ''}`}>
             {localStorage.getItem('token') ? (
-              <a className="btn btn-accent btn-sm" href={`${consoleBaseUrl}/portal`}>
+              <a className="btn btn-accent btn-sm" href={`${consoleBaseUrl}/dashboard`}>
                 Open console
               </a>
             ) : (
               <>
-                <a className="btn-text" href={`${consoleBaseUrl}/login`}>Sign in</a>
-                <a className="btn btn-accent btn-sm" href={`${consoleBaseUrl}/signup`}>Request access</a>
+                <a className="btn-text" href={`${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`}>Sign in</a>
+                <a className="btn btn-accent btn-sm" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>Request access</a>
               </>
             )}
           </div>

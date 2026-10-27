@@ -21,13 +21,13 @@ COPY ui ./ui
 COPY admin ./admin
 
 WORKDIR /workspace/admin
-ARG VITE_AUTHSVC_URL
-ARG VITE_DIRSVC_URL
-ARG VITE_GOVSVC_URL
-ARG VITE_API_URL
-ARG VITE_ID_URL
-ARG VITE_ALLOWED_REDIRECT_ORIGINS
-ARG VITE_APP_MODE=selfhost
+ARG VITE_AUTHSVC_URL=http://manage.wardseal.local
+ARG VITE_DIRSVC_URL=http://manage.wardseal.local
+ARG VITE_GOVSVC_URL=http://manage.wardseal.local
+ARG VITE_API_URL=http://manage.wardseal.local
+ARG VITE_ID_URL=http://id.wardseal.local
+ARG VITE_ALLOWED_REDIRECT_ORIGINS=http://manage.wardseal.local,http://id.wardseal.local,http://auth.wardseal.local,http://wardseal.local
+ARG VITE_APP_MODE=saas
 ENV VITE_AUTHSVC_URL=$VITE_AUTHSVC_URL
 ENV VITE_DIRSVC_URL=$VITE_DIRSVC_URL
 ENV VITE_GOVSVC_URL=$VITE_GOVSVC_URL

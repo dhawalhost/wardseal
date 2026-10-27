@@ -10,6 +10,7 @@ import Passkeys from './pages/Passkeys';
 import Devices from './pages/Devices';
 import MFASetup from './pages/MFASetup';
 import AuthGuard from './components/AuthGuard';
+import { resolveIdUrl } from '@wardseal/shared';
 
 /**
  * web/app — User App Portal
@@ -18,11 +19,11 @@ import AuthGuard from './components/AuthGuard';
  * Login is handled by id.wardseal.* — AuthGuard redirects there if no session.
  */
 const LoginRedirect: React.FC = () => {
-  const idUrl = import.meta.env.VITE_ID_URL ?? 'http://id.wardseal.local';
   React.useEffect(() => {
+    const idUrl = resolveIdUrl();
     const redirectUri = encodeURIComponent(`${window.location.origin}/dashboard`);
     window.location.href = `${idUrl}/login?redirect_uri=${redirectUri}`;
-  }, [idUrl]);
+  }, []);
   return null;
 };
 

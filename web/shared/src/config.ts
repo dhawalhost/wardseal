@@ -2,11 +2,13 @@
  * Shared environment configuration for WardSeal MFEs.
  */
 
+import { resolveIdUrl } from './safeRedirect';
+
 const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env ?? {};
 
 export const AppConfig = {
   /** Identity / Login UI (id.*) */
-  idUrl: env.VITE_ID_URL ?? 'http://id.wardseal.local',
+  idUrl: env.VITE_ID_URL || resolveIdUrl(),
 
   /** This MFE's own origin / nginx proxy (often empty = same-origin) */
   apiUrl: env.VITE_API_URL ?? '',

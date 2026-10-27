@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { clearSessionLocal, seedSessionFromProfile } from './session';
+import { resolveIdUrl } from './safeRedirect';
 
 export type AuthGuardProps = {
   children: React.ReactElement;
@@ -20,9 +21,8 @@ export type AuthGuardProps = {
 export const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
   loginMode = 'external',
-  apiUrl = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL ?? '',
-  idUrl = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_ID_URL ??
-    'http://id.wardseal.local',
+  apiUrl = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL || '',
+  idUrl = (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_ID_URL || resolveIdUrl(),
 }) => {
   const [status, setStatus] = useState<'loading' | 'ok' | 'redirect'>('loading');
 

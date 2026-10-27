@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { resolveManageConsoleUrl, seedSessionFromAuthResponse } from '@wardseal/shared';
+import {
+    resolveManageConsoleUrl,
+    resolveSafeRedirect,
+    navigateSafeRedirect,
+    seedSessionFromAuthResponse
+} from '@wardseal/shared';
 import { signup } from '../api';
 import Config from '../config';
 import { Button } from '@/components/ui/button';
@@ -63,8 +68,14 @@ const SignUp: React.FC = () => {
                 { ...data, roles: data.roles ?? ['super-admin'] },
                 email
             );
-            // Founder next step is admin console (portal app launcher starts empty).
-            window.location.assign(resolveManageConsoleUrl());
+            const redirectUri = searchParams.get('redirect_uri') || localStorage.getItem('login_redirect_uri');
+            localStorage.removeItem('login_redirect_uri');
+            const fallbackTarget = `${resolveManageConsoleUrl()}/dashboard`;
+            if (redirectUri && resolveSafeRedirect(redirectUri)) {
+                navigateSafeRedirect(redirectUri, fallbackTarget);
+                return;
+            }
+            window.location.assign(fallbackTarget);
             return;
         } catch (err: any) {
             console.error(err);

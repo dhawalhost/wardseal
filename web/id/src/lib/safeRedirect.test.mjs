@@ -5,13 +5,48 @@ import { describe, it } from 'node:test';
 function siblingHostsFromIdHost(hostname) {
   if (hostname.startsWith('id.')) {
     const rest = hostname.slice(3);
-    return [`manage.${rest}`, `app.${rest}`, `developer.${rest}`, `status.${rest}`, `auth.${rest}`];
+    return [
+      `manage.${rest}`,
+      `app.${rest}`,
+      `developer.${rest}`,
+      `status.${rest}`,
+      `auth.${rest}`,
+      `wardseal.${rest}`,
+      rest,
+    ];
   }
   if (hostname.startsWith('id-')) {
     const rest = hostname.slice(3);
-    return [`manage-${rest}`, `app-${rest}`, `developer-${rest}`, `status-${rest}`, `auth-${rest}`];
+    return [
+      `manage-${rest}`,
+      `app-${rest}`,
+      `developer-${rest}`,
+      `status-${rest}`,
+      `auth-${rest}`,
+      rest,
+    ];
   }
   return [];
+}
+
+function resolveIdUrl(hostname = '') {
+  if (hostname.endsWith('.local')) {
+    return 'http://id.wardseal.local';
+  }
+  if (hostname.includes('-staging.') || hostname.startsWith('staging.')) {
+    return 'https://id-staging.wardseal.com';
+  }
+  if (
+    hostname.startsWith('manage.') ||
+    hostname.startsWith('app.') ||
+    hostname.startsWith('developer.') ||
+    hostname.startsWith('status.') ||
+    hostname.startsWith('wardseal.')
+  ) {
+    const rest = hostname.replace(/^(manage|app|developer|status|wardseal)\./, '');
+    return `https://id.${rest}`;
+  }
+  return 'https://id.wardseal.com';
 }
 
 function getAllowedRedirectOrigins(currentOrigin = '', envList = '') {
@@ -91,5 +126,13 @@ describe('resolveSafeRedirect', () => {
       resolveSafeRedirect('https://custom.example/app', origin, allowed),
       'https://custom.example/app'
     );
+  });
+
+  it('resolves id URL dynamically for local, staging, and custom domains', () => {
+    assert.equal(resolveIdUrl('manage.wardseal.local'), 'http://id.wardseal.local');
+    assert.equal(resolveIdUrl('wardseal.local'), 'http://id.wardseal.local');
+    assert.equal(resolveIdUrl('manage-staging.wardseal.com'), 'https://id-staging.wardseal.com');
+    assert.equal(resolveIdUrl('manage.wardseal.com'), 'https://id.wardseal.com');
+    assert.equal(resolveIdUrl('manage.acme-corp.com'), 'https://id.acme-corp.com');
   });
 });

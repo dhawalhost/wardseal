@@ -6,7 +6,8 @@ import {
 } from 'lucide-react'
 import siteConfig from '../siteConfig'
 
-const { consoleBaseUrl } = siteConfig
+const { consoleBaseUrl, idBaseUrl } = siteConfig
+const loginRedirectUri = encodeURIComponent(`${consoleBaseUrl}/dashboard`)
 
 const protocols = [
   { name: 'OIDC', desc: 'OpenID Connect' },
@@ -114,10 +115,10 @@ export default function HomePage() {
               built on open standards for teams that cannot leave identity to chance.
             </p>
             <div className="hero-cta">
-              <a className="btn btn-accent btn-lg" href={`${consoleBaseUrl}/signup`}>
+              <a className="btn btn-accent btn-lg" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
                 Request access <ArrowRight size={18} aria-hidden="true" />
               </a>
-              <a className="btn btn-outline btn-lg" href={`${consoleBaseUrl}/login`}>
+              <a className="btn btn-outline btn-lg" href={`${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`}>
                 Sign in to console
               </a>
             </div>
@@ -298,7 +299,7 @@ export default function HomePage() {
               for who can access what — and why.
             </p>
             <div className="cta-actions">
-              <a className="btn btn-accent btn-lg" href={`${consoleBaseUrl}/signup`}>
+              <a className="btn btn-accent btn-lg" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
                 Request access <ArrowRight size={18} aria-hidden="true" />
               </a>
               <a className="btn btn-outline btn-lg" href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer">

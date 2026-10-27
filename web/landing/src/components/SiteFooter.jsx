@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import siteConfig from '../siteConfig'
 
-const { consoleBaseUrl } = siteConfig
+const { consoleBaseUrl, idBaseUrl } = siteConfig
 
 export default function SiteFooter() {
+  const loginRedirectUri = encodeURIComponent(`${consoleBaseUrl}/dashboard`)
+
   return (
     <footer className="site-footer">
       <div className="container">
@@ -26,7 +28,7 @@ export default function SiteFooter() {
               <li><a href="/#product">Control plane</a></li>
               <li><a href="/#capabilities">Capabilities</a></li>
               <li><a href="/#platform">Platform</a></li>
-              <li><a href={`${consoleBaseUrl}/signup`}>Request access</a></li>
+              <li><a href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>Request access</a></li>
             </ul>
           </div>
           <div className="footer-col">
@@ -34,7 +36,7 @@ export default function SiteFooter() {
             <ul>
               <li><a href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer">Documentation</a></li>
               <li><Link to="/policies">Policies</Link></li>
-              <li><a href={`${consoleBaseUrl}/login`}>Console sign-in</a></li>
+              <li><a href={`${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`}>Console sign-in</a></li>
             </ul>
           </div>
           <div className="footer-col">

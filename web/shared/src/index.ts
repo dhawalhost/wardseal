@@ -6,6 +6,7 @@ export {
   navigateSafeRedirect,
   getAllowedRedirectOrigins,
   siblingHostsFromIdHost,
+  resolveIdUrl,
   resolveManageConsoleUrl,
 } from './safeRedirect';
 export {
