@@ -21,6 +21,7 @@ import api, { getUserRoles } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
+import { Logo } from '@/components/ui/logo';
 
 type RBACRole = {
     id?: string;
@@ -118,7 +119,7 @@ const PortalLayout = () => {
                     <div className="flex items-center gap-4">
                         <Link to="/portal" className="flex items-center gap-3 group">
                             <div className="w-8 h-8 flex items-center justify-center rounded-full">
-                                <img src='/wardseal.svg' height={16} width={16} alt='wardseal' className="w-8 h-8" />
+                                <Logo variant="icon" className="w-8 h-8" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
@@ -224,7 +225,7 @@ const PortalLayout = () => {
                 <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2">
-                            <img src="/wardseal.svg" alt="WardSeal" height={16} width={16} className="w-3.5 h-3.5" />
+                            <Logo variant="icon" className="w-3.5 h-3.5" />
                             <p className="text-[10px] font-bold text-on-surface-variant">Secured by WardSeal</p>
                         </div>
                         <p className="text-[9px] font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>

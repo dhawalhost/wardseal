@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { resolveManageConsoleUrl, seedSessionFromAuthResponse } from '@wardseal/shared';
 import { signup } from '../api';
@@ -6,6 +6,7 @@ import Config from '../config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Logo } from '@/components/ui/logo';
 import { ShieldCheck, ArrowRight, Building, Lock, Mail, Loader2, Fingerprint, Activity } from 'lucide-react';
 import {
     GlassCard,
@@ -26,6 +27,10 @@ const SignUp: React.FC = () => {
     const [error, setError] = useState('');
 
     const plan = searchParams.get('plan') || 'free';
+
+    useEffect(() => {
+        document.title = 'WardSeal — Create account';
+    }, []);
 
     if (!Config.features.publicSignup) {
         return (
@@ -84,7 +89,7 @@ const SignUp: React.FC = () => {
                 <div className="relative z-10">
                     <Link to="/" className="flex items-center gap-3 text-white hover:opacity-90 transition-opacity">
                         <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 border border-white/10">
-                            <img src="/wardseal.svg" alt="" className="w-6 h-6 object-contain brightness-0 invert" />
+                            <Logo variant="icon" className="w-6 h-6" />
                         </div>
                         <span className="text-xl font-bold tracking-tight text-white">WardSeal</span>
                     </Link>
@@ -119,7 +124,7 @@ const SignUp: React.FC = () => {
                 <div className="w-full max-w-md mx-auto">
                     {/* Mobile Logo Only */}
                     <div className="lg:hidden mb-12 flex justify-center">
-                        <img src="/wardseal.svg" alt="WardSeal" className="w-12 h-12" />
+                        <Logo variant="icon" className="w-12 h-12" />
                     </div>
 
                     <div className="mb-10 text-center lg:text-left">

@@ -1,46 +1,44 @@
-# Build stage
+# Build context: web/ (npm workspaces root)
+#   docker build -f landing/Dockerfile -t wardseal-landingui .
 FROM node:22.14-alpine3.21 AS builder
+WORKDIR /workspace
 
-WORKDIR /app
+# Stub all workspace package.json files so npm ci can resolve the lockfile
+COPY package.json package-lock.json ./
+COPY shared/package.json ./shared/
+COPY ui/package.json ./ui/
+COPY admin/package.json ./admin/
+COPY app/package.json ./app/
+COPY developer/package.json ./developer/
+COPY id/package.json ./id/
+COPY landing/package.json ./landing/
+COPY status/package.json ./status/
+RUN npm ci --legacy-peer-deps
 
-# Build arguments for VITE environment variables
+COPY shared ./shared
+COPY ui ./ui
+COPY landing ./landing
+
+WORKDIR /workspace/landing
 ARG VITE_ENVIRONMENT=production
 ARG VITE_SITE_BASE_URL=https://wardseal.com
 ARG VITE_CONSOLE_BASE_URL=https://manage.wardseal.com
 ARG VITE_SUPPORT_EMAIL=support@wardseal.com
 
-# Set environment variables for the build process
 ENV VITE_ENVIRONMENT=$VITE_ENVIRONMENT
 ENV VITE_SITE_BASE_URL=$VITE_SITE_BASE_URL
 ENV VITE_CONSOLE_BASE_URL=$VITE_CONSOLE_BASE_URL
 ENV VITE_SUPPORT_EMAIL=$VITE_SUPPORT_EMAIL
 
-# Install dependencies first for better caching
-COPY package*.json ./
-RUN npm ci
+RUN npm run build --workspace=wardseal-landing
 
-# Copy source and build
-COPY . .
-RUN npm run build
-
-# Runtime stage
 FROM nginx:1.27.4-alpine3.21
-
-# Standardized labels
 LABEL org.opencontainers.image.source="https://github.com/dhawalhost/wardseal"
 LABEL org.opencontainers.image.description="WardSeal Marketing Landing Page"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy build artifacts to Nginx html directory
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Health check for Nginx
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1
+COPY landing/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /workspace/landing/dist /usr/share/nginx/html
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

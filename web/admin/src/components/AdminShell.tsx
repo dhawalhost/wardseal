@@ -38,6 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
+import { Logo } from '@/components/ui/logo';
 import CopilotWidget from './CopilotWidget';
 
 interface NavItem {
@@ -240,7 +241,7 @@ const AdminShell: React.FC = () => {
                 <div className="h-14 flex items-center px-5 border-b border-border shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-secondary/10">
-                            <img src="/wardseal.svg" alt="WardSeal" className="w-5 h-5" />
+                            <Logo variant="icon" className="w-5 h-5" />
                         </div>
                         <div>
                             <span className="font-bold text-sm tracking-tight text-on-surface">WardSeal</span>

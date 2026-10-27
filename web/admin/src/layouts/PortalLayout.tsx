@@ -15,6 +15,7 @@ import api, { getUserRoles } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
+import { Logo } from '@/components/ui/logo';
 
 const ADMIN_ROLE = 'admin';
 
@@ -121,7 +122,7 @@ const PortalLayout = () => {
                     <div className="flex items-center gap-6">
                         <Link to="/portal" className="flex items-center gap-3 group">
                             <div className="w-10 h-10 flex items-center justify-center rounded-full">
-                                <img src='/wardseal.svg' height={20} width={20} alt='wardseal' className="w-10 h-10" />
+                                <Logo variant="icon" className="w-10 h-10" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-xl tracking-tight text-on-surface leading-none">WardSeal</span>
@@ -220,7 +221,7 @@ const PortalLayout = () => {
                 <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                            <img src="/wardseal.svg" alt="WardSeal" height={20} width={20} className="w-4 h-4" />
+                            <Logo variant="icon" className="w-4 h-4" />
                             <p className="text-[11px] font-bold text-on-surface-variant">Secured by WardSeal</p>
                         </div>
                         <p className="text-[10px] font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>

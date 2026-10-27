@@ -13,6 +13,7 @@ import {
     GlassCardTitle,
     GlassCardContent,
     GlassCardDescription,
+    Logo,
 } from '@dhawalhost/wardseal-ui-kit';
 import { navigateSafeRedirect, resolveSafeRedirect, seedSessionFromAuthResponse } from '@wardseal/shared';
 
@@ -469,7 +470,11 @@ const Login: React.FC = () => {
                 <div className="relative z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 border border-white/10">
-                            <img src={branding.logo_url || "/wardseal.svg"} alt="" className="w-6 h-6 object-contain brightness-0 invert" />
+                            {branding.logo_url ? (
+                                <img src={branding.logo_url} alt="" className="w-6 h-6 object-contain" />
+                            ) : (
+                                <Logo variant="icon" className="w-6 h-6" />
+                            )}
                         </div>
                         <span className="text-xl font-bold tracking-tight text-white">
                             {branding.tenant_name || "WardSeal"}
@@ -498,7 +503,11 @@ const Login: React.FC = () => {
                 <div className="w-full max-w-md mx-auto">
                     {/* Mobile Logo Only */}
                     <div className="lg:hidden mb-12 flex justify-center">
-                        <img src={branding.logo_url || "/wardseal.svg"} alt="WardSeal" className="w-12 h-12" />
+                        {branding.logo_url ? (
+                            <img src={branding.logo_url} alt={branding.tenant_name || "WardSeal"} className="w-12 h-12 object-contain" />
+                        ) : (
+                            <Logo variant="icon" className="w-12 h-12" />
+                        )}
                     </div>
 
                     <div className="mb-10 text-center lg:text-left">
