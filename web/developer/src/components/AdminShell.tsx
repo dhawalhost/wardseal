@@ -36,6 +36,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
+import { resolveIdUrl } from '@wardseal/shared';
 import CopilotWidget from './CopilotWidget';
 
 const AdminShell: React.FC = () => {
@@ -208,10 +209,7 @@ const AdminShell: React.FC = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    const targetUrl = window.location.hostname.endsWith('.local')
-                                        ? 'http://app.wardseal.local'
-                                        : 'https://id.wardseal.com/portal';
-                                    window.location.assign(targetUrl);
+                                    window.location.assign(`${resolveIdUrl()}/portal`);
                                 }}
                                 className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-all"
                             >

@@ -45,6 +45,7 @@ import { Badge } from '@/components/ui/badge';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
 import { Logo } from '@/components/ui/logo';
+import { resolveIdUrl } from '@wardseal/shared';
 import CopilotWidget from './CopilotWidget';
 
 interface NavItem {
@@ -386,10 +387,7 @@ const AdminShell: React.FC = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                                const targetUrl = window.location.hostname.endsWith('.local')
-                                    ? 'http://app.wardseal.local'
-                                    : 'https://id.wardseal.com/portal';
-                                window.location.assign(targetUrl);
+                                window.location.assign(`${resolveIdUrl()}/portal`);
                             }}
                             className="h-9 px-3 text-xs font-semibold rounded-lg hidden lg:flex items-center gap-1.5 border-border"
                         >
