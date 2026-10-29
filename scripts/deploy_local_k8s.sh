@@ -262,7 +262,7 @@ if [[ "$DEPLOY_LANDING" == "true" && -d "web/landing" ]]; then
     --build-arg VITE_SUPPORT_EMAIL="support@wardseal.com" \
     -t "wardseal-landingui:$IMAGE_TAG" \
     -f "web/landing/Dockerfile" \
-    "web/landing" \
+    "web" \
     || fail "Failed to build landingui"
   pass "Built wardseal-landingui:$IMAGE_TAG"
 else
