@@ -1,0 +1,29 @@
+{{- if and .Values.ingress.enabled .Values.ingress.securityMiddleware (eq .Values.ingress.securityMiddleware.enabled true) -}}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "wardseal.fullname" . }}-security-waf
+  labels:
+    {{- include "wardseal.labels" . | nindent 4 }}
+spec:
+  headers:
+    browserXssFilter: true
+    contentTypeNosniff: true
+    frameDeny: true
+    sslRedirect: {{ .Values.ingress.securityMiddleware.sslRedirect | default false }}
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    stsPreload: true
+    customFrameOptionsValue: "DENY"
+    referrerPolicy: "strict-origin-when-cross-origin"
+  {{- if and .Values.ingress.securityMiddleware.rateLimit .Values.ingress.securityMiddleware.rateLimit.enabled }}
+  rateLimit:
+    average: {{ .Values.ingress.securityMiddleware.rateLimit.average | default 100 }}
+    burst: {{ .Values.ingress.securityMiddleware.rateLimit.burst | default 50 }}
+  {{- end }}
+  {{- if and .Values.ingress.securityMiddleware.buffering .Values.ingress.securityMiddleware.buffering.enabled }}
+  buffering:
+    maxRequestBodyBytes: {{ .Values.ingress.securityMiddleware.buffering.maxRequestBodyBytes | default 2097152 }}
+    memRequestBodyBytes: 1048576
+  {{- end }}
+{{- end }}

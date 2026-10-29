@@ -63,6 +63,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 	router.Use(middleware.Compression())
+	router.Use(middleware.SoftwareWAFMiddleware())
 
 	if cfg.Auth.JWTPublicKeyPath == "" {
 		log.Fatal("JWT public key path is required for policysvc")

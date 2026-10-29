@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -17,13 +18,30 @@ var (
 
 	// XSS patterns
 	xssRegex = regexp.MustCompile(`(?i)(<script\b|javascript:|on\w+\s*=)`)
+
+	// Path traversal and remote code execution / JNDI probe patterns
+	probeRegex = regexp.MustCompile(`(?i)(\.\./\.\./|%2e%2e%2f|%2e%2e/|\$\{jndi:(?:ldap|rmi|dns)://)`)
 )
 
-// SoftwareWAFMiddleware provides Layer 7 protection against common injection attacks.
+// SoftwareWAFMiddleware provides Layer 7 protection against common injection attacks, XSS, and probe attempts.
 func SoftwareWAFMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Check Query Parameters
-		for _, values := range c.Request.URL.Query() {
+		// 1. Check Query Parameters (RawQuery, unescaped raw query, keys, and values)
+		if rawQuery := c.Request.URL.RawQuery; rawQuery != "" {
+			if detectThreat(rawQuery) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "malicious payload detected"})
+				return
+			}
+			if unescaped, err := url.QueryUnescape(rawQuery); err == nil && detectThreat(unescaped) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "malicious payload detected"})
+				return
+			}
+		}
+		for key, values := range c.Request.URL.Query() {
+			if detectThreat(key) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "malicious payload detected"})
+				return
+			}
 			for _, val := range values {
 				if detectThreat(val) {
 					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "malicious payload detected"})
@@ -32,10 +50,10 @@ func SoftwareWAFMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		// 2. Check Headers (e.g., X-Forwarded-For)
+		// 2. Check Headers (e.g., X-Forwarded-For, User-Agent, Referer)
 		for key, values := range c.Request.Header {
 			// Only check specific headers to avoid false positives on auth tokens
-			if strings.HasPrefix(key, "X-") || key == "User-Agent" {
+			if strings.HasPrefix(key, "X-") || key == "User-Agent" || key == "Referer" {
 				for _, val := range values {
 					if detectThreat(val) {
 						c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "malicious payload detected"})
@@ -45,10 +63,11 @@ func SoftwareWAFMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		// 3. Check Request Body
-		if c.Request.Body != nil && c.Request.ContentLength > 0 {
-			bodyBytes, err := io.ReadAll(c.Request.Body)
-			if err == nil {
+		// 3. Check Request Body (safely buffered up to 1MB, handles chunked encoding)
+		if c.Request.Body != nil {
+			const maxScanBody = 1024 * 1024 // 1 MB scan window
+			bodyBytes, err := io.ReadAll(io.LimitReader(c.Request.Body, maxScanBody))
+			if err == nil && len(bodyBytes) > 0 {
 				// Restore body for subsequent handlers
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
@@ -68,6 +87,9 @@ func detectThreat(input string) bool {
 		return true
 	}
 	if xssRegex.MatchString(input) {
+		return true
+	}
+	if probeRegex.MatchString(input) {
 		return true
 	}
 	return false

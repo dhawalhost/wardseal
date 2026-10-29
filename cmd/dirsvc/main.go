@@ -130,6 +130,7 @@ func main() {
 	// Security Middleware
 	router.Use(middleware.Wrap(gokitmiddleware.SecureHeaders()))
 	router.Use(middleware.SecurityHeadersMiddleware())
+	router.Use(middleware.SoftwareWAFMiddleware())
 
 	var rateLimitRedisClient redis.UniversalClient
 	if cfg.Auth.RedisAddr != "" {

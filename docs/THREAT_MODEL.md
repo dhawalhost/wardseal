@@ -53,7 +53,7 @@ Canonical route authz expectations: `pkg/routeauthz`. Living audit: `docs/ENTERP
 | Tenant data leakage | JWT tenant binding + RLS | ✅ Implemented | Tenant from JWT/service context; queries scoped |
 | Key compromise | KMS + rotation | ✅ Implemented | Vault Transit in prod |
 | Abuse | Rate limits | ✅ Implemented | Token bucket / Redis distributed |
-| Abuse | WAF | ❌ Not Implemented | No WAF integration |
+| Abuse | WAF | ✅ Implemented | Layer 7 `SoftwareWAFMiddleware` across all public services (SQLi/XSS/JNDI/path traversal) + Ingress security middleware & rate limits |
 | Webhook SSRF | Redirect deny + outbox/DLQ + DNS checks | ✅ Implemented | `CheckRedirect` deny; all resolved IPs checked; `webhook_deliveries` outbox |
 | MCP unauthenticated | API key required outside local | ✅ Implemented | `mcpsvc` + tenant binding for master token |
 | Supply chain | Vuln scan + SBOM | ✅ Implemented | `govulncheck`, Dependabot, CycloneDX SBOM artifact |
@@ -65,16 +65,14 @@ Canonical route authz expectations: `pkg/routeauthz`. Living audit: `docs/ENTERP
 
 | Status | Count |
 |--------|-------|
-| ✅ Fully Implemented | 25 |
+| ✅ Fully Implemented | 26 |
 | ⚠️ Partially Implemented | 0 |
-| ❌ Not Implemented | 1 |
+| ❌ Not Implemented | 0 |
 
 ---
 
 ## Remaining roadmap
 
-1. **External pen test** — follow `docs/runbooks/PEN_TEST.md`; close Critical/High with retest
-2. **WAF** — Cloudflare/AWS WAF in front of ingress
-3. **Webhook durability** — outbox / DLQ (Phase D)
-4. **MFA policy UX** — admin-configurable per-user/org MFA requirements
-5. **HIBP online check** (optional) — k-anonymity API behind feature flag; offline denylist already ships
+1. **External pen test** — follow `docs/runbooks/PEN_TEST.md`; annual operational compliance engagement
+2. **MFA policy UX** — admin-configurable per-user/org MFA requirements
+3. **HIBP online check** (optional) — k-anonymity API behind feature flag; offline denylist already ships

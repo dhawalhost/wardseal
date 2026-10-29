@@ -44,6 +44,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 	router.Use(middleware.Compression())
+	router.Use(middleware.SoftwareWAFMiddleware())
 
 	provHandlers := provisioning.NewHTTPHandler(svc, log)
 	provHandlers.RegisterRoutes(router)
