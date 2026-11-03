@@ -1,7 +1,9 @@
 import * as React from "react";
+import { CheckCircle2, ChevronDown, LogOut, User } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { ShieldCheck, ChevronDown, CheckCircle2, ShieldAlert, LogOut, User, Settings } from "lucide-react";
+import { focusRing } from "../../lib/styles";
 import { Avatar } from "../../components/Avatar/Avatar";
+import { SkipLink } from "../../components/SkipLink/SkipLink";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,13 +12,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "../../components/Dropdown/Dropdown";
+import { BrandMark } from "../BrandMark";
 
 export interface PortalLink {
   label: string;
   href?: string;
+  /** Current page. Rendered with aria-current="page" and an underline, not colour alone. */
   isActive?: boolean;
   onClick?: () => void;
 }
+
+export type NodeStatus = "healthy" | "degraded" | "disconnected";
 
 export interface PortalLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
   links: PortalLink[];
@@ -27,9 +33,46 @@ export interface PortalLayoutProps extends React.HTMLAttributes<HTMLDivElement> 
   };
   onLogout?: () => void;
   onProfileSettings?: () => void;
-  nodeStatus?: "healthy" | "degraded" | "disconnected";
+  nodeStatus?: NodeStatus;
+  /** Connected node shown in the header. The indicator is hidden when omitted. */
   nodeName?: string;
   brandName?: string;
+  /**
+   * Certifications shown in the footer. Empty by default — only list
+   * attestations the deployment actually holds.
+   */
+  complianceBadges?: string[];
+  /** id of <main>; target of the skip link. */
+  mainId?: string;
+}
+
+const statusMeta: Record<NodeStatus, { label: string; dot: string }> = {
+  healthy: { label: "Healthy", dot: "bg-success" },
+  degraded: { label: "Degraded", dot: "bg-warning" },
+  disconnected: { label: "Disconnected", dot: "bg-error" },
+};
+
+function PortalNavLink({ link, compact = false }: { link: PortalLink; compact?: boolean }) {
+  const className = cn(
+    "relative inline-flex shrink-0 items-center rounded-md text-sm transition-colors duration-fast",
+    compact ? "h-10 px-3" : "h-9 px-3",
+    focusRing,
+    link.isActive
+      ? "font-semibold text-on-surface after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-secondary"
+      : "font-medium text-on-surface-variant hover:bg-muted hover:text-on-surface",
+    compact && link.isActive && "after:-bottom-px"
+  );
+  const current = link.isActive ? ("page" as const) : undefined;
+
+  return link.href ? (
+    <a href={link.href} onClick={link.onClick} aria-current={current} className={className}>
+      {link.label}
+    </a>
+  ) : (
+    <button type="button" onClick={link.onClick} aria-current={current} className={className}>
+      {link.label}
+    </button>
+  );
 }
 
 const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
@@ -41,161 +84,131 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
       onLogout,
       onProfileSettings,
       nodeStatus = "healthy",
-      nodeName = "wardseal-node-01.us-east",
+      nodeName,
       brandName = "WardSeal Portal",
+      complianceBadges = [],
+      mainId = "main-content",
       children,
       ...props
     },
     ref
   ) => {
+    const status = statusMeta[nodeStatus];
+
     return (
       <div
         ref={ref}
-        className={cn(
-          "min-h-screen w-screen bg-background flex flex-col justify-between font-sans text-on-surface relative overflow-x-hidden",
-          className
-        )}
+        className={cn("flex min-h-dvh w-full flex-col bg-background font-sans text-on-surface", className)}
         {...props}
       >
-        {/* ── BACKGROUND ACCENTS ── */}
-        <div className="absolute top-[-300px] left-[50%] -translate-x-1/2 w-[800px] h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none z-0" />
-        <div className="absolute bottom-[-200px] right-[-100px] w-[500px] h-[400px] bg-accent/5 rounded-full blur-[120px] pointer-events-none z-0" />
+        <SkipLink targetId={mainId} />
 
-        {/* ── TOPBAR HEADER ── */}
-        <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md shrink-0">
-          <div className="max-w-7xl mx-auto h-16 px-4 md:px-8 flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-secondary/10 border border-border flex items-center justify-center shadow-sm">
-                  <ShieldCheck className="w-4 h-4 text-secondary" />
-                </div>
-                <span className="font-bold text-sm tracking-tight text-on-surface">
-                  {brandName}
-                </span>
-              </div>
-
-              {/* Navigation Links */}
-              <nav className="hidden md:flex items-center space-x-1">
+        <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-8">
+            <div className="flex min-w-0 items-center gap-6">
+              <BrandMark name={brandName} />
+              <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
                 {links.map((link) => (
-                  <button
-                    key={link.label}
-                    onClick={link.onClick}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-semibold tracking-tight transition-colors duration-150 cursor-pointer",
-                      link.isActive
-                        ? "bg-secondary/10 text-secondary font-bold shadow-sm"
-                        : "text-muted-foreground hover:text-on-surface hover:bg-muted"
-                    )}
-                  >
-                    {link.label}
-                  </button>
+                  <PortalNavLink key={link.href ?? link.label} link={link} />
                 ))}
               </nav>
             </div>
 
-            {/* Right side controls */}
-            <div className="flex items-center gap-4">
-              {/* Telemetry Status Indicator */}
-              <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-muted border border-border font-semibold text-[10px] tracking-tight uppercase">
-                <span className="relative flex h-2 w-2">
-                  <span
-                    className={cn(
-                      "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                      nodeStatus === "healthy"
-                        ? "bg-primary"
-                        : nodeStatus === "degraded"
-                        ? "bg-warning"
-                        : "bg-destructive"
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "relative inline-flex rounded-full h-2 w-2",
-                      nodeStatus === "healthy"
-                        ? "bg-primary"
-                        : nodeStatus === "degraded"
-                        ? "bg-warning"
-                        : "bg-destructive"
-                    )}
-                  />
-                </span>
-                <span className="text-on-surface-variant/60 font-mono truncate max-w-[150px]">
-                  {nodeName}
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
+              {nodeName && (
+                <div
+                  className="hidden items-center gap-2 rounded-md border border-border bg-muted px-3 py-1.5 lg:flex"
+                  title={`${nodeName} — ${status.label}`}
+                >
+                  <span className={cn("h-2 w-2 shrink-0 rounded-full", status.dot)} aria-hidden />
+                  <span className="max-w-[180px] truncate font-mono text-xs text-on-surface-variant">
+                    {nodeName}
+                  </span>
+                  {/* Status in text, so it is not conveyed by colour alone */}
+                  <span className="sr-only">, status {status.label}</span>
+                  {nodeStatus !== "healthy" && (
+                    <span className="text-xs font-semibold text-on-surface" aria-hidden>
+                      {status.label}
+                    </span>
+                  )}
+                </div>
+              )}
 
-              {/* User Dropdown Profile */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-2 p-1 rounded-lg hover:bg-muted outline-none transition-colors">
-                  <Avatar name={user.name} size={28} />
-                  <ChevronDown className="w-4 h-4 text-on-surface-variant/40 hover:text-on-surface" />
+                <DropdownMenuTrigger
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg p-1 transition-colors duration-fast hover:bg-muted data-[state=open]:bg-muted",
+                    focusRing
+                  )}
+                  aria-label={`Account menu for ${user.name}`}
+                >
+                  <Avatar name={user.name} size={28} aria-hidden />
+                  <ChevronDown className="h-4 w-4 text-on-surface-subtle" aria-hidden />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-on-surface">{user.name}</span>
-                      <span className="text-[10px] font-semibold text-on-surface-variant/40 mt-0.5">
-                        {user.email}
-                      </span>
-                    </div>
+                <DropdownMenuContent className="w-60" align="end">
+                  <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
+                    <span className="text-sm font-semibold text-on-surface">{user.name}</span>
+                    <span className="truncate text-xs font-normal text-on-surface-subtle">{user.email}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onProfileSettings}>
-                    <User className="mr-2 h-4 w-4 opacity-40" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
+                  {onProfileSettings && (
+                    <DropdownMenuItem onSelect={onProfileSettings}>
+                      <User className="text-on-surface-subtle" aria-hidden />
+                      Profile
+                    </DropdownMenuItem>
+                  )}
+                  {onLogout && (
+                    <DropdownMenuItem onSelect={onLogout}>
+                      <LogOut className="text-on-surface-subtle" aria-hidden />
+                      Sign out
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
+
+          {/* Mobile: scrollable tab strip under the header, same links + same active cue */}
+          {links.length > 0 && (
+            <nav
+              aria-label="Primary"
+              className="custom-scrollbar flex gap-1 overflow-x-auto border-t border-border px-2 md:hidden"
+            >
+              {links.map((link) => (
+                <PortalNavLink key={link.href ?? link.label} link={link} compact />
+              ))}
+            </nav>
+          )}
         </header>
 
-        {/* ── MOBILE SYSTEM NAV ── */}
-        <nav className="md:hidden border-b border-border bg-muted flex items-center justify-around py-2 shrink-0 z-10">
-          {links.map((link) => (
-            <button
-              key={link.label}
-              onClick={link.onClick}
-              className={cn(
-                "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
-                link.isActive
-                  ? "bg-muted text-primary"
-                  : "text-on-surface-variant/40 hover:text-on-surface"
-              )}
-            >
-              {link.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* ── CONTENT BODY ── */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 z-10 overflow-y-auto">
+        <main
+          id={mainId}
+          tabIndex={-1}
+          className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 focus:outline-none sm:px-6 sm:py-8 md:px-8 lg:px-12 lg:py-10"
+        >
           <div className="flex flex-col gap-8 lg:gap-10">{children}</div>
         </main>
 
-        {/* ── SECURE FOOTER (Premium Layout standard) ── */}
-        <footer className="border-t border-border bg-card py-8 shrink-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Brand details */}
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-secondary" />
-              <div className="text-xs font-medium text-muted-foreground">
-                © {new Date().getFullYear()} WardSeal. All rights reserved.
-              </div>
+        <footer className="shrink-0 border-t border-border bg-card py-8">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 md:flex-row md:px-8">
+            <div className="flex items-center gap-3 text-xs text-on-surface-variant">
+              <BrandMark name="WardSeal" className="[&>span:last-child]:sr-only" />
+              <span>© {new Date().getFullYear()} WardSeal. All rights reserved.</span>
             </div>
 
-            {/* Compliance Certificates */}
-            <div className="flex items-center gap-4 flex-wrap justify-center">
-              <ComplianceBadge label="SOC 2 TYPE II" icon={<CheckCircle2 className="w-3 h-3 text-primary" />} />
-              <ComplianceBadge label="ISO 27001" icon={<CheckCircle2 className="w-3 h-3 text-primary" />} />
-              <ComplianceBadge label="CCPA COMPLIANT" icon={<CheckCircle2 className="w-3 h-3 text-primary" />} />
-            </div>
+            {complianceBadges.length > 0 && (
+              <ul aria-label="Compliance" className="flex flex-wrap items-center justify-center gap-2">
+                {complianceBadges.map((label) => (
+                  <li
+                    key={label}
+                    className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-medium text-on-surface-variant"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-hidden />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </footer>
       </div>
@@ -203,15 +216,5 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
   }
 );
 PortalLayout.displayName = "PortalLayout";
-
-// Small localized helper component for compliance items
-function ComplianceBadge({ label, icon }: { label: string; icon: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-muted border border-border text-[9px] font-bold tracking-wider text-on-surface-variant/60 uppercase">
-      {icon}
-      <span>{label}</span>
-    </div>
-  );
-}
 
 export { PortalLayout };

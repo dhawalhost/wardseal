@@ -1,4 +1,4 @@
-/** SoT: @dhawalhost/wardseal-ui-kit@0.2.0 — plus types for the app toast hook. */
+/** SoT: @dhawalhost/wardseal-ui-kit@0.3.0 — plus types for the app toast hook. */
 import type * as React from "react";
 
 export {
@@ -14,7 +14,7 @@ export {
 export type ToastProps = {
   id?: string;
   className?: string;
-  variant?: "default" | "destructive" | "success";
+  variant?: "default" | "destructive" | "success" | "info" | "warning";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   children?: React.ReactNode;

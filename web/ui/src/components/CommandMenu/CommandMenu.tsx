@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Dialog, DialogContent } from "../Dialog/Dialog";
 import { Search, CornerDownLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../Dialog/Dialog";
 import { cn } from "../../lib/utils";
 
 export interface CommandItem {
@@ -17,177 +17,241 @@ export interface CommandMenuProps {
   onOpenChange: (open: boolean) => void;
   items: CommandItem[];
   placeholder?: string;
+  /** Accessible name of the dialog and its search box. */
+  label?: string;
+  /** Shown when nothing matches. Receives the current query. */
+  emptyMessage?: (query: string) => React.ReactNode;
+  /** Register the ⌘K / Ctrl+K toggle on window. Disable if the app owns the shortcut. */
+  enableShortcut?: boolean;
 }
 
+/**
+ * Command palette — WAI-ARIA combobox with a grouped listbox.
+ * Focus stays in the search box; arrow keys move `aria-activedescendant`,
+ * so screen readers announce the highlighted command without moving focus.
+ */
 export function CommandMenu({
   open,
   onOpenChange,
   items,
-  placeholder = "Search console commands (⌘K)...",
+  placeholder = "Search commands…",
+  label = "Command menu",
+  emptyMessage = (q) => (q ? <>No commands match “{q}”</> : "No commands available"),
+  enableShortcut = true,
 }: CommandMenuProps) {
   const [query, setQuery] = React.useState("");
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const baseId = React.useId().replace(/:/g, "");
+  const listId = `cmd-${baseId}-list`;
+  const optionId = (i: number) => `cmd-${baseId}-opt-${i}`;
+  const listRef = React.useRef<HTMLDivElement>(null);
 
-  // Filter items based on search query
   const filteredItems = React.useMemo(() => {
-    if (!query) return items;
-    const lower = query.toLowerCase();
-    return items.filter((item) =>
-      item.label.toLowerCase().includes(lower) ||
-      item.category.toLowerCase().includes(lower)
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      (item) => item.label.toLowerCase().includes(q) || item.category.toLowerCase().includes(q)
     );
   }, [items, query]);
 
-  // Reset selected index when query changes
+  // Group while preserving order; flat index drives keyboard + aria.
+  const groups = React.useMemo(() => {
+    const map = new Map<string, { item: CommandItem; index: number }[]>();
+    filteredItems.forEach((item, index) => {
+      const g = map.get(item.category) ?? [];
+      g.push({ item, index });
+      map.set(item.category, g);
+    });
+    return [...map.entries()];
+  }, [filteredItems]);
+
+  React.useEffect(() => setActiveIndex(0), [query]);
+
+  // Fresh state each time the palette opens.
   React.useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+    if (!open) setQuery("");
+  }, [open]);
 
-  // Handle arrow key navigation and execution
-  const handleKeyDown = React.useCallback(
-    (e: React.KeyboardEvent) => {
-      if (filteredItems.length === 0) return;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % filteredItems.length);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + filteredItems.length) % filteredItems.length);
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        const activeItem = filteredItems[selectedIndex];
-        if (activeItem && activeItem.onClick) {
-          activeItem.onClick();
-          onOpenChange(false);
-        }
-      }
-    },
-    [filteredItems, selectedIndex, onOpenChange]
-  );
-
-  // Keyboard listener for ⌘K
+  // Keep the highlighted option in view.
   React.useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+    if (!open) return;
+    listRef.current
+      ?.querySelector<HTMLElement>(`#${CSS.escape(optionId(activeIndex))}`)
+      ?.scrollIntoView({ block: "nearest" });
+    // optionId is stable for a given baseId
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, open]);
+
+  React.useEffect(() => {
+    if (!enableShortcut) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         onOpenChange(!open);
       }
     };
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [open, onOpenChange]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onOpenChange, enableShortcut]);
 
-  // Group filtered items by category
-  const categories = React.useMemo(() => {
-    const groups: { [key: string]: CommandItem[] } = {};
-    filteredItems.forEach((item) => {
-      if (!groups[item.category]) {
-        groups[item.category] = [];
-      }
-      groups[item.category].push(item);
-    });
-    return groups;
-  }, [filteredItems]);
+  const run = React.useCallback(
+    (item: CommandItem | undefined) => {
+      if (!item?.onClick) return;
+      item.onClick();
+      onOpenChange(false);
+    },
+    [onOpenChange]
+  );
 
-  // Linear index calculation for grouped items
-  let itemCounter = 0;
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const n = filteredItems.length;
+    if (!n) return;
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActiveIndex((i) => (i + 1) % n);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActiveIndex((i) => (i - 1 + n) % n);
+        break;
+      case "Home":
+        e.preventDefault();
+        setActiveIndex(0);
+        break;
+      case "End":
+        e.preventDefault();
+        setActiveIndex(n - 1);
+        break;
+      case "Enter":
+        e.preventDefault();
+        run(filteredItems[activeIndex]);
+        break;
+    }
+  };
+
+  const hasResults = filteredItems.length > 0;
+  const safeIndex = Math.min(activeIndex, Math.max(filteredItems.length - 1, 0));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden border border-border bg-card/95 backdrop-blur-2xl shadow-2xl rounded-xl">
-        {/* Search Input */}
-        <div className="flex items-center border-b border-border px-4 h-12 gap-3 shrink-0">
-          <Search className="w-4 h-4 text-on-surface-variant/40 shrink-0" />
+      <DialogContent
+        showClose={false}
+        className="top-[15%] max-w-lg translate-y-0 gap-0 overflow-hidden p-0"
+      >
+        <DialogTitle className="sr-only">{label}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Type to filter. Use the up and down arrow keys to move, Enter to run, Escape to close.
+        </DialogDescription>
+
+        <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
+          <Search className="h-4 w-4 shrink-0 text-on-surface-subtle" aria-hidden />
           <input
+            role="combobox"
+            aria-label={label}
+            aria-expanded={hasResults}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={hasResults ? optionId(safeIndex) : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={onKeyDown}
             placeholder={placeholder}
-            className="flex-1 bg-transparent border-0 outline-none text-xs font-semibold text-on-surface placeholder:text-on-surface-variant/30 h-full w-full"
-            autoFocus
+            autoComplete="off"
+            spellCheck={false}
+            className="h-full w-full flex-1 border-0 bg-transparent text-sm text-on-surface outline-none placeholder:text-on-surface-subtle"
           />
         </div>
 
-        {/* Command List Viewport */}
-        <div className="max-h-72 overflow-y-auto custom-scrollbar p-2 space-y-3">
-          {filteredItems.length === 0 ? (
-            <div className="py-6 text-center text-xs font-semibold text-on-surface-variant/30 uppercase tracking-widest italic">
-              No telemetry matches found
-            </div>
+        <div
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          aria-label={label}
+          className="custom-scrollbar max-h-80 space-y-2 overflow-y-auto p-2"
+        >
+          {!hasResults ? (
+            <p className="px-3 py-8 text-center text-sm text-on-surface-subtle">
+              {emptyMessage(query.trim())}
+            </p>
           ) : (
-            Object.entries(categories).map(([cat, catItems]) => (
-              <div key={cat} className="space-y-1">
-                <h4 className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/30">
-                  {cat}
-                </h4>
-                <ul className="space-y-0.5">
-                  {catItems.map((item) => {
-                    const currentIndex = itemCounter++;
-                    const isActive = currentIndex === selectedIndex;
-
+            groups.map(([category, entries]) => {
+              const headingId = `cmd-${baseId}-group-${category.replace(/\W+/g, "-")}`;
+              return (
+                <div key={category} role="group" aria-labelledby={headingId}>
+                  <div id={headingId} aria-hidden className="px-2 py-1.5 text-label text-on-surface-subtle">
+                    {category}
+                  </div>
+                  {entries.map(({ item, index }) => {
+                    const active = index === safeIndex;
                     return (
-                      <li key={item.id}>
-                        <button
-                          onClick={() => {
-                            if (item.onClick) item.onClick();
-                            onOpenChange(false);
-                          }}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-semibold transition-all duration-150 group/cmd border border-transparent",
-                            isActive
-                              ? "bg-primary/5 text-primary border-primary/10"
-                              : "text-on-surface-variant/70 hover:bg-muted hover:text-on-surface"
+                      <div
+                        key={item.id}
+                        id={optionId(index)}
+                        role="option"
+                        aria-selected={active}
+                        aria-disabled={!item.onClick || undefined}
+                        onMouseMove={() => !active && setActiveIndex(index)}
+                        // keep focus in the input
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => run(item)}
+                        className={cn(
+                          "flex cursor-pointer select-none items-center justify-between gap-4 rounded-md px-2 py-2 text-sm transition-colors duration-fast",
+                          active ? "bg-accent text-accent-foreground" : "text-on-surface",
+                          !item.onClick && "cursor-default opacity-50"
+                        )}
+                      >
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          {item.icon && (
+                            <span
+                              className={cn(
+                                "flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4",
+                                active ? "text-accent-foreground" : "text-on-surface-subtle"
+                              )}
+                              aria-hidden
+                            >
+                              {item.icon}
+                            </span>
                           )}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            {item.icon && (
-                              <span
-                                className={cn(
-                                  "w-4 h-4 shrink-0 transition-colors",
-                                  isActive
-                                    ? "text-primary"
-                                    : "text-on-surface-variant/40 group-hover/cmd:text-on-surface-variant/75"
-                                )}
-                              >
-                                {item.icon}
-                              </span>
-                            )}
-                            <span className="truncate">{item.label}</span>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0 ml-4">
-                            {item.shortcut && (
-                              <kbd className="text-[9px] font-bold bg-surface-container-highest/80 border border-outline/10 px-1 rounded font-mono text-on-surface-variant/40 uppercase tracking-wide">
-                                {item.shortcut}
-                              </kbd>
-                            )}
-                            {isActive && (
-                              <CornerDownLeft className="w-3 h-3 text-primary/60 shrink-0" />
-                            )}
-                          </div>
-                        </button>
-                      </li>
+                          <span className="truncate">{item.label}</span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2" aria-hidden>
+                          {item.shortcut && (
+                            <kbd className="rounded border border-border bg-surface-container px-1.5 font-mono text-xs text-on-surface-subtle">
+                              {item.shortcut}
+                            </kbd>
+                          )}
+                          {active && <CornerDownLeft className="h-3.5 w-3.5" />}
+                        </span>
+                      </div>
                     );
                   })}
-                </ul>
-              </div>
-            ))
+                </div>
+              );
+            })
           )}
         </div>
 
-        {/* Footer controls instruction */}
-        <div className="h-9 px-4 border-t border-border flex items-center gap-4 text-[9px] font-bold text-on-surface-variant/30 uppercase tracking-wider bg-surface-container-low/40 shrink-0">
+        {/* Result count for screen readers as the user types */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {query ? `${filteredItems.length} result${filteredItems.length === 1 ? "" : "s"}` : ""}
+        </div>
+
+        <div
+          className="flex h-10 shrink-0 items-center gap-4 border-t border-border bg-surface-container-low px-4 text-xs text-on-surface-subtle"
+          aria-hidden
+        >
           <span className="flex items-center gap-1.5">
-            <kbd className="bg-surface-container border border-outline/10 px-1 rounded">↑↓</kbd>
-            <span>Navigate</span>
+            <kbd className="rounded border border-border bg-card px-1 font-mono">↑↓</kbd>
+            Navigate
           </span>
           <span className="flex items-center gap-1.5">
-            <kbd className="bg-surface-container border border-outline/10 px-1 rounded">Enter</kbd>
-            <span>Select</span>
+            <kbd className="rounded border border-border bg-card px-1 font-mono">Enter</kbd>
+            Run
           </span>
-          <span className="flex items-center gap-1.5 ml-auto">
-            <kbd className="bg-surface-container border border-outline/10 px-1 rounded">Esc</kbd>
-            <span>Close</span>
+          <span className="ml-auto flex items-center gap-1.5">
+            <kbd className="rounded border border-border bg-card px-1 font-mono">Esc</kbd>
+            Close
           </span>
         </div>
       </DialogContent>

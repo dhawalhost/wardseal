@@ -1,14 +1,14 @@
 # `@dhawalhost/wardseal-ui-kit` (workspace mirror)
 
-**Version: `0.2.0`** — keep this package identical to published / sibling [`wardseal-ui-kit@0.2.0`](https://github.com/dhawalhost/wardseal-ui-kit).
+**Version: `0.3.0`** — keep this package identical to published / sibling [`wardseal-ui-kit@0.3.0`](https://github.com/dhawalhost/wardseal-ui-kit).
 
 This folder is a **mirror** of the brand UI library for the WardSeal monorepo. Product apps may keep local layouts that **compose** kit components; they must not fork Button/Card/Input/etc.
 
 | | |
 |--|--|
-| **Source of truth** | [`wardseal-ui-kit`](https://github.com/dhawalhost/wardseal-ui-kit) `@0.2.0` |
+| **Source of truth** | [`wardseal-ui-kit`](https://github.com/dhawalhost/wardseal-ui-kit) `@0.3.0` |
 | **This folder** | `wardseal/web/ui` — sync from kit; do **not** invent tokens/components here |
-| **Consumers** | `web/admin`, `web/app`, `web/id`, … depend on `@dhawalhost/wardseal-ui-kit@0.2.0` (workspace symlink) |
+| **Consumers** | `web/admin`, `web/app`, `web/id`, … depend on `@dhawalhost/wardseal-ui-kit@0.3.0` (workspace symlink) |
 
 ## How apps get the kit
 

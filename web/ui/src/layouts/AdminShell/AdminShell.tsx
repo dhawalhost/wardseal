@@ -1,14 +1,27 @@
 import * as React from "react";
+import { Bell, LogOut, Menu, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { ShieldCheck, Menu, X, Bell, Search, LogOut, ChevronRight } from "lucide-react";
+import { focusRing, iconButton } from "../../lib/styles";
 import { Avatar } from "../../components/Avatar/Avatar";
+import { Sheet, SheetContent, SheetTitle } from "../../components/Sheet/Sheet";
+import { SkipLink } from "../../components/SkipLink/SkipLink";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../components/Tooltip/Tooltip";
+import { BrandMark } from "../BrandMark";
 
 export interface NavigationItem {
   label: string;
   href?: string;
   icon?: React.ReactNode;
+  /** Current page. Rendered with aria-current="page" and an indicator bar, not colour alone. */
   isActive?: boolean;
   badge?: string | number;
+  /** Screen-reader text for the badge, e.g. "3 pending". Defaults to the badge value. */
+  badgeLabel?: string;
   onClick?: () => void;
 }
 
@@ -26,10 +39,151 @@ export interface AdminShellProps extends React.HTMLAttributes<HTMLDivElement> {
   };
   onLogout?: () => void;
   onSearchClick?: () => void;
+  /** Placeholder-style label inside the search trigger. */
+  searchLabel?: string;
   onNotificationClick?: () => void;
+  /** Unread count. Shows the dot and is announced in the button name. */
+  unreadNotifications?: number;
   brandName?: string;
   topHeaderActions?: React.ReactNode;
+  /** id of <main>; target of the skip link. */
+  mainId?: string;
 }
+
+/* ── Sidebar content (shared by desktop rail and mobile sheet) ─────────── */
+
+function NavItem({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
+  const content = (
+    <>
+      <span className="flex min-w-0 items-center gap-2.5">
+        {item.icon && (
+          <span
+            className={cn(
+              "flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4",
+              item.isActive ? "text-accent-foreground" : "text-on-surface-subtle group-hover/nav:text-on-surface"
+            )}
+            aria-hidden
+          >
+            {item.icon}
+          </span>
+        )}
+        <span className="truncate">{item.label}</span>
+      </span>
+      {item.badge !== undefined && (
+        <>
+          <span
+            className={cn(
+              "rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums",
+              item.isActive ? "bg-card text-accent-foreground" : "bg-surface-container-high text-on-surface-variant"
+            )}
+            aria-hidden
+          >
+            {item.badge}
+          </span>
+          <span className="sr-only">, {item.badgeLabel ?? String(item.badge)}</span>
+        </>
+      )}
+    </>
+  );
+
+  const className = cn(
+    "group/nav relative flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors duration-fast",
+    focusRing,
+    item.isActive
+      ? "bg-accent font-semibold text-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-secondary"
+      : "font-medium text-on-surface-variant hover:bg-muted hover:text-on-surface"
+  );
+
+  const handleClick = () => {
+    item.onClick?.();
+    onNavigate?.();
+  };
+
+  return item.href ? (
+    <a
+      href={item.href}
+      onClick={handleClick}
+      aria-current={item.isActive ? "page" : undefined}
+      className={className}
+    >
+      {content}
+    </a>
+  ) : (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-current={item.isActive ? "page" : undefined}
+      className={className}
+    >
+      {content}
+    </button>
+  );
+}
+
+function SidebarContent({
+  navigation,
+  user,
+  onLogout,
+  brandName,
+  onNavigate,
+  navId,
+}: Pick<AdminShellProps, "navigation" | "user" | "onLogout"> & {
+  brandName: string;
+  onNavigate?: () => void;
+  navId: string;
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex h-16 shrink-0 items-center border-b border-border px-5">
+        <BrandMark name={brandName} />
+      </div>
+
+      <nav aria-label="Primary" className="custom-scrollbar flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {navigation.map((group, gi) => {
+          const headingId = `${navId}-group-${gi}`;
+          return (
+            <div key={group.title} className="space-y-1">
+              <h2 id={headingId} className="px-3 pb-1 text-label text-on-surface-subtle">
+                {group.title}
+              </h2>
+              <ul aria-labelledby={headingId} className="space-y-0.5">
+                {group.items.map((item) => (
+                  <li key={item.href ?? item.label}>
+                    <NavItem item={item} onNavigate={onNavigate} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="shrink-0 border-t border-border p-3">
+        <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Avatar name={user.name} size={32} aria-hidden />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-on-surface">{user.name}</div>
+              <div className="truncate text-xs text-on-surface-subtle">{user.email}</div>
+            </div>
+          </div>
+          {onLogout && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" onClick={onLogout} className={iconButton} aria-label="Sign out">
+                  <LogOut className="h-4 w-4" aria-hidden />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Sign out</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Shell ─────────────────────────────────────────────────────────────── */
 
 const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
   (
@@ -39,232 +193,177 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
       user,
       onLogout,
       onSearchClick,
+      searchLabel = "Search…",
       onNotificationClick,
+      unreadNotifications = 0,
       brandName = "WardSeal",
       topHeaderActions,
+      mainId = "main-content",
       children,
       ...props
     },
     ref
   ) => {
-    const [isMobileOpen, setIsMobileOpen] = React.useState(false);
+    const [mobileOpen, setMobileOpen] = React.useState(false);
+    const navId = React.useId().replace(/:/g, "");
+    const drawerRef = React.useRef<HTMLDivElement>(null);
+    const menuButtonRef = React.useRef<HTMLButtonElement>(null);
+
+    // Land on the current page's link (else the first link) — not whatever
+    // focusable happens to come first — so arrowing/tabbing starts in context.
+    const focusCurrentLink = React.useCallback((event: Event) => {
+      const root = drawerRef.current;
+      const target =
+        root?.querySelector<HTMLElement>('nav [aria-current="page"]') ??
+        root?.querySelector<HTMLElement>("nav a, nav button");
+      if (target) {
+        event.preventDefault();
+        target.focus();
+      }
+    }, []);
+
+    // The drawer is mobile-only: close it if the viewport grows past md.
+    React.useEffect(() => {
+      const mq = window.matchMedia("(min-width: 768px)");
+      const onChange = () => mq.matches && setMobileOpen(false);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    }, []);
+
+    const notificationLabel =
+      unreadNotifications > 0
+        ? `Notifications, ${unreadNotifications} unread`
+        : "Notifications";
 
     return (
-      <div
-        ref={ref}
-        className={cn("flex h-screen w-screen bg-background overflow-hidden relative font-sans text-on-surface", className)}
-        {...props}
-      >
-        {/* ── BACKGROUND GLOW DECORATIONS (Premium Cyberpunk) ── */}
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none z-0" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] pointer-events-none z-0" />
-
-        {/* ── SIDEBAR (DESKTOP & MOBILE TRANSITION) ── */}
-        <aside
-          className={cn(
-            "fixed inset-y-0 left-0 z-40 w-64 bg-surface-container-low border-r border-border flex flex-col justify-between transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static shrink-0 h-full",
-            isMobileOpen ? "translate-x-0" : "-translate-x-full"
-          )}
+      <TooltipProvider delayDuration={300}>
+        <div
+          ref={ref}
+          className={cn("flex h-dvh w-full overflow-hidden bg-background font-sans text-on-surface", className)}
+          {...props}
         >
-          {/* Brand Header */}
-          <div className="h-16 px-6 border-b border-border flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center shadow-sm shrink-0">
-                <ShieldCheck className="w-4 h-4 text-primary" />
-              </div>
-              <span className="font-bold text-sm tracking-wider uppercase text-on-surface">
-                {brandName}
-              </span>
-            </div>
-            {/* Mobile close button */}
-            <button
-              onClick={() => setIsMobileOpen(false)}
-              className="md:hidden p-1 text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container rounded-md"
+          <SkipLink targetId={mainId} />
+
+          {/* Desktop rail — hidden (and out of the tab order) below md */}
+          <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-container-low md:block">
+            <SidebarContent
+              navigation={navigation}
+              user={user}
+              onLogout={onLogout}
+              brandName={brandName}
+              navId={`${navId}-desktop`}
+            />
+          </aside>
+
+          {/* Mobile drawer — modal: traps focus, Esc closes, focus returns to the trigger */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetContent
+              ref={drawerRef}
+              onOpenAutoFocus={focusCurrentLink}
+              // Opened programmatically (not via SheetTrigger), so return focus ourselves.
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                menuButtonRef.current?.focus();
+              }}
+              side="left"
+              id={`${navId}-drawer`}
+              className="w-72 gap-0 bg-surface-container-low p-0 sm:max-w-xs"
+              closeLabel="Close navigation"
+              aria-describedby={undefined}
             >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <SidebarContent
+                navigation={navigation}
+                user={user}
+                onLogout={onLogout}
+                brandName={brandName}
+                onNavigate={() => setMobileOpen(false)}
+                navId={`${navId}-mobile`}
+              />
+            </SheetContent>
+          </Sheet>
 
-          {/* Navigation Items (Scrollable) */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-6">
-            {navigation.map((group) => (
-              <div key={group.title} className="space-y-2">
-                <h3 className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {group.title}
-                </h3>
-                <ul className="space-y-0.5">
-                  {group.items.map((item) => (
-                    <li key={item.label}>
-                      {item.href ? (
-                        <a
-                          href={item.href}
-                          onClick={item.onClick}
-                          className={cn(
-                            "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold tracking-tight transition-all duration-200 group/nav",
-                            item.isActive
-                              ? "bg-primary/5 text-primary border-l-2 border-primary pl-2.5 font-bold"
-                              : "text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container/50"
-                          )}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            {item.icon && (
-                              <div
-                                className={cn(
-                                  "w-4 h-4 transition-colors shrink-0",
-                                  item.isActive
-                                    ? "text-primary"
-                                    : "text-on-surface-variant/40 group-hover/nav:text-on-surface"
-                                )}
-                              >
-                                {item.icon}
-                              </div>
-                            )}
-                            <span>{item.label}</span>
-                          </div>
-                          {item.badge !== undefined && (
-                            <span
-                              className={cn(
-                                "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight",
-                                item.isActive
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-surface-container-highest text-on-surface-variant/50"
-                              )}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                        </a>
-                      ) : (
-                        <button
-                          onClick={item.onClick}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold tracking-tight text-left transition-all duration-200 group/nav",
-                            item.isActive
-                              ? "bg-primary/5 text-primary border-l-2 border-primary pl-2.5 font-bold"
-                              : "text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container/50"
-                          )}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            {item.icon && (
-                              <div
-                                className={cn(
-                                  "w-4 h-4 transition-colors shrink-0",
-                                  item.isActive
-                                    ? "text-primary"
-                                    : "text-on-surface-variant/40 group-hover/nav:text-on-surface"
-                                )}
-                              >
-                                {item.icon}
-                              </div>
-                            )}
-                            <span>{item.label}</span>
-                          </div>
-                          {item.badge !== undefined && (
-                            <span
-                              className={cn(
-                                "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight",
-                                item.isActive
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-surface-container-highest text-on-surface-variant/50"
-                              )}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 md:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  ref={menuButtonRef}
+                  type="button"
+                  onClick={() => setMobileOpen(true)}
+                  className={cn(iconButton, "md:hidden")}
+                  aria-label="Open navigation"
+                  aria-expanded={mobileOpen}
+                  aria-controls={`${navId}-drawer`}
+                >
+                  <Menu className="h-5 w-5" aria-hidden />
+                </button>
+
+                {onSearchClick && (
+                  <button
+                    type="button"
+                    onClick={onSearchClick}
+                    aria-keyshortcuts="Meta+K Control+K"
+                    className={cn(
+                      "hidden h-9 w-64 items-center gap-2 rounded-lg border border-input bg-card px-3 text-left text-sm text-on-surface-subtle transition-colors duration-fast hover:border-on-surface-subtle hover:text-on-surface-variant md:flex",
+                      focusRing
+                    )}
+                  >
+                    <Search className="h-4 w-4 shrink-0" aria-hidden />
+                    <span className="flex-1 truncate">{searchLabel}</span>
+                    <kbd
+                      className="rounded border border-border bg-surface-container px-1.5 font-mono text-xs text-on-surface-subtle"
+                      aria-hidden
+                    >
+                      ⌘K
+                    </kbd>
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
 
-          {/* User Profile Footer */}
-          <div className="p-4 border-t border-border bg-surface-container-low/50 shrink-0">
-            <div className="flex items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Avatar name={user.name} size={32} />
-                <div className="min-w-0">
-                  <div className="text-xs font-bold tracking-tight text-on-surface truncate">
-                    {user.name}
-                  </div>
-                  <div className="text-[10px] font-semibold text-on-surface-variant/40 truncate">
-                    {user.email}
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                {topHeaderActions}
+
+                {onSearchClick && (
+                  <button
+                    type="button"
+                    onClick={onSearchClick}
+                    className={cn(iconButton, "md:hidden")}
+                    aria-label="Search"
+                  >
+                    <Search className="h-4 w-4" aria-hidden />
+                  </button>
+                )}
+
+                {onNotificationClick && (
+                  <button
+                    type="button"
+                    onClick={onNotificationClick}
+                    className={cn(iconButton, "relative")}
+                    aria-label={notificationLabel}
+                  >
+                    <Bell className="h-4 w-4" aria-hidden />
+                    {unreadNotifications > 0 && (
+                      <span
+                        className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-secondary ring-2 ring-background"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                )}
               </div>
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="p-1.5 text-on-surface-variant/40 hover:text-destructive hover:bg-destructive/5 rounded-md transition-colors shrink-0"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            </header>
+
+            {/* Page body — wrap page content in <PageLayout> */}
+            <main
+              id={mainId}
+              tabIndex={-1}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden focus:outline-none"
+            >
+              {children}
+            </main>
           </div>
-        </aside>
-
-        {/* ── MOBILE OVERLAY ── */}
-        {isMobileOpen && (
-          <div
-            onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 overlay-scrim backdrop-blur-sm z-30 md:hidden"
-          />
-        )}
-
-        {/* ── MAIN CONTENT CONTAINER ── */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full z-10">
-          {/* Top Navbar */}
-          <header className="h-16 px-6 border-b border-border bg-surface-container-low/50 backdrop-blur-sm flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-4">
-              {/* Mobile menu trigger */}
-              <button
-                onClick={() => setIsMobileOpen(true)}
-                className="md:hidden p-1.5 text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container rounded-md shrink-0"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-
-              {/* Quick Search trigger */}
-              {onSearchClick && (
-                <button
-                  onClick={onSearchClick}
-                  className="hidden md:flex items-center gap-2 px-3 py-1.5 text-xs text-on-surface-variant/30 hover:text-on-surface-variant/60 bg-surface-container/30 hover:bg-surface-container/60 border border-outline/10 rounded-lg transition-all w-56 text-left"
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  <span className="font-semibold">Search credentials...</span>
-                  <kbd className="ml-auto text-[10px] bg-surface-container-highest border border-outline/10 px-1 rounded text-on-surface-variant/50">
-                    ⌘K
-                  </kbd>
-                </button>
-              )}
-            </div>
-
-            {/* Actions & Notifications */}
-            <div className="flex items-center gap-4">
-              {topHeaderActions}
-
-              {onNotificationClick && (
-                <button
-                  onClick={onNotificationClick}
-                  className="relative p-1.5 text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container rounded-md transition-colors shrink-0"
-                >
-                  <Bell className="w-4.5 h-4.5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
-                </button>
-              )}
-            </div>
-          </header>
-
-          {/* Page body — no padding here; wrap page content in <PageLayout> */}
-          <main className="flex-1 overflow-hidden flex flex-col min-h-0 custom-scrollbar bg-background/25">
-            {children}
-          </main>
         </div>
-      </div>
+      </TooltipProvider>
     );
   }
 );

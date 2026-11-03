@@ -1,9 +1,12 @@
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "../../lib/utils";
+import { overlaySurface } from "../../lib/styles";
 
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
+const PopoverAnchor = PopoverPrimitive.Anchor;
+const PopoverClose = PopoverPrimitive.Close;
 
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
@@ -15,7 +18,9 @@ const PopoverContent = React.forwardRef<
       align={align}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 w-72 rounded-xl border border-border bg-card/95 backdrop-blur-xl p-4 text-on-surface shadow-2xl outline-none data-[state=open]:animate-scale-in",
+        overlaySurface,
+        "z-50 w-72 max-w-[calc(100vw-2rem)] rounded-lg p-4 text-sm outline-none",
+        "data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
         className
       )}
       {...props}
@@ -24,4 +29,4 @@ const PopoverContent = React.forwardRef<
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent };
+export { Popover, PopoverTrigger, PopoverAnchor, PopoverClose, PopoverContent };

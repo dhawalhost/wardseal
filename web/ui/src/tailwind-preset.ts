@@ -24,6 +24,8 @@ export const tailwindPreset = {
         "on-surface": {
           DEFAULT: "hsl(var(--on-surface))",
           variant: "hsl(var(--on-surface-variant))",
+          /** Tertiary text (labels, captions, placeholders) — ≥4.5:1. Use instead of text-on-surface-variant/NN. */
+          subtle: "hsl(var(--on-surface-subtle))",
         },
         inverse: "hsl(var(--surface-inverse))",
         "on-inverse": "hsl(var(--on-surface-inverse))",
@@ -54,21 +56,25 @@ export const tailwindPreset = {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
           subtle: "hsl(var(--success-subtle))",
+          "subtle-foreground": "hsl(var(--success-subtle-foreground))",
         },
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
           subtle: "hsl(var(--warning-subtle))",
+          "subtle-foreground": "hsl(var(--warning-subtle-foreground))",
         },
         error: {
           DEFAULT: "hsl(var(--error))",
           foreground: "hsl(var(--error-foreground))",
           subtle: "hsl(var(--error-subtle))",
+          "subtle-foreground": "hsl(var(--error-subtle-foreground))",
         },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
           subtle: "hsl(var(--info-subtle))",
+          "subtle-foreground": "hsl(var(--info-subtle-foreground))",
         },
 
         // ── shadcn compat ──
@@ -95,6 +101,12 @@ export const tailwindPreset = {
         },
       },
 
+      // ── Type tokens ──
+      // `label`: 12px semibold — the floor for UI labels, table headers, captions.
+      fontSize: {
+        label: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }],
+      },
+
       fontFamily: {
         sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
         display: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
@@ -108,8 +120,10 @@ export const tailwindPreset = {
         md: "var(--radius-md)",
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
-        "2xl": "16px",
-        "3xl": "24px",
+        // Legacy: 2xl === xl (16px) — 50+ app usages depend on it. Prefer `xl` in new code.
+        "2xl": "var(--radius-xl)",
+        "3xl": "var(--radius-3xl)",
+        full: "var(--radius-full)",
       },
 
       // ── Box shadow scale ──
@@ -129,24 +143,53 @@ export const tailwindPreset = {
       },
 
       // ── Keyframes & Animations ──
+      // Keyframes use the standalone `translate` / `scale` properties, not `transform`,
+      // so they compose with positioning transforms (e.g. a centred dialog's
+      // -translate-x-1/2) instead of overwriting them mid-animation.
       keyframes: {
-        "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        "slide-up": {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        "scale-in": {
-          "0%": { opacity: "0", transform: "scale(0.96)" },
-          "100%": { opacity: "1", transform: "scale(1)" },
-        },
+        "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "fade-out": { from: { opacity: "1" }, to: { opacity: "0" } },
+        "slide-up": { from: { opacity: "0", translate: "0 8px" }, to: { opacity: "1", translate: "0 0" } },
+        "scale-in": { from: { opacity: "0", scale: "0.96" }, to: { opacity: "1", scale: "1" } },
+        "scale-out": { from: { opacity: "1", scale: "1" }, to: { opacity: "0", scale: "0.96" } },
+        "slide-in-right": { from: { translate: "100% 0" }, to: { translate: "0 0" } },
+        "slide-out-right": { from: { translate: "0 0" }, to: { translate: "100% 0" } },
+        "slide-in-left": { from: { translate: "-100% 0" }, to: { translate: "0 0" } },
+        "slide-out-left": { from: { translate: "0 0" }, to: { translate: "-100% 0" } },
+        "slide-in-top": { from: { translate: "0 -100%" }, to: { translate: "0 0" } },
+        "slide-out-top": { from: { translate: "0 0" }, to: { translate: "0 -100%" } },
+        "slide-in-bottom": { from: { translate: "0 100%" }, to: { translate: "0 0" } },
+        "slide-out-bottom": { from: { translate: "0 0" }, to: { translate: "0 100%" } },
       },
       animation: {
-        "fade-in": "fade-in 0.3s ease-out",
-        "slide-up": "slide-up 0.3s ease-out",
-        "scale-in": "scale-in 0.2s ease-out",
+        "fade-in": "fade-in var(--duration-base, 200ms) var(--ease-enter, ease-out)",
+        "fade-out": "fade-out var(--duration-fast, 150ms) var(--ease-exit, ease-in) forwards",
+        "slide-up": "slide-up var(--duration-base, 200ms) var(--ease-enter, ease-out)",
+        "scale-in": "scale-in var(--duration-base, 200ms) var(--ease-enter, ease-out)",
+        "scale-out": "scale-out var(--duration-fast, 150ms) var(--ease-exit, ease-in) forwards",
+        // Sheets travel further, so they get the slow duration on enter.
+        "slide-in-right": "slide-in-right var(--duration-slow, 300ms) var(--ease-enter, ease-out)",
+        "slide-out-right": "slide-out-right var(--duration-base, 200ms) var(--ease-exit, ease-in) forwards",
+        "slide-in-left": "slide-in-left var(--duration-slow, 300ms) var(--ease-enter, ease-out)",
+        "slide-out-left": "slide-out-left var(--duration-base, 200ms) var(--ease-exit, ease-in) forwards",
+        "slide-in-top": "slide-in-top var(--duration-slow, 300ms) var(--ease-enter, ease-out)",
+        "slide-out-top": "slide-out-top var(--duration-base, 200ms) var(--ease-exit, ease-in) forwards",
+        "slide-in-bottom": "slide-in-bottom var(--duration-slow, 300ms) var(--ease-enter, ease-out)",
+        "slide-out-bottom": "slide-out-bottom var(--duration-base, 200ms) var(--ease-exit, ease-in) forwards",
+      },
+
+      // ── Motion tokens ──
+      transitionDuration: {
+        fast: "var(--duration-fast, 150ms)",
+        DEFAULT: "var(--duration-base, 200ms)",
+        base: "var(--duration-base, 200ms)",
+        slow: "var(--duration-slow, 300ms)",
+      },
+      transitionTimingFunction: {
+        DEFAULT: "var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1))",
+        standard: "var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1))",
+        enter: "var(--ease-enter, cubic-bezier(0, 0, 0.2, 1))",
+        exit: "var(--ease-exit, cubic-bezier(0.4, 0, 1, 1))",
       },
     },
   },

@@ -8,17 +8,70 @@
  * 2. Never hardcode brand hex in components (no #0A0A0C, border-white/5, etc.).
  * 3. HSL channels are stored WITHOUT the hsl() wrapper so opacity works:
  *      background: hsl(var(--primary) / 0.1);
- * 4. Light is the brand default (:root + .light). Dark overrides under .dark.
+ *    Opacity is for FILLS only. Never fade TEXT or CONTROL BORDERS with /NN —
+ *    use the text tiers and --outline below, which are contrast-checked.
+ * 4. Light is the brand default (:root + .light). Dark overrides colour + elevation
+ *    under .dark. Theme-independent tokens (radius, space, type, motion) live in
+ *    :root only.
  * 5. Role map (aligned with design-system/wardseal/MASTER.md):
  *      --primary     → navy ink (#0F172A)
  *      --secondary   → CTA blue (#0369A1)  ← MASTER “Accent/CTA”
  *      --accent      → soft tint fill (not CTA)
+ *
+ * Contrast contract (WCAG 2.2 AA, measured against card, background, muted
+ * and surface-container-high in both themes — see scripts/check-contrast.mjs):
+ *   --on-surface                 ≥ 15:1   primary text
+ *   --on-surface-variant         ≥ 7:1    secondary text
+ *   --on-surface-subtle          ≥ 4.5:1  tertiary text: labels, captions, placeholders, table headers
+ *   --outline / --input          ≥ 3:1    control borders (input, select, checkbox, switch)
+ *   --outline-variant / --border   —      decorative dividers only
+ *   --{status}-foreground        ≥ 4.5:1  on solid --{status}
+ *   --{status}-subtle-foreground ≥ 4.5:1  on --{status}-subtle
+ *   --ring                       ≥ 3:1    focus indicator
  *
  * Import in apps:
  *   import "@dhawalhost/wardseal-ui-kit/tokens.css";
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap");
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME-INDEPENDENT TOKENS
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Radius ── */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-3xl: 24px; /* no --radius-2xl: Tailwind `2xl` is a legacy alias of xl */
+  --radius-full: 9999px;
+
+  /* ── Spacing ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-page: 40px;
+  --space-section: 32px;
+  --space-card: 24px;
+
+  /* ── Typography ── */
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Motion (DESIGN.md: micro-interactions 150–200ms ease-in-out) ── */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms; /* large overlays entering only */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
 
 /* ═══════════════════════════════════════════════════════════════
    LIGHT THEME (default)
@@ -38,9 +91,13 @@
   --surface-container-high: 214 32% 91%;
   --surface-container-highest: 215 25% 87%;
 
+  /* ── Text tiers ── */
   --on-surface: 222 47% 6%;
   --on-surface-variant: 215 16% 35%;
-  --outline: 214 20% 78%;
+  --on-surface-subtle: 215 14% 41%;
+
+  /* ── Lines ── */
+  --outline: 214 16% 55%;
   --outline-variant: 214 25% 88%;
 
   /* ── Brand ── */
@@ -66,29 +123,34 @@
   --muted: 214 32% 94%;
   --muted-foreground: 215 16% 35%;
   --border: 214 32% 91%;
-  --input: 214 32% 91%;
+  --input: 214 16% 55%;
   --ring: 201 96% 32%;
 
   --surface-inverse: 222 47% 11%;
   --on-surface-inverse: 210 40% 98%;
 
   /* ── Semantic ── */
-  --success: 152 60% 32%;
+  --success: 142 72% 29%;
   --success-foreground: 0 0% 100%;
   --success-subtle: 145 60% 93%;
-  --warning: 37 91% 40%;
+  --success-subtle-foreground: 142 72% 24%;
+  --warning: 26 90% 37%;
   --warning-foreground: 0 0% 100%;
   --warning-subtle: 48 90% 93%;
+  --warning-subtle-foreground: 26 90% 30%;
   --error: 0 72% 51%;
   --error-foreground: 0 0% 100%;
   --error-subtle: 0 80% 95%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
+  --error-subtle-foreground: 0 74% 40%;
+  /* Alias of --error for shadcn compat — prefer error-* in new code */
+  --destructive: var(--error);
+  --destructive-foreground: var(--error-foreground);
   --info: 201 96% 32%;
   --info-foreground: 0 0% 100%;
   --info-subtle: 199 89% 94%;
+  --info-subtle-foreground: 201 96% 24%;
 
-  /* ── Overlay (modal scrim — intentional black alpha) ── */
+  /* ── Overlay (modal scrim) ── */
   --overlay: 222 47% 6%;
   --overlay-opacity: 0.55;
 
@@ -97,33 +159,10 @@
   --shadow-sm: 0 2px 8px -2px rgb(15 23 42 / 0.06), 0 0 0 1px rgb(15 23 42 / 0.04);
   --shadow-card: 0 4px 24px -6px rgb(15 23 42 / 0.08), 0 0 0 1px rgb(15 23 42 / 0.04);
   --shadow-overlay: 0 16px 48px -8px rgb(15 23 42 / 0.16), 0 0 0 1px rgb(15 23 42 / 0.06);
-
-  /* ── Radius ── */
-  --radius: 8px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-
-  /* ── Spacing ── */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
-  --space-3xl: 64px;
-  --space-page: 40px;
-  --space-section: 32px;
-  --space-card: 24px;
-
-  /* ── Typography ── */
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DARK THEME
+   DARK THEME — colour + elevation only
    ═══════════════════════════════════════════════════════════════ */
 .dark {
   --background: 222 47% 6%;
@@ -140,7 +179,9 @@
 
   --on-surface: 210 40% 98%;
   --on-surface-variant: 215 20% 65%;
-  --outline: 215 16% 30%;
+  --on-surface-subtle: 215 16% 56%;
+
+  --outline: 215 16% 44%;
   --outline-variant: 217 33% 18%;
 
   --primary: 210 40% 96%;
@@ -163,26 +204,31 @@
   --muted: 217 33% 14%;
   --muted-foreground: 215 20% 65%;
   --border: 217 33% 18%;
-  --input: 217 33% 18%;
+  --input: 215 16% 44%;
   --ring: 199 80% 48%;
 
   --surface-inverse: 210 40% 98%;
   --on-surface-inverse: 222 47% 11%;
 
+  /* Bright fills in dark mode take dark ink text (white fails on these) */
   --success: 152 55% 40%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 222 47% 6%;
   --success-subtle: 152 40% 14%;
+  --success-subtle-foreground: 145 60% 70%;
   --warning: 37 91% 45%;
-  --warning-foreground: 0 0% 100%;
+  --warning-foreground: 222 47% 6%;
   --warning-subtle: 48 40% 12%;
+  --warning-subtle-foreground: 45 90% 65%;
   --error: 0 72% 51%;
   --error-foreground: 0 0% 100%;
   --error-subtle: 0 50% 14%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
+  --error-subtle-foreground: 0 85% 75%;
+  --destructive: var(--error);
+  --destructive-foreground: var(--error-foreground);
   --info: 199 80% 48%;
   --info-foreground: 222 47% 6%;
   --info-subtle: 201 50% 18%;
+  --info-subtle-foreground: 199 89% 80%;
 
   --overlay: 222 47% 4%;
   --overlay-opacity: 0.7;
@@ -191,24 +237,4 @@
   --shadow-sm: 0 4px 16px -4px rgb(0 0 0 / 0.35);
   --shadow-card: 0 8px 32px -8px rgb(0 0 0 / 0.45);
   --shadow-overlay: 0 24px 64px -12px rgb(0 0 0 / 0.55);
-
-  --radius: 8px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
-  --space-3xl: 64px;
-  --space-page: 40px;
-  --space-section: 32px;
-  --space-card: 24px;
-
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }

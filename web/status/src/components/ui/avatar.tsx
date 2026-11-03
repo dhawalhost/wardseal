@@ -1,5 +1,5 @@
 /**
- * App Avatar — prefers @dhawalhost/wardseal-ui-kit@0.2.0 when `name` is set.
+ * App Avatar — prefers @dhawalhost/wardseal-ui-kit@0.3.0 when `name` is set.
  * Legacy compound (AvatarImage / AvatarFallback) kept as thin shells for gradual migration.
  */
 import * as React from "react";

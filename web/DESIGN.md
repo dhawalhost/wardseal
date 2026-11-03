@@ -10,4 +10,4 @@ Token + component SoT: [`@dhawalhost/wardseal-ui-kit`](../wardseal-ui-kit) (work
 5. **MOTION:** Micro-interactions only — 150–200ms `ease-in-out` on hovers. No scroll-jacking or page-level transition theater.
 6. **AVOID:** Purple/pink AI gradients, emoji-as-icons, glass-card overuse, playful consumer chrome on trust surfaces (login, MFA, billing).
 7. **LANDING:** Marketing SPA imports kit `tokens.css` and maps local aliases (`--accent` = CTA → kit `--secondary`). Do not fork a second palette.
-8. **PRODUCT APPS:** Depend on `@dhawalhost/wardseal-ui-kit@0.2.0`. App layouts (`FilterBar`, `PageSection`, shells) may live in-app but must compose kit components. `@/components/ui/*` primitives are kit re-exports (thin adapters only for API tweaks).
+8. **PRODUCT APPS:** Depend on `@dhawalhost/wardseal-ui-kit@0.3.0`. App layouts (`FilterBar`, `PageSection`, shells) may live in-app but must compose kit components. `@/components/ui/*` primitives are kit re-exports (thin adapters only for API tweaks).
