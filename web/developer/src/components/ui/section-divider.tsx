@@ -21,7 +21,7 @@ export const SectionDivider: React.FC<SectionDividerProps> = ({
             {label && (
                 <span
                     className={cn(
-                        "font-bold tracking-tight text-muted-foreground italic flex-shrink-0",
+                        "font-medium tracking-tight text-muted-foreground italic flex-shrink-0",
                         size === "sm" ? "text-[12px]" : "text-[13px]"
                     )}
                 >

@@ -52,7 +52,7 @@ export const PageSection: React.FC<PageSectionProps> = ({
     return (
         <GlassCard
             className={cn(
-                "border-none shadow-2xl shadow-on-surface/5 bg-card overflow-hidden rounded-xl",
+                "border-none shadow-overlay shadow-on-surface/5 bg-card overflow-hidden rounded-xl",
                 className
             )}
         >
@@ -65,11 +65,11 @@ export const PageSection: React.FC<PageSectionProps> = ({
                             </div>
                         )}
                         <div>
-                            <GlassCardTitle className="text-lg font-bold tracking-tight text-on-surface uppercase">
+                            <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface ">
                                 {title}
                             </GlassCardTitle>
                             {description && (
-                                <p className="text-muted-foreground font-medium text-[10px] mt-0.5 uppercase tracking-wide">
+                                <p className="text-muted-foreground font-medium text-xs mt-0.5 ">
                                     {description}
                                 </p>
                             )}

@@ -52,8 +52,8 @@ const PortalDashboard = () => {
         <div className="space-y-page animate-in fade-in duration-500">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-card border-b border-border pb-8">
                 <div className="space-y-3 max-w-xl">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">User portal</p>
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-on-surface">
+                    <p className="text-xs font-semibold text-secondary">User portal</p>
+                    <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
                         Your applications
                     </h1>
                     <p className="text-muted-foreground text-base leading-relaxed">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    Sparkles, 
+    MessagesSquare,
     Send, 
     Bot, 
     User, 
@@ -108,7 +108,7 @@ const CopilotPage: React.FC = () => {
     <PageLayout>
     <div className="space-y-page animate-in fade-in duration-300 h-[calc(100vh-160px)] flex flex-col">
       <PageHeader 
-        icon={<Sparkles className="w-6 h-6 text-secondary" />}
+        icon={<MessagesSquare className="w-6 h-6 text-on-surface-subtle" strokeWidth={1.5} />}
         title="Security Copilot"
         description="Ask questions about identity, access, and recent audit activity."
       />
@@ -116,7 +116,7 @@ const CopilotPage: React.FC = () => {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-card overflow-hidden">
         <div className="lg:col-span-1 space-y-6 h-full overflow-y-auto pr-2 hidden lg:block custom-scrollbar">
             <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">System status</p>
+                <p className="text-xs font-semibold text-muted-foreground ">System status</p>
                 <div className="space-y-2">
                     {[
                         { label: 'Identity Graph', status: 'Healthy', icon: <History className="w-3.5 h-3.5" /> },
@@ -128,14 +128,14 @@ const CopilotPage: React.FC = () => {
                                 <div className="text-secondary">{item.icon}</div>
                                 <span className="text-sm font-semibold text-on-surface">{item.label}</span>
                             </div>
-                            <span className="text-[10px] font-semibold text-success bg-success-subtle px-2 py-0.5 rounded-md">{item.status}</span>
+                            <span className="text-xs font-semibold text-success-subtle-foreground bg-success-subtle px-2 py-0.5 rounded-md">{item.status}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
             <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Recent Activity</p>
+                <p className="text-xs font-semibold text-muted-foreground ">Recent Activity</p>
                 <div className="space-y-2">
                     {logsLoading ? (
                         [1, 2, 3].map(i => <div key={i} className="h-14 bg-muted/30 animate-pulse rounded-lg" />)
@@ -148,7 +148,7 @@ const CopilotPage: React.FC = () => {
                             <div key={log.id || i} className="p-3 rounded-lg bg-card shadow-sm border border-border space-y-1">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-semibold text-muted-foreground">{log.action}</span>
-                                    <span className="text-[10px] font-medium text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                 </div>
                                 <p className="text-xs font-medium text-on-surface leading-tight line-clamp-2">
                                     {log.details?.reason || log.details?.user_id || "System action performed."}
@@ -161,7 +161,7 @@ const CopilotPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Suggested questions</p>
+                <p className="text-xs font-semibold text-muted-foreground ">Suggested questions</p>
                 <div className="flex flex-col gap-2">
                     {SUGGESTED_PROMPTS.map(p => (
                         <button 
@@ -183,14 +183,14 @@ const CopilotPage: React.FC = () => {
                         <Bot className="w-5 h-5 text-secondary-foreground" />
                     </div>
                     <div>
-                        <h4 className="text-base font-bold tracking-tight text-on-surface">WardSeal Copilot</h4>
+                        <h4 className="text-base font-medium tracking-tight text-on-surface">WardSeal Copilot</h4>
                         <div className="flex items-center gap-2 mt-0.5">
                             <div className="w-2 h-2 bg-success rounded-full" />
                             <span className="text-xs font-semibold text-success">Online</span>
                         </div>
                     </div>
                 </div>
-                <Button
+                <Button aria-label="Clear conversation"
                   variant="ghost"
                   size="icon"
                   className="h-9 w-9 rounded-lg border border-border text-muted-foreground hover:text-secondary"
@@ -208,7 +208,7 @@ const CopilotPage: React.FC = () => {
                                 "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
                                 m.role === 'bot' ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"
                             )}>
-                                {m.role === 'bot' ? <Sparkles className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                                {m.role === 'bot' ? <MessagesSquare className="w-4 h-4" strokeWidth={1.5} /> : <User className="w-4 h-4" />}
                             </div>
                             <div className={cn("space-y-1", m.role === 'user' ? "items-end" : "items-start")}>
                                 <div className={cn(
@@ -243,7 +243,7 @@ const CopilotPage: React.FC = () => {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        className="h-12 pr-14 border-none bg-transparent text-sm font-medium focus-visible:ring-0 px-4 text-on-surface placeholder:text-muted-foreground"
+                        className="h-12 pr-14 border-none bg-transparent text-sm font-medium px-4 text-on-surface placeholder:text-muted-foreground"
                     />
                     <div className="absolute right-1.5 top-1.5">
                         <Button

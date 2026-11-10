@@ -2,20 +2,27 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
+/**
+ * Non-interactive status label. Tinted variants use the *-subtle /
+ * *-subtle-foreground pairs (≥4.5:1 in both themes). Pair status colour with a
+ * meaningful word — the colour alone must not carry the meaning.
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-bold tracking-tight transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-none shadow-none",
+  "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-transparent px-2 py-0.5 text-xs font-semibold [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-surface-container-high text-on-surface hover:bg-surface-container-highest",
-        primary: "bg-primary/10 text-primary hover:bg-primary/20",
-        secondary: "bg-secondary text-on-secondary hover:bg-secondary/80",
-        success: "bg-success-subtle text-success hover:bg-success-subtle/80",
-        warning: "bg-warning-subtle text-warning hover:bg-warning-subtle/80",
-        error: "bg-error-subtle text-error hover:bg-error-subtle/80",
-        destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20",
-        neutral: "bg-surface-container-high text-on-surface-variant/75 hover:bg-surface-container-highest",
-        outline: "border border-border text-on-surface bg-transparent hover:bg-accent",
+        default: "bg-surface-container-high text-on-surface",
+        neutral: "bg-surface-container-high text-on-surface-variant",
+        primary: "bg-primary-container text-on-primary-container",
+        secondary: "bg-secondary text-secondary-foreground",
+        info: "bg-info-subtle text-info-subtle-foreground",
+        success: "bg-success-subtle text-success-subtle-foreground",
+        warning: "bg-warning-subtle text-warning-subtle-foreground",
+        error: "bg-error-subtle text-error-subtle-foreground",
+        /** Alias of `error` (shadcn compat). */
+        destructive: "bg-error-subtle text-error-subtle-foreground",
+        outline: "border-border bg-transparent text-on-surface",
       },
     },
     defaultVariants: {
@@ -25,13 +32,11 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

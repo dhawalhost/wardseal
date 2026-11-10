@@ -116,7 +116,7 @@ const PortalLayout = () => {
     return (
         <div className="min-h-screen bg-surface flex flex-col font-sans selection:bg-primary/10 selection:text-primary">
             {/* Top Navigation Bar: Modernist */}
-            <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-md">
+            <header className="sticky top-0 z-50 w-full border-b bg-card">
                 <div className="container mx-auto px-6 h-16 flex items-center justify-between">
                     {/* Logo Area */}
                     <div className="flex items-center gap-6">
@@ -125,8 +125,8 @@ const PortalLayout = () => {
                                 <Logo variant="icon" className="w-10 h-10" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-bold text-xl tracking-tight text-on-surface leading-none">WardSeal</span>
-                                <span className="text-[10px] font-semibold tracking-tight text-on-surface-variant/50 leading-none mt-0.5">User portal</span>
+                                <span className="font-medium text-xl tracking-tight text-on-surface leading-none">WardSeal</span>
+                                <span className="text-xs font-semibold tracking-tight text-on-surface-subtle leading-none mt-0.5">User portal</span>
                             </div>
                         </Link>
                     </div>
@@ -137,7 +137,7 @@ const PortalLayout = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/dashboard')}
-                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-semibold text-[11px] px-4 hover:bg-surface-container transition-all"
+                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-semibold text-xs px-4 hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
                             >
                                 <ShieldCheck className="w-4 h-4 text-primary" />
                                 <span>Admin Panel</span>
@@ -150,15 +150,15 @@ const PortalLayout = () => {
                             {/* User Menu */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-surface-container transition-all">
+                                    <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]">
                                         <Avatar name={getTokenUserID(localStorage.getItem('token')) || 'user'} size={32} className="h-8 w-8" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-64 rounded-lg border p-1 shadow-lg overflow-hidden">
+                                <DropdownMenuContent align="end" className="w-64 rounded-lg border p-1 shadow-card overflow-hidden">
                                     <DropdownMenuLabel className="p-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/50 mb-1">Authenticated Account</span>
-                                            <span className="text-sm font-bold text-on-surface truncate">{userName}</span>
+                                            <span className="text-xs font-medium text-on-surface-subtle mb-1">Authenticated Account</span>
+                                            <span className="text-sm font-medium text-on-surface truncate">{userName}</span>
                                         </div>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
@@ -201,16 +201,16 @@ const PortalLayout = () => {
                 <div className="flex items-center justify-between mb-6 border-b pb-4">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">
-                            <div className="h-2 w-2 bg-success rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                            <span className="text-[11px] font-semibold tracking-tight text-on-surface">Secure connection</span>
+                            <div className="h-1.5 w-1.5 bg-success rounded-full" />
+                            <span className="text-xs font-semibold tracking-tight text-on-surface">Secure connection</span>
                         </div>
                         <div className="flex items-center gap-3 opacity-40">
                             <Activity className="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-medium italic">End-to-end encrypted</span>
+                            <span className="text-xs font-medium italic">End-to-end encrypted</span>
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-4">
-                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
+                        <span className="text-xs font-medium text-muted-foreground tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
                     </div>
                 </div>
 
@@ -222,15 +222,15 @@ const PortalLayout = () => {
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
                             <Logo variant="icon" className="w-4 h-4" />
-                            <p className="text-[11px] font-bold text-on-surface-variant">Secured by WardSeal</p>
+                            <p className="text-xs font-medium text-on-surface-variant">Secured by WardSeal</p>
                         </div>
-                        <p className="text-[10px] font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
+                        <p className="text-xs font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center gap-10">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Terms</a>
-                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Security Policies</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Terms</a>
+                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Security Policies</a>
                     </div>
                 </div>
             </footer>

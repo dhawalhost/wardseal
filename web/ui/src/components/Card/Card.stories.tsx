@@ -33,7 +33,7 @@ export const Standard: Story = {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-on-surface-variant/70 leading-relaxed font-medium">
+        <p className="text-sm text-on-surface-variant leading-relaxed font-medium">
           Deploy and organize security parameters across groups of individual user accounts to establish structured access policies.
         </p>
       </CardContent>
@@ -62,7 +62,7 @@ export const GlassCard: Story = {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-on-surface-variant/70 leading-relaxed font-medium">
+        <p className="text-sm text-on-surface-variant leading-relaxed font-medium">
           Monitoring end-to-end user activity and security hygiene scores. There are currently no outstanding critical actions.
         </p>
       </CardContent>

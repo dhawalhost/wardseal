@@ -116,11 +116,11 @@ const Policies: React.FC = () => {
                                     <FileJson className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Create policy</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Create policy</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Define access control rules with JSON</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)} className="rounded-lg h-9 w-9 hover:bg-destructive/10 hover:text-destructive">
+                            <Button aria-label="Close" variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)} className="rounded-lg h-9 w-9 hover:bg-destructive/10 hover:text-destructive">
                                 <X className="w-5 h-5" />
                             </Button>
                         </div>
@@ -128,31 +128,31 @@ const Policies: React.FC = () => {
                     <GlassCardContent className="p-card space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="text-xs font-semibold tracking-wide text-muted-foreground">Policy name</Label>
+                                <Label htmlFor="name" className="text-xs font-semibold text-muted-foreground">Policy name</Label>
                                 <Input
                                     id="name"
                                     placeholder="e.g. Admin access"
-                                    className="h-10 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
+                                    className="h-10 rounded-lg border border-input bg-card focus-visible:ring-ring font-medium text-sm px-4"
                                     value={newPolicy.name}
                                     onChange={(e) => setNewPolicy({...newPolicy, name: e.target.value})}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="type" className="text-xs font-semibold tracking-wide text-muted-foreground">Rule type</Label>
+                                <Label htmlFor="type" className="text-xs font-semibold text-muted-foreground">Rule type</Label>
                                 <Input
                                     id="type"
                                     value={newPolicy.rule_type}
-                                    className="h-10 rounded-lg border border-border bg-muted font-medium text-sm px-4"
+                                    className="h-10 rounded-lg border border-input bg-muted font-medium text-sm px-4"
                                     readOnly
                                 />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="rule" className="text-xs font-semibold tracking-wide text-muted-foreground">Rule definition (JSON)</Label>
+                            <Label htmlFor="rule" className="text-xs font-semibold text-muted-foreground">Rule definition (JSON)</Label>
                             <Textarea
                                 id="rule"
                                 rows={8}
-                                className="font-mono text-sm rounded-xl border border-border bg-muted p-4 focus-visible:ring-secondary/20 resize-none"
+                                className="font-mono text-sm rounded-xl border border-input bg-muted p-4 focus-visible:ring-ring resize-none"
                                 value={newPolicy.rule_data}
                                 onChange={(e) => setNewPolicy({...newPolicy, rule_data: e.target.value})}
                             />
@@ -173,7 +173,7 @@ const Policies: React.FC = () => {
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Policies</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Policies</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">
                                 {policies.length} active policies
                             </p>
@@ -185,11 +185,11 @@ const Policies: React.FC = () => {
                         <GlassTable>
                             <GlassTableHeader>
                                 <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Policy name</GlassTableHead>
-                                    <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Rules</GlassTableHead>
-                                    <GlassTableHead className="py-3 text-center font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
-                                    <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Created</GlassTableHead>
-                                    <GlassTableHead className="py-3 text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
+                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Policy name</GlassTableHead>
+                                    <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Rules</GlassTableHead>
+                                    <GlassTableHead className="py-3 text-center font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
+                                    <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Created</GlassTableHead>
+                                    <GlassTableHead className="py-3 text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
@@ -218,7 +218,7 @@ const Policies: React.FC = () => {
                                             </TableCell>
                                             <TableCell className="text-center py-card">
                                                 {policy.is_enabled ?
-                                                    <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-xs px-2 py-0.5">Active</Badge> :
+                                                    <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Active</Badge> :
                                                     <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Disabled</Badge>
                                                 }
                                             </TableCell>
@@ -234,7 +234,7 @@ const Policies: React.FC = () => {
                                                     >
                                                         <ArrowUpRight className="w-3.5 h-3.5 mr-1.5" /> View
                                                     </Button>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive rounded-lg">
+                                                    <Button aria-label="Delete policy" size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive rounded-lg">
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </Button>
                                                 </div>
@@ -254,8 +254,8 @@ const Policies: React.FC = () => {
                         <ShieldCheck className="w-6 h-6 text-secondary-foreground" />
                     </div>
                     <div className="space-y-1 flex-1 text-center lg:text-left">
-                        <h3 className="text-lg font-bold tracking-tight">Policy enforcement</h3>
-                        <p className="text-sm font-medium text-secondary-foreground/80 max-w-2xl">
+                        <h3 className="text-lg font-medium tracking-tight">Policy enforcement</h3>
+                        <p className="text-sm font-medium text-secondary-foreground max-w-2xl">
                             Policies apply after login across active sessions. Use valid JSON to avoid enforcement errors.
                         </p>
                     </div>

@@ -19,7 +19,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b border-border bg-card/20", className)} {...props} />
+  <thead ref={ref} className={cn("bg-muted/60 [&_tr]:border-b [&_tr]:border-border", className)} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -57,7 +57,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-border transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b border-border transition-colors duration-fast hover:bg-muted/50 data-[state=selected]:bg-accent",
       className
     )}
     {...props}
@@ -68,11 +68,12 @@ TableRow.displayName = "TableRow";
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
+>(({ className, scope = "col", ...props }, ref) => (
   <th
     ref={ref}
+    scope={scope}
     className={cn(
-      "h-10 px-4 text-left align-middle font-bold text-on-surface-variant/40 uppercase tracking-tight text-xs [&:has([role=checkbox])]:pr-0",
+      "h-10 px-4 text-left align-middle text-label text-on-surface-subtle [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -87,7 +88,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-4 align-middle font-medium text-sm [&:has([role=checkbox])]:pr-0 text-on-surface",
+      "px-4 py-3 align-middle text-sm text-on-surface [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -101,13 +102,13 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-xs font-semibold text-on-surface-variant/30 uppercase tracking-wider italic", className)}
+    className={cn("mt-4 text-sm text-on-surface-subtle", className)}
     {...props}
   />
 ));
 TableCaption.displayName = "TableCaption";
 
-// ── GlassTable specific variants ──────────────────────────────────────────
+// ── GlassTable — legacy names, same solid styling (kept for 0.2.x consumers) ──
 const GlassTable = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
@@ -126,7 +127,7 @@ const GlassTableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("glass-header border-b border-border bg-muted sticky top-0 z-10", className)} {...props} />
+  <thead ref={ref} className={cn("sticky top-0 z-10 border-b border-border bg-muted", className)} {...props} />
 ));
 GlassTableHeader.displayName = "GlassTableHeader";
 
@@ -137,7 +138,7 @@ const GlassTableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-border transition-all hover:bg-surface-container/20 group/row",
+      "group/row border-b border-border transition-colors duration-fast hover:bg-muted/50",
       className
     )}
     {...props}
@@ -148,11 +149,12 @@ GlassTableRow.displayName = "GlassTableRow";
 const GlassTableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
+>(({ className, scope = "col", ...props }, ref) => (
   <th
     ref={ref}
+    scope={scope}
     className={cn(
-      "h-12 px-6 text-left align-middle font-bold text-label text-on-surface-variant/40 uppercase tracking-tight [&:has([role=checkbox])]:pr-0",
+      "h-11 px-6 text-left align-middle text-label text-on-surface-subtle [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}

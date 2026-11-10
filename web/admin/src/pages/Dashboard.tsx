@@ -1,47 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getSCIMUsers, getGovernanceStats, DashboardStats } from '../api';
 import { useNavigate } from 'react-router-dom';
-import {
-    Users,
-    ShieldCheck,
-    UserPlus,
-    Copy,
-    Check,
-    Database,
-    Clock,
-    Globe,
-    AlertTriangle,
-    ArrowUpRight,
-    RefreshCw,
-    Shield,
-    KeyRound,
-    Search,
-    Filter,
-    CheckCircle2,
-    Lock,
-    Cpu,
-    ExternalLink,
-    Sparkles,
-} from 'lucide-react';
-import {
-    ResponsiveContainer,
-    Tooltip,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    PieChart,
-    Pie,
-    Cell,
-} from 'recharts';
+import { AlertTriangle, Check, ChevronRight, Copy, RefreshCw, Search, UserPlus } from 'lucide-react';
+import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from 'recharts';
 import {
     PageLayout,
-    PageHeader,
-    StatCard,
     GlassCard,
-    GlassCardHeader,
-    GlassCardTitle,
     GlassCardContent,
     GlassTable,
     GlassTableHeader,
@@ -57,16 +21,15 @@ import {
     TabsList,
     TabsTrigger,
     TabsContent,
-    Progress,
 } from '@dhawalhost/wardseal-ui-kit';
 import { cn } from '@/lib/utils';
-import { colors, chartTooltipStyle } from '@/components/theme';
+import { chartTooltipStyle } from '@/components/theme';
 
-const RISK_COLORS: Record<string, string> = {
-    High: 'hsl(var(--destructive))',
-    Medium: 'hsl(var(--warning))',
-    Low: 'hsl(var(--success))',
-};
+const RISK_LEVELS = [
+    { key: 'High', color: 'hsl(var(--error))' },
+    { key: 'Medium', color: 'hsl(var(--warning))' },
+    { key: 'Low', color: 'hsl(var(--on-surface-subtle))' },
+] as const;
 
 interface UserRow {
     id: string;
@@ -75,10 +38,37 @@ interface UserRow {
     meta?: { created?: string };
 }
 
+const fmt = (n: number | undefined) => (n === undefined ? '—' : n.toLocaleString('en-US'));
+
+/** Compact figure: label, number, one line of context. Numbers only, no decoration. */
+const Stat: React.FC<{ label: string; value: string; note: string; onClick?: () => void }> = ({ label, value, note, onClick }) => {
+    const body = (
+        <>
+            <p className="text-sm text-on-surface-variant">{label}</p>
+            <p className="mt-3 text-[1.75rem] font-medium leading-none tracking-[-0.01em] text-on-surface tabular-nums">{value}</p>
+            <p className="mt-2 text-xs text-on-surface-subtle">{note}</p>
+        </>
+    );
+    const base = 'rounded-xl border border-border bg-card p-5 text-left';
+    return onClick ? (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                base,
+                'transition-colors duration-fast hover:border-on-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+            )}
+        >
+            {body}
+        </button>
+    ) : (
+        <div className={base}>{body}</div>
+    );
+};
+
 export const Dashboard: React.FC = () => {
     const [users, setUsers] = useState<UserRow[]>([]);
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -90,17 +80,13 @@ export const Dashboard: React.FC = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [usersResult, statsResult] = await Promise.allSettled([
-                getSCIMUsers(),
-                getGovernanceStats(),
-            ]);
+            const [usersResult, statsResult] = await Promise.allSettled([getSCIMUsers(), getGovernanceStats()]);
             if (usersResult.status === 'fulfilled') {
                 setUsers(usersResult.value?.Resources || []);
             }
             if (statsResult.status === 'fulfilled') {
                 setStats(statsResult.value);
             }
-            setError('');
             setLastUpdated(new Date());
         } catch (err: unknown) {
             console.error(err);
@@ -115,34 +101,32 @@ export const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const riskData = useMemo(() => {
-        if (!stats?.risk_profile) return [];
-        return Object.entries(stats.risk_profile).map(([name, value]) => ({
-            name: name.charAt(0).toUpperCase() + name.slice(1),
-            value: Number(value) || 0,
-        }));
+    const identities = stats?.active_users ?? (users.length || undefined);
+
+    const riskRows = useMemo(() => {
+        const profile = stats?.risk_profile ?? {};
+        const lookup = Object.fromEntries(Object.entries(profile).map(([k, v]) => [k.toLowerCase(), Number(v) || 0]));
+        const total = Object.values(lookup).reduce((s, v) => s + v, 0);
+        return RISK_LEVELS.map((l) => {
+            const value = lookup[l.key.toLowerCase()] ?? 0;
+            return { ...l, value, pct: total > 0 ? Math.round((value / total) * 100) : 0 };
+        });
     }, [stats]);
 
-    const riskTotal = useMemo(
-        () => riskData.reduce((sum, item) => sum + (Number(item.value) || 0), 0),
-        [riskData]
-    );
-
-    const activityData = useMemo(
+    const compositionData = useMemo(
         () => [
-            { name: 'Identities', value: stats?.active_users ?? users.length },
-            { name: 'Groups', value: stats?.total_groups ?? 3 },
-            { name: 'Workloads', value: stats?.active_workloads ?? 8 },
-            { name: 'Policies', value: stats?.active_ip_policies ?? 4 },
+            { name: 'Identities', value: identities ?? 0 },
+            { name: 'Groups', value: stats?.total_groups ?? 0 },
+            { name: 'Workloads', value: stats?.active_workloads ?? 0 },
+            { name: 'IP policies', value: stats?.active_ip_policies ?? 0 },
+            { name: 'Organizations', value: stats?.connected_orgs ?? 0 },
         ],
-        [stats, users]
+        [stats, identities]
     );
 
-    const hygiene = stats?.hygiene_score ?? 94;
-    const hygieneTone =
-        hygiene >= 80 ? 'text-emerald-600 dark:text-emerald-400' : hygiene >= 50 ? 'text-amber-500' : 'text-red-500';
-    const hygieneBg =
-        hygiene >= 80 ? 'bg-emerald-500/10 border-emerald-500/20' : hygiene >= 50 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
+    const hygiene = stats?.hygiene_score;
+    const hygieneNote =
+        hygiene === undefined ? 'No posture data yet' : hygiene >= 80 ? 'Healthy' : hygiene >= 50 ? 'Needs attention' : 'At risk';
 
     const handleCopyId = (id: string) => {
         navigator.clipboard.writeText(id);
@@ -151,642 +135,335 @@ export const Dashboard: React.FC = () => {
     };
 
     const filteredUsers = useMemo(() => {
+        const q = searchQuery.toLowerCase();
         return users.filter((u) => {
-            const matchesQuery =
-                !searchQuery ||
-                (u.userName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                u.id.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesQuery = !q || (u.userName || '').toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
             const matchesStatus =
-                statusFilter === 'all' ||
-                (statusFilter === 'active' && u.active) ||
-                (statusFilter === 'inactive' && !u.active);
+                statusFilter === 'all' || (statusFilter === 'active' && u.active) || (statusFilter === 'inactive' && !u.active);
             return matchesQuery && matchesStatus;
         });
     }, [users, searchQuery, statusFilter]);
 
+    const shortcuts = [
+        { title: 'Access requests', desc: 'Approve or deny pending elevation', link: '/requests', meta: stats ? `${fmt(stats.pending_requests)} pending` : '' },
+        { title: 'IP access rules', desc: 'Network ranges allowed per resource', link: '/policies/ip', meta: stats ? `${fmt(stats.active_ip_policies)} active` : '' },
+        { title: 'Machine accounts', desc: 'SPIFFE and mTLS service identities', link: '/workloads', meta: stats ? `${fmt(stats.active_workloads)} active` : '' },
+        { title: 'Identity connectors', desc: 'SCIM, Okta and Entra ID sync', link: '/connectors', meta: '' },
+    ];
+
     return (
-        <PageLayout className="animate-in fade-in duration-300 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-            {/* Command Header Banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#001C41] via-[#0F172A] to-[#002D62] p-6 sm:p-8 text-white shadow-xl">
-                <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl pointer-events-none" />
-                <div className="absolute right-32 -bottom-20 h-56 w-56 rounded-full bg-blue-600/15 blur-2xl pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-200">
-                            <span className="relative flex h-2 w-2">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                            </span>
-                            WardSeal Zero-Trust Control Plane · Active
-                        </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                            Security & Identity Command
-                        </h1>
-                        <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                            Continuous governance across workforce SCIM directories, workload mTLS credentials, and dynamic zero-trust perimeter policies.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                        {lastUpdated && (
-                            <span className="text-xs text-slate-400 font-mono hidden lg:inline-flex items-center gap-1.5">
-                                <RefreshCw className="h-3 w-3" />
-                                {lastUpdated.toLocaleTimeString()}
-                            </span>
-                        )}
-                        <Button
-                            variant="outline"
-                            onClick={() => fetchData()}
-                            disabled={loading}
-                            className="h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs font-semibold px-3.5 backdrop-blur-md cursor-pointer transition-all"
-                        >
-                            <RefreshCw className={cn("mr-2 h-3.5 w-3.5", loading && "animate-spin")} />
-                            Sync Live
-                        </Button>
-                        <Button
-                            onClick={() => navigate('/users/new')}
-                            className="h-10 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs px-4 shadow-lg shadow-sky-500/20 cursor-pointer transition-all"
-                        >
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            Provision Identity
-                        </Button>
-                    </div>
+        <PageLayout maxWidthClassName="max-w-[1440px]" className="gap-6 lg:gap-8">
+            <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 className="text-[28px] font-medium leading-tight tracking-[-0.015em] text-on-surface">Overview</h1>
+                    <p className="mt-1 text-sm text-on-surface-variant">Directory, access and posture for this tenant</p>
                 </div>
-            </div>
+                <div className="flex items-center gap-2">
+                    {lastUpdated && (
+                        <span className="mr-2 hidden items-center gap-2 font-mono text-xs text-on-surface-subtle tabular-nums md:inline-flex">
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />
+                            Updated {lastUpdated.toLocaleTimeString('en-GB')}
+                        </span>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={loading} className="gap-2">
+                        <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} strokeWidth={1.5} aria-hidden />
+                        Refresh
+                    </Button>
+                    <Button size="sm" onClick={() => navigate('/users/new')} className="gap-2">
+                        <UserPlus className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                        Add user
+                    </Button>
+                </div>
+            </header>
 
-            {error && (
+            {!loading && !stats && (
                 <div
                     role="alert"
-                    className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm font-semibold text-destructive shadow-sm"
+                    className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning-subtle px-4 py-3 text-sm text-warning-subtle-foreground"
                 >
-                    <AlertTriangle className="h-5 w-5 shrink-0" />
-                    <span>{error}</span>
+                    <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
+                    Governance stats are unavailable, so some figures are missing
                 </div>
             )}
 
-            {/* KPI Metric Strip */}
-            <section aria-label="Key metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <GlassCard className="relative overflow-hidden border border-border/70 hover:border-sky-500/40 shadow-sm hover:shadow-md transition-all duration-200">
-                    <GlassCardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                Total Workforce
-                            </span>
-                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                                <Users className="h-5 w-5" />
-                            </span>
-                        </div>
-                        <div className="mt-4 flex items-baseline gap-2">
-                            <span className="text-3xl font-extrabold tracking-tight text-on-surface tabular-nums">
-                                {loading ? '—' : (stats?.active_users ?? users.length)}
-                            </span>
-                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center">
-                                <ArrowUpRight className="h-3 w-3" /> +12%
-                            </span>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            Active SCIM provisioned identities
-                        </p>
-                    </GlassCardContent>
-                </GlassCard>
-
-                <GlassCard
+            <section aria-label="Key figures" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Stat label="Active identities" value={loading && !stats ? '—' : fmt(identities)} note="Provisioned through SCIM" />
+                <Stat
+                    label="Pending requests"
+                    value={loading && !stats ? '—' : fmt(stats?.pending_requests)}
+                    note={(stats?.pending_requests ?? 0) > 0 ? 'Waiting for a reviewer' : 'Queue is clear'}
                     onClick={() => navigate('/requests')}
-                    className="relative overflow-hidden border border-border/70 hover:border-amber-500/40 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-                >
-                    <GlassCardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                Pending Access
-                            </span>
-                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                                <Clock className="h-5 w-5" />
-                            </span>
-                        </div>
-                        <div className="mt-4 flex items-baseline gap-2">
-                            <span className="text-3xl font-extrabold tracking-tight text-on-surface tabular-nums">
-                                {loading ? '—' : (stats?.pending_requests ?? 0)}
-                            </span>
-                            {(stats?.pending_requests ?? 0) > 0 ? (
-                                <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-none font-semibold text-xs">
-                                    Action Required
-                                </Badge>
-                            ) : (
-                                <span className="text-xs font-semibold text-muted-foreground">Queue clear</span>
-                            )}
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            Privileged access reviews pending
-                        </p>
-                    </GlassCardContent>
-                </GlassCard>
-
-                <GlassCard
-                    onClick={() => navigate('/policies/ip')}
-                    className="relative overflow-hidden border border-border/70 hover:border-sky-500/40 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-                >
-                    <GlassCardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                Active Guardrails
-                            </span>
-                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                                <Globe className="h-5 w-5" />
-                            </span>
-                        </div>
-                        <div className="mt-4 flex items-baseline gap-2">
-                            <span className="text-3xl font-extrabold tracking-tight text-on-surface tabular-nums">
-                                {loading ? '—' : (stats?.active_ip_policies ?? 4)}
-                            </span>
-                            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none font-semibold text-xs">
-                                100% Enforced
-                            </Badge>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            IP geo-fence & subnet filters
-                        </p>
-                    </GlassCardContent>
-                </GlassCard>
-
-                <GlassCard className="relative overflow-hidden border border-border/70 hover:border-emerald-500/40 shadow-sm hover:shadow-md transition-all duration-200">
-                    <GlassCardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                Security Posture
-                            </span>
-                            <span className={cn("flex h-10 w-10 items-center justify-center rounded-xl", hygieneBg, hygieneTone)}>
-                                <ShieldCheck className="h-5 w-5" />
-                            </span>
-                        </div>
-                        <div className="mt-4 flex items-baseline gap-2">
-                            <span className={cn("text-3xl font-extrabold tracking-tight tabular-nums", hygieneTone)}>
-                                {loading ? '—' : `${hygiene}%`}
-                            </span>
-                            <span className="text-xs font-semibold text-muted-foreground">
-                                {hygiene >= 80 ? 'Grade A · Robust' : 'Attention Needed'}
-                            </span>
-                        </div>
-                        <div className="mt-2.5">
-                            <Progress value={hygiene} className="h-2 rounded-full bg-muted" />
-                        </div>
-                    </GlassCardContent>
-                </GlassCard>
+                />
+                <Stat label="Groups" value={loading && !stats ? '—' : fmt(stats?.total_groups)} note="Security and directory groups" onClick={() => navigate('/groups')} />
+                <Stat label="IP access rules" value={loading && !stats ? '—' : fmt(stats?.active_ip_policies)} note="Enforced at sign-in" onClick={() => navigate('/policies/ip')} />
             </section>
 
-            {/* Redesigned Tabbed Navigation Area */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
-                    <TabsList className="bg-muted/70 p-1 rounded-xl h-11 border border-border/60">
-                        <TabsTrigger
-                            value="overview"
-                            className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-on-surface data-[state=active]:shadow-sm transition-all"
-                        >
-                            <Database className="w-3.5 h-3.5 mr-2 text-sky-500" />
-                            Overview & Telemetry
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="posture"
-                            className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-on-surface data-[state=active]:shadow-sm transition-all"
-                        >
-                            <Shield className="w-3.5 h-3.5 mr-2 text-emerald-500" />
-                            Security Hygiene
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="directory"
-                            className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-on-surface data-[state=active]:shadow-sm transition-all"
-                        >
-                            <Users className="w-3.5 h-3.5 mr-2 text-indigo-500" />
-                            Directory Stream ({users.length})
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="flex items-center justify-between gap-4">
+                    <TabsList>
+                        <TabsTrigger value="overview">Overview</TabsTrigger>
+                        <TabsTrigger value="posture">Posture</TabsTrigger>
+                        <TabsTrigger value="directory">
+                            Directory
+                            <span className="font-mono text-xs text-on-surface-subtle tabular-nums">{users.length}</span>
                         </TabsTrigger>
                     </TabsList>
-
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate('/audit')}
-                            className="h-9 rounded-lg text-xs font-semibold text-muted-foreground hover:text-on-surface"
-                        >
-                            View Audit Log <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                        </Button>
-                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/audit')} className="gap-1">
+                        Audit trail
+                        <ChevronRight className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                    </Button>
                 </div>
 
-                {/* TAB 1: OVERVIEW & TELEMETRY */}
-                <TabsContent value="overview" className="space-y-8 mt-0 focus-visible:outline-none">
-                    {/* Charts Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        <GlassCard className="lg:col-span-7 border border-border/70 shadow-sm bg-card">
-                            <GlassCardHeader className="flex flex-row items-center justify-between pb-2">
-                                <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface flex items-center gap-2">
-                                        <Database className="w-4 h-4 text-sky-500" />
-                                        Identity Resource Throughput
-                                    </GlassCardTitle>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Active entities monitored across control plane subsystems
+                <TabsContent value="overview" className="mt-6 space-y-6 focus-visible:outline-none">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                        <GlassCard className="border-border shadow-none lg:col-span-8">
+                            <GlassCardContent className="p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-base font-medium text-on-surface">Directory composition</h2>
+                                        <p className="mt-1 text-sm text-on-surface-subtle">What this control plane is governing right now</p>
+                                    </div>
+                                    <p className="font-mono text-xs text-on-surface-subtle tabular-nums">
+                                        {compositionData.reduce((s, d) => s + d.value, 0).toLocaleString('en-US')} objects
                                     </p>
                                 </div>
-                                <Badge className="bg-muted text-muted-foreground border-none font-mono text-[10px]">
-                                    Live Sync
-                                </Badge>
-                            </GlassCardHeader>
-                            <GlassCardContent className="pt-4 pb-6 px-6">
-                                <div className="h-[270px] w-full" role="img" aria-label="Resource throughput chart">
+                                <div className="mt-6 h-[300px] w-full" role="img" aria-label="Bar chart of identities, groups, workloads, IP policies and organizations">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={activityData} barCategoryGap="28%" margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.6} />
+                                        <BarChart data={compositionData} barCategoryGap="32%" margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+                                            <CartesianGrid vertical={false} stroke="hsl(var(--on-surface) / 0.06)" />
                                             <XAxis
                                                 dataKey="name"
-                                                fontSize={12}
-                                                fontWeight={600}
                                                 tickLine={false}
                                                 axisLine={false}
-                                                tick={{ fill: 'hsl(var(--muted-foreground))' }}
                                                 dy={8}
+                                                tick={{ fill: 'hsl(var(--on-surface-subtle))', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}
                                             />
                                             <YAxis
-                                                fontSize={12}
-                                                fontWeight={600}
                                                 tickLine={false}
                                                 axisLine={false}
-                                                tick={{ fill: 'hsl(var(--muted-foreground))' }}
                                                 allowDecimals={false}
-                                                width={36}
+                                                width={48}
+                                                tickFormatter={(v: number) => v.toLocaleString("en-US")}
+                                                tick={{ fill: 'hsl(var(--on-surface-subtle))', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}
                                             />
-                                            <Tooltip {...chartTooltipStyle} />
-                                            <Bar
-                                                dataKey="value"
-                                                fill="#0369A1"
-                                                radius={[6, 6, 0, 0]}
-                                                barSize={38}
-                                            />
+                                            <Tooltip {...chartTooltipStyle} cursor={{ fill: 'hsl(var(--on-surface) / 0.04)' }} />
+                                            <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={56}>
+                                                {compositionData.map((d, i) => (
+                                                    <Cell
+                                                        key={d.name}
+                                                        fill={i === 0 ? 'hsl(var(--secondary))' : 'hsl(var(--surface-container-highest))'}
+                                                    />
+                                                ))}
+                                            </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
                             </GlassCardContent>
                         </GlassCard>
 
-                        <GlassCard className="lg:col-span-5 border border-border/70 shadow-sm bg-card">
-                            <GlassCardHeader className="pb-2">
-                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface flex items-center gap-2">
-                                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                                    Risk Distribution
-                                </GlassCardTitle>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    Severity ranking of active identity privileges
-                                </p>
-                            </GlassCardHeader>
-                            <GlassCardContent className="pt-4 pb-6 px-6 space-y-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
-                                    <div className="h-[170px] w-full flex items-center justify-center">
-                                        {riskData.length === 0 || riskTotal === 0 ? (
-                                            <div className="flex flex-col items-center justify-center text-center p-4">
-                                                <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2" />
-                                                <p className="text-xs font-semibold text-on-surface">No High Risk Entities</p>
-                                                <p className="text-[11px] text-muted-foreground mt-0.5">Posture verified healthy</p>
-                                            </div>
-                                        ) : (
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={riskData}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={48}
-                                                        outerRadius={68}
-                                                        paddingAngle={4}
-                                                        dataKey="value"
-                                                        stroke="none"
-                                                    >
-                                                        {riskData.map((entry) => (
-                                                            <Cell
-                                                                key={entry.name}
-                                                                fill={RISK_COLORS[entry.name] || colors.chart[0]}
-                                                            />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip {...chartTooltipStyle} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                        )}
-                                    </div>
-                                    <div className="space-y-3">
-                                        {(['High', 'Medium', 'Low'] as const).map((level) => {
-                                            const item = riskData.find((r) => r.name === level);
-                                            const val = Number(item?.value ?? 0);
-                                            const pct = riskTotal > 0 ? Math.round((val / riskTotal) * 100) : (level === 'Low' ? 100 : 0);
-                                            return (
-                                                <div key={level} className="flex items-center justify-between rounded-lg bg-muted/40 p-2.5 border border-border/50">
-                                                    <div className="flex items-center gap-2">
-                                                        <span
-                                                            className="h-2.5 w-2.5 rounded-full shrink-0"
-                                                            style={{ backgroundColor: RISK_COLORS[level] }}
-                                                        />
-                                                        <span className="text-xs font-semibold text-on-surface">{level} Risk</span>
-                                                    </div>
-                                                    <span className="text-xs font-mono font-bold text-muted-foreground">
-                                                        {val} · {pct}%
-                                                    </span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                        <GlassCard className="border-border shadow-none lg:col-span-4">
+                            <GlassCardContent className="flex h-full flex-col p-6">
+                                <h2 className="text-base font-medium text-on-surface">Posture</h2>
+                                <div className="mt-6 flex items-baseline gap-2">
+                                    <span className="text-5xl font-medium leading-none tracking-[-0.02em] text-on-surface tabular-nums">
+                                        {hygiene === undefined ? '—' : hygiene}
+                                    </span>
+                                    {hygiene !== undefined && <span className="text-sm text-on-surface-subtle">/ 100</span>}
+                                </div>
+                                <p className="mt-2 text-sm text-on-surface-variant">{hygieneNote}</p>
+                                <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
+                                    <div className="h-full rounded-full bg-secondary" style={{ width: `${hygiene ?? 0}%` }} />
                                 </div>
 
-                                <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5 flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground font-medium">Auto-quarantine engine:</span>
-                                    <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-none font-semibold text-[11px]">
-                                        ARMED & READY
-                                    </Badge>
-                                </div>
+                                <h3 className="mt-8 text-sm text-on-surface-variant">Identities by privilege risk</h3>
+                                <ul className="mt-3 divide-y divide-border">
+                                    {riskRows.map((r) => (
+                                        <li key={r.key} className="grid grid-cols-[72px_1fr_96px] items-center gap-3 py-2.5">
+                                            <span className="text-sm text-on-surface">{r.key}</span>
+                                            <span className="h-1 overflow-hidden rounded-full bg-surface-container-high">
+                                                <span className="block h-full rounded-full" style={{ width: `${r.pct}%`, background: r.color }} />
+                                            </span>
+                                            <span className="text-right font-mono text-xs text-on-surface-subtle tabular-nums">
+                                                {r.value.toLocaleString("en-US")} · {r.pct}%
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </GlassCardContent>
                         </GlassCard>
                     </div>
 
-                    {/* Quick Access Launchpad */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {[
-                            {
-                                title: 'Privilege Reviews',
-                                desc: 'Approve pending elevation tickets',
-                                icon: <KeyRound className="h-5 w-5 text-amber-500" />,
-                                link: '/requests',
-                                count: stats?.pending_requests ? `${stats.pending_requests} pending` : 'All clean',
-                            },
-                            {
-                                title: 'Perimeter Rules',
-                                desc: 'Manage IP and subnet boundaries',
-                                icon: <Shield className="h-5 w-5 text-sky-500" />,
-                                link: '/policies/ip',
-                                count: `${stats?.active_ip_policies ?? 4} active`,
-                            },
-                            {
-                                title: 'Workload Tokens',
-                                desc: 'SPIFFE & mTLS service identities',
-                                icon: <Cpu className="h-5 w-5 text-indigo-500" />,
-                                link: '/workloads',
-                                count: '8 running',
-                            },
-                            {
-                                title: 'SSO & Connectors',
-                                desc: 'SCIM, Okta, Azure AD sync',
-                                icon: <Lock className="h-5 w-5 text-emerald-500" />,
-                                link: '/settings',
-                                count: 'Configured',
-                            },
-                        ].map((card) => (
-                            <button
-                                key={card.title}
-                                type="button"
-                                onClick={() => navigate(card.link)}
-                                className="group relative flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 text-left shadow-sm hover:border-sky-500/50 hover:shadow-md transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-                            >
-                                <div className="flex items-start justify-between w-full">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted border border-border/60 group-hover:bg-sky-500/10 transition-colors">
-                                        {card.icon}
-                                    </div>
-                                    <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-sky-500 transition-colors">
-                                        {card.count}
-                                    </span>
-                                </div>
-                                <div className="mt-4">
-                                    <h4 className="text-sm font-bold text-on-surface group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                                        {card.title}
-                                    </h4>
-                                    <p className="mt-1 text-xs text-muted-foreground leading-normal">
-                                        {card.desc}
-                                    </p>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
+                    <GlassCard className="border-border shadow-none">
+                        <ul className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
+                            {shortcuts.map((s) => (
+                                <li key={s.title}>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(s.link)}
+                                        className="group flex h-full w-full items-start justify-between gap-3 p-5 text-left transition-colors duration-fast hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                                    >
+                                        <span>
+                                            <span className="block text-sm font-medium text-on-surface">{s.title}</span>
+                                            <span className="mt-1 block text-xs text-on-surface-subtle">{s.desc}</span>
+                                            {s.meta && <span className="mt-3 block font-mono text-xs text-on-surface-variant tabular-nums">{s.meta}</span>}
+                                        </span>
+                                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-on-surface-subtle transition-colors group-hover:text-on-surface" strokeWidth={1.5} aria-hidden />
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </GlassCard>
                 </TabsContent>
 
-                {/* TAB 2: SECURITY POSTURE */}
-                <TabsContent value="posture" className="space-y-6 mt-0 focus-visible:outline-none">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <GlassCard className="border border-border/70 shadow-sm bg-card p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
-                                    <ShieldCheck className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-bold text-on-surface">MFA Enforcement</h4>
-                                    <p className="text-xs text-muted-foreground">FIDO2 WebAuthn & TOTP</p>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-xs font-semibold">
-                                    <span className="text-muted-foreground">Enrollment Rate</span>
-                                    <span className="text-emerald-600 font-mono">100%</span>
-                                </div>
-                                <Progress value={100} className="h-2 rounded-full" />
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                All active administrator and directory accounts are bound to mandatory hardware or authenticator tokens.
-                            </p>
-                        </GlassCard>
-
-                        <GlassCard className="border border-border/70 shadow-sm bg-card p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600">
-                                    <Lock className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-bold text-on-surface">Zero-Trust Network Access</h4>
-                                    <p className="text-xs text-muted-foreground">Micro-segmentation</p>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-xs font-semibold">
-                                    <span className="text-muted-foreground">Traffic Inspected</span>
-                                    <span className="text-sky-600 font-mono">100%</span>
-                                </div>
-                                <Progress value={100} className="h-2 rounded-full" />
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Strict mTLS cryptographic verification enabled for all Kubernetes pod-to-pod ingress communication.
-                            </p>
-                        </GlassCard>
-
-                        <GlassCard className="border border-border/70 shadow-sm bg-card p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600">
-                                    <CheckCircle2 className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-bold text-on-surface">Audit Compliance</h4>
-                                    <p className="text-xs text-muted-foreground">SOC2 / ISO 27001</p>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-xs font-semibold">
-                                    <span className="text-muted-foreground">Immutable Retention</span>
-                                    <span className="text-indigo-600 font-mono">365 Days</span>
-                                </div>
-                                <Progress value={100} className="h-2 rounded-full" />
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                All authorization events and token minting decisions are signed and shipped to tamper-evident storage.
-                            </p>
-                        </GlassCard>
-                    </div>
+                <TabsContent value="posture" className="mt-6 focus-visible:outline-none">
+                    <GlassCard className="border-border shadow-none">
+                        <ul className="divide-y divide-border">
+                            {[
+                                { title: 'Adaptive MFA', desc: 'Passkeys, WebAuthn and TOTP requirements per group', link: '/mfa' },
+                                {
+                                    title: 'IP access rules',
+                                    desc: 'Network ranges checked before a session is issued',
+                                    link: '/policies/ip',
+                                    meta: stats ? `${fmt(stats.active_ip_policies)} active` : undefined,
+                                },
+                                {
+                                    title: 'Machine accounts',
+                                    desc: 'Short-lived mTLS identities for services',
+                                    link: '/workloads',
+                                    meta: stats ? `${fmt(stats.active_workloads)} active` : undefined,
+                                },
+                                { title: 'Audit trail', desc: 'Signed record of sign-ins, tokens and admin changes', link: '/audit' },
+                            ].map((row) => (
+                                <li key={row.title}>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(row.link)}
+                                        className="group flex w-full items-center justify-between gap-4 px-6 py-4 text-left transition-colors duration-fast hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                                    >
+                                        <span>
+                                            <span className="block text-sm font-medium text-on-surface">{row.title}</span>
+                                            <span className="mt-0.5 block text-sm text-on-surface-subtle">{row.desc}</span>
+                                        </span>
+                                        <span className="flex items-center gap-4">
+                                            {row.meta && <span className="font-mono text-xs text-on-surface-variant tabular-nums">{row.meta}</span>}
+                                            <ChevronRight className="h-4 w-4 text-on-surface-subtle group-hover:text-on-surface" strokeWidth={1.5} aria-hidden />
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </GlassCard>
                 </TabsContent>
 
-                {/* TAB 3: DIRECTORY STREAM */}
-                <TabsContent value="directory" className="space-y-6 mt-0 focus-visible:outline-none">
-                    <GlassCard className="border border-border/70 shadow-sm bg-card overflow-hidden">
-                        <GlassCardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-5">
+                <TabsContent value="directory" className="mt-6 focus-visible:outline-none">
+                    <GlassCard className="overflow-hidden border-border shadow-none">
+                        <div className="flex flex-col gap-4 border-b border-border px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">
-                                    Workforce Directory Feed
-                                </GlassCardTitle>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    Real-time SCIM synchronized identities across active directory providers
-                                </p>
+                                <h2 className="text-base font-medium text-on-surface">Directory</h2>
+                                <p className="mt-0.5 text-sm text-on-surface-subtle">Identities synced from your SCIM providers</p>
                             </div>
-
-                            {/* Redesigned Search & Filter Input Bar */}
-                            <div className="flex flex-wrap items-center gap-3">
-                                <div className="relative min-w-[240px]">
-                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="relative w-60">
+                                    <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-on-surface-subtle" strokeWidth={1.5} aria-hidden />
                                     <Input
-                                        placeholder="Search by name, ID..."
+                                        placeholder="Search name or ID"
+                                        aria-label="Search directory"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="h-9 pl-9 pr-3 text-xs rounded-xl bg-muted/40 border-border/80 focus:bg-card"
+                                        className="h-8 pl-9 text-sm"
                                     />
                                 </div>
-
-                                <div className="inline-flex rounded-xl bg-muted/50 p-1 border border-border/60">
+                                <div className="inline-flex h-8 items-center rounded-md border border-border bg-surface-container p-0.5" role="group" aria-label="Filter by status">
                                     {(['all', 'active', 'inactive'] as const).map((filter) => (
                                         <button
                                             key={filter}
                                             type="button"
+                                            aria-pressed={statusFilter === filter}
                                             onClick={() => setStatusFilter(filter)}
                                             className={cn(
-                                                "px-2.5 py-1 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer",
+                                                'h-7 rounded px-2.5 text-xs font-medium capitalize transition-colors duration-fast',
                                                 statusFilter === filter
-                                                    ? "bg-card text-on-surface shadow-xs"
-                                                    : "text-muted-foreground hover:text-on-surface"
+                                                    ? 'bg-card text-on-surface shadow-[0_0_0_1px_hsl(var(--on-surface)/0.08)]'
+                                                    : 'text-on-surface-subtle hover:text-on-surface'
                                             )}
                                         >
                                             {filter}
                                         </button>
                                     ))}
                                 </div>
-
-                                <Button
-                                    onClick={() => navigate('/users/new')}
-                                    size="sm"
-                                    className="h-9 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs px-3.5 cursor-pointer shadow-sm"
-                                >
-                                    <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                                    New User
-                                </Button>
                             </div>
-                        </GlassCardHeader>
+                        </div>
 
-                        <GlassCardContent className="p-0">
-                            <div className="overflow-x-auto">
-                                <GlassTable>
-                                    <GlassTableHeader>
-                                        <GlassTableRow className="hover:bg-transparent border-b border-border/70 bg-muted/20">
-                                            <GlassTableHead className="py-3.5 pl-6 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
-                                                User Identity
-                                            </GlassTableHead>
-                                            <GlassTableHead className="py-3.5 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
-                                                Status
-                                            </GlassTableHead>
-                                            <GlassTableHead className="py-3.5 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
-                                                Provisioned
-                                            </GlassTableHead>
-                                            <GlassTableHead className="py-3.5 text-right pr-6 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
-                                                Actions
-                                            </GlassTableHead>
+                        <div className="overflow-x-auto">
+                            <GlassTable>
+                                <GlassTableHeader>
+                                    <GlassTableRow className="border-b border-border hover:bg-transparent">
+                                        <GlassTableHead className="h-10 pl-6 text-xs font-medium text-on-surface-subtle">Identity</GlassTableHead>
+                                        <GlassTableHead className="h-10 text-xs font-medium text-on-surface-subtle">Status</GlassTableHead>
+                                        <GlassTableHead className="h-10 text-xs font-medium text-on-surface-subtle">Provisioned</GlassTableHead>
+                                        <GlassTableHead className="h-10 pr-6 text-right text-xs font-medium text-on-surface-subtle">
+                                            <span className="sr-only">Actions</span>
+                                        </GlassTableHead>
+                                    </GlassTableRow>
+                                </GlassTableHeader>
+                                <TableBody>
+                                    {filteredUsers.length === 0 ? (
+                                        <GlassTableRow className="hover:bg-transparent">
+                                            <TableCell colSpan={4} className="py-16 text-center">
+                                                <p className="text-sm font-medium text-on-surface">No identities</p>
+                                                <p className="mt-1 text-sm text-on-surface-subtle">
+                                                    {searchQuery ? `Nothing matches “${searchQuery}”` : 'Connect a SCIM provider or add a user to get started'}
+                                                </p>
+                                            </TableCell>
                                         </GlassTableRow>
-                                    </GlassTableHeader>
-                                    <TableBody>
-                                        {filteredUsers.length === 0 ? (
-                                            <GlassTableRow>
-                                                <TableCell colSpan={4} className="py-16 text-center">
-                                                    <div className="flex flex-col items-center justify-center gap-3">
-                                                        <div className="h-12 w-12 rounded-2xl bg-muted/60 border border-border flex items-center justify-center text-muted-foreground">
-                                                            <Users className="h-6 w-6" />
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <p className="text-sm font-bold text-on-surface">No identities found</p>
-                                                            <p className="text-xs text-muted-foreground max-w-sm">
-                                                                {searchQuery ? `No users matching "${searchQuery}".` : 'No users have been provisioned yet.'}
-                                                            </p>
+                                    ) : (
+                                        filteredUsers.map((user) => (
+                                            <GlassTableRow key={user.id} className="border-b border-border transition-colors last:border-none hover:bg-surface-container">
+                                                <TableCell className="py-3 pl-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar name={user.userName || user.id} size={32} />
+                                                        <div className="flex min-w-0 flex-col">
+                                                            <span className="truncate text-sm font-medium text-on-surface">{user.userName || 'Unnamed identity'}</span>
+                                                            <span className="truncate font-mono text-xs text-on-surface-subtle">{user.id}</span>
                                                         </div>
                                                     </div>
                                                 </TableCell>
+                                                <TableCell className="py-3">
+                                                    <Badge
+                                                        className={cn(
+                                                            'rounded border-none px-2 py-0.5 text-xs font-medium',
+                                                            user.active
+                                                                ? 'bg-success-subtle text-success-subtle-foreground'
+                                                                : 'bg-surface-container-high text-on-surface-variant'
+                                                        )}
+                                                    >
+                                                        {user.active ? 'Active' : 'Suspended'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="py-3 font-mono text-xs text-on-surface-subtle tabular-nums">
+                                                    {user.meta?.created ? new Date(user.meta.created).toLocaleDateString('en-GB') : '—'}
+                                                </TableCell>
+                                                <TableCell className="py-3 pr-6 text-right">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleCopyId(user.id)} className="gap-1.5 text-on-surface-subtle">
+                                                        {copiedId === user.id ? (
+                                                            <>
+                                                                <Check className="h-4 w-4 text-success" strokeWidth={1.5} aria-hidden />
+                                                                Copied
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                                                                Copy ID
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </TableCell>
                                             </GlassTableRow>
-                                        ) : (
-                                            filteredUsers.map((user) => (
-                                                <GlassTableRow key={user.id} className="hover:bg-muted/30 transition-colors border-b border-border/60 last:border-none">
-                                                    <TableCell className="py-4 pl-6">
-                                                        <div className="flex items-center gap-3.5">
-                                                            <Avatar
-                                                                name={user.userName || user.id}
-                                                                size={36}
-                                                                className="h-9 w-9 rounded-xl border border-border/80 font-bold shrink-0"
-                                                            />
-                                                            <div className="flex flex-col min-w-0">
-                                                                <span className="font-semibold text-sm text-on-surface truncate">
-                                                                    {user.userName || 'Unnamed Identity'}
-                                                                </span>
-                                                                <span className="text-[11px] text-muted-foreground font-mono truncate">
-                                                                    {user.id}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="py-4">
-                                                        <Badge
-                                                            className={cn(
-                                                                "rounded-md text-[11px] font-semibold border-none px-2.5 py-0.5",
-                                                                user.active
-                                                                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                                                    : "bg-destructive/15 text-destructive"
-                                                            )}
-                                                        >
-                                                            {user.active ? 'Active' : 'Suspended'}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="py-4 text-xs font-medium text-muted-foreground tabular-nums">
-                                                        {user.meta?.created ? new Date(user.meta.created).toLocaleDateString() : 'Active session'}
-                                                    </TableCell>
-                                                    <TableCell className="py-4 text-right pr-6">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleCopyId(user.id)}
-                                                            className="h-8 px-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-on-surface cursor-pointer"
-                                                        >
-                                                            {copiedId === user.id ? (
-                                                                <>
-                                                                    <Check className="h-3.5 w-3.5 mr-1 text-emerald-500" />
-                                                                    Copied
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Copy className="h-3.5 w-3.5 mr-1" />
-                                                                    Copy ID
-                                                                </>
-                                                            )}
-                                                        </Button>
-                                                    </TableCell>
-                                                </GlassTableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </GlassTable>
-                            </div>
-                        </GlassCardContent>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </GlassTable>
+                        </div>
                     </GlassCard>
                 </TabsContent>
             </Tabs>

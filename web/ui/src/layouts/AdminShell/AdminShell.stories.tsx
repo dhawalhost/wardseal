@@ -53,6 +53,7 @@ const mockNavigation = [
         href: "#",
         icon: <Users className="w-4 h-4" />,
         badge: 4,
+        badgeLabel: "4 pending",
       },
       {
         label: "Access Policies",
@@ -135,10 +136,27 @@ export const FullDashboard: Story = {
     onLogout: () => console.log("Logout triggered"),
     onSearchClick: () => console.log("Search triggered"),
     onNotificationClick: () => console.log("Notifications opened"),
+    unreadNotifications: 3,
+    brandSubtitle: "Control plane",
+    brandHref: "#",
+    navFilter: true,
+    collapsibleGroups: true,
+    sidebarHeader: (
+      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-card p-2.5">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary-container text-xs font-medium text-on-secondary-container" aria-hidden>
+          A
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-on-surface">Acme Corp</span>
+          <span className="block text-xs text-on-surface-subtle">Production tenant</span>
+        </span>
+      </div>
+    ),
+    footer: <span>Build 0.3.1 · Privacy · Security</span>,
     topHeaderActions: (
       <Button variant="outline" size="sm" className="flex items-center gap-1">
         <span>Upgrade Node</span>
-        <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
+        <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
       </Button>
     ),
     children: (
@@ -185,19 +203,19 @@ export const FullDashboard: Story = {
                       <Avatar name={identity.username} size={28} />
                       <div>
                         <div className="text-on-surface font-semibold text-sm">{identity.name}</div>
-                        <div className="text-on-surface-variant/40 text-xs">@{identity.username}</div>
+                        <div className="text-on-surface-subtle text-xs">@{identity.username}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-on-surface-variant/80 font-medium text-xs">
+                    <TableCell className="text-on-surface-variant font-medium text-xs">
                       {identity.role}
                     </TableCell>
                     <TableCell>
                       <Badge variant={identity.status as any}>{identity.statusLabel}</Badge>
                     </TableCell>
-                    <TableCell className="text-on-surface-variant/60 font-semibold text-xs">
+                    <TableCell className="text-on-surface-subtle font-semibold text-xs">
                       {identity.lastActive}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-[11px] text-on-surface-variant/50">
+                    <TableCell className="text-right font-mono text-xs text-on-surface-subtle">
                       {identity.key}
                     </TableCell>
                   </TableRow>

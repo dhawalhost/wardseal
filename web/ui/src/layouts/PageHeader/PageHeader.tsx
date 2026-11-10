@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
+import { focusRing } from "../../lib/styles";
 import { ChevronRight } from "lucide-react";
 
 export interface BreadcrumbItem {
@@ -51,31 +52,35 @@ const PageHeader = React.forwardRef<HTMLElement, PageHeaderProps>(
       >
         <div className="min-w-0 flex-1 space-y-3">
           {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav
-              className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold uppercase tracking-wide flex-wrap"
-              aria-label="Breadcrumb"
-            >
-              {breadcrumbs.map((crumb, idx) => {
-                const isLast = idx === breadcrumbs.length - 1;
-                return (
-                  <React.Fragment key={crumb.label + idx}>
-                    {idx > 0 && (
-                      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                    )}
-                    {crumb.href && !isLast ? (
-                      <a
-                        href={crumb.href}
-                        onClick={crumb.onClick}
-                        className="hover:text-on-surface transition-colors cursor-pointer"
-                      >
-                        {crumb.label}
-                      </a>
-                    ) : (
-                      <span className={isLast ? "text-on-surface" : undefined}>{crumb.label}</span>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+            <nav aria-label="Breadcrumb">
+              <ol className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-on-surface-variant">
+                {breadcrumbs.map((crumb, idx) => {
+                  const isLast = idx === breadcrumbs.length - 1;
+                  return (
+                    <li key={crumb.label + idx} className="flex items-center gap-1.5">
+                      {idx > 0 && (
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-on-surface-subtle" aria-hidden />
+                      )}
+                      {crumb.href && !isLast ? (
+                        <a
+                          href={crumb.href}
+                          onClick={crumb.onClick}
+                          className={cn("rounded-sm transition-colors duration-fast hover:text-on-surface hover:underline", focusRing)}
+                        >
+                          {crumb.label}
+                        </a>
+                      ) : (
+                        <span
+                          className={isLast ? "font-semibold text-on-surface" : undefined}
+                          aria-current={isLast ? "page" : undefined}
+                        >
+                          {crumb.label}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
             </nav>
           )}
 
@@ -89,7 +94,7 @@ const PageHeader = React.forwardRef<HTMLElement, PageHeaderProps>(
               </div>
             )}
             <div className="min-w-0 space-y-1">
-              <h1 className="text-2xl lg:text-[28px] font-bold tracking-tight text-on-surface leading-tight truncate">
+              <h1 className="text-2xl font-medium leading-tight tracking-[-0.015em] text-on-surface [overflow-wrap:anywhere] lg:text-[28px]">
                 {title}
               </h1>
               {meta}
@@ -97,7 +102,7 @@ const PageHeader = React.forwardRef<HTMLElement, PageHeaderProps>(
           </div>
 
           {description && (
-            <p className="text-sm lg:text-[15px] text-muted-foreground font-medium leading-relaxed max-w-2xl">
+            <p className="max-w-2xl text-sm leading-relaxed text-on-surface-variant lg:text-[15px]">
               {description}
             </p>
           )}

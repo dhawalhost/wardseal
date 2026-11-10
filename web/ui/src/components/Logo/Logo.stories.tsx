@@ -18,8 +18,8 @@ export const DefaultFull: Story = {
   args: {
     variant: "full",
     logoColor: "brand",
-    textColor: "white",
-    className: "h-12 w-auto",
+    textColor: "mono",
+    className: "h-12 w-auto text-on-surface",
   },
 };
 
@@ -35,36 +35,36 @@ export const MonochromaticLogo: Story = {
   render: () => (
     <div className="flex flex-col gap-6 p-6 bg-surface-container rounded-xl border border-border">
       <div>
-        <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase">
-          Monochromatic Cyan Theme (using Tailwind text classes)
+        <p className="mb-2 text-label text-on-surface-variant">
+          Brand ink (text-primary)
         </p>
         <Logo
           variant="full"
           logoColor="mono"
           textColor="mono"
-          className="h-10 w-auto text-cyan-400"
+          className="h-10 w-auto text-primary"
         />
       </div>
       <div>
-        <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase">
-          Monochromatic Rose Theme
+        <p className="mb-2 text-label text-on-surface-variant">
+          CTA blue (text-secondary)
         </p>
         <Logo
           variant="full"
           logoColor="mono"
           textColor="mono"
-          className="h-10 w-auto text-rose-400"
+          className="h-10 w-auto text-secondary"
         />
       </div>
       <div>
-        <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase">
-          Dim Muted Logo (using text-muted-foreground)
+        <p className="mb-2 text-label text-on-surface-variant">
+          Subtle (text-on-surface-subtle)
         </p>
         <Logo
           variant="full"
           logoColor="mono"
           textColor="mono"
-          className="h-10 w-auto text-muted-foreground/30"
+          className="h-10 w-auto text-on-surface-subtle"
         />
       </div>
     </div>
@@ -75,7 +75,7 @@ export const ResponsiveScales: Story = {
   render: () => (
     <div className="flex flex-col gap-8 p-4">
       <div className="space-y-2">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+        <span className="text-xs font-medium text-muted-foreground ">
           Micro (Navbar header / sidebar collapsed)
         </span>
         <div className="flex gap-4 items-center">
@@ -85,7 +85,7 @@ export const ResponsiveScales: Story = {
       </div>
 
       <div className="space-y-2">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+        <span className="text-xs font-medium text-muted-foreground ">
           Standard (Sidebar Header / Dashboard Panel)
         </span>
         <div className="flex gap-6 items-center">
@@ -95,7 +95,7 @@ export const ResponsiveScales: Story = {
       </div>
 
       <div className="space-y-2">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+        <span className="text-xs font-medium text-muted-foreground ">
           Large (Sign-in / Console Splash Page)
         </span>
         <div className="flex flex-col gap-4">

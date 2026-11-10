@@ -67,21 +67,21 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
     });
 
     return (
-        <GlassTableRow className="hover:bg-surface-container/20 transition-all border-b border-on-surface/5 last:border-0 group">
+        <GlassTableRow className="hover:bg-surface-container/20 transition-[color,background-color,border-color,opacity,transform] border-b border-on-surface/5 last:border-0 group">
             <TableCell className="py-1.5 pl-4">
                 <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs tracking-tight text-on-surface group-hover:text-primary transition-colors">
+                    <span className="font-medium text-xs tracking-tight text-on-surface group-hover:text-primary transition-colors">
                         {group.name}
                     </span>
                 </div>
             </TableCell>
             <TableCell className="py-1.5">
-                <code className="bg-surface-container px-2 py-0.5 rounded text-primary font-mono text-[9px] tracking-tight">
+                <code className="bg-surface-container px-2 py-0.5 rounded text-primary font-mono text-xs tracking-tight">
                     {group.id}
                 </code>
             </TableCell>
             <TableCell className="py-1.5">
-                <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                     {group.created_at ? new Date(group.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Verified'}
                 </span>
             </TableCell>
@@ -92,22 +92,22 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                     }
                 }}>
                     <SheetTrigger asChild>
-                        <Button variant="ghost" className="h-7 rounded-md px-2.5 font-bold text-[10px] tracking-tight text-primary hover:bg-primary/5 transition-all">
+                        <Button variant="ghost" className="h-7 rounded-md px-2.5 font-medium text-xs tracking-tight text-primary hover:bg-primary/5 transition-[color,background-color,border-color,opacity,transform]">
                             <Users className="w-3.5 h-3.5 mr-1.5 opacity-60" /> Manage Members
                         </Button>
                     </SheetTrigger>
-                    <SheetContent className="sm:max-w-xl p-0 border-none rounded-l-[24px] shadow-2xl shadow-on-surface/20 bg-card overflow-hidden">
+                    <SheetContent className="sm:max-w-xl p-0 border-none rounded-l-[24px] shadow-overlay shadow-on-surface/20 bg-card overflow-hidden">
                         <div className="bg-primary p-8 text-primary-foreground">
                             <SheetHeader>
                                 <div className="flex items-center gap-6">
-                                    <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                                    <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center">
                                         <Users className="w-7 h-7 text-primary-foreground" />
                                     </div>
                                     <div>
-                                        <SheetTitle className="text-2xl font-bold tracking-tight text-primary-foreground">
+                                        <SheetTitle className="text-2xl font-medium tracking-tight text-primary-foreground">
                                             {group.name}
                                         </SheetTitle>
-                                        <SheetDescription className="text-primary-foreground/50 font-bold text-[10px] mt-2 tracking-tight uppercase">
+                                        <SheetDescription className="text-primary-foreground font-medium text-xs mt-2 tracking-tight ">
                                             Manage the members of this group.
                                         </SheetDescription>
                                     </div>
@@ -119,11 +119,11 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                 {/* Current Members Section */}
                                 <section>
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-[10px] font-bold tracking-tight text-muted-foreground flex items-center gap-2 uppercase">
+                                        <h3 className="text-xs font-medium tracking-tight text-muted-foreground flex items-center gap-2 ">
                                             <ShieldCheck className="w-3.5 h-3.5 text-success" />
                                             Current Members
                                         </h3>
-                                        <Badge className="bg-primary/5 text-primary border-none rounded-lg h-6 px-3 text-[10px] font-bold shadow-none">
+                                        <Badge className="bg-primary/5 text-primary border-none rounded-lg h-6 px-3 text-xs font-medium shadow-none">
                                             {members.length} Members
                                         </Badge>
                                     </div>
@@ -131,17 +131,17 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                     <div className="space-y-2">
                                         {loadingMembers ? (
                                             <div className="py-12 flex items-center justify-center">
-                                                <Loader2 className="w-8 h-8 animate-spin text-primary/30" />
+                                                <Loader2 className="w-8 h-8 animate-spin text-on-surface-subtle" />
                                             </div>
                                         ) : members.length === 0 ? (
                                             <div className="py-12 text-center border-2 border-dashed rounded-2xl bg-surface-container/10">
-                                                <ShieldAlert className="w-8 h-8 mx-auto text-on-surface-variant/10 mb-2" />
+                                                <ShieldAlert className="w-8 h-8 mx-auto text-on-surface-subtle mb-2" />
                                                 <p className="text-xs font-medium text-muted-foreground">No users are in this group.</p>
                                             </div>
                                         ) : (
                                             <div className="grid gap-2">
                                                 {members.map(member => (
-                                                    <div key={member.id} className="flex items-center justify-between p-3 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-lg hover:shadow-sm transition-all group/member">
+                                                    <div key={member.id} className="flex items-center justify-between p-3 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-card hover:shadow-sm transition-[color,background-color,border-color,opacity,transform] group/member">
                                                         <div className="flex items-center gap-3">
                                                             {(() => {
                                                                 const email = member.email || (member.emails && member.emails.length > 0 ? member.emails[0].value : '');
@@ -149,8 +149,8 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                                                     <>
                                                                         <Avatar name={email || ''} size={32} className="h-8 w-8 rounded-lg ring-1 ring-on-surface/5 overflow-hidden" />
                                                                         <div>
-                                                                            <p className="text-xs font-bold text-on-surface">{email || 'Unknown User'}</p>
-                                                                            <p className="text-[9px] font-bold text-muted-foreground mt-0.5 flex items-center gap-1 tracking-tight">
+                                                                            <p className="text-xs font-medium text-on-surface">{email || 'Unknown User'}</p>
+                                                                            <p className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center gap-1 tracking-tight">
                                                                                 <span className={`h-1.5 w-1.5 rounded-full ${member.status === 'active' ? 'bg-success' : 'bg-destructive/100'}`} />
                                                                                 {member.status === 'active' ? 'Active' : 'Offline'}
                                                                             </p>
@@ -159,10 +159,10 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                                                 );
                                                             })()}
                                                         </div>
-                                                        <Button
+                                                        <Button aria-label="Remove member from group"
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-all opacity-0 group-hover/member:opacity-100"
+                                                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-[color,background-color,border-color,opacity,transform] opacity-0 group-hover/member:opacity-100"
                                                             onClick={() => handleRemoveUser(member.id)}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -177,7 +177,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                 {/* Assign New Members Section */}
                                 <section className="space-y-6">
                                     <div className="flex flex-col gap-4">
-                                        <h3 className="text-[10px] font-bold tracking-tight text-muted-foreground flex items-center gap-2 uppercase">
+                                        <h3 className="text-xs font-medium tracking-tight text-muted-foreground flex items-center gap-2 ">
                                             <Users className="w-3.5 h-3.5 text-primary" />
                                             Add More Members
                                         </h3>
@@ -185,7 +185,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                             <Input
                                                 placeholder="Search for users to add..."
-                                                className="h-10 border-none rounded-xl font-medium text-xs pl-10 bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+                                                className="h-10 border-none rounded-xl font-medium text-xs pl-10 bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform]"
                                                 value={searchUser}
                                                 onChange={(e) => setSearchUser(e.target.value)}
                                             />
@@ -195,26 +195,26 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                     <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                         {filteredAvailableUsers.length === 0 ? (
                                             <div className="py-8 text-center bg-surface-container/10 rounded-2xl border-2 border-dashed">
-                                                <p className="text-[10px] font-bold text-muted-foreground tracking-tight uppercase">No users found.</p>
+                                                <p className="text-xs font-medium text-muted-foreground tracking-tight ">No users found.</p>
                                             </div>
                                         ) : (
                                             filteredAvailableUsers.map(user => (
-                                                <div key={user.id} className="flex items-center justify-between p-2.5 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-lg hover:shadow-sm transition-all group/add">
+                                                <div key={user.id} className="flex items-center justify-between p-2.5 bg-card border border-on-surface/5 rounded-xl hover:border-primary/20 hover:shadow-card hover:shadow-sm transition-[color,background-color,border-color,opacity,transform] group/add">
                                                     <div className="flex items-center gap-3">
                                                         {(() => {
                                                             const email = user.email || (user.emails && user.emails.length > 0 ? user.emails[0].value : '');
                                                             return (
                                                                 <>
                                                                     <Avatar name={email || ''} size={28} className="h-7 w-7 rounded-lg ring-1 ring-on-surface/5 overflow-hidden" />
-                                                                    <p className="text-[11px] font-bold text-on-surface">{email || 'Anonymous'}</p>
+                                                                    <p className="text-xs font-medium text-on-surface">{email || 'Anonymous'}</p>
                                                                 </>
                                                             );
                                                         })()}
                                                     </div>
-                                                    <Button
+                                                    <Button aria-label="Add user to group"
                                                         size="icon"
                                                         variant="ghost"
-                                                        className="h-7 w-7 rounded-lg text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                                                        className="h-7 w-7 rounded-lg text-primary hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform]"
                                                         onClick={() => handleAddUser(user)}
                                                     >
                                                         <ArrowRight className="w-3.5 h-3.5" />
@@ -228,10 +228,10 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                         </ScrollArea>
                     </SheetContent>
                 </Sheet>
-                <Button
+                <Button aria-label="Delete group"
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-md hover:bg-destructive/10 hover:text-destructive transition-all opacity-40 hover:opacity-100"
+                    className="h-7 w-7 rounded-md hover:bg-destructive/10 hover:text-destructive transition-[color,background-color,border-color,opacity,transform] opacity-40 hover:opacity-100"
                     onClick={() => handleDeleteGroup(group.id)}
                 >
                     <Trash2 className="w-3.5 h-3.5" />

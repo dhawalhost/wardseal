@@ -247,13 +247,20 @@ export type { SectionProps } from "./layouts/Section/Section";
 export { AdminShell } from "./layouts/AdminShell/AdminShell";
 export type {
   AdminShellProps,
+  AdminShellUser,
   NavigationItem,
   NavigationGroup,
 } from "./layouts/AdminShell/AdminShell";
+export type { ShellLinkProps, RenderShellLink } from "./layouts/BrandMark";
 
 // PortalLayout
 export { PortalLayout } from "./layouts/PortalLayout/PortalLayout";
-export type { PortalLayoutProps, PortalLink, NodeStatus } from "./layouts/PortalLayout/PortalLayout";
+export type {
+  PortalLayoutProps,
+  PortalLink,
+  PortalFooterLink,
+  NodeStatus,
+} from "./layouts/PortalLayout/PortalLayout";
 
 // SkipLink
 export { SkipLink } from "./components/SkipLink/SkipLink";

@@ -117,19 +117,19 @@ const Webhooks: React.FC = () => {
                                 <div className="p-2 bg-primary rounded-lg text-primary-foreground shadow-sm">
                                     <Activity className="w-4 h-4" />
                                 </div>
-                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Provision Tunnel</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Provision Tunnel</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-4 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-[11px] font-bold tracking-tight text-muted-foreground ml-1">Endpoint vector</Label>
+                                <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Endpoint vector</Label>
                                 <div className="relative">
                                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
                                         <Globe className="h-4 w-4" />
                                     </div>
                                     <Input
                                         placeholder="https://api.external.service/hook"
-                                        className="h-9 border-none rounded-lg bg-surface-container/50 border border-border focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-mono text-[10px] pl-9"
+                                        className="h-9 border-none rounded-lg bg-surface-container border border-input focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] font-mono text-xs pl-9"
                                         value={newUrl}
                                         onChange={(e) => setNewUrl(e.target.value)}
                                     />
@@ -137,30 +137,30 @@ const Webhooks: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-[11px] font-bold tracking-tight text-muted-foreground ml-1">Subscription</Label>
+                                <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Subscription</Label>
                                 <div className="grid grid-cols-1 gap-1.5 bg-surface-container/30 rounded-lg p-3 border border-border">
                                     {availableEvents.map(ev => (
                                         <div key={ev} className="flex items-center space-x-3 group cursor-pointer select-none" onClick={() => toggleEvent(ev)}>
                                             <div
-                                                className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedEvents.includes(ev) ? 'bg-primary border-primary' : 'border-on-surface/10 bg-card group-hover:border-primary/50'}`}
+                                                className={`w-4 h-4 rounded border flex items-center justify-center transition-[color,background-color,border-color,opacity,transform] ${selectedEvents.includes(ev) ? 'bg-primary border-primary' : 'border-on-surface/10 bg-card group-hover:border-primary/50'}`}
                                             >
                                                 {selectedEvents.includes(ev) && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
                                             </div>
-                                            <span className={`text-[11px] font-bold tracking-tight transition-colors ${selectedEvents.includes(ev) ? 'text-on-surface' : 'text-muted-foreground'}`}>{ev.replace('.', ' ')}</span>
+                                            <span className={`text-xs font-medium tracking-tight transition-colors ${selectedEvents.includes(ev) ? 'text-on-surface' : 'text-muted-foreground'}`}>{ev.replace('.', ' ')}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             {error && (
-                                <div className="text-destructive text-[10px] font-bold tracking-tight bg-destructive/5 p-2 rounded-lg border border-destructive/10">
+                                <div className="text-error-subtle-foreground text-xs font-medium tracking-tight bg-destructive/5 p-2 rounded-lg border border-destructive/10">
                                     {error}
                                 </div>
                             )}
 
                             <Button
                                 onClick={handleCreate}
-                                className="w-full h-9 rounded-lg font-bold text-xs tracking-tight shadow-sm transition-all"
+                                className="w-full h-9 rounded-lg font-medium text-xs tracking-tight shadow-sm transition-[color,background-color,border-color,opacity,transform]"
                                 disabled={creating}
                             >
                                 {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -177,8 +177,8 @@ const Webhooks: React.FC = () => {
                             <Lock className="w-4 h-4 text-primary" />
                         </div>
                         <div className="space-y-1">
-                            <h4 className="text-[11px] font-bold tracking-tight text-on-surface">Security protocol</h4>
-                            <p className="text-[10px] font-medium leading-relaxed text-muted-foreground tracking-tight">
+                            <h4 className="text-xs font-medium tracking-tight text-on-surface">Security protocol</h4>
+                            <p className="text-xs font-medium leading-relaxed text-muted-foreground tracking-tight">
                                 HMAC-SHA256 signed.
                             </p>
                         </div>
@@ -193,28 +193,28 @@ const Webhooks: React.FC = () => {
                                     <ShieldCheck className="w-5 h-5 text-primary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Tunnel Registry</GlassCardTitle>
-                                    <p className="text-muted-foreground font-bold text-[10px] mt-0.5 tracking-tight">Active orchestration pipelines ({webhooks.length})</p>
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Tunnel Registry</GlassCardTitle>
+                                    <p className="text-muted-foreground font-medium text-xs mt-0.5 tracking-tight">Active orchestration pipelines ({webhooks.length})</p>
                                 </div>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0">
                             {webhooks.length === 0 ? (
                                 <div className="py-32 text-center text-muted-foreground flex flex-col items-center gap-6">
-                                    <div className="w-20 h-20 rounded-3xl bg-surface-container/50 flex items-center justify-center">
+                                    <div className="w-20 h-20 rounded-3xl bg-surface-container flex items-center justify-center">
                                         <WebhookIcon className="h-10 w-10 opacity-20" />
                                     </div>
-                                    <span className="max-w-xs font-bold text-[11px] tracking-tight leading-relaxed opacity-60">System silence // Zero communication vectors established.</span>
+                                    <span className="max-w-xs font-medium text-xs tracking-tight leading-relaxed opacity-60">System silence // Zero communication vectors established.</span>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <GlassTable>
                                         <GlassTableHeader>
                                             <GlassTableRow className="hover:bg-transparent border-b border-on-surface/5">
-                                                <GlassTableHead className="py-3 pl-5 text-[10px]">Identity</GlassTableHead>
-                                                <GlassTableHead className="text-[10px]">Subscription</GlassTableHead>
-                                                <GlassTableHead className="text-[10px]">Status</GlassTableHead>
-                                                <GlassTableHead className="text-right pr-5 text-[10px]">Actions</GlassTableHead>
+                                                <GlassTableHead className="py-3 pl-5 text-xs">Identity</GlassTableHead>
+                                                <GlassTableHead className="text-xs">Subscription</GlassTableHead>
+                                                <GlassTableHead className="text-xs">Status</GlassTableHead>
+                                                <GlassTableHead className="text-right pr-5 text-xs">Actions</GlassTableHead>
                                             </GlassTableRow>
                                         </GlassTableHeader>
                                         <TableBody>

@@ -10,17 +10,27 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["primary", "secondary", "outline", "ghost", "glass"],
+      options: ["primary", "secondary", "outline", "ghost", "glass", "destructive"],
+      description:
+        "primary = navy ink · secondary = CTA blue (default) · destructive = danger",
     },
     size: {
       control: "select",
-      options: ["sm", "md", "lg"],
+      options: ["sm", "md", "lg", "icon"],
     },
     isLoading: {
       control: "boolean",
     },
     disabled: {
       control: "boolean",
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Primary is navy (`bg-primary`). Most product CTAs should use **secondary** (brand blue).",
+      },
     },
   },
 };

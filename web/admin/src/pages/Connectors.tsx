@@ -103,7 +103,7 @@ export default function Connectors() {
         });
     };
 
-    const inputClass = "h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium px-4 text-sm";
+    const inputClass = "h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium px-4 text-sm";
 
     if (loading && connectors.length === 0) return <div className="h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
@@ -134,7 +134,7 @@ export default function Connectors() {
                                     <ExternalLink className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">
                                         {editingConnector.type ? editingConnector.type.charAt(0).toUpperCase() + editingConnector.type.slice(1).toLowerCase() : 'Generic'} connector
                                     </GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Sync users and groups from your external directory.</p>
@@ -144,7 +144,7 @@ export default function Connectors() {
                         <GlassCardContent className="p-card space-y-4">
                             <form onSubmit={handleSave} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Connection name</Label>
+                                    <Label className="text-xs font-semibold text-muted-foreground">Connection name</Label>
                                     <Input
                                         placeholder="e.g., Corporate LDAP"
                                         value={editingConnector.name || ''}
@@ -157,12 +157,12 @@ export default function Connectors() {
                                 <div className="h-px bg-border" />
 
                                 <div className="space-y-4">
-                                    <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Credentials</h3>
+                                    <h3 className="text-xs font-semibold text-muted-foreground ">Credentials</h3>
 
                                     {editingConnector.type === 'scim' && (
                                         <div className="grid gap-card">
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Endpoint URL</Label>
+                                                <Label className="text-xs font-semibold text-muted-foreground">Endpoint URL</Label>
                                                 <Input
                                                     type="url"
                                                     placeholder="https://scim.identity.provider/v2"
@@ -173,7 +173,7 @@ export default function Connectors() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Bearer token</Label>
+                                                <Label className="text-xs font-semibold text-muted-foreground">Bearer token</Label>
                                                 <Input
                                                     type="password"
                                                     placeholder="••••••••••••••••"
@@ -189,7 +189,7 @@ export default function Connectors() {
                                     {editingConnector.type === 'ldap' && (
                                         <div className="grid gap-card">
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Server URL</Label>
+                                                <Label className="text-xs font-semibold text-muted-foreground">Server URL</Label>
                                                 <Input
                                                     placeholder="ldaps://identity.corp:636"
                                                     value={editingConnector.endpoint || ''}
@@ -200,7 +200,7 @@ export default function Connectors() {
                                             </div>
                                             <div className="grid md:grid-cols-2 gap-card">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Bind DN</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Bind DN</Label>
                                                     <Input
                                                         placeholder="cn=admin,dc=corp,dc=com"
                                                         value={editingConnector.credentials?.bind_dn || ''}
@@ -210,7 +210,7 @@ export default function Connectors() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Bind password</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Bind password</Label>
                                                     <Input
                                                         type="password"
                                                         placeholder="••••••••"
@@ -222,7 +222,7 @@ export default function Connectors() {
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Base DN</Label>
+                                                <Label className="text-xs font-semibold text-muted-foreground">Base DN</Label>
                                                 <Input
                                                     placeholder="dc=corp,dc=com"
                                                     value={editingConnector.settings?.base_dn || ''}
@@ -241,7 +241,7 @@ export default function Connectors() {
                                                 This connection uses Microsoft Graph API. Ensure the app registration has Directory.Read.All permissions in Entra ID.
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Tenant ID</Label>
+                                                <Label className="text-xs font-semibold text-muted-foreground">Tenant ID</Label>
                                                 <Input
                                                     placeholder="00000000-0000-0000-0000-000000000000"
                                                     value={editingConnector.credentials?.tenant_id || ''}
@@ -252,7 +252,7 @@ export default function Connectors() {
                                             </div>
                                             <div className="grid md:grid-cols-2 gap-card">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Client ID</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Client ID</Label>
                                                     <Input
                                                         placeholder="00000000-0000-0000-0000-000000000000"
                                                         value={editingConnector.credentials?.client_id || ''}
@@ -262,7 +262,7 @@ export default function Connectors() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Client secret</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Client secret</Label>
                                                     <Input
                                                         type="password"
                                                         placeholder="••••••••"
@@ -280,7 +280,7 @@ export default function Connectors() {
                                         <div className="grid gap-card">
                                             <div className="grid md:grid-cols-2 gap-card">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Workspace domain</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Workspace domain</Label>
                                                     <Input
                                                         placeholder="acme.com"
                                                         value={editingConnector.settings?.domain || ''}
@@ -290,7 +290,7 @@ export default function Connectors() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Admin email</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Admin email</Label>
                                                     <Input
                                                         type="email"
                                                         placeholder="admin@acme.com"
@@ -302,9 +302,9 @@ export default function Connectors() {
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Service account key (JSON)</Label>
+                                                <Label className="text-xs font-semibold text-muted-foreground">Service account key (JSON)</Label>
                                                 <textarea
-                                                    className="flex min-h-[150px] w-full border border-border rounded-xl bg-card p-4 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-secondary/20 text-on-surface"
+                                                    className="flex min-h-[150px] w-full border border-input rounded-xl bg-card p-4 font-mono text-xs leading-relaxed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring text-on-surface"
                                                     placeholder='{ "type": "service_account", ... }'
                                                     value={editingConnector.credentials?.service_account_json || ''}
                                                     onChange={(e) => updateNested('credentials', 'service_account_json', e.target.value)}
@@ -330,7 +330,7 @@ export default function Connectors() {
                                     </Button>
 
                                     {testResult && (
-                                        <div className={`p-3 rounded-lg border flex items-center gap-3 flex-1 ${testResult.status === 'success' ? 'bg-success-subtle border-success/20 text-success' : 'bg-destructive/5 border-destructive/20 text-destructive'}`}>
+                                        <div className={`p-3 rounded-lg border flex items-center gap-3 flex-1 ${testResult.status === 'success' ? 'bg-success-subtle border-success/20 text-success-subtle-foreground' : 'bg-destructive/5 border-destructive/20 text-error-subtle-foreground'}`}>
                                             {testResult.status === 'success' ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-semibold leading-none">{testResult.status === 'success' ? 'Test successful' : 'Test failed'}</span>
@@ -436,7 +436,7 @@ export default function Connectors() {
                             <Link2 className="w-4 h-4 text-secondary" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Configured sources ({connectors.length})</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Configured sources ({connectors.length})</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">Identity sources syncing with WardSeal</p>
                         </div>
                     </div>
@@ -455,7 +455,7 @@ export default function Connectors() {
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-semibold tracking-tight text-on-surface">{c.name}</span>
-                                                <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-[10px] px-2 py-0.5">{c.type}</Badge>
+                                                <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">{c.type}</Badge>
                                             </div>
                                             <div className="text-xs font-medium text-muted-foreground">
                                                 {c.endpoint || 'Internal'}
@@ -475,10 +475,10 @@ export default function Connectors() {
                                         </div>
 
                                         <div className="flex gap-1">
-                                            <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-on-surface hover:bg-muted" onClick={() => { setEditingConnector(c); setIsCreating(false); }}>
+                                            <Button aria-label="Connector settings" size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-on-surface hover:bg-muted" onClick={() => { setEditingConnector(c); setIsCreating(false); }}>
                                                 <Settings className="h-4 w-4" />
                                             </Button>
-                                            <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(c.id)}>
+                                            <Button aria-label="Delete connector" size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(c.id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>

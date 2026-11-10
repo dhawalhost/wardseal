@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { LayoutGrid, User, ShieldCheck, LogOut, Terminal, Activity, Globe } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Activity, ShieldCheck, Terminal } from "lucide-react";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { PortalLayout as KitPortalLayout, type RenderShellLink } from "@dhawalhost/wardseal-ui-kit";
 import {
     resolveManageConsoleUrl,
     roleGrantsAdminConsole,
@@ -19,14 +13,18 @@ import {
 } from '@wardseal/shared';
 import api, { getUserRoles } from '../api';
 import { useAuth } from '../hooks/useAuth';
-import { Badge } from '@/components/ui/badge';
-import { Avatar } from '@/components/ui/avatar';
-import { Logo } from '@/components/ui/logo';
 
 type RBACRole = {
     id?: string;
     name?: string;
 };
+
+/** Client-side navigation for kit shell links (no full page reloads). */
+const renderRouterLink: RenderShellLink = ({ href, children, ...rest }) => (
+    <Link to={href} {...rest}>
+        {children}
+    </Link>
+);
 
 const PortalLayout = () => {
     const location = useLocation();
@@ -111,137 +109,65 @@ const PortalLayout = () => {
     };
 
     return (
-        <div className="min-h-screen bg-surface flex flex-col font-sans selection:bg-primary/10 selection:text-primary">
-            {/* Top Navigation Bar: Modernist */}
-            <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-md">
-                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-                    {/* Logo Area */}
-                    <div className="flex items-center gap-4">
-                        <Link to="/portal" className="flex items-center gap-3 group">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-full">
-                                <Logo variant="icon" className="w-8 h-8" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="font-bold text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
-                                <span className="text-[9px] font-semibold tracking-tight text-on-surface-variant/50 leading-none mt-0.5">User portal</span>
-                            </div>
-                        </Link>
-                    </div>
-
-                    {/* Right Actions */}
-                    <div className="flex items-center gap-6">
-                        {canAccessAdmin && (
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    window.location.assign(resolveManageConsoleUrl());
-                                }}
-                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-semibold text-[10px] px-4 hover:bg-surface-container transition-all"
-                            >
-                                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                                <span>Admin Panel</span>
-                            </Button>
-                        )}
-
-                        <div className="flex items-center gap-4">
-                            <ModeToggle />
-
-                            {/* User Menu */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-surface-container transition-all">
-                                        <Avatar name={localStorage.getItem('userId') || userName || 'user'} size={32} className="h-8 w-8" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-64 rounded-lg border p-1 shadow-lg overflow-hidden">
-                                    <DropdownMenuLabel className="p-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/50 mb-1">Authenticated Account</span>
-                                            <span className="text-sm font-bold text-on-surface truncate">{userName}</span>
-                                        </div>
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <div className="p-1 space-y-1">
-                                        <DropdownMenuItem
-                                            onClick={() => navigate('/profile')}
-                                            className="rounded-lg focus:bg-primary/5 focus:text-primary font-medium text-sm px-3 py-2 cursor-pointer"
-                                        >
-                                            <User className="mr-2 h-4 w-4 opacity-50" />
-                                            Profile Settings
-                                        </DropdownMenuItem>
-                                        {canAccessAdmin && (
-                                            <DropdownMenuItem
-                                                onClick={() => {
-                                                    const adminUrl = window.location.hostname.endsWith('.local')
-                                                        ? 'http://manage.wardseal.local'
-                                                        : 'https://manage.wardseal.com';
-                                                    window.location.assign(adminUrl);
-                                                }}
-                                                className="rounded-lg focus:bg-primary/5 focus:text-primary font-medium text-sm px-3 py-2 cursor-pointer"
-                                            >
-                                                <Terminal className="mr-2 h-4 w-4 opacity-50" />
-                                                Switch to Admin
-                                            </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            className="rounded-lg focus:bg-destructive/10 focus:text-destructive text-destructive font-medium text-sm px-3 py-2 cursor-pointer"
-                                            onClick={handleSignOut}
-                                        >
-                                            <LogOut className="mr-2 h-4 w-4" />
-                                            Sign Out
-                                        </DropdownMenuItem>
-                                    </div>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
+        <KitPortalLayout
+            links={[]}
+            renderLink={renderRouterLink}
+            brandName="WardSeal"
+            brandSubtitle="User portal"
+            brandHref="/portal"
+            user={{ name: userName, avatarSeed: localStorage.getItem('userId') || userName }}
+            userMenuLabel="Signed in as"
+            profileLabel="Profile settings"
+            onProfileSettings={() => navigate('/profile')}
+            onLogout={handleSignOut}
+            userMenuItems={
+                canAccessAdmin ? (
+                    <DropdownMenuItem onSelect={() => window.location.assign(resolveManageConsoleUrl())}>
+                        <Terminal className="text-on-surface-subtle" aria-hidden />
+                        Switch to admin console
+                    </DropdownMenuItem>
+                ) : null
+            }
+            headerActions={
+                <>
+                    {canAccessAdmin && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.location.assign(resolveManageConsoleUrl())}
+                            className="hidden items-center gap-2 md:flex"
+                        >
+                            <ShieldCheck className="h-4 w-4 text-secondary" aria-hidden />
+                            Admin panel
+                        </Button>
+                    )}
+                    <ModeToggle />
+                </>
+            }
+            footerNote={<>&copy; {new Date().getFullYear()} WardSeal Managed Security. Identity &amp; Access Platform.</>}
+            footerLinks={[
+                { label: 'Privacy', href: `${policyBaseUrl}/policies#privacy`, external: true },
+                { label: 'Terms', href: `${policyBaseUrl}/policies#privacy`, external: true },
+                { label: 'Security policies', href: `${policyBaseUrl}/policies`, external: true },
+            ]}
+        >
+            {/* Session context — static labels, no animation (calm trust surface) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 text-xs">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <span className="flex items-center gap-2 font-semibold text-on-surface">
+                        <span className="h-2 w-2 rounded-full bg-success" aria-hidden />
+                        Secure connection
+                    </span>
+                    <span className="flex items-center gap-2 text-on-surface-variant">
+                        <Activity className="h-3.5 w-3.5" aria-hidden />
+                        End-to-end encrypted
+                    </span>
                 </div>
-            </header>
-
-            {/* Main Content Area */}
-            <main className="flex-1 container mx-auto px-6 py-8 relative">
-                {/* Live Status Indicators */}
-                <div className="flex items-center justify-between mb-6 border-b pb-4">
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="h-2 w-2 bg-success rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                            <span className="text-[11px] font-semibold tracking-tight text-on-surface">Secure connection</span>
-                        </div>
-                        <div className="flex items-center gap-3 opacity-40">
-                            <Activity className="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-medium italic">End-to-end encrypted</span>
-                        </div>
-                    </div>
-                    <div className="hidden sm:flex items-center gap-4">
-                        <span className="text-[10px] font-bold text-muted-foreground tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
-                    </div>
-                </div>
-
-                <Outlet />
-            </main>
-
-            <footer className="border-t py-8 bg-card">
-                <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2">
-                            <Logo variant="icon" className="w-3.5 h-3.5" />
-                            <p className="text-[10px] font-bold text-on-surface-variant">Secured by WardSeal</p>
-                        </div>
-                        <p className="text-[9px] font-medium text-muted-foreground mt-1">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-6">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Terms</a>
-                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-on-surface-variant hover:text-primary transition-colors">Security Policies</a>
-                    </div>
-                </div>
-            </footer>
-        </div>
+                <span className="hidden text-on-surface-subtle sm:inline">WardSeal Identity Platform</span>
+            </div>
+            <Outlet />
+        </KitPortalLayout>
     );
 };
 
 export default PortalLayout;
-
-

@@ -26,23 +26,23 @@ export const Default: Story = {
         <PopoverContent className="w-80">
           <div className="grid gap-4">
             <div className="space-y-2">
-              <h4 className="font-bold leading-none text-sm text-on-surface">Secure Telemetry Config</h4>
-              <p className="text-[10px] text-on-surface-variant/40 uppercase tracking-widest font-semibold mt-0.5">
+              <h4 className="font-medium leading-none text-sm text-on-surface">Secure Telemetry Config</h4>
+              <p className="text-xs text-on-surface-subtle font-semibold mt-0.5">
                 Active connection configurations.
               </p>
             </div>
-            <div className="grid gap-2 text-xs font-semibold text-on-surface-variant/70 leading-relaxed">
+            <div className="grid gap-2 text-xs font-semibold text-on-surface-variant leading-relaxed">
               <div className="flex justify-between border-b border-border pb-2">
                 <span>Active Server</span>
-                <span className="font-mono text-[10px] text-primary">us-east-01.wardseal.net</span>
+                <span className="font-mono text-xs text-primary">us-east-01.wardseal.net</span>
               </div>
               <div className="flex justify-between border-b border-border pb-2">
                 <span>Handshake Ping</span>
-                <span className="font-mono text-[10px] text-primary">12 ms</span>
+                <span className="font-mono text-xs text-primary">12 ms</span>
               </div>
               <div className="flex justify-between pb-1">
                 <span>Fallback Gateway</span>
-                <span className="font-mono text-[10px] text-on-surface-variant/40">Not Configured</span>
+                <span className="font-mono text-xs text-on-surface-subtle">Not Configured</span>
               </div>
             </div>
             <Button variant="primary" size="sm" className="w-full flex items-center justify-center gap-1.5 mt-2">

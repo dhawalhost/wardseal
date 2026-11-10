@@ -9,7 +9,7 @@ const Card = React.forwardRef<
     ref={ref}
     className={cn(
       isGlass
-        ? "relative overflow-hidden rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-card text-card-foreground"
+        ? "relative overflow-hidden rounded-xl border border-border bg-card shadow-card text-card-foreground"
         : "rounded-xl border border-border bg-card text-card-foreground shadow-sm",
       className
     )}
@@ -40,7 +40,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-base font-bold leading-none tracking-tight text-on-surface",
+      "text-base font-medium leading-snug text-on-surface",
       className
     )}
     {...props}
@@ -54,7 +54,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm font-medium text-muted-foreground leading-relaxed", className)}
+    className={cn("text-sm text-on-surface-variant leading-relaxed", className)}
     {...props}
   />
 ));

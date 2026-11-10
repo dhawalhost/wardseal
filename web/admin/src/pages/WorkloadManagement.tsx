@@ -115,15 +115,15 @@ const WorkloadManagement: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-card">
                 {[
                     { label: 'Total accounts', value: workloads.length, icon: <Cpu className="w-4 h-4" />, color: 'bg-secondary/10 text-secondary' },
-                    { label: 'Active', value: workloads.filter(w => w.status === 'active').length, icon: <Activity className="w-4 h-4" />, color: 'bg-success-subtle text-success' },
-                    { label: 'Rotated', value: workloads.filter(w => w.status === 'rotated').length, icon: <Zap className="w-4 h-4" />, color: 'bg-warning/10 text-warning' },
+                    { label: 'Active', value: workloads.filter(w => w.status === 'active').length, icon: <Activity className="w-4 h-4" />, color: 'bg-success-subtle text-success-subtle-foreground' },
+                    { label: 'Rotated', value: workloads.filter(w => w.status === 'rotated').length, icon: <Zap className="w-4 h-4" />, color: 'bg-warning/10 text-warning-subtle-foreground' },
                 ].map((stat) => (
                     <GlassCard key={stat.label} className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardContent className="p-card">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground font-semibold text-xs tracking-wide uppercase">{stat.label}</p>
-                                    <p className="text-2xl font-bold tracking-tight text-on-surface tabular-nums">{stat.value}</p>
+                                    <p className="text-muted-foreground font-semibold text-xs ">{stat.label}</p>
+                                    <p className="text-2xl font-medium tracking-tight text-on-surface tabular-nums">{stat.value}</p>
                                 </div>
                                 <div className={`p-2 rounded-lg ${stat.color}`}>
                                     {stat.icon}
@@ -141,7 +141,7 @@ const WorkloadManagement: React.FC = () => {
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Accounts</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Accounts</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">
                                 {workloads.length} managed accounts
                             </p>
@@ -153,11 +153,11 @@ const WorkloadManagement: React.FC = () => {
                         <GlassTable>
                             <GlassTableHeader>
                                 <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Name</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Service handle</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Last used</GlassTableHead>
-                                    <GlassTableHead className="text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
+                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Name</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Service handle</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Last used</GlassTableHead>
+                                    <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
@@ -207,7 +207,7 @@ const WorkloadManagement: React.FC = () => {
                                             <TableCell className="py-card text-right pr-card">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
+                                                        <Button aria-label="Workload actions" variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
                                                             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -243,7 +243,7 @@ const WorkloadManagement: React.FC = () => {
                                 <Plus className="w-5 h-5" />
                             </div>
                             <div>
-                                <DialogTitle className="text-lg font-bold tracking-tight">Create machine account</DialogTitle>
+                                <DialogTitle className="text-lg font-medium tracking-tight">Create machine account</DialogTitle>
                                 <DialogDescription className="text-muted-foreground text-sm mt-1">
                                     Add a new identity for an automated service or workload.
                                 </DialogDescription>
@@ -252,7 +252,7 @@ const WorkloadManagement: React.FC = () => {
                     </DialogHeader>
                     <form onSubmit={handleCreateWorkload} className="p-card space-y-4 bg-card">
                         {error && (
-                            <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-destructive">
+                            <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground">
                                 <AlertDescription className="font-semibold text-sm">
                                     {error}
                                 </AlertDescription>
@@ -260,23 +260,23 @@ const WorkloadManagement: React.FC = () => {
                         )}
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Name</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Name</Label>
                             <Input
                                 value={newName}
                                 onChange={e => setNewName(e.target.value)}
                                 placeholder="e.g. auth-aggregator"
-                                className="h-10 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
+                                className="h-10 rounded-lg border border-border bg-card focus-visible:ring-ring font-medium text-sm px-4"
                                 required
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Service handle</Label>
+                            <Label className="text-xs font-semibold text-muted-foreground">Service handle</Label>
                             <Input
                                 value={newHandle}
                                 onChange={e => setNewHandle(e.target.value)}
                                 placeholder="e.g. system:service:aggregator"
-                                className="h-10 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4 font-mono"
+                                className="h-10 rounded-lg border border-border bg-card focus-visible:ring-ring font-medium text-sm px-4 font-mono"
                                 required
                             />
                         </div>

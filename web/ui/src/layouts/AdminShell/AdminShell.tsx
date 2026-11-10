@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { focusRing, iconButton } from "../../lib/styles";
 import { Avatar } from "../../components/Avatar/Avatar";
@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../../components/Tooltip/Tooltip";
-import { BrandMark } from "../BrandMark";
+import { BrandMark, defaultRenderLink, type RenderShellLink } from "../BrandMark";
 
 export interface NavigationItem {
   label: string;
@@ -28,15 +28,21 @@ export interface NavigationItem {
 export interface NavigationGroup {
   title: string;
   items: NavigationItem[];
+  /** Stable id for collapse state. Defaults to `title`. */
+  key?: string;
+}
+
+export interface AdminShellUser {
+  name: string;
+  email?: string;
+  /** Second line under the name (e.g. role). Falls back to `email`. */
+  subtitle?: string;
+  avatarUrl?: string;
 }
 
 export interface AdminShellProps extends React.HTMLAttributes<HTMLDivElement> {
   navigation: NavigationGroup[];
-  user: {
-    name: string;
-    email: string;
-    avatarUrl?: string;
-  };
+  user: AdminShellUser;
   onLogout?: () => void;
   onSearchClick?: () => void;
   /** Placeholder-style label inside the search trigger. */
@@ -45,14 +51,41 @@ export interface AdminShellProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Unread count. Shows the dot and is announced in the button name. */
   unreadNotifications?: number;
   brandName?: string;
+  /** Line under the brand name, e.g. "Control plane". */
+  brandSubtitle?: string;
+  /** Makes the brand a link (e.g. to the dashboard). */
+  brandHref?: string;
+  /** Right side of the header, before notifications. */
   topHeaderActions?: React.ReactNode;
+  /** Left side of the header, after the menu button (e.g. breadcrumb). */
+  headerStart?: React.ReactNode;
+  /** Content between the brand and the navigation (e.g. tenant switcher). */
+  sidebarHeader?: React.ReactNode;
+  /** Show a "jump to page" filter above the navigation. */
+  navFilter?: boolean | { label?: string; placeholder?: string };
+  /** Let users collapse navigation groups. The group holding the current page stays open. */
+  collapsibleGroups?: boolean;
+  /** Footer under the page content. */
+  footer?: React.ReactNode;
+  /** Router integration — render a client-side link (e.g. react-router <Link to>). */
+  renderLink?: RenderShellLink;
   /** id of <main>; target of the skip link. */
   mainId?: string;
+  mainClassName?: string;
+  sidebarClassName?: string;
 }
 
-/* ── Sidebar content (shared by desktop rail and mobile sheet) ─────────── */
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
 
-function NavItem({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
+function NavItem({
+  item,
+  onNavigate,
+  renderLink,
+}: {
+  item: NavigationItem;
+  onNavigate?: () => void;
+  renderLink: RenderShellLink;
+}) {
   const content = (
     <>
       <span className="flex min-w-0 items-center gap-2.5">
@@ -60,7 +93,7 @@ function NavItem({ item, onNavigate }: { item: NavigationItem; onNavigate?: () =
           <span
             className={cn(
               "flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4",
-              item.isActive ? "text-accent-foreground" : "text-on-surface-subtle group-hover/nav:text-on-surface"
+              item.isActive ? "text-on-surface" : "text-on-surface-subtle group-hover/nav:text-on-surface-variant"
             )}
             aria-hidden
           >
@@ -73,8 +106,8 @@ function NavItem({ item, onNavigate }: { item: NavigationItem; onNavigate?: () =
         <>
           <span
             className={cn(
-              "rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums",
-              item.isActive ? "bg-card text-accent-foreground" : "bg-surface-container-high text-on-surface-variant"
+              "font-mono text-xs tabular-nums",
+              item.isActive ? "text-on-surface-variant" : "text-on-surface-subtle"
             )}
             aria-hidden
           >
@@ -87,37 +120,36 @@ function NavItem({ item, onNavigate }: { item: NavigationItem; onNavigate?: () =
   );
 
   const className = cn(
-    "group/nav relative flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors duration-fast",
+    "group/nav relative flex h-8 w-full items-center justify-between gap-2 rounded-md px-3 text-left text-sm font-medium transition-colors duration-fast",
     focusRing,
     item.isActive
-      ? "bg-accent font-semibold text-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-secondary"
-      : "font-medium text-on-surface-variant hover:bg-muted hover:text-on-surface"
+      ? "bg-surface-container-high text-on-surface shadow-[inset_0_0_0_1px_hsl(var(--on-surface)/0.06)]"
+      : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
   );
-
+  const current = item.isActive ? ("page" as const) : undefined;
   const handleClick = () => {
     item.onClick?.();
     onNavigate?.();
   };
 
   return item.href ? (
-    <a
-      href={item.href}
-      onClick={handleClick}
-      aria-current={item.isActive ? "page" : undefined}
-      className={className}
-    >
-      {content}
-    </a>
+    renderLink({ href: item.href, className, "aria-current": current, onClick: handleClick, children: content })
   ) : (
-    <button
-      type="button"
-      onClick={handleClick}
-      aria-current={item.isActive ? "page" : undefined}
-      className={className}
-    >
+    <button type="button" onClick={handleClick} aria-current={current} className={className}>
       {content}
     </button>
   );
+}
+
+interface SidebarContentProps
+  extends Pick<
+    AdminShellProps,
+    "navigation" | "user" | "onLogout" | "sidebarHeader" | "navFilter" | "collapsibleGroups" | "brandSubtitle" | "brandHref"
+  > {
+  brandName: string;
+  renderLink: RenderShellLink;
+  onNavigate?: () => void;
+  navId: string;
 }
 
 function SidebarContent({
@@ -125,34 +157,125 @@ function SidebarContent({
   user,
   onLogout,
   brandName,
+  brandSubtitle,
+  brandHref,
+  sidebarHeader,
+  navFilter,
+  collapsibleGroups,
+  renderLink,
   onNavigate,
   navId,
-}: Pick<AdminShellProps, "navigation" | "user" | "onLogout"> & {
-  brandName: string;
-  onNavigate?: () => void;
-  navId: string;
-}) {
+}: SidebarContentProps) {
+  const [query, setQuery] = React.useState("");
+  const [collapsed, setCollapsed] = React.useState<string[]>([]);
+  const filterOpts = typeof navFilter === "object" ? navFilter : {};
+
+  const groups = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return navigation;
+    return navigation
+      .map((g) => ({
+        ...g,
+        items: g.title.toLowerCase().includes(q) ? g.items : g.items.filter((i) => i.label.toLowerCase().includes(q)),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [navigation, query]);
+
+  const brand = <BrandMark name={brandName} subtitle={brandSubtitle} />;
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center border-b border-border px-5">
-        <BrandMark name={brandName} />
+        {brandHref
+          ? renderLink({
+              href: brandHref,
+              className: cn("rounded-md", focusRing),
+              onClick: onNavigate,
+              children: brand,
+            })
+          : brand}
       </div>
 
-      <nav aria-label="Primary" className="custom-scrollbar flex-1 space-y-6 overflow-y-auto px-3 py-5">
-        {navigation.map((group, gi) => {
+      {sidebarHeader && <div className="shrink-0 border-b border-border p-3">{sidebarHeader}</div>}
+
+      {navFilter && (
+        <div className="shrink-0 px-3 pt-3">
+          <label htmlFor={`${navId}-filter`} className="sr-only">
+            {filterOpts.label ?? "Filter pages"}
+          </label>
+          <div className="relative">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-subtle"
+              aria-hidden
+            />
+            <input
+              id={`${navId}-filter`}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={filterOpts.placeholder ?? "Jump to page…"}
+              autoComplete="off"
+              className={cn(
+                "h-9 w-full rounded-lg border border-input bg-card pl-8 pr-3 text-sm text-on-surface placeholder:text-on-surface-subtle",
+                focusRing
+              )}
+            />
+          </div>
+        </div>
+      )}
+
+      <nav aria-label="Primary" className="custom-scrollbar flex-1 space-y-6 overflow-y-auto px-3 py-4">
+        {groups.length === 0 && (
+          <p className="px-3 py-2 text-sm text-on-surface-subtle" role="status">
+            No pages match “{query.trim()}”
+          </p>
+        )}
+        {groups.map((group, gi) => {
+          const key = group.key ?? group.title;
           const headingId = `${navId}-group-${gi}`;
+          const listId = `${navId}-list-${gi}`;
+          const holdsCurrent = group.items.some((i) => i.isActive);
+          // Filtering always shows matches; the current page's group never hides.
+          const isCollapsed = collapsibleGroups && !query && !holdsCurrent && collapsed.includes(key);
+
           return (
-            <div key={group.title} className="space-y-1">
-              <h2 id={headingId} className="px-3 pb-1 text-label text-on-surface-subtle">
-                {group.title}
-              </h2>
-              <ul aria-labelledby={headingId} className="space-y-0.5">
-                {group.items.map((item) => (
-                  <li key={item.href ?? item.label}>
-                    <NavItem item={item} onNavigate={onNavigate} />
-                  </li>
-                ))}
-              </ul>
+            <div key={key} className="space-y-2">
+              {collapsibleGroups ? (
+                <h2 className="m-0">
+                  <button
+                    type="button"
+                    id={headingId}
+                    aria-expanded={!isCollapsed}
+                    aria-controls={listId}
+                    onClick={() =>
+                      setCollapsed((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key]))
+                    }
+                    className={cn(
+                      "flex h-6 w-full items-center justify-between rounded-md px-3 text-label text-on-surface-subtle transition-colors duration-fast hover:text-on-surface",
+                      focusRing
+                    )}
+                  >
+                    {group.title}
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform duration-fast", isCollapsed && "-rotate-90")}
+                      aria-hidden
+                    />
+                  </button>
+                </h2>
+              ) : (
+                <h2 id={headingId} className="px-3 pb-1 text-label text-on-surface-subtle">
+                  {group.title}
+                </h2>
+              )}
+              {!isCollapsed && (
+                <ul id={listId} aria-labelledby={headingId} className="space-y-0.5">
+                  {group.items.map((item) => (
+                    <li key={item.href ?? item.label}>
+                      <NavItem item={item} onNavigate={onNavigate} renderLink={renderLink} />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           );
         })}
@@ -163,8 +286,10 @@ function SidebarContent({
           <div className="flex min-w-0 items-center gap-2.5">
             <Avatar name={user.name} size={32} aria-hidden />
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-on-surface">{user.name}</div>
-              <div className="truncate text-xs text-on-surface-subtle">{user.email}</div>
+              <div className="truncate text-sm font-medium text-on-surface">{user.name}</div>
+              {(user.subtitle ?? user.email) && (
+                <div className="truncate text-xs text-on-surface-subtle">{user.subtitle ?? user.email}</div>
+              )}
             </div>
           </div>
           {onLogout && (
@@ -197,8 +322,18 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
       onNotificationClick,
       unreadNotifications = 0,
       brandName = "WardSeal",
+      brandSubtitle,
+      brandHref,
       topHeaderActions,
+      headerStart,
+      sidebarHeader,
+      navFilter,
+      collapsibleGroups,
+      footer,
+      renderLink = defaultRenderLink,
       mainId = "main-content",
+      mainClassName,
+      sidebarClassName,
       children,
       ...props
     },
@@ -209,8 +344,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
     const drawerRef = React.useRef<HTMLDivElement>(null);
     const menuButtonRef = React.useRef<HTMLButtonElement>(null);
 
-    // Land on the current page's link (else the first link) — not whatever
-    // focusable happens to come first — so arrowing/tabbing starts in context.
+    // Land on the current page's link (else the first link) so tabbing starts in context.
     const focusCurrentLink = React.useCallback((event: Event) => {
       const root = drawerRef.current;
       const target =
@@ -231,9 +365,20 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
     }, []);
 
     const notificationLabel =
-      unreadNotifications > 0
-        ? `Notifications, ${unreadNotifications} unread`
-        : "Notifications";
+      unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : "Notifications";
+
+    const sidebarProps = {
+      navigation,
+      user,
+      onLogout,
+      brandName,
+      brandSubtitle,
+      brandHref,
+      sidebarHeader,
+      navFilter,
+      collapsibleGroups,
+      renderLink,
+    };
 
     return (
       <TooltipProvider delayDuration={300}>
@@ -245,14 +390,13 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
           <SkipLink targetId={mainId} />
 
           {/* Desktop rail — hidden (and out of the tab order) below md */}
-          <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-container-low md:block">
-            <SidebarContent
-              navigation={navigation}
-              user={user}
-              onLogout={onLogout}
-              brandName={brandName}
-              navId={`${navId}-desktop`}
-            />
+          <aside
+            className={cn(
+              "hidden w-64 shrink-0 border-r border-border bg-surface-container-low md:block",
+              sidebarClassName
+            )}
+          >
+            <SidebarContent {...sidebarProps} navId={`${navId}-desktop`} />
           </aside>
 
           {/* Mobile drawer — modal: traps focus, Esc closes, focus returns to the trigger */}
@@ -273,10 +417,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
             >
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <SidebarContent
-                navigation={navigation}
-                user={user}
-                onLogout={onLogout}
-                brandName={brandName}
+                {...sidebarProps}
                 onNavigate={() => setMobileOpen(false)}
                 navId={`${navId}-mobile`}
               />
@@ -297,6 +438,8 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
                 >
                   <Menu className="h-5 w-5" aria-hidden />
                 </button>
+
+                {headerStart && <div className="min-w-0">{headerStart}</div>}
 
                 {onSearchClick && (
                   <button
@@ -320,7 +463,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 {topHeaderActions}
 
                 {onSearchClick && (
@@ -357,10 +500,16 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
             <main
               id={mainId}
               tabIndex={-1}
-              className="flex min-h-0 flex-1 flex-col overflow-hidden focus:outline-none"
+              className={cn("flex min-h-0 flex-1 flex-col overflow-hidden focus:outline-none", mainClassName)}
             >
               {children}
             </main>
+
+            {footer && (
+              <footer className="shrink-0 border-t border-border bg-card px-4 py-2.5 text-xs text-on-surface-variant md:px-6">
+                {footer}
+              </footer>
+            )}
           </div>
         </div>
       </TooltipProvider>

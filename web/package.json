@@ -18,6 +18,7 @@
     "build:id": "npm run build --workspace=id",
     "build:landing": "npm run build --workspace=landing",
     "build:status": "npm run build --workspace=status",
-    "build:all": "npm run build --workspaces --if-present"
+    "build:all": "npm run build --workspaces --if-present",
+    "check:craft": "node scripts/check-craft.mjs ui/src admin/src app/src developer/src id/src landing/src shared/src status/src"
   }
 }

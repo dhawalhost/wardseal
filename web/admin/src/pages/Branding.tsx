@@ -91,7 +91,7 @@ const Branding: React.FC = () => {
                                     <LayoutTemplate className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Design settings</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Design settings</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Configure brand colors and logo.</p>
                                 </div>
                             </div>
@@ -99,7 +99,7 @@ const Branding: React.FC = () => {
                         <GlassCardContent className="p-card">
                             <form id="branding-form" onSubmit={handleSave} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="logo" className="text-xs font-semibold tracking-wide text-muted-foreground">
+                                    <Label htmlFor="logo" className="text-xs font-semibold text-muted-foreground">
                                         Logo URL
                                     </Label>
                                     <Input
@@ -108,14 +108,14 @@ const Branding: React.FC = () => {
                                         value={config.logo_url}
                                         onChange={e => setConfig({ ...config, logo_url: e.target.value })}
                                         placeholder="https://your-domain.com/logo.svg"
-                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
+                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium text-sm px-4"
                                     />
                                     <p className="text-xs font-medium text-muted-foreground">Recommended: SVG or PNG with a transparent background.</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-card">
                                     <div className="space-y-2">
-                                        <Label htmlFor="primary" className="text-xs font-semibold tracking-wide text-muted-foreground">Primary color</Label>
+                                        <Label htmlFor="primary" className="text-xs font-semibold text-muted-foreground">Primary color</Label>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 id="primary"
@@ -127,13 +127,13 @@ const Branding: React.FC = () => {
                                             <Input
                                                 value={config.primary_color}
                                                 onChange={e => setConfig({ ...config, primary_color: e.target.value })}
-                                                className="uppercase font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
+                                                className=" font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
                                                 maxLength={7}
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="bg" className="text-xs font-semibold tracking-wide text-muted-foreground">Background</Label>
+                                        <Label htmlFor="bg" className="text-xs font-semibold text-muted-foreground">Background</Label>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 id="bg"
@@ -145,7 +145,7 @@ const Branding: React.FC = () => {
                                             <Input
                                                 value={config.background_color}
                                                 onChange={e => setConfig({ ...config, background_color: e.target.value })}
-                                                className="uppercase font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
+                                                className=" font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
                                                 maxLength={7}
                                             />
                                         </div>
@@ -153,26 +153,26 @@ const Branding: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="css" className="text-xs font-semibold tracking-wide text-muted-foreground">Custom CSS</Label>
+                                    <Label htmlFor="css" className="text-xs font-semibold text-muted-foreground">Custom CSS</Label>
                                     <Textarea
                                         id="css"
                                         value={config.css_override}
                                         onChange={e => setConfig({ ...config, css_override: e.target.value })}
                                         rows={8}
                                         placeholder=".login-card { border: 2px solid var(--primary); }"
-                                        className="flex min-h-[160px] w-full border border-border rounded-xl bg-card p-4 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-secondary/20 text-on-surface"
+                                        className="flex min-h-[160px] w-full border border-border rounded-xl bg-card p-4 font-mono text-xs leading-relaxed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring text-on-surface"
                                     />
                                     <p className="text-xs font-medium text-muted-foreground">Optional CSS to further customize the login experience.</p>
                                 </div>
 
                                 <div className="pt-2">
                                     {error && (
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-destructive bg-destructive/5 p-3 rounded-lg border border-destructive/20 mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-error-subtle-foreground bg-destructive/5 p-3 rounded-lg border border-destructive/20 mb-3">
                                             {error}
                                         </div>
                                     )}
                                     {success && (
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-success bg-success-subtle p-3 rounded-lg border border-success/20 mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-success-subtle-foreground bg-success-subtle p-3 rounded-lg border border-success/20 mb-3">
                                             {success}
                                         </div>
                                     )}
@@ -196,10 +196,10 @@ const Branding: React.FC = () => {
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Preview</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Preview</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">How your login page will look to users.</p>
                                 </div>
-                                <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-[10px] px-2 py-0.5">Live preview</Badge>
+                                <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Live preview</Badge>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0 bg-muted/30">
@@ -216,7 +216,7 @@ const Branding: React.FC = () => {
                                                 <Palette className="h-5 w-5 text-secondary" />
                                             </div>
                                         )}
-                                        <h2 className="text-xl font-bold text-on-surface tracking-tight">Sign in</h2>
+                                        <h2 className="text-xl font-medium text-on-surface tracking-tight">Sign in</h2>
                                         <p className="text-sm font-medium text-muted-foreground mt-2">Secure access to your account</p>
                                     </div>
 

@@ -43,7 +43,7 @@ const Developer: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-card">
                 <div className="lg:col-span-1 space-y-card">
                     <div className="space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground tracking-wide ml-1">Resources</p>
+                        <p className="text-xs font-semibold text-muted-foreground ml-1">Resources</p>
                         <div className="space-y-1">
                             {[
                                 { label: 'Go SDK Client', icon: <Cpu className="w-4 h-4" /> },
@@ -61,8 +61,8 @@ const Developer: React.FC = () => {
                         </div>
                         <GlassCardContent className="p-card space-y-3 relative z-10">
                             <div className="space-y-0.5">
-                                <p className="text-xs font-semibold tracking-wide opacity-70">SDK</p>
-                                <h4 className="text-lg font-bold tracking-tight">WardSeal Go</h4>
+                                <p className="text-xs font-semibold opacity-70">SDK</p>
+                                <h4 className="text-lg font-medium tracking-tight">WardSeal Go</h4>
                             </div>
                             <div className="bg-secondary-foreground/10 p-2 rounded-lg font-mono text-xs border border-secondary-foreground/10">
                                 <code>go get github.com/...</code>
@@ -76,7 +76,7 @@ const Developer: React.FC = () => {
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-2.5">
                                 <Code2 className="w-4 h-4 text-secondary" />
-                                <GlassCardTitle className="text-base font-bold tracking-tight">API reference</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium tracking-tight">API reference</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0">

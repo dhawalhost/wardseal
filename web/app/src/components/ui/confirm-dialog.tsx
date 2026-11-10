@@ -64,14 +64,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     };
 
     const confirmButtonClass = {
-        danger:  "bg-destructive hover:bg-red-700 text-white shadow-lg shadow-destructive/20",
-        warning: "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20",
+        danger:  "bg-destructive hover:bg-error text-destructive-foreground shadow-card shadow-destructive/20",
+        warning: "bg-warning hover:bg-warning text-warning-foreground shadow-card",
         default: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm",
     }[variant];
 
     const iconColor = {
         danger:  "text-destructive",
-        warning: "text-amber-500",
+        warning: "text-warning",
         default: "text-primary",
     }[variant];
 
@@ -84,10 +84,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                             <AlertTriangle className={`w-7 h-7 ${iconColor}`} />
                         </div>
                         <div>
-                            <DialogTitle className="text-2xl font-bold tracking-tight text-on-surface">
+                            <DialogTitle className="text-2xl font-medium tracking-tight text-on-surface">
                                 {title}
                             </DialogTitle>
-                            <DialogDescription className="text-muted-foreground font-medium text-[11px] mt-2 italic">
+                            <DialogDescription className="text-muted-foreground font-medium text-xs mt-2 italic">
                                 This action may be irreversible.
                             </DialogDescription>
                         </div>
@@ -95,7 +95,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 </DialogHeader>
 
                 <div className="p-10 bg-card space-y-8">
-                    <p className="text-sm font-medium text-on-surface-variant/70 leading-relaxed">
+                    <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
                         {description}
                     </p>
 
@@ -105,7 +105,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                             variant="ghost"
                             onClick={onClose}
                             disabled={loading}
-                            className="h-12 px-8 rounded-xl font-bold text-[12px] tracking-tight hover:bg-surface-container/20"
+                            className="h-12 px-8 rounded-xl font-medium text-[12px] tracking-tight hover:bg-surface-container/20"
                         >
                             {cancelLabel}
                         </Button>
@@ -113,7 +113,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                             type="button"
                             onClick={handleConfirm}
                             disabled={loading}
-                            className={`flex-1 h-12 rounded-xl font-bold tracking-tight text-[12px] transition-all ${confirmButtonClass}`}
+                            className={`flex-1 h-12 rounded-xl font-medium tracking-tight text-[12px] transition-[color,background-color,border-color,opacity,transform] ${confirmButtonClass}`}
                         >
                             {loading ? (
                                 <span className="flex items-center gap-2">

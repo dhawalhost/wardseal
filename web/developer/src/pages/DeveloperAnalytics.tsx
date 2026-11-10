@@ -66,7 +66,7 @@ export function DeveloperAnalytics() {
             />
 
             {error && (
-                <div className="bg-destructive/10 text-destructive p-3 rounded-xl flex items-center gap-3 font-bold text-xs">
+                <div className="bg-destructive/10 text-error-subtle-foreground p-3 rounded-xl flex items-center gap-3 font-medium text-xs">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {error}
                 </div>
@@ -121,7 +121,7 @@ export function DeveloperAnalytics() {
                         <div className="p-1.5 bg-primary/10 rounded-lg">
                             <Zap className="w-3.5 h-3.5 text-primary" />
                         </div>
-                        <GlassCardTitle className="text-sm font-bold tracking-tight text-on-surface">API traffic</GlassCardTitle>
+                        <GlassCardTitle className="text-sm font-medium tracking-tight text-on-surface">API traffic</GlassCardTitle>
                     </div>
                 </GlassCardHeader>
                 <GlassCardContent className="p-5">

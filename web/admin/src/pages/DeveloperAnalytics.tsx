@@ -67,7 +67,7 @@ export function DeveloperAnalytics() {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg border border-destructive/20 flex items-center gap-3 font-semibold text-sm">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 flex items-center gap-3 font-semibold text-sm">
                     <AlertCircle className="h-5 w-5 shrink-0" />
                     {error}
                 </div>
@@ -80,9 +80,9 @@ export function DeveloperAnalytics() {
                             <div className="p-2 bg-secondary/10 rounded-lg">
                                 <Activity className="h-4 w-4 text-secondary" />
                             </div>
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total Calls (7d)</span>
+                            <span className="text-xs font-semibold text-muted-foreground ">Total Calls (7d)</span>
                         </div>
-                        <p className="text-3xl font-bold tracking-tight text-on-surface tabular-nums">{loading ? '—' : totalCalls.toLocaleString()}</p>
+                        <p className="text-3xl font-medium tracking-tight text-on-surface tabular-nums">{loading ? '—' : totalCalls.toLocaleString()}</p>
                     </GlassCardContent>
                 </GlassCard>
 
@@ -92,9 +92,9 @@ export function DeveloperAnalytics() {
                             <div className="p-2 bg-secondary/10 rounded-lg">
                                 <Clock className="h-4 w-4 text-secondary" />
                             </div>
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Avg Latency</span>
+                            <span className="text-xs font-semibold text-muted-foreground ">Avg Latency</span>
                         </div>
-                        <p className="text-3xl font-bold tracking-tight text-on-surface tabular-nums">
+                        <p className="text-3xl font-medium tracking-tight text-on-surface tabular-nums">
                             {loading ? '—' : <>{avgLatency}<span className="text-lg ml-1 text-muted-foreground">ms</span></>}
                         </p>
                     </GlassCardContent>
@@ -106,9 +106,9 @@ export function DeveloperAnalytics() {
                             <div className="p-2 bg-destructive/10 rounded-lg">
                                 <AlertCircle className="h-4 w-4 text-destructive" />
                             </div>
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total Errors (7d)</span>
+                            <span className="text-xs font-semibold text-muted-foreground ">Total Errors (7d)</span>
                         </div>
-                        <p className={`text-3xl font-bold tracking-tight tabular-nums ${totalErrors > 0 ? 'text-destructive' : 'text-on-surface'}`}>
+                        <p className={`text-3xl font-medium tracking-tight tabular-nums ${totalErrors > 0 ? 'text-destructive' : 'text-on-surface'}`}>
                             {loading ? '—' : totalErrors.toLocaleString()}
                         </p>
                     </GlassCardContent>
@@ -121,7 +121,7 @@ export function DeveloperAnalytics() {
                         <div className="p-2 bg-secondary/10 rounded-lg">
                             <Zap className="w-4 h-4 text-secondary" />
                         </div>
-                        <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">API Traffic</GlassCardTitle>
+                        <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">API Traffic</GlassCardTitle>
                     </div>
                 </GlassCardHeader>
                 <GlassCardContent className="p-card">
@@ -162,7 +162,7 @@ export function DeveloperAnalytics() {
                         <Terminal className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-base tracking-tight text-on-surface">Interactive API Logs</h4>
+                        <h4 className="font-medium text-base tracking-tight text-on-surface">Interactive API Logs</h4>
                         <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                             Looking for specific request payloads? Go to{' '}
                             <a href="/developer/apps" className="text-secondary hover:underline font-semibold">OAuth Apps</a>{' '}

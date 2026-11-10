@@ -31,7 +31,7 @@ const Section = React.forwardRef<HTMLElement, SectionProps>(
           >
             <div className="min-w-0 space-y-1">
               {title && (
-                <h2 className="text-base font-bold tracking-tight text-on-surface">{title}</h2>
+                <h2 className="text-base font-medium text-on-surface">{title}</h2>
               )}
               {description && (
                 <p className="text-sm font-medium text-muted-foreground max-w-2xl">

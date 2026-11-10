@@ -118,7 +118,7 @@ const IPPolicies: React.FC = () => {
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[520px] rounded-xl border border-border p-0 overflow-hidden shadow-sm">
                             <DialogHeader className="bg-card p-card border-b border-border">
-                                <DialogTitle className="text-lg font-bold tracking-tight text-on-surface">Create IP rule</DialogTitle>
+                                <DialogTitle className="text-lg font-medium tracking-tight text-on-surface">Create IP rule</DialogTitle>
                                 <DialogDescription className="text-muted-foreground text-sm mt-1">
                                     Define a new IP or geo-location access rule.
                                 </DialogDescription>
@@ -126,9 +126,9 @@ const IPPolicies: React.FC = () => {
                             <form onSubmit={handleCreatePolicy} className="p-card space-y-4 bg-card">
                                 <div className="grid grid-cols-2 gap-card">
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Rule type</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground">Rule type</Label>
                                         <Select value={newRuleKind} onValueChange={(v: any) => setNewRuleKind(v)}>
-                                            <SelectTrigger className="h-10 border border-border rounded-lg bg-card focus:ring-secondary/20 font-medium text-sm">
+                                            <SelectTrigger className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-lg border border-border shadow-sm text-sm">
@@ -138,9 +138,9 @@ const IPPolicies: React.FC = () => {
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Action</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground">Action</Label>
                                         <Select value={newAction} onValueChange={(v: any) => setNewAction(v)}>
-                                            <SelectTrigger className={`h-10 border border-border rounded-lg bg-card focus:ring-secondary/20 font-medium text-sm ${newAction === 'allow' ? 'text-success' : 'text-destructive'}`}>
+                                            <SelectTrigger className={`h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium text-sm ${newAction === 'allow' ? 'text-success' : 'text-destructive'}`}>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-lg border border-border shadow-sm text-sm">
@@ -152,22 +152,22 @@ const IPPolicies: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">{newRuleKind === 'cidr' ? 'IP CIDR range' : 'Country ISO code'}</Label>
+                                    <Label className="text-xs font-semibold text-muted-foreground">{newRuleKind === 'cidr' ? 'IP CIDR range' : 'Country ISO code'}</Label>
                                     <Input
                                         value={newValue}
                                         onChange={(e) => setNewValue(e.target.value)}
-                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-mono text-sm px-4"
+                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-mono text-sm px-4"
                                         placeholder={newRuleKind === 'cidr' ? 'e.g. 192.168.1.0/24' : 'ISO 3166-1 alpha-2 (e.g. CN)'}
                                         required
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Description</Label>
+                                    <Label className="text-xs font-semibold text-muted-foreground">Description</Label>
                                     <Input
                                         value={newDesc}
                                         onChange={(e) => setNewDesc(e.target.value)}
-                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium text-sm px-4"
+                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium text-sm px-4"
                                         placeholder="Purpose of this access rule..."
                                     />
                                 </div>
@@ -184,7 +184,7 @@ const IPPolicies: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold">
                     {error}
                 </div>
             )}
@@ -197,24 +197,24 @@ const IPPolicies: React.FC = () => {
                                 <div className="p-2 bg-secondary/10 rounded-lg">
                                     <Activity className="w-4 h-4 text-secondary" />
                                 </div>
-                                <GlassCardTitle className="text-base font-bold tracking-tight">Status</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium tracking-tight">Status</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-card space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold tracking-wide text-muted-foreground">Enforcement</span>
-                                <Badge className="bg-success-subtle text-success rounded-md font-semibold text-xs px-2 py-0.5 border-none">Active</Badge>
+                                <span className="text-xs font-semibold text-muted-foreground">Enforcement</span>
+                                <Badge className="bg-success-subtle text-success-subtle-foreground rounded-md font-semibold text-xs px-2 py-0.5 border-none">Active</Badge>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold tracking-wide text-muted-foreground">Total rules</span>
-                                <span className="text-2xl font-bold tracking-tight text-on-surface tabular-nums">{policies.length}</span>
+                                <span className="text-xs font-semibold text-muted-foreground">Total rules</span>
+                                <span className="text-2xl font-medium tracking-tight text-on-surface tabular-nums">{policies.length}</span>
                             </div>
                         </GlassCardContent>
                     </GlassCard>
 
                     <div className="bg-secondary text-secondary-foreground p-card rounded-xl flex items-start gap-3 shadow-sm border border-secondary/20">
                         <ShieldAlert className="w-5 h-5 text-secondary-foreground flex-shrink-0 mt-0.5" />
-                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground/80">
+                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground">
                             Rules are evaluated by specificity. If no matching rule applies, traffic is allowed by default.
                         </p>
                     </div>
@@ -228,7 +228,7 @@ const IPPolicies: React.FC = () => {
                                     <Network className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Active IP rules</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Active IP rules</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">
                                         {policies.length} rules configured
                                     </p>
@@ -240,10 +240,10 @@ const IPPolicies: React.FC = () => {
                                 <GlassTable>
                                     <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">IP rule / location</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Type</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Description</GlassTableHead>
-                                            <GlassTableHead className="text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">IP rule / location</GlassTableHead>
+                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Type</GlassTableHead>
+                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Description</GlassTableHead>
+                                            <GlassTableHead className="text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>

@@ -64,7 +64,7 @@ export const Overlay: React.FC<OverlayProps> = ({
         >
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-on-surface/20 backdrop-blur-md"
+                className="absolute inset-0 bg-on-surface/20"
                 onClick={closeOnBackdrop ? onClose : undefined}
             />
 
@@ -81,7 +81,7 @@ export const Overlay: React.FC<OverlayProps> = ({
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
-                        className="absolute top-5 right-5 z-10 h-9 w-9 rounded-xl hover:bg-surface-container transition-all"
+                        className="absolute top-5 right-5 z-10 h-9 w-9 rounded-xl hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
                         aria-label="Close"
                     >
                         <X className="h-4 w-4" />

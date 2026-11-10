@@ -15,13 +15,13 @@ export const Horizontal: Story = {
   render: () => (
     <div className="max-w-xs">
       <div className="space-y-1">
-        <h4 className="text-sm font-bold leading-none text-on-surface">WardSeal Gateway Config</h4>
-        <p className="text-[10px] text-on-surface-variant/40 uppercase tracking-widest font-semibold">
+        <h4 className="text-sm font-medium leading-none text-on-surface">WardSeal Gateway Config</h4>
+        <p className="text-xs text-on-surface-subtle font-semibold">
           Active network rules list.
         </p>
       </div>
       <Separator className="my-4" />
-      <div className="flex h-5 items-center space-x-4 text-xs font-semibold text-on-surface-variant/70">
+      <div className="flex h-5 items-center space-x-4 text-xs font-semibold text-on-surface-variant">
         <div>node-01</div>
         <Separator orientation="vertical" />
         <div>10.0.1.45</div>

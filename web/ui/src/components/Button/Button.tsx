@@ -5,7 +5,7 @@ import { cn } from "../../lib/utils";
 import { Loader2 } from "lucide-react";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold tracking-tight transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-[color,background-color,border-color,transform] duration-fast ease-standard active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -14,24 +14,24 @@ const buttonVariants = cva(
          * Use text-*-foreground (preset keys) — text-on-primary is not always generated.
          */
         primary:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+          "bg-primary text-primary-foreground shadow-[inset_0_1px_0_hsl(0_0%_100%/0.1)] hover:bg-primary/90",
         /** Brand CTA blue (MASTER accent) — default for most product actions */
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/90",
+          "bg-secondary text-secondary-foreground shadow-[inset_0_1px_0_hsl(0_0%_100%/0.12)] hover:bg-secondary/90",
         outline:
-          "border border-border bg-background text-foreground hover:bg-muted",
+          "border border-on-surface/15 bg-card text-foreground hover:border-on-surface/25 hover:bg-surface-container",
         ghost:
           "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         glass:
-          "border border-border bg-card text-card-foreground shadow-sm hover:bg-muted",
+          "border border-on-surface/15 bg-card text-card-foreground hover:bg-surface-container",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
       },
       size: {
-        sm: "h-8 px-3 text-xs rounded-md",
-        md: "h-10 px-5 text-sm",
-        lg: "h-12 px-7 text-base rounded-xl",
-        icon: "h-10 w-10",
+        sm: "h-8 px-3 text-sm",
+        md: "h-9 px-4 text-sm",
+        lg: "h-11 px-5 text-sm",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {

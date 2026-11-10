@@ -110,19 +110,19 @@ const AdminShell: React.FC = () => {
     return (
         <div className="flex min-h-screen font-sans bg-background selection:bg-primary/10 selection:text-primary">
             {/* Sidebar: Modernist */}
-            <aside className="w-72 border-r bg-surface-container-lowest flex flex-col fixed inset-y-0 z-50 transition-all duration-300">
+            <aside className="w-72 border-r bg-surface-container-lowest flex flex-col fixed inset-y-0 z-50 transition-[color,background-color,border-color,opacity,transform] duration-300">
                 <div className="h-20 flex items-center px-8 border-b shrink-0 bg-card">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">
                             {/* <ShieldCheck className="w-5 h-5 text-white" /> */}
                             <img src="/wardseal.svg" alt="WardSeal" className="w-10 h-10 text-white" />
                         </div>
-                        <span className="font-bold text-lg tracking-tight text-on-surface">WardSeal</span>
+                        <span className="font-medium text-lg tracking-tight text-on-surface">WardSeal</span>
                     </div>
                 </div>
 
                 <nav className="flex-1 overflow-y-auto py-8 px-4 space-y-1 custom-scrollbar">
-                    <div className="text-[12px] font-bold text-muted-foreground mb-4 px-4 tracking-tight">Main Menu</div>
+                    <div className="text-[12px] font-medium text-muted-foreground mb-4 px-4 tracking-tight">Main Menu</div>
                     {menuItems.slice(0, 8).map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
                         const Icon = item.icon;
@@ -131,7 +131,7 @@ const AdminShell: React.FC = () => {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group relative",
+                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-[color,background-color,border-color,opacity,transform] duration-200 group relative",
                                     isActive
                                         ? "bg-primary/5 text-primary"
                                         : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
@@ -145,7 +145,7 @@ const AdminShell: React.FC = () => {
                     })}
 
                     <div className="h-8" />
-                    <div className="text-[12px] font-bold text-muted-foreground mb-4 px-4 tracking-tight">System Settings</div>
+                    <div className="text-[12px] font-medium text-muted-foreground mb-4 px-4 tracking-tight">System Settings</div>
                     {menuItems.slice(8).map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
                         const Icon = item.icon;
@@ -154,7 +154,7 @@ const AdminShell: React.FC = () => {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group relative",
+                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-[color,background-color,border-color,opacity,transform] duration-200 group relative",
                                     isActive
                                         ? "bg-primary/5 text-primary"
                                         : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
@@ -170,7 +170,7 @@ const AdminShell: React.FC = () => {
 
                 <div className="p-6 border-t bg-surface-container-low/30">
                     <div className="flex items-center gap-3 group cursor-pointer" onClick={handleLogout}>
-                        <Avatar name={userId} size={40} className="h-10 w-10 border shadow-sm transition-transform group-hover:scale-105" />
+                        <Avatar name={userId} size={40} className="h-10 w-10 border shadow-sm transition-transform " />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
                                 {userName}
@@ -186,7 +186,7 @@ const AdminShell: React.FC = () => {
 
             {/* Main Content: Modernist */}
             <main className="flex-1 ml-72 min-h-screen flex flex-col relative bg-surface">
-                <header className="h-20 border-b bg-card/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-10">
+                <header className="h-20 border-b bg-card sticky top-0 z-40 flex items-center justify-between px-10">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm font-medium">
                             <span className="text-muted-foreground">System</span>
@@ -201,7 +201,7 @@ const AdminShell: React.FC = () => {
                             <Input
                                 type="search"
                                 placeholder="Search everywhere..."
-                                className="w-full bg-surface-container border-none rounded-xl pl-10 h-10 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium"
+                                className="w-full bg-surface-container border-none rounded-xl pl-10 h-10 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] font-medium"
                             />
                         </div>
 
@@ -211,7 +211,7 @@ const AdminShell: React.FC = () => {
                                 onClick={() => {
                                     window.location.assign(`${resolveIdUrl()}/portal`);
                                 }}
-                                className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-all"
+                                className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
                             >
                                 <Activity className="mr-2 h-4 w-4 text-primary" /> User Portal
                             </Button>
@@ -233,13 +233,13 @@ const AdminShell: React.FC = () => {
                 <footer className="border-t py-8 px-10 bg-card">
                     <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="py-1.5 px-3 bg-surface-container rounded-full text-on-surface-variant font-bold text-[11px] tracking-tight flex items-center gap-2">
+                            <div className="py-1.5 px-3 bg-surface-container rounded-full text-on-surface-variant font-medium text-xs tracking-tight flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                                 System Status: Online
                             </div>
-                            <span className="text-[11px] font-bold text-muted-foreground italic">v4.2.0-stable</span>
+                            <span className="text-xs font-medium text-muted-foreground italic">v4.2.0-stable</span>
                         </div>
-                        <div className="flex items-center gap-8 text-[11px] font-semibold text-on-surface-variant">
+                        <div className="flex items-center gap-8 text-xs font-semibold text-on-surface-variant">
                             <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Privacy</a>
                             <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Compliance</a>
                             <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Security</a>

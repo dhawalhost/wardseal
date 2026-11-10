@@ -54,11 +54,11 @@ const Devices: React.FC = () => {
     const getStatusBadge = (status: string) => {
         switch (status) {
              case 'trusted':
-                return <Badge className="bg-success-subtle text-success border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><ShieldCheck className="w-3.5 h-3.5" /> Verified</Badge>;
+                return <Badge className="bg-success-subtle text-success-subtle-foreground border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><ShieldCheck className="w-3.5 h-3.5" /> Verified</Badge>;
             case 'untrusted':
-                return <Badge className="bg-destructive/10 text-destructive border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><ShieldAlert className="w-3.5 h-3.5" /> Blocked</Badge>;
+                return <Badge className="bg-destructive/10 text-error-subtle-foreground border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><ShieldAlert className="w-3.5 h-3.5" /> Blocked</Badge>;
             default:
-                return <Badge className="bg-amber-500/10 text-amber-600 border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><Activity className="w-3.5 h-3.5" /> Pending</Badge>;
+                return <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><Activity className="w-3.5 h-3.5" /> Pending</Badge>;
         }
     };
 
@@ -75,11 +75,11 @@ const Devices: React.FC = () => {
                     <div className="flex gap-card">
                         {[
                             { label: 'Verified Devices', value: devices.filter(d => d.trust_status === 'trusted').length, color: 'text-success' },
-                            { label: 'Pending Review', value: devices.filter(d => d.trust_status === 'pending').length, color: 'text-amber-600' },
+                            { label: 'Pending Review', value: devices.filter(d => d.trust_status === 'pending').length, color: 'text-warning' },
                         ].map((stat, i) => (
                              <GlassCard key={i} className="min-w-[140px] border border-border shadow-sm bg-card rounded-lg p-card">
                                 <div className="flex flex-col items-center gap-2">
-                                    <span className={`text-2xl font-bold tracking-tight tabular-nums ${stat.color}`}>{stat.value}</span>
+                                    <span className={`text-2xl font-medium tracking-tight tabular-nums ${stat.color}`}>{stat.value}</span>
                                     <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
                                 </div>
                             </GlassCard>
@@ -89,7 +89,7 @@ const Devices: React.FC = () => {
             />
 
              {error && (
-                <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-destructive">
+                <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground">
                     <AlertDescription className="font-semibold text-sm flex items-center gap-3">
                         <ShieldAlert className="w-4 h-4" />
                         Device error: {error}
@@ -104,7 +104,7 @@ const Devices: React.FC = () => {
                             <Lock className="w-4 h-4" />
                         </div>
                          <div>
-                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Device Directory</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Device Directory</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">List of devices allowed to access company resources.</p>
                         </div>
                     </div>
@@ -114,12 +114,12 @@ const Devices: React.FC = () => {
                         <GlassTable>
                             <GlassTableHeader>
                                  <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Serial Number</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">User</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Platform</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Security Status</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Last Seen</GlassTableHead>
-                                    <GlassTableHead className="text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
+                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Serial Number</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Platform</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Security Status</GlassTableHead>
+                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Last Seen</GlassTableHead>
+                                    <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
@@ -154,8 +154,8 @@ const Devices: React.FC = () => {
                         <Cpu className="w-8 h-8 text-secondary-foreground" />
                     </div>
                       <div className="space-y-2 flex-1 text-center md:text-left">
-                         <h3 className="text-xl font-bold tracking-tight">Device Security Policy</h3>
-                         <p className="text-sm font-medium text-secondary-foreground/80 max-w-2xl leading-relaxed">
+                         <h3 className="text-xl font-medium tracking-tight">Device Security Policy</h3>
+                         <p className="text-sm font-medium text-secondary-foreground max-w-2xl leading-relaxed">
                              All devices must be verified to access company data. Unrecognized devices will be blocked automatically according to global security policies.
                          </p>
                      </div>

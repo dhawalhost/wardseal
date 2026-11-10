@@ -67,7 +67,7 @@ const AccessRequests: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold flex items-center gap-3">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold flex items-center gap-3">
                     <ShieldAlert className="h-4 w-4" />
                     {error}
                 </div>
@@ -77,9 +77,9 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                          <div className="flex flex-col gap-2">
-                             <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Pending</span>
+                             <span className="text-xs font-semibold text-muted-foreground ">Pending</span>
                             <div className="mt-3 flex items-end gap-3 leading-none">
-                                <span className="text-3xl font-bold tracking-tight text-on-surface tabular-nums">{requests.filter(r => r.status === 'pending').length}</span>
+                                <span className="text-3xl font-medium tracking-tight text-on-surface tabular-nums">{requests.filter(r => r.status === 'pending').length}</span>
                                 <GitPullRequest className="h-5 w-5 text-muted-foreground mb-1" />
                             </div>
                         </div>
@@ -89,9 +89,9 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                          <div className="flex flex-col gap-2">
-                             <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Approved</span>
+                             <span className="text-xs font-semibold text-muted-foreground ">Approved</span>
                             <div className="mt-3 flex items-end gap-3 leading-none">
-                                <span className="text-3xl font-bold tracking-tight text-on-surface tabular-nums">{requests.filter(r => r.status === 'approved').length}</span>
+                                <span className="text-3xl font-medium tracking-tight text-on-surface tabular-nums">{requests.filter(r => r.status === 'approved').length}</span>
                                 <ShieldCheck className="h-5 w-5 text-success mb-1" />
                             </div>
                         </div>
@@ -100,11 +100,11 @@ const AccessRequests: React.FC = () => {
 
                 <GlassCard className="md:col-span-2 border border-secondary/20 shadow-sm bg-secondary overflow-hidden rounded-lg text-secondary-foreground">
                     <GlassCardContent className="p-card h-full flex flex-col justify-center relative overflow-hidden">
-                        <div className="absolute -right-6 -bottom-6 text-secondary-foreground/10 rotate-12">
+                        <div className="absolute -right-6 -bottom-6 text-secondary-foreground rotate-12">
                             <Activity className="w-32 h-32" />
                         </div>
-                          <h3 className="text-xl font-bold tracking-tight relative z-10">Temporary Access</h3>
-                        <p className="text-sm font-medium text-secondary-foreground/80 mt-2 relative z-10">
+                          <h3 className="text-xl font-medium tracking-tight relative z-10">Temporary Access</h3>
+                        <p className="text-sm font-medium text-secondary-foreground mt-2 relative z-10">
                             All access decisions are logged for compliance auditing.
                         </p>
                     </GlassCardContent>
@@ -113,7 +113,7 @@ const AccessRequests: React.FC = () => {
 
             <div className="space-y-page">
                  <div className="flex items-center gap-4">
-                    <h2 className="text-xs font-semibold tracking-wide text-muted-foreground flex-shrink-0 uppercase">Requests Queue</h2>
+                    <h2 className="text-xs font-semibold text-muted-foreground flex-shrink-0 ">Requests Queue</h2>
                     <div className="h-px flex-1 bg-border" />
                 </div>
 
@@ -124,7 +124,7 @@ const AccessRequests: React.FC = () => {
                                 <Activity className="w-4 h-4 text-secondary" />
                             </div>
                              <div>
-                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Request Details</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Request Details</GlassCardTitle>
                                 <p className="text-muted-foreground text-sm mt-0.5">List of active requests and their status.</p>
                             </div>
                         </div>
@@ -142,11 +142,11 @@ const AccessRequests: React.FC = () => {
                                 <GlassTable>
                                      <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">User</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Resource</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Duration</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
-                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Duration</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
+                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>

@@ -141,12 +141,12 @@ const Groups: React.FC = () => {
     return (
         <div className="flex h-full gap-0 animate-in fade-in duration-300">
             <div className={cn(
-                "flex flex-col transition-all duration-300",
+                "flex flex-col transition-[color,background-color,border-color,opacity,transform] duration-300",
                 selectedGroup ? "w-[380px] min-w-[380px]" : "flex-1"
             )}>
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
                     <div>
-                        <h1 className="text-sm font-bold tracking-tight text-on-surface">Groups</h1>
+                        <h1 className="text-sm font-medium tracking-tight text-on-surface">Groups</h1>
                         <p className="text-xs text-muted-foreground font-medium mt-0.5">
                             {groups.length} identity groups
                         </p>
@@ -156,7 +156,7 @@ const Groups: React.FC = () => {
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors" />
                             <Input
                                 placeholder="Filter groups..."
-                                className="h-8 w-40 rounded-lg text-xs pl-8 border border-border bg-card focus-visible:ring-secondary/20 font-medium"
+                                className="h-8 w-40 rounded-lg text-xs pl-8 border border-input bg-card focus-visible:ring-ring font-medium"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -170,34 +170,34 @@ const Groups: React.FC = () => {
                             <DialogContent className="sm:max-w-[420px] p-0 border border-border rounded-xl shadow-sm bg-card overflow-hidden">
                                 <div className="bg-secondary p-card text-secondary-foreground">
                                     <DialogHeader>
-                                        <DialogTitle className="text-lg font-bold flex items-center gap-3 text-secondary-foreground">
+                                        <DialogTitle className="text-lg font-medium flex items-center gap-3 text-secondary-foreground">
                                             <div className="w-8 h-8 bg-secondary-foreground/10 rounded-lg flex items-center justify-center">
                                                 <Plus className="w-4 h-4" />
                                             </div>
                                             Create group
                                         </DialogTitle>
-                                        <DialogDescription className="text-secondary-foreground/80 text-sm mt-1">
+                                        <DialogDescription className="text-secondary-foreground text-sm mt-1">
                                             Group users together to manage shared access policies.
                                         </DialogDescription>
                                     </DialogHeader>
                                 </div>
                                 <form onSubmit={handleCreateGroup} className="p-card space-y-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Group name</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground ">Group name</Label>
                                         <Input
                                             value={newGroupName}
                                             onChange={(e) => setNewGroupName(e.target.value)}
-                                            className="h-9 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 text-sm font-medium"
+                                            className="h-9 rounded-lg border border-border bg-card focus-visible:ring-ring text-sm font-medium"
                                             placeholder="e.g. Engineering"
                                             required
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Description</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground ">Description</Label>
                                         <Input
                                             value={newGroupDesc}
                                             onChange={(e) => setNewGroupDesc(e.target.value)}
-                                            className="h-9 rounded-lg border border-border bg-card focus-visible:ring-secondary/20 text-sm font-medium"
+                                            className="h-9 rounded-lg border border-border bg-card focus-visible:ring-ring text-sm font-medium"
                                             placeholder="Purpose of this group..."
                                         />
                                     </div>
@@ -213,7 +213,7 @@ const Groups: React.FC = () => {
                 </div>
 
                 {error && (
-                    <div className="mx-4 mt-3 bg-destructive/5 text-destructive px-4 py-2 rounded-lg border border-destructive/20 text-sm font-semibold">
+                    <div className="mx-4 mt-3 bg-destructive/5 text-error-subtle-foreground px-4 py-2 rounded-lg border border-destructive/20 text-sm font-semibold">
                         {error}
                     </div>
                 )}
@@ -263,7 +263,7 @@ const Groups: React.FC = () => {
                                             </p>
                                         </div>
                                         <ChevronRight className={cn(
-                                            "w-3.5 h-3.5 shrink-0 transition-all",
+                                            "w-3.5 h-3.5 shrink-0 transition-[color,background-color,border-color,opacity,transform]",
                                             isSelected ? "text-secondary rotate-90" : "text-muted-foreground"
                                         )} />
                                     </div>
@@ -283,8 +283,8 @@ const Groups: React.FC = () => {
                                     <Users className="w-5 h-5 text-secondary-foreground" />
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-bold text-secondary-foreground">{selectedGroup.name}</h2>
-                                    <p className="text-secondary-foreground/80 text-xs font-medium mt-0.5">
+                                    <h2 className="text-base font-medium text-secondary-foreground">{selectedGroup.name}</h2>
+                                    <p className="text-secondary-foreground text-xs font-medium mt-0.5">
                                         {members.length} member{members.length !== 1 ? 's' : ''}
                                     </p>
                                 </div>
@@ -298,7 +298,7 @@ const Groups: React.FC = () => {
                                 >
                                     <Trash2 className="w-3 h-3 mr-1" /> Delete
                                 </Button>
-                                <Button
+                                <Button aria-label="Close details"
                                     variant="ghost"
                                     size="icon"
                                     className="h-7 w-7 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground"
@@ -312,7 +312,7 @@ const Groups: React.FC = () => {
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-card space-y-5">
                         <section>
-                            <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-3">
+                            <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                                 Members ({members.length})
                             </h3>
                             {loadingMembers ? (
@@ -333,11 +333,11 @@ const Groups: React.FC = () => {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-semibold text-on-surface truncate">{email || member.userName}</p>
                                                 </div>
-                                                <Button
+                                                <Button aria-label="Remove member from group"
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleRemoveUser(member.id)}
-                                                    className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-all hover:bg-destructive/10 hover:text-destructive"
+                                                    className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-[color,background-color,border-color,opacity,transform] hover:bg-destructive/10 hover:text-destructive"
                                                 >
                                                     <UserMinus className="w-3 h-3" />
                                                 </Button>
@@ -349,12 +349,12 @@ const Groups: React.FC = () => {
                         </section>
 
                         <section className="border-t border-border pt-5">
-                            <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-3">Add members</h3>
+                            <h3 className="text-xs font-semibold text-muted-foreground mb-3">Add members</h3>
                             <div className="relative group mb-3">
                                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors" />
                                 <Input
                                     placeholder="Search users to add..."
-                                    className="h-8 pl-8 rounded-lg text-xs border border-border bg-card focus-visible:ring-secondary/20 font-medium"
+                                    className="h-8 pl-8 rounded-lg text-xs border border-input bg-card focus-visible:ring-ring font-medium"
                                     value={searchUser}
                                     onChange={(e) => setSearchUser(e.target.value)}
                                 />

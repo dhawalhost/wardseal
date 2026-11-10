@@ -56,8 +56,8 @@ export const HealthyPortal: Story = {
               <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-container border border-border">
                 <KeyRound className="w-8 h-8 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-on-surface">Registered YubiKey 5C NFC</h4>
-                  <p className="text-xs text-on-surface-variant/60 font-medium">
+                  <h4 className="text-sm font-medium text-on-surface">Registered YubiKey 5C NFC</h4>
+                  <p className="text-xs text-on-surface-subtle font-medium">
                     Added on April 12, 2026. Used for cryptographic proof challenges on primary workspace.
                   </p>
                 </div>
@@ -65,15 +65,15 @@ export const HealthyPortal: Story = {
               <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-container border border-border">
                 <Laptop className="w-8 h-8 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-on-surface">MacBook Pro TouchID Passkey</h4>
-                  <p className="text-xs text-on-surface-variant/60 font-medium">
+                  <h4 className="text-sm font-medium text-on-surface">MacBook Pro TouchID Passkey</h4>
+                  <p className="text-xs text-on-surface-subtle font-medium">
                     Added on May 24, 2026. Local authentication token synced with secure hardware enclave.
                   </p>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="justify-between">
-              <span className="text-[10px] text-on-surface-variant/40 font-bold uppercase tracking-wider">
+              <span className="text-xs text-on-surface-subtle font-medium ">
                 Last modified 3 days ago
               </span>
               <Button variant="primary" size="sm">
@@ -92,15 +92,15 @@ export const HealthyPortal: Story = {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-xs font-semibold text-on-surface-variant/80">Hardware MFA factor</span>
+                <span className="text-xs font-semibold text-on-surface-variant">Hardware MFA factor</span>
                 <Badge variant="success">Verified</Badge>
               </div>
               <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-xs font-semibold text-on-surface-variant/80">Device OS Patch State</span>
+                <span className="text-xs font-semibold text-on-surface-variant">Device OS Patch State</span>
                 <Badge variant="success">Up to Date</Badge>
               </div>
               <div className="flex items-center justify-between pb-1">
-                <span className="text-xs font-semibold text-on-surface-variant/80">Active Access Token</span>
+                <span className="text-xs font-semibold text-on-surface-variant">Active Access Token</span>
                 <Badge variant="success">Valid (2h remaining)</Badge>
               </div>
             </CardContent>
@@ -140,7 +140,7 @@ export const AlertPortal: Story = {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-xs text-on-surface-variant/80 font-medium leading-relaxed">
+            <p className="text-xs text-on-surface-variant font-medium leading-relaxed">
               Your connection origin has changed or your system's hardware token has failed to sync.
               You must re-verify your secure connection using a registered identity card or MFA token.
             </p>

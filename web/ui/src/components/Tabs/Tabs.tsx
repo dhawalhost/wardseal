@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { cn } from "../../lib/utils";
+import { focusRing } from "../../lib/styles";
 
 const Tabs = TabsPrimitive.Root;
 
@@ -11,7 +12,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-9 items-center justify-center rounded-lg bg-surface-container-low p-1 text-on-surface-variant/60 border border-border/40",
+      "inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-border bg-muted p-1 text-on-surface-variant",
       className
     )}
     {...props}
@@ -26,7 +27,9 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-bold tracking-tight ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-surface-container-high data-[state=active]:text-primary data-[state=active]:shadow-sm",
+      // Active = card fill + shadow + weight, so state is not colour-only.
+      "inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors duration-fast hover:text-on-surface disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-on-surface data-[state=active]:shadow-xs [&_svg]:h-4 [&_svg]:w-4",
+      focusRing,
       className
     )}
     {...props}
@@ -41,7 +44,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
+      "mt-3 rounded-md", focusRing,
       className
     )}
     {...props}

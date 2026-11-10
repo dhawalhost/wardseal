@@ -52,7 +52,7 @@ const SetPassword: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <Card className="w-full max-w-md border-border shadow-sm rounded-xl bg-card">
         <CardHeader className="border-b border-border">
-          <CardTitle className="text-xl font-bold tracking-tight">Set password</CardTitle>
+          <CardTitle className="text-xl font-medium tracking-tight">Set password</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             Choose a secure password for your account.
           </CardDescription>
@@ -75,7 +75,7 @@ const SetPassword: React.FC = () => {
               <Input
                 id="password"
                 type="password"
-                className="h-11 rounded-lg border-border shadow-xs"
+                className="h-11 rounded-lg border-input shadow-xs"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -87,7 +87,7 @@ const SetPassword: React.FC = () => {
               <Input
                 id="confirmPassword"
                 type="password"
-                className="h-11 rounded-lg border-border shadow-xs"
+                className="h-11 rounded-lg border-input shadow-xs"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

@@ -91,26 +91,26 @@ const Setup: React.FC = () => {
 
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardHeader className="pt-card pb-4 px-card text-center">
-                        <GlassCardTitle className="text-2xl font-bold tracking-tight">Initial Setup</GlassCardTitle>
+                        <GlassCardTitle className="text-2xl font-medium tracking-tight">Initial Setup</GlassCardTitle>
                         <div className="h-1 w-10 bg-secondary mx-auto mt-4 mb-3 rounded-full" />
                         <GlassCardDescription className="text-sm text-muted-foreground">Create the first administrator account</GlassCardDescription>
                     </GlassCardHeader>
                     <form onSubmit={handleSubmit}>
                         <GlassCardContent className="px-card pb-card space-y-6">
                             {error && (
-                                <div className="p-4 bg-destructive/5 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
+                                <div className="p-4 bg-destructive/5 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
                                     <AlertCircle className="h-5 w-5 shrink-0" />
                                     <span className="text-sm font-semibold">{error}</span>
                                 </div>
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Admin email</Label>
+                                <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground ">Admin email</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     placeholder="admin@company.com"
-                                    className="h-11 rounded-lg border border-border bg-card font-medium text-sm focus-visible:ring-2 focus-visible:ring-secondary/20"
+                                    className="h-11 rounded-lg border border-input bg-card font-medium text-sm focus-visible:ring-2 focus-visible:ring-ring"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -119,14 +119,14 @@ const Setup: React.FC = () => {
                             </div>
                             
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</Label>
+                                <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground ">Password</Label>
                                 <div className="relative group">
                                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-secondary transition-colors" />
                                     <Input
                                         id="password"
                                         type="password"
                                         placeholder="At least 8 characters"
-                                        className="h-11 pl-10 rounded-lg border border-border bg-card font-medium text-sm focus-visible:ring-2 focus-visible:ring-secondary/20"
+                                        className="h-11 pl-10 rounded-lg border border-input bg-card font-medium text-sm focus-visible:ring-2 focus-visible:ring-ring"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -136,12 +136,12 @@ const Setup: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Confirm password</Label>
+                                <Label htmlFor="confirmPassword" className="text-xs font-semibold text-muted-foreground ">Confirm password</Label>
                                 <Input
                                     id="confirmPassword"
                                     type="password"
                                     placeholder="Re-enter password"
-                                    className="h-11 rounded-lg border border-border bg-card font-medium text-sm focus-visible:ring-2 focus-visible:ring-secondary/20"
+                                    className="h-11 rounded-lg border border-input bg-card font-medium text-sm focus-visible:ring-2 focus-visible:ring-ring"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required

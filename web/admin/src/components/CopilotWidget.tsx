@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, X, Send, Bot, User, Loader2, ShieldCheck } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowUp, Loader2, MessagesSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,7 +16,7 @@ const CopilotWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'bot', text: "Hello! I am your Security Copilot. Ask me anything about your identity posture or active requests." }
+    { role: 'bot', text: 'Ask about your identity posture, risky grants or pending access requests.' },
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -32,113 +32,93 @@ const CopilotWidget = () => {
 
     const userMsg = query;
     setQuery('');
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setMessages((prev) => [...prev, { role: 'user', text: userMsg }]);
     setLoading(true);
 
     try {
       const response = await askAI(userMsg);
-      setMessages(prev => [...prev, { role: 'bot', text: response.answer }]);
+      setMessages((prev) => [...prev, { role: 'bot', text: response.answer }]);
     } catch (error) {
       console.error('AI Query failed:', error);
-      setMessages(prev => [...prev, { role: 'bot', text: "I encountered an error while analyzing the data. Please ensure the AI service is active." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'bot', text: 'The copilot service did not respond. Check that it is running and try again.' },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-4">
-      {/* Chat Window */}
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3">
       {isOpen && (
-        <GlassCard className="w-96 h-[550px] shadow-2xl flex flex-col overflow-hidden border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="h-16 flex items-center justify-between px-6 border-b bg-primary/5">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-lg">
-                <Sparkles className="w-4.5 h-4.5 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-on-surface leading-none">Security Copilot</p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                  <p className="text-[10px] font-semibold text-success">Online</p>
-                </div>
-              </div>
+        <GlassCard className="flex h-[520px] w-[380px] flex-col overflow-hidden border-border shadow-[0_8px_24px_rgba(0,0,0,0.08)] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex h-14 items-center justify-between border-b border-border px-4">
+            <div>
+              <p className="text-sm font-medium leading-none text-on-surface">Security copilot</p>
+              <p className="mt-1 text-xs text-on-surface-subtle">Answers from your tenant’s directory and audit data</p>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 rounded-lg hover:bg-black/5">
-              <X className="w-4 h-4" />
+            <Button aria-label="Close copilot" variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8">
+              <X className="h-4 w-4" strokeWidth={1.5} />
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 p-6" viewportRef={scrollRef}>
-            <div className="space-y-6">
+          <ScrollArea className="flex-1 px-4 py-4" viewportRef={scrollRef}>
+            <div className="space-y-3">
               {messages.map((m, i) => (
-                <div key={i} className={cn("flex gap-3", m.role === 'user' ? "flex-row-reverse" : "flex-row")}>
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
-                    m.role === 'bot' ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground")}>
-                    {m.role === 'bot' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
-                  </div>
-                  <div className={cn("max-w-[80%] p-4 rounded-2xl text-[13px] font-medium leading-relaxed shadow-sm",
-                    m.role === 'bot'
-                      ? "bg-card border text-on-surface"
-                      : "bg-primary text-primary-foreground")}>
+                <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                  <div
+                    className={cn(
+                      'max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed',
+                      m.role === 'bot' ? 'bg-surface-container text-on-surface' : 'bg-primary text-primary-foreground'
+                    )}
+                  >
                     {m.text}
                   </div>
                 </div>
               ))}
               {loading && (
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  </div>
-                  <div className="p-4 rounded-2xl bg-card border text-[13px] font-bold italic text-muted-foreground">
-                    Analyzing identity graph...
-                  </div>
+                <div className="flex items-center gap-2 px-1 text-sm text-on-surface-subtle">
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} aria-hidden />
+                  Reading the access graph
                 </div>
               )}
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t bg-card">
-            <div className="relative group">
+          <div className="border-t border-border p-3">
+            <div className="relative">
               <Input
-                placeholder="Ask a security question..."
+                placeholder="Ask a question"
+                aria-label="Ask the security copilot"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                className="h-12 pr-12 rounded-xl border-none bg-surface-container font-medium text-sm focus-visible:ring-primary/20"
+                className="h-10 pr-11 text-sm"
               />
               <Button
+                aria-label="Send"
                 onClick={handleSend}
                 disabled={!query.trim() || loading}
                 size="icon"
-                className="absolute right-1 top-1 h-10 w-10 rounded-lg shadow-none"
+                className="absolute right-1 top-1 h-8 w-8"
               >
-                <Send className="w-4 h-4" />
+                <ArrowUp className="h-4 w-4" strokeWidth={1.5} />
               </Button>
             </div>
-            <p className="text-xs text-center text-muted-foreground mt-3">
-              AI suggestions may be incomplete — verify before acting.
-            </p>
+            <p className="mt-2 text-xs text-on-surface-subtle">Check suggestions before acting on them</p>
           </div>
         </GlassCard>
       )}
 
-      {/* Trigger Button */}
       <Button
+        variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-14 h-14 rounded-xl shadow-sm transition-colors duration-150 group",
-          isOpen ? "bg-secondary text-secondary-foreground" : "bg-secondary text-secondary-foreground"
-        )}
+        aria-expanded={isOpen}
+        className="h-10 gap-2 rounded-full bg-card px-4 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_4px_12px_rgba(0,0,0,0.06)]"
       >
-        {isOpen ? (
-          <X className="w-7 h-7 text-white" />
-        ) : (
-          <div className="relative">
-            <Sparkles className="w-7 h-7 text-white group-hover:animate-pulse" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-success rounded-full border-2 border-primary" />
-          </div>
-        )}
+        {isOpen ? <X className="h-4 w-4" strokeWidth={1.5} aria-hidden /> : <MessagesSquare className="h-4 w-4" strokeWidth={1.5} aria-hidden />}
+        {isOpen ? 'Close' : 'Ask copilot'}
       </Button>
     </div>
   );

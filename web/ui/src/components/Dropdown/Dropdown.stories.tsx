@@ -37,28 +37,28 @@ export const ProfileMenu: Story = {
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4 opacity-40" />
+              <User className="text-on-surface-subtle" aria-hidden />
               <span>Profile Settings</span>
               <DropdownMenuShortcut>⌘P</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Settings2 className="mr-2 h-4 w-4 opacity-40" />
+              <Settings2 className="text-on-surface-subtle" aria-hidden />
               <span>Manage Groups</span>
               <DropdownMenuShortcut>⌘G</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Key className="mr-2 h-4 w-4 opacity-40" />
+              <Key className="text-on-surface-subtle" aria-hidden />
               <span>Set Password</span>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Mail className="mr-2 h-4 w-4 opacity-40" />
+              <Mail className="text-on-surface-subtle" aria-hidden />
               <span>Send Reset Link</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-            <ShieldAlert className="mr-2 h-4 w-4" />
-            <span>Suspend User</span>
+          <DropdownMenuItem variant="destructive">
+            <ShieldAlert aria-hidden />
+            <span>Suspend user</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -74,10 +74,10 @@ const Passkeys: React.FC = () => {
                             <Fingerprint className="w-7 h-7 text-primary-foreground" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-2xl font-bold tracking-tight text-primary-foreground">
+                            <GlassCardTitle className="text-2xl font-medium tracking-tight text-primary-foreground">
                                 Register a passkey
                             </GlassCardTitle>
-                            <GlassCardDescription className="text-primary-foreground/70 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                            <GlassCardDescription className="text-primary-foreground text-sm mt-2 max-w-sm mx-auto leading-relaxed">
                                 Use Touch ID, Face ID, or a hardware security key to sign in faster and more securely.
                             </GlassCardDescription>
                         </div>
@@ -85,13 +85,13 @@ const Passkeys: React.FC = () => {
                 </GlassCardHeader>
                 <GlassCardContent className="p-8 space-y-6">
                     {message && (
-                        <div className="bg-success-subtle border border-success/20 text-success p-4 rounded-lg flex items-center gap-3 text-sm font-medium">
+                        <div className="bg-success-subtle border border-success/20 text-success-subtle-foreground p-4 rounded-lg flex items-center gap-3 text-sm font-medium">
                             <Check className="h-5 w-5 shrink-0" />
                             {message}
                         </div>
                     )}
                     {error && (
-                        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg flex items-center gap-3 text-sm font-medium">
+                        <div className="bg-destructive/10 border border-destructive/20 text-error-subtle-foreground p-4 rounded-lg flex items-center gap-3 text-sm font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             {error}
                         </div>

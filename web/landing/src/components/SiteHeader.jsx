@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import siteConfig from '../siteConfig'
 
 const { consoleBaseUrl, idBaseUrl } = siteConfig
@@ -20,15 +20,10 @@ export default function SiteHeader() {
         <div className="header-left">
           <Link className="logo" to="/" onClick={closeMenu}>
             <div className="logo-container">
-              <img src="/wardseal.svg" alt="WardSeal" className="logo-img" />
+              <img src="/wardseal.svg" alt="" className="logo-img" />
             </div>
             <span className="logo-text">WardSeal</span>
           </Link>
-
-          <div className="system-status-pill hidden-sm">
-            <span className="status-dot-pulse" />
-            <span>Systems Normal</span>
-          </div>
         </div>
 
         <button
@@ -38,7 +33,7 @@ export default function SiteHeader() {
           aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isMenuOpen}
         >
-          {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          {isMenuOpen ? <X size={18} strokeWidth={1.5} /> : <Menu size={18} strokeWidth={1.5} />}
         </button>
 
         <nav className={`nav-links ${isMenuOpen ? 'active' : ''}`} aria-label="Primary">
@@ -55,8 +50,7 @@ export default function SiteHeader() {
           <div className={`header-actions${isMenuOpen ? ' header-actions-mobile' : ''}`}>
             {localStorage.getItem('token') ? (
               <a className="btn btn-accent btn-sm" href={`${consoleBaseUrl}/dashboard`}>
-                Open Console
-                <ArrowRight size={14} />
+                Open console
               </a>
             ) : (
               <>
@@ -64,8 +58,7 @@ export default function SiteHeader() {
                   Sign in
                 </a>
                 <a className="btn btn-accent btn-sm" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
-                  Request Access
-                  <ArrowRight size={14} />
+                  Request access
                 </a>
               </>
             )}

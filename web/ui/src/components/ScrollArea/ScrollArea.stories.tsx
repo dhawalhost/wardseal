@@ -14,10 +14,10 @@ type Story = StoryObj<typeof ScrollArea>;
 export const Default: Story = {
   render: () => (
     <ScrollArea className="h-48 w-64 rounded-md border border-border p-4">
-      <div className="text-xs font-bold uppercase tracking-wider text-primary mb-4">
+      <div className="text-xs font-medium text-primary mb-4">
         Live Security Stream logs
       </div>
-      <div className="space-y-3 font-mono text-[10px] text-on-surface-variant/70">
+      <div className="space-y-3 font-mono text-xs text-on-surface-variant">
         {Array.from({ length: 20 }).map((_, i) => (
           <div key={i} className="border-b border-border pb-2">
             [10:45:{(i + 12).toString().padStart(2, "0")}] {"node-01 -> challenge: "}

@@ -33,48 +33,48 @@ export const DeviceRow: React.FC<DeviceRowProps> = ({
     handleUpdateStatus,
 }) => {
     return (
-        <GlassTableRow className="hover:bg-surface-container/10 transition-all border-b border-on-surface/5 last:border-0 group">
+        <GlassTableRow className="hover:bg-surface-container/10 transition-[color,background-color,border-color,opacity,transform] border-b border-on-surface/5 last:border-0 group">
             <TableCell className="py-8 pl-10">
                 <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-2xl bg-surface-container flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                     <div className="w-10 h-10 rounded-2xl bg-surface-container flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-[color,background-color,border-color,opacity,transform]">
                         <Binary className="h-5 w-5 opacity-40 group-hover:opacity-100" />
                     </div>
-                    <code className="text-[11px] font-bold text-primary tracking-tight font-mono group-hover:underline cursor-pointer">
+                    <code className="text-xs font-medium text-primary tracking-tight font-mono group-hover:underline cursor-pointer">
                         {device.serial}
                     </code>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                 <div className="flex items-center gap-4">
-                     <div className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                     <div className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-[color,background-color,border-color,opacity,transform]">
                         <User className="w-4 h-4 opacity-40 group-hover:opacity-100" />
                     </div>
-                    <span className="text-[11px] font-bold text-muted-foreground tracking-tight">{device.user_id.substring(0, 16)}...</span>
+                    <span className="text-xs font-medium text-muted-foreground tracking-tight">{device.user_id.substring(0, 16)}...</span>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                  <div className="flex flex-col">
-                    <span className="text-sm font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">{device.platform}</span>
-                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight mt-1 italic">{device.os_version}</span>
+                    <span className="text-sm font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors">{device.platform}</span>
+                    <span className="text-xs font-medium text-muted-foreground tracking-tight mt-1 italic">{device.os_version}</span>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                 {getStatusBadge(device.trust_status)}
             </TableCell>
-             <TableCell className="py-8 text-[11px] font-medium text-muted-foreground italic tracking-tight">
+             <TableCell className="py-8 text-xs font-medium text-muted-foreground italic tracking-tight">
                 {new Date(device.last_scan_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </TableCell>
             <TableCell className="py-8 text-right pr-10">
                 <div className="flex justify-end gap-3">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-surface-container transition-all">
+                            <Button aria-label="Device actions" variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]">
                                 <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[200px] rounded-xl border-none shadow-2xl shadow-on-surface/10 p-2 bg-card">
+                        <DropdownMenuContent align="end" className="w-[200px] rounded-xl border-none shadow-overlay shadow-on-surface/10 p-2 bg-card">
                              <DropdownMenuItem 
-                                 className="font-bold text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-success-subtle focus:text-success transition-colors"
+                                 className="font-medium text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-success-subtle focus:text-success transition-colors"
                                  onClick={() => handleUpdateStatus(device.id, 'trusted')}
                                  disabled={device.trust_status === 'trusted'}
                              >
@@ -82,14 +82,14 @@ export const DeviceRow: React.FC<DeviceRowProps> = ({
                                  Verify Device
                              </DropdownMenuItem>
                              <DropdownMenuItem 
-                                 className="font-bold text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-destructive/10 focus:text-destructive transition-colors"
+                                 className="font-medium text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-destructive/10 focus:text-destructive transition-colors"
                                  onClick={() => handleUpdateStatus(device.id, 'untrusted')}
                                  disabled={device.trust_status === 'untrusted'}
                              >
                                  <ShieldAlert className="w-4 h-4" />
                                  Block Device
                              </DropdownMenuItem>
-                             <DropdownMenuItem className="font-bold text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-primary/5 focus:text-primary transition-colors">
+                             <DropdownMenuItem className="font-medium text-xs gap-3 py-3.5 px-4 cursor-pointer rounded-2xl focus:bg-primary/5 focus:text-primary transition-colors">
                                  <Terminal className="w-4 h-4 opacity-50" />
                                  Terminal
                              </DropdownMenuItem>

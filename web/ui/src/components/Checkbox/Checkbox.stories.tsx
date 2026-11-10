@@ -29,7 +29,7 @@ export const SecuredFactor: Story = {
         <Label htmlFor="secured" className="text-on-surface font-semibold text-xs">
           Hardware Security Posture Check
         </Label>
-        <p className="text-[10px] text-on-surface-variant/40 leading-normal font-medium">
+        <p className="text-xs text-on-surface-subtle leading-normal font-medium">
           Require hardware MFA tokens and TPM validation key challenges for this account.
         </p>
       </div>

@@ -68,7 +68,7 @@ const Passkeys: React.FC = () => {
 
             <GlassCard className="border border-border shadow-sm overflow-hidden rounded-lg bg-card">
                 <GlassCardHeader className="bg-secondary py-card px-card text-secondary-foreground relative overflow-hidden">
-                    <div className="absolute top-0 right-0 text-secondary-foreground/10 p-6">
+                    <div className="absolute top-0 right-0 text-secondary-foreground p-6">
                         <Fingerprint className="w-32 h-32 -mr-8 -mt-8" />
                     </div>
                     <div className="relative z-10 flex flex-col items-center text-center gap-4">
@@ -76,8 +76,8 @@ const Passkeys: React.FC = () => {
                             <Fingerprint className="w-8 h-8 text-secondary-foreground" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-xl font-bold tracking-tight text-secondary-foreground">Register a Passkey</GlassCardTitle>
-                            <GlassCardDescription className="text-secondary-foreground/80 font-medium text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                            <GlassCardTitle className="text-xl font-medium tracking-tight text-secondary-foreground">Register a Passkey</GlassCardTitle>
+                            <GlassCardDescription className="text-secondary-foreground font-medium text-sm mt-2 max-w-sm mx-auto leading-relaxed">
                                 Use TouchID, FaceID, or a hardware security key (YubiKey) to sign in faster and more securely.
                             </GlassCardDescription>
                         </div>
@@ -85,13 +85,13 @@ const Passkeys: React.FC = () => {
                 </GlassCardHeader>
                 <GlassCardContent className="p-card space-y-6">
                     {message && (
-                        <div className="bg-success-subtle border border-success/20 text-success p-4 rounded-lg flex items-center gap-3 font-semibold text-sm">
+                        <div className="bg-success-subtle border border-success/20 text-success-subtle-foreground p-4 rounded-lg flex items-center gap-3 font-semibold text-sm">
                             <Check className="h-5 w-5 shrink-0" />
                             {message}
                         </div>
                     )}
                     {error && (
-                        <div className="bg-destructive/5 border border-destructive/20 text-destructive p-4 rounded-lg flex items-center gap-3 font-semibold text-sm">
+                        <div className="bg-destructive/5 border border-destructive/20 text-error-subtle-foreground p-4 rounded-lg flex items-center gap-3 font-semibold text-sm">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             {error}
                         </div>

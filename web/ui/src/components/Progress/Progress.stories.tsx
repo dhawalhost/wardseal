@@ -24,8 +24,8 @@ export const Default: Story = {
 
     return (
       <div className="space-y-4 max-w-sm">
-        <div className="flex justify-between items-center text-xs font-bold font-mono">
-          <span className="text-on-surface-variant/40 uppercase tracking-wider">Syncing Nodes...</span>
+        <div className="flex justify-between items-center text-xs font-medium font-mono">
+          <span className="text-on-surface-subtle ">Syncing Nodes...</span>
           <span className="text-primary">{val}%</span>
         </div>
         <Progress value={val} />

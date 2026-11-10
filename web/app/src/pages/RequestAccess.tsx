@@ -60,7 +60,7 @@ const RequestAccess: React.FC = () => {
                             <ShieldCheck className="w-5 h-5" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">
+                            <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface">
                                 New access request
                             </GlassCardTitle>
                             <GlassCardDescription className="mt-1">
@@ -75,7 +75,7 @@ const RequestAccess: React.FC = () => {
                         {error && (
                             <Alert
                                 variant="destructive"
-                                className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive"
+                                className="rounded-lg border border-destructive/20 bg-destructive/10 text-error-subtle-foreground"
                             >
                                 <AlertDescription className="text-sm font-medium">{error}</AlertDescription>
                             </Alert>
@@ -88,7 +88,7 @@ const RequestAccess: React.FC = () => {
                                     Resource type
                                 </Label>
                                 <Select value={resourceType} onValueChange={setResourceType}>
-                                    <SelectTrigger className="h-11 rounded-lg border-border bg-background shadow-xs text-sm">
+                                    <SelectTrigger className="h-11 rounded-lg border-input bg-background shadow-xs text-sm">
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg border-border shadow-sm text-sm">
@@ -120,7 +120,7 @@ const RequestAccess: React.FC = () => {
                                 Access duration
                             </Label>
                             <Select value={duration} onValueChange={setDuration}>
-                                <SelectTrigger className="h-11 rounded-lg border-border bg-background shadow-xs text-sm">
+                                <SelectTrigger className="h-11 rounded-lg border-input bg-background shadow-xs text-sm">
                                     <SelectValue placeholder="Select duration" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg border-border shadow-sm text-sm">

@@ -1,19 +1,18 @@
-/* ── Site Header — Modern Glassmorphism ── */
+/* ── Site header ── */
 .site-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  transition: all 200ms ease;
+  background: hsl(var(--background) / 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .header-inner {
-  height: 68px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -22,7 +21,6 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
 }
 
 /* ── Logo ── */
@@ -30,130 +28,99 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  text-decoration: none;
-  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+.logo:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
 }
 
 .logo-container {
-  width: 34px;
-  height: 34px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 8px;
 }
 
 .logo-img {
-  width: 26px;
+  width: 22px;
   height: 26px;
   object-fit: contain;
 }
 
 .logo-text {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #001C41;
-  letter-spacing: -0.03em;
-}
-
-.system-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 1.0625rem;
   font-weight: 600;
-  color: #059669;
-}
-
-.status-dot-pulse {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10B981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
-  animation: pulse-ring 2s infinite;
-}
-
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
 /* ── Navigation ── */
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 32px;
 }
 
 .nav-links > a {
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-  text-decoration: none;
-  transition: color 150ms ease;
-  padding: 6px 0;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition);
+  padding: 8px 0;
+  border-radius: var(--r-sm);
+}
+.nav-links > a:hover { color: var(--text); }
+.nav-links > a.active { color: var(--text); }
+.nav-links > a:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
-.nav-links > a:hover {
-  color: #0F172A;
-}
-
-.nav-links > a.active {
-  color: #0369A1;
-}
-
-/* ── Header Actions ── */
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-left: 12px;
+  gap: 8px;
+  margin-left: 8px;
 }
 
-/* ── Mobile Toggle ── */
 .mobile-toggle {
   display: none;
   background: none;
-  border: 1px solid #E2E8F0;
-  color: #0F172A;
-  padding: 6px;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
   cursor: pointer;
+}
+.mobile-toggle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
 @media (max-width: 900px) {
-  .hidden-sm { display: none !important; }
   .nav-links { display: none; }
   .mobile-toggle { display: flex; }
   .nav-links.active {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     position: absolute;
-    top: 68px;
+    top: 64px;
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    padding: 24px;
-    border-bottom: 1px solid #E2E8F0;
-    gap: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    background: hsl(var(--background));
+    padding: 16px;
+    border-bottom: 1px solid var(--hairline);
+    gap: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   }
+  .nav-links.active > a { padding: 10px 8px; }
   .header-actions-mobile {
-    width: 100%;
-    margin-top: 12px;
-    display: flex;
+    margin: 12px 0 0;
     flex-direction: column;
-    gap: 10px;
-  }
-  .header-actions-mobile .btn {
-    width: 100%;
-    justify-content: center;
+    align-items: stretch;
+    gap: 8px;
   }
 }

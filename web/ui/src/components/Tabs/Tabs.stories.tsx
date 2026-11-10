@@ -25,7 +25,7 @@ export const Default: Story = {
             <CardTitle>System Credentials</CardTitle>
             <CardDescription>Active keys loaded into session.</CardDescription>
           </CardHeader>
-          <CardContent className="text-xs text-on-surface-variant/70 leading-relaxed font-semibold">
+          <CardContent className="text-xs text-on-surface-variant leading-relaxed font-semibold">
             Primary verified credential: YubiKey 5C NFC. Posture state matches corporate criteria.
           </CardContent>
         </Card>
@@ -36,7 +36,7 @@ export const Default: Story = {
             <CardTitle>Access Posture Policy</CardTitle>
             <CardDescription>Active rules and criteria verification</CardDescription>
           </CardHeader>
-          <CardContent className="text-xs text-on-surface-variant/70 leading-relaxed font-semibold">
+          <CardContent className="text-xs text-on-surface-variant leading-relaxed font-semibold">
             Strict MFA and posture checking is enabled. Legacy credentials without PIN signature are currently rejected.
           </CardContent>
         </Card>

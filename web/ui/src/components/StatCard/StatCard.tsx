@@ -3,56 +3,45 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 import { Card, CardContent } from "../Card/Card";
 
-const statCardVariants = cva("overflow-hidden rounded-xl border border-border", {
+/** Tinted variants use *-subtle fills with *-subtle-foreground text (≥4.5:1). */
+const statCardVariants = cva("overflow-hidden rounded-xl border shadow-none", {
   variants: {
     variant: {
-      default: "shadow-sm bg-card",
-      danger: "shadow-sm bg-destructive/5 border-destructive/20",
-      primary: "shadow-sm bg-secondary/5 border-secondary/20",
-      success: "shadow-sm bg-success-subtle border-success/20",
-      warning: "shadow-sm bg-warning-subtle border-warning/20",
-      muted: "shadow-sm bg-muted",
+      default: "border-border bg-card",
+      muted: "border-border bg-muted",
+      primary: "border-secondary/30 bg-secondary-container",
+      success: "border-success/30 bg-success-subtle",
+      warning: "border-warning/30 bg-warning-subtle",
+      danger: "border-error/30 bg-error-subtle",
     },
   },
   defaultVariants: { variant: "default" },
 });
 
-const statValueVariants = cva("text-3xl font-bold tracking-tight leading-none tabular-nums", {
-  variants: {
-    variant: {
-      default: "text-on-surface",
-      danger: "text-destructive",
-      primary: "text-secondary",
-      success: "text-success",
-      warning: "text-warning",
-      muted: "text-on-surface",
-    },
-  },
-  defaultVariants: { variant: "default" },
-});
+const toneText = {
+  default: "text-on-surface",
+  muted: "text-on-surface",
+  primary: "text-on-secondary-container",
+  success: "text-success-subtle-foreground",
+  warning: "text-warning-subtle-foreground",
+  danger: "text-error-subtle-foreground",
+} as const;
 
-const statLabelVariants = cva(
-  "text-xs font-semibold tracking-wide uppercase leading-none text-muted-foreground",
-  {
-    variants: {
-      variant: {
-        default: "",
-        danger: "text-destructive/70",
-        primary: "text-secondary/70",
-        success: "text-success/70",
-        warning: "text-warning/70",
-        muted: "",
-      },
-    },
-    defaultVariants: { variant: "default" },
-  }
-);
+const labelText = {
+  default: "text-on-surface-variant",
+  muted: "text-on-surface-variant",
+  primary: "text-on-secondary-container",
+  success: "text-success-subtle-foreground",
+  warning: "text-warning-subtle-foreground",
+  danger: "text-error-subtle-foreground",
+} as const;
 
 export interface StatCardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof statCardVariants> {
   label: React.ReactNode;
   value: React.ReactNode;
+  /** Decorative icon (hidden from assistive tech). */
   icon?: React.ReactNode;
   subtext?: React.ReactNode;
   loading?: boolean;
@@ -60,25 +49,40 @@ export interface StatCardProps
 
 const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
   ({ className, variant, label, value, icon, subtext, loading = false, ...props }, ref) => {
+    const tone = variant ?? "default";
+
     return (
-      <Card ref={ref} className={cn(statCardVariants({ variant }), className)} {...props}>
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-5 h-full min-h-[112px]">
+      <Card
+        ref={ref}
+        className={cn(statCardVariants({ variant }), className)}
+        aria-busy={loading || undefined}
+        {...props}
+      >
+        <CardContent className="p-5">
+          <div className="flex h-full min-h-[112px] flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
-              <span className={statLabelVariants({ variant })}>{label}</span>
+              <span className={cn("text-sm", labelText[tone])}>{label}</span>
               {icon && (
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+                <span
+                  className="flex h-4 w-4 shrink-0 items-center justify-center text-on-surface-subtle [&_svg]:h-4 [&_svg]:w-4"
+                  aria-hidden
+                >
                   {icon}
                 </span>
               )}
             </div>
-            <div className="space-y-2 mt-auto">
-              <div className={statValueVariants({ variant })}>
-                {loading ? <span className="opacity-20 animate-pulse">—</span> : value}
+            <div className="mt-auto space-y-2">
+              <div className={cn("text-[1.75rem] font-medium leading-none tracking-[-0.01em] tabular-nums", toneText[tone])}>
+                {loading ? (
+                  <>
+                    <span className="inline-block h-8 w-20 animate-pulse rounded-md bg-on-surface/10" aria-hidden />
+                    <span className="sr-only">Loading</span>
+                  </>
+                ) : (
+                  value
+                )}
               </div>
-              {subtext && (
-                <p className="text-sm font-medium text-muted-foreground">{subtext}</p>
-              )}
+              {subtext && <p className={cn("text-sm", labelText[tone])}>{subtext}</p>}
             </div>
           </div>
         </CardContent>

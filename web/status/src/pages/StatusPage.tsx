@@ -62,14 +62,14 @@ const ServiceStatusItem: React.FC<ServiceStatusItemProps> = ({
             </div>
             <div
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold text-xs ${
-                    status === 'operational'
-                        ? 'bg-success/10 border border-success/20 text-success'
-                        : 'bg-destructive/10 border border-destructive/20 text-destructive'
+     status === 'operational'
+                        ? 'bg-success/10 border border-success/20 text-success-subtle-foreground'
+                        : 'bg-destructive/10 border border-destructive/20 text-error-subtle-foreground'
                 }`}
             >
                 <div
                     className={`h-1.5 w-1.5 rounded-full ${
-                        status === 'operational' ? 'bg-success' : 'bg-destructive'
+      status === 'operational' ? 'bg-success' : 'bg-destructive'
                     }`}
                 />
                 {status === 'operational' ? 'Active' : 'Offline'}
@@ -131,7 +131,7 @@ const StatusPage: React.FC = () => {
                 <div className="flex items-center justify-center gap-3">
                     <img src="/wardseal.svg" alt="WardSeal" className="w-7 h-7" />
                     <div className="flex flex-col items-start leading-none">
-                        <span className="text-base font-bold tracking-tight text-on-surface">WardSeal</span>
+                        <span className="text-base font-medium tracking-tight text-on-surface">WardSeal</span>
                         <span className="text-xs font-semibold text-secondary">System status</span>
                     </div>
                 </div>
@@ -146,7 +146,7 @@ const StatusPage: React.FC = () => {
                             <AlertCircle className="h-5 w-5 text-warning" />
                         </div>
                     )}
-                    <h2 className="text-2xl font-bold tracking-tight text-on-surface">
+                    <h2 className="text-2xl font-medium tracking-tight text-on-surface">
                         {overallStatus === 'operational' ? 'All systems operational' : 'Degraded performance'}
                     </h2>
                     <p className="text-muted-foreground text-sm">Live health checks across core services</p>

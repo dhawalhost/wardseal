@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils"
 import { Badge } from "./badge"
 
 const statusBadgeVariants = cva(
-  "font-bold text-[11px] tracking-tight px-3 py-1 shadow-none border-none rounded-xl",
+  "font-medium text-xs tracking-tight px-3 py-1 shadow-none border-none rounded-xl",
   {
     variants: {
       status: {
-        active: "bg-success-subtle text-success",
-        suspended: "bg-destructive/10 text-destructive",
-        pending: "bg-warning/10 text-warning",
+        active: "bg-success-subtle text-success-subtle-foreground",
+        suspended: "bg-destructive/10 text-error-subtle-foreground",
+        pending: "bg-warning/10 text-warning-subtle-foreground",
         inactive: "bg-surface-container text-on-surface-variant",
         premium: "bg-primary/5 text-primary",
       },

@@ -78,7 +78,7 @@ export const Default: Story = {
     return (
       <div className="p-12 flex flex-col justify-center items-center gap-4">
         <Button onClick={() => setOpen(true)}>Open Command Console</Button>
-        <p className="text-xs text-on-surface-variant/40 font-bold uppercase tracking-widest">
+        <p className="text-xs text-on-surface-subtle font-medium ">
           Press <kbd className="bg-surface-container-high border border-outline/10 px-1 rounded font-mono">⌘K</kbd> globally to toggle
         </p>
         <CommandMenu open={open} onOpenChange={setOpen} items={mockCommands} />

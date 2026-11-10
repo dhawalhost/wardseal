@@ -72,7 +72,7 @@ const AccessRequests: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/10 text-destructive px-5 py-4 rounded-lg border border-destructive/20 text-sm font-medium flex items-center gap-3">
+                <div className="bg-destructive/10 text-error-subtle-foreground px-5 py-4 rounded-lg border border-destructive/20 text-sm font-medium flex items-center gap-3">
                     <ShieldAlert className="h-4 w-4" />
                     {error}
                 </div>
@@ -84,7 +84,7 @@ const AccessRequests: React.FC = () => {
                         <div className="flex flex-col gap-2">
                             <span className="text-xs font-semibold text-muted-foreground">Pending</span>
                             <div className="mt-2 flex items-end gap-3 leading-none">
-                                <span className="text-3xl font-bold tracking-tight text-on-surface">
+                                <span className="text-3xl font-medium tracking-tight text-on-surface">
                                     {requests.filter((r) => r.status === 'pending').length}
                                 </span>
                                 <GitPullRequest className="h-5 w-5 text-muted-foreground mb-1" />
@@ -98,7 +98,7 @@ const AccessRequests: React.FC = () => {
                         <div className="flex flex-col gap-2">
                             <span className="text-xs font-semibold text-muted-foreground">Approved</span>
                             <div className="mt-2 flex items-end gap-3 leading-none">
-                                <span className="text-3xl font-bold tracking-tight text-on-surface">
+                                <span className="text-3xl font-medium tracking-tight text-on-surface">
                                     {requests.filter((r) => r.status === 'approved').length}
                                 </span>
                                 <ShieldCheck className="h-5 w-5 text-success mb-1" />
@@ -112,8 +112,8 @@ const AccessRequests: React.FC = () => {
                         <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
                             <Activity className="w-40 h-40" />
                         </div>
-                        <h3 className="text-lg font-bold tracking-tight relative z-10">Temporary access</h3>
-                        <p className="text-sm text-secondary-foreground/80 mt-2 relative z-10">
+                        <h3 className="text-lg font-medium tracking-tight relative z-10">Temporary access</h3>
+                        <p className="text-sm text-secondary-foreground mt-2 relative z-10">
                             Access decisions are logged for compliance auditing.
                         </p>
                     </GlassCardContent>
@@ -133,7 +133,7 @@ const AccessRequests: React.FC = () => {
                                 <Activity className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-lg font-bold tracking-tight text-on-surface">
+                                <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface">
                                     Request details
                                 </GlassCardTitle>
                                 <p className="text-sm text-muted-foreground mt-1">Active requests and their status.</p>

@@ -156,9 +156,9 @@
 
   /* ── Elevation ── */
   --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --shadow-sm: 0 2px 8px -2px rgb(15 23 42 / 0.06), 0 0 0 1px rgb(15 23 42 / 0.04);
-  --shadow-card: 0 4px 24px -6px rgb(15 23 42 / 0.08), 0 0 0 1px rgb(15 23 42 / 0.04);
-  --shadow-overlay: 0 16px 48px -8px rgb(15 23 42 / 0.16), 0 0 0 1px rgb(15 23 42 / 0.06);
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-overlay: 0 8px 24px -4px rgb(15 23 42 / 0.10), 0 0 0 1px rgb(15 23 42 / 0.06);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -219,8 +219,8 @@
   --warning-foreground: 222 47% 6%;
   --warning-subtle: 48 40% 12%;
   --warning-subtle-foreground: 45 90% 65%;
-  --error: 0 72% 51%;
-  --error-foreground: 0 0% 100%;
+  --error: 0 84% 60%;
+  --error-foreground: 222 47% 6%;
   --error-subtle: 0 50% 14%;
   --error-subtle-foreground: 0 85% 75%;
   --destructive: var(--error);
@@ -234,7 +234,7 @@
   --overlay-opacity: 0.7;
 
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.2);
-  --shadow-sm: 0 4px 16px -4px rgb(0 0 0 / 0.35);
-  --shadow-card: 0 8px 32px -8px rgb(0 0 0 / 0.45);
-  --shadow-overlay: 0 24px 64px -12px rgb(0 0 0 / 0.55);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-card: 0 0 0 0 transparent; /* dark depth = surface steps + hairlines */
+  --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
 }

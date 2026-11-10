@@ -40,17 +40,17 @@ export const TelemetryLogs: Story = {
         </SheetHeader>
         <div className="space-y-4 py-6">
           <div className="flex items-start gap-3 text-xs leading-normal">
-            <Clock className="w-4 h-4 text-on-surface-variant/40 shrink-0 mt-0.5" />
+            <Clock className="w-4 h-4 text-on-surface-subtle shrink-0 mt-0.5" />
             <div>
               <div className="font-semibold text-on-surface">Verification Challenge Dispatched</div>
-              <div className="text-[10px] text-on-surface-variant/40">10:45:12 AM • node-01</div>
+              <div className="text-xs text-on-surface-subtle">10:45:12 AM • node-01</div>
             </div>
           </div>
           <div className="flex items-start gap-3 text-xs leading-normal border-t border-border pt-4">
             <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div>
               <div className="font-semibold text-primary">Cryptographic Signature Validated</div>
-              <div className="text-[10px] text-on-surface-variant/40">10:45:13 AM • node-01</div>
+              <div className="text-xs text-on-surface-subtle">10:45:13 AM • node-01</div>
             </div>
           </div>
         </div>

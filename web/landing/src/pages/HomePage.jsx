@@ -1,485 +1,306 @@
-import { useState, useEffect } from 'react'
-import {
-  ShieldCheck, Lock, ArrowRight, Activity, Shield, Network,
-  Server, Key, Users, Fingerprint, Building2, CheckCircle2,
-  KeyRound, Layers, GitBranch, Eye, Laptop, Cpu, Terminal,
-  ExternalLink, Sparkles, Database, Check
-} from 'lucide-react'
+import { useState } from 'react'
+import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import siteConfig from '../siteConfig'
+import SealMark from '../components/SealMark'
 
 const { consoleBaseUrl, idBaseUrl } = siteConfig
 const loginRedirectUri = encodeURIComponent(`${consoleBaseUrl}/dashboard`)
+const signupHref = `${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`
+const loginHref = `${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`
 
 const protocols = [
-  { name: 'OIDC Core 1.0', spec: 'OpenID Connect & PKCE', badge: 'Certified' },
-  { name: 'SAML 2.0', spec: 'Enterprise Federation', badge: 'Supported' },
-  { name: 'SCIM 2.0', spec: 'RFC 7643 / 7644 Sync', badge: 'Automated' },
-  { name: 'WebAuthn / Passkeys', spec: 'FIDO2 Passwordless', badge: 'Hardware' },
-  { name: 'SPIFFE / SPIRE', spec: 'mTLS Workload Identity', badge: 'Cloud Native' },
-  { name: 'OAuth 2.1', spec: 'Delegated Authorization', badge: 'Hardened' },
+  { name: 'OpenID Connect', spec: 'Core 1.0 with PKCE' },
+  { name: 'SAML 2.0', spec: 'IdP and SP initiated federation' },
+  { name: 'SCIM 2.0', spec: 'RFC 7643 and 7644 provisioning' },
+  { name: 'WebAuthn', spec: 'FIDO2 passkeys and security keys' },
+  { name: 'OAuth 2.1', spec: 'Delegated authorization' },
+  { name: 'SPIFFE', spec: 'mTLS identities for workloads' },
 ]
 
 const controlPlaneSteps = [
   {
-    step: '01',
-    icon: <KeyRound size={24} />,
     title: 'Authenticate',
-    subtitle: 'Zero-Password & SSO Gateway',
-    desc: 'Verify users once with FIDO2 hardware passkeys, adaptive MFA, or enterprise SAML — then issue cryptographically signed sessions.',
-    badge: 'FIDO2 / WebAuthn',
+    desc: 'People sign in once with a passkey, adaptive MFA or your SAML provider. WardSeal issues a signed, short-lived session.',
   },
   {
-    step: '02',
-    icon: <Shield size={24} />,
     title: 'Authorize',
-    subtitle: 'Dynamic Policy Engine',
-    desc: 'Evaluate RBAC, groups, and IP geofencing at request time. Least privilege is continuously enforced without stale permissions.',
-    badge: 'Context-Aware',
+    desc: 'Each request is checked against roles, groups and network rules at the moment it happens, so old grants do not linger.',
   },
   {
-    step: '03',
-    icon: <GitBranch size={24} />,
     title: 'Provision',
-    subtitle: 'Bi-directional SCIM 2.0',
-    desc: 'Synchronize directories across HRIS, Okta, Google Workspace, and internal microservices with instant joiner-mover-leaver propagation.',
-    badge: 'Real-time Sync',
+    desc: 'SCIM keeps Okta, Google Workspace, your HR system and internal services in step. Removing someone removes their access.',
   },
 ]
 
 const tabFeatures = {
   sso: {
-    title: 'Workforce & Customer SSO',
-    desc: 'Federate logins across all company applications with one unified, hardened identity provider.',
+    label: 'Single sign-on',
+    title: 'One sign-in for workforce and customer apps',
+    desc: 'Federate every application behind one identity provider that you control.',
     points: [
-      'Universal IdP and SP-initiated SAML 2.0 & OIDC flows',
-      'FIDO2 WebAuthn passkey enrollment with zero phishing vulnerability',
-      'Adaptive step-up MFA triggered by anomalous network context',
-      'Centralized session revocation across cloud & on-premise services',
+      'SAML 2.0 and OIDC, started from the IdP or the app',
+      'Passkey and security key enrollment for every user',
+      'Step-up MFA when the network or device looks unfamiliar',
+      'Revoke a session everywhere from one place',
     ],
-    code: `// OIDC Session Verification
-const session = await wardseal.verifyToken(token, {
+    file: 'verify.ts',
+    code: `const session = await wardseal.verifyToken(token, {
   audience: "manage.wardseal.local",
   requireMFA: true,
-  maxAge: "8h"
+  maxAge: "8h",
 });
-// Result: { sub: "usr_9981", mfa: "webauthn_fido2", role: "SuperAdmin" }`,
+
+// { sub: "usr_9981", mfa: "webauthn", role: "admin" }`,
   },
   scim: {
-    title: 'Automated SCIM 2.0 Mesh',
-    desc: 'Eliminate manual access spreadsheets with real-time directory synchronization and lifecycle automation.',
+    label: 'SCIM provisioning',
+    title: 'Directories that keep themselves current',
+    desc: 'Joiners, movers and leavers flow from your source of truth without spreadsheets.',
     points: [
-      'RFC 7643 / 7644 compliant REST endpoints for Users & Groups',
-      'Instant deprovisioning closes leaver access vulnerabilities in milliseconds',
-      'Custom schema extension support for department, manager, and team attributes',
-      'Audit log trail for every SCIM payload delivered or rejected',
+      'RFC 7643 and 7644 endpoints for users and groups',
+      'Deprovisioning closes access as soon as the HR record changes',
+      'Schema extensions for department, manager and team',
+      'Every SCIM payload logged, delivered or rejected',
     ],
-    code: `// SCIM 2.0 Inbound Provisioning Webhook
-POST /v2/scim/Users
-{
+    file: 'POST /scim/v2/Users',
+    code: `{
   "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
-  "userName": "sarah.chen@enterprise.io",
+  "userName": "sarah.chen@northwind.io",
   "active": true,
   "groups": ["Engineering", "Infrastructure-Admin"]
 }`,
   },
   zerotrust: {
-    title: 'Continuous Zero-Trust Guardrails',
-    desc: 'Contextual access policies that evaluate IP ranges, client certificates, and posture before granting entry.',
+    label: 'Access policy',
+    title: 'Rules that look at the request, not just the role',
+    desc: 'Policies weigh network, device and MFA state before a session is granted.',
     points: [
-      'CIDR subnet boundary enforcement and geographical anomaly rejection',
-      'Just-in-Time (JIT) access requests with automated approval workflows',
-      'SPIFFE/SPIRE compatible workload identities with short-lived mTLS X.509 certs',
-      'Complete separation of control plane and data plane communications',
+      'CIDR ranges and location rules per resource',
+      'Just-in-time access requests with approval workflows',
+      'Short-lived SPIFFE certificates for service-to-service calls',
+      'Control plane and data plane kept apart',
     ],
-    code: `// WardSeal Policy Rule Engine
-policy "ProductionDatabaseAccess" {
-  enforce_ip_range = ["10.240.0.0/16", "192.168.1.0/24"]
+    file: 'production-db.policy',
+    code: `policy "ProductionDatabaseAccess" {
+  enforce_ip_range       = ["10.240.0.0/16"]
   require_device_posture = "hardened"
-  require_mfa = true
-  max_session_ttl = "2h"
+  require_mfa            = true
+  max_session_ttl        = "2h"
 }`,
   },
   compliance: {
-    title: 'Immutable Compliance & Audit Trails',
-    desc: 'Always be audit-ready for SOC 2 Type II, ISO 27001, and HIPAA with cryptographically signed logs.',
+    label: 'Audit',
+    title: 'A record of every decision, signed',
+    desc: 'Each sign-in, token and policy change is written to a tamper-evident log.',
     points: [
-      'Every authentication decision, token issuance, and policy change is logged',
-      'Tamper-evident log export to Splunk, Datadog, AWS S3, or Elasticsearch',
-      'Granular admin activity attribution with full IP and user-agent context',
-      'Scheduled posture score calculations and automated compliance reports',
+      'Authentication, token issuance and admin changes all recorded',
+      'Export to Splunk, Datadog, S3 or Elasticsearch',
+      'Admin actions attributed with IP and user agent',
+      'Scheduled posture scores and compliance reports',
     ],
-    code: `// Audit Log Stream
-{
+    file: 'audit-event.json',
+    code: `{
   "event": "identity.token.granted",
-  "actor": "dhawal@wardseal.local",
+  "actor": "maya.patel@northwind.io",
   "resource": "console.admin",
-  "ip": "127.0.0.1",
-  "decision": "ALLOW",
-  "signature": "ed25519:8fa10b93..."
+  "decision": "allow",
+  "signature": "ed25519:8fa10b93…"
 }`,
   },
 }
 
+const decisionSteps = [
+  { time: '09:41:02.118', title: 'Passkey verified', meta: 'WebAuthn · YubiKey 5C NFC' },
+  { time: '09:41:02.131', title: 'Policy ProductionDatabaseAccess', meta: 'IP 10.240.4.17 in range · device hardened · MFA' },
+  { time: '09:41:02.140', title: 'Session issued', meta: 'OIDC · expires in 2h' },
+]
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('sso')
-  const [authStage, setAuthStage] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setAuthStage((prev) => (prev + 1) % 3)
-    }, 3500)
-    return () => clearInterval(timer)
-  }, [])
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add('in-view')
-            observer.unobserve(e.target)
-          }
-        })
-      },
-      { threshold: 0.1 }
-    )
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
+  const tab = tabFeatures[activeTab]
 
   return (
     <main className="landing-main">
-      {/* ── HERO SECTION ── */}
       <section className="hero">
-        <div className="container hero-content">
-          <div className="hero-text reveal">
-            <div className="hero-badge">
-              <span className="badge-pulse-dot" />
-              <span>Zero-Trust Identity Fabric · v2.4</span>
-            </div>
-
-            <h1 className="hero-title">
-              The Unified Control Plane for <span className="highlight-text">Enterprise Identity</span>
-            </h1>
-
+        <div className="container hero-grid">
+          <div className="hero-text">
+            <h1 className="hero-title">Every sign-in decided, signed and on the record</h1>
             <p className="hero-subtitle">
-              Authenticate workforce, automate SCIM directory lifecycles, and enforce continuous zero-trust security policies across all cloud infrastructure.
+              WardSeal runs SSO, passkeys, SCIM provisioning and access policy for your people and services, and writes each decision to a signed audit log
             </p>
-
             <div className="hero-cta">
-              <a className="btn btn-accent btn-lg" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
-                Request Access
-                <ArrowRight size={18} />
+              <a className="btn btn-accent btn-lg" href={signupHref}>
+                Request access
+                <ArrowRight size={16} strokeWidth={1.75} />
               </a>
-              <a className="btn btn-outline btn-lg" href={`${idBaseUrl}/login?redirect_uri=${loginRedirectUri}`}>
-                Sign In to Console
+              <a className="btn btn-outline btn-lg" href={loginHref}>
+                Sign in
               </a>
-            </div>
-
-            <div className="hero-trust">
-              <div className="trust-indicator">
-                <ShieldCheck size={16} /> SOC 2 Type II
-              </div>
-              <div className="trust-dot" />
-              <div className="trust-indicator">
-                <CheckCircle2 size={16} /> OIDC &amp; FIDO2 Certified
-              </div>
-              <div className="trust-dot" />
-              <div className="trust-indicator">
-                <Server size={16} /> Cloud &amp; Self-Hosted
-              </div>
             </div>
           </div>
 
-          {/* Interactive Hero Visual Simulator */}
-          <div className="hero-visual reveal" aria-hidden="true">
-            <div className="hero-stage">
-              <div className="hero-stage-glow" />
-
-              {/* Card 1: Live Authentication Prompt */}
-              <div className="hero-auth-card hero-float">
-                <div className="hero-auth-brand">
-                  <img src="/wardseal.svg" alt="" className="hero-auth-logo" />
-                  <span>WardSeal Auth</span>
+          <div className="hero-visual" aria-hidden="true">
+            <div className="record">
+              <div className="record-head">
+                <div>
+                  <p className="record-label">Access decision</p>
+                  <p className="record-id">evt_7f3a21c9</p>
                 </div>
-                <p className="hero-auth-kicker">Secure Authentication</p>
-                <p className="hero-auth-title">FIDO2 Hardware Key Verification</p>
+                <span className="record-outcome">Allowed</span>
+              </div>
 
-                <div className="hero-auth-field">
-                  <Users size={14} />
-                  <span>alex.turner@enterprise.io</span>
-                </div>
-
-                <div className="hero-auth-status-box">
-                  {authStage === 0 && (
-                    <div className="status-step active">
-                      <span className="step-spinner" />
-                      <span>Requesting hardware passkey...</span>
-                    </div>
-                  )}
-                  {authStage === 1 && (
-                    <div className="status-step verified">
-                      <Check size={14} className="text-emerald-400" />
-                      <span>WebAuthn Signature Verified</span>
-                    </div>
-                  )}
-                  {authStage === 2 && (
-                    <div className="status-step issued">
-                      <Lock size={14} className="text-sky-400" />
-                      <span>OIDC Session Issued (8h TTL)</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="hero-auth-btn">
-                  {authStage === 2 ? 'Session Authenticated' : 'Verify Touch ID / YubiKey'}
-                </div>
-
-                <div className="hero-auth-sso">
-                  <span>Okta SCIM</span>
-                  <span>Entra ID</span>
-                  <span>SPIFFE</span>
+              <div className="record-subject">
+                <span className="record-avatar">MP</span>
+                <div>
+                  <p className="record-name">Maya Patel</p>
+                  <p className="record-meta">maya.patel@northwind.io → prod-postgres-eu</p>
                 </div>
               </div>
 
-              {/* Verification Pulse Badge */}
-              <div className="hero-link-pulse">
-                <ShieldCheck size={14} />
-                <span>Zero-Trust Policy: PASSED</span>
+              <ol className="record-steps">
+                {decisionSteps.map((s, i) => (
+                  <li key={s.title} style={{ '--i': i }}>
+                    <span className="record-step-dot" />
+                    <div className="record-step-body">
+                      <p className="record-step-title">{s.title}</p>
+                      <p className="record-step-meta">{s.meta}</p>
+                    </div>
+                    <span className="record-step-time">{s.time}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="record-foot">
+                <span className="seal-chip">ed25519:8fa1…0b93</span>
+                <span className="record-foot-note">Appended to audit log · 14 Nov, 09:41 UTC</span>
               </div>
 
-              {/* Card 2: Live Cluster Console Posture */}
-              <div className="hero-console-card hero-float-delay">
-                <div className="hero-console-bar">
-                  <span className="hero-preview-dot" />
-                  <span className="hero-preview-dot" />
-                  <span className="hero-preview-dot" />
-                  <span className="hero-preview-title">Control Plane Telemetry</span>
-                </div>
-                <div className="hero-console-body">
-                  <div className="hero-console-metrics">
-                    <div>
-                      <span className="hero-preview-metric-label">Identities</span>
-                      <strong>14,280</strong>
-                    </div>
-                    <div>
-                      <span className="hero-preview-metric-label">MFA Enforced</span>
-                      <strong className="text-emerald-500">100%</strong>
-                    </div>
-                  </div>
-                  <ul className="hero-preview-list">
-                    <li>
-                      <span>SCIM Directory Mesh</span>
-                      <span className="hero-preview-badge">Active</span>
-                    </li>
-                    <li>
-                      <span>IP Geofence Guardrail</span>
-                      <span className="hero-preview-badge">Strict</span>
-                    </li>
-                    <li>
-                      <span>Kubernetes Ingress mTLS</span>
-                      <span className="hero-preview-badge">Verified</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+              <SealMark className="record-seal" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── SUPPORTED STANDARDS BAR ── */}
-      <section className="section section-protocols" id="protocols" aria-label="Supported standards">
-        <div className="container">
-          <div className="protocols-header reveal">
-            <p className="protocols-label">Enterprise Interoperability Without Vendor Lock-In</p>
+      <section className="section section-protocols" id="protocols" aria-labelledby="protocols-title">
+        <div className="container protocols-layout">
+          <div>
+            <h2 id="protocols-title" className="section-title-sm">Built on open standards</h2>
+            <p className="section-lede">Bring your existing apps and directories. Nothing is locked to WardSeal</p>
           </div>
-          <div className="protocols-grid reveal">
+          <dl className="protocols-grid">
             {protocols.map((p) => (
-              <div key={p.name} className="protocol-card">
-                <div className="protocol-card-top">
-                  <strong>{p.name}</strong>
-                  <span className="protocol-badge">{p.badge}</span>
-                </div>
-                <p className="protocol-spec">{p.spec}</p>
+              <div key={p.name} className="protocol-item">
+                <dt>{p.name}</dt>
+                <dd>{p.spec}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         </div>
       </section>
 
-      {/* ── 3-TIER ARCHITECTURE SECTION ── */}
-      <section className="section" id="architecture">
+      <section className="section" id="architecture" aria-labelledby="architecture-title">
         <div className="container">
-          <div className="section-header reveal">
-            <span className="section-kicker">Unified Core</span>
-            <h2>How WardSeal Governs Access End to End</h2>
-            <p>
-              Three coordinated layers working in complete harmony — eliminating tool sprawl across identity, directories, and perimeter security.
-            </p>
+          <div className="section-header">
+            <h2 id="architecture-title">How a request moves through WardSeal</h2>
+            <p>Three steps that usually live in three tools, handled in one place</p>
           </div>
 
-          <div className="architecture-grid">
+          <ol className="steps">
             {controlPlaneSteps.map((step, idx) => (
-              <div key={step.step} className="architecture-card reveal">
-                <div className="card-top-row">
-                  <span className="step-pill">{step.step}</span>
-                  <span className="card-badge">{step.badge}</span>
-                </div>
-                <div className="step-icon-wrap">{step.icon}</div>
+              <li key={step.title} className="step">
+                <span className="step-num">{idx + 1}</span>
                 <h3>{step.title}</h3>
-                <h4 className="step-subtitle">{step.subtitle}</h4>
                 <p>{step.desc}</p>
-              </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="section section-capabilities" id="capabilities" aria-labelledby="capabilities-title">
+        <div className="container">
+          <div className="section-header">
+            <h2 id="capabilities-title">What security and platform teams run on it</h2>
+            <p>Workforce access, service-to-service identity and the evidence your auditors ask for</p>
+          </div>
+
+          <div className="tabs" role="tablist" aria-label="Capabilities">
+            {Object.entries(tabFeatures).map(([key, t]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === key}
+                aria-controls="capabilities-panel"
+                onClick={() => setActiveTab(key)}
+                className={`tab ${activeTab === key ? 'active' : ''}`}
+              >
+                {t.label}
+              </button>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ── INTERACTIVE CAPABILITIES SECTION ── */}
-      <section className="section section-capabilities" id="capabilities">
-        <div className="container">
-          <div className="section-header reveal">
-            <span className="section-kicker">Complete Feature Matrix</span>
-            <h2>Engineered for Security Architects &amp; DevOps Teams</h2>
-            <p>
-              Everything modern engineering organizations need to govern workforce access, server-to-server microservices, and compliance requirements.
-            </p>
-          </div>
-
-          <div className="capabilities-tabs-wrap reveal">
-            {/* Segmented Tab Buttons */}
-            <div className="capabilities-tab-nav">
-              <button
-                type="button"
-                onClick={() => setActiveTab('sso')}
-                className={`cap-tab-btn ${activeTab === 'sso' ? 'active' : ''}`}
-              >
-                <Fingerprint size={16} />
-                <span>Single Sign-On</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('scim')}
-                className={`cap-tab-btn ${activeTab === 'scim' ? 'active' : ''}`}
-              >
-                <GitBranch size={16} />
-                <span>SCIM 2.0 Mesh</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('zerotrust')}
-                className={`cap-tab-btn ${activeTab === 'zerotrust' ? 'active' : ''}`}
-              >
-                <Shield size={16} />
-                <span>Zero-Trust Policies</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('compliance')}
-                className={`cap-tab-btn ${activeTab === 'compliance' ? 'active' : ''}`}
-              >
-                <Layers size={16} />
-                <span>Audit &amp; Governance</span>
-              </button>
-            </div>
-
-            {/* Tab Body */}
-            <div className="capabilities-tab-content">
-              <div className="tab-left">
-                <h3>{tabFeatures[activeTab].title}</h3>
-                <p className="tab-desc">{tabFeatures[activeTab].desc}</p>
-                <ul className="tab-points">
-                  {tabFeatures[activeTab].points.map((pt) => (
-                    <li key={pt}>
-                      <CheckCircle2 size={16} className="point-icon" />
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="tab-cta">
-                  <a className="btn btn-accent btn-sm" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
-                    Explore in Sandbox
-                    <ArrowRight size={14} />
-                  </a>
-                </div>
-              </div>
-
-              <div className="tab-right">
-                <div className="code-card">
-                  <div className="code-card-header">
-                    <div className="code-dots">
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                    <span className="code-filename">spec.wardseal.ts</span>
-                  </div>
-                  <pre className="code-body">
-                    <code>{tabFeatures[activeTab].code}</code>
-                  </pre>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── DEPLOYMENT FLEXIBILITY BANNER ── */}
-      <section className="section section-deployment">
-        <div className="container">
-          <div className="deployment-box reveal">
-            <div className="deployment-text">
-              <span className="deployment-kicker">Deployment Freedom</span>
-              <h2>Your Cloud, Your Perimeter, Your Jurisdiction</h2>
-              <p>
-                Run WardSeal on your private Kubernetes clusters with our official Helm chart, or let us host your dedicated, SOC 2 compliant environment.
-              </p>
-              <div className="deployment-tags">
-                <span>Kubernetes Native</span>
-                <span>Helm Charts</span>
-                <span>Air-Gapped Ready</span>
-                <span>Zero Data Telemetry Leaks</span>
-              </div>
-            </div>
-            <div className="deployment-terminal">
-              <div className="terminal-header">
-                <Terminal size={14} />
-                <span>bash — helm install</span>
-              </div>
-              <div className="terminal-content">
-                <p><span className="prompt">$</span> helm repo add wardseal https://charts.wardseal.com</p>
-                <p><span className="prompt">$</span> helm repo update</p>
-                <p><span className="prompt">$</span> helm install wardseal wardseal/control-plane \</p>
-                <p className="indent">--namespace wardseal-system \</p>
-                <p className="indent">--set security.fido2=enabled</p>
-                <p className="success mt-2">✓ WardSeal Cluster Deployed Successfully</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── HIGH IMPACT BOTTOM CTA BANNER ── */}
-      <section className="section section-cta" id="get-started">
-        <div className="container">
-          <div className="cta-banner reveal">
-            <div className="cta-glow" />
-            <div className="cta-logo-wrap">
-              <img src="/wardseal.svg" alt="" className="cta-shield-logo" />
-            </div>
-            <h2>Put Identity Under One Seal of Control</h2>
-            <p>
-              Deploy WardSeal, federate your enterprise directory, and enforce continuous zero-trust authorization in minutes.
-            </p>
-            <div className="cta-actions">
-              <a className="btn btn-accent btn-lg" href={`${idBaseUrl}/signup?redirect_uri=${loginRedirectUri}`}>
-                Request Access Today
-                <ArrowRight size={18} />
+          <div className="tab-panel" id="capabilities-panel" role="tabpanel">
+            <div className="tab-copy">
+              <h3>{tab.title}</h3>
+              <p className="tab-desc">{tab.desc}</p>
+              <ul className="tab-points">
+                {tab.points.map((pt) => (
+                  <li key={pt}>{pt}</li>
+                ))}
+              </ul>
+              <a className="text-link" href={signupHref}>
+                Try it in a sandbox
+                <ArrowRight size={14} strokeWidth={1.75} />
               </a>
-              <a className="btn btn-outline-white btn-lg" href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer">
-                Read Developer Docs
-                <ExternalLink size={16} />
+            </div>
+
+            <div className="code-card">
+              <div className="code-card-header">{tab.file}</div>
+              <pre className="code-body"><code>{tab.code}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section-deployment" aria-labelledby="deploy-title">
+        <div className="container deployment">
+          <div className="deployment-text">
+            <h2 id="deploy-title">Run it in your cluster, or ours</h2>
+            <p>
+              Install WardSeal on your own Kubernetes with the Helm chart, including air-gapped environments, or let us run a dedicated instance for you
+            </p>
+            <p className="deployment-tags">Kubernetes · Helm · Air-gapped installs · Your region</p>
+          </div>
+          <div className="terminal">
+            <div className="terminal-header">zsh · helm</div>
+            <div className="terminal-content">
+              <p><span className="prompt">$</span> helm repo add wardseal https://charts.wardseal.com</p>
+              <p><span className="prompt">$</span> helm repo update</p>
+              <p><span className="prompt">$</span> helm install wardseal wardseal/control-plane \</p>
+              <p className="indent">--namespace wardseal-system \</p>
+              <p className="indent">--set security.fido2=enabled</p>
+              <p className="terminal-out">STATUS: deployed · REVISION: 1</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section-cta" id="get-started" aria-labelledby="cta-title">
+        <div className="container">
+          <div className="cta-panel">
+            <div>
+              <h2 id="cta-title">Put identity under one seal</h2>
+              <p>Start with SSO for one app, then bring in directories and policies when you are ready</p>
+            </div>
+            <div className="cta-actions">
+              <a className="btn btn-light btn-lg" href={signupHref}>
+                Request access
+                <ArrowRight size={16} strokeWidth={1.75} />
+              </a>
+              <a className="btn btn-ghost-light btn-lg" href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer">
+                Read the docs
+                <ArrowUpRight size={16} strokeWidth={1.75} />
               </a>
             </div>
           </div>

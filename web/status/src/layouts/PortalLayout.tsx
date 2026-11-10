@@ -115,7 +115,7 @@ const PortalLayout = () => {
     return (
         <div className="min-h-screen bg-surface flex flex-col font-sans selection:bg-primary/10 selection:text-primary">
             {/* Top Navigation Bar: Modernist */}
-            <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-md">
+            <header className="sticky top-0 z-50 w-full border-b bg-card">
                 <div className="container mx-auto px-5 h-14 flex items-center justify-between">
                     {/* Logo Area */}
                     <div className="flex items-center gap-4">
@@ -124,8 +124,8 @@ const PortalLayout = () => {
                                 <img src='/wardseal.svg' height={16} width={16} alt='wardseal' className="w-8 h-8" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-bold text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
-                                <span className="text-[9px] font-bold tracking-tight text-muted-foreground leading-none mt-0.5 uppercase">Developer portal</span>
+                                <span className="font-medium text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
+                                <span className="text-xs font-medium tracking-tight text-muted-foreground leading-none mt-0.5 ">Developer portal</span>
                             </div>
                         </Link>
                     </div>
@@ -136,7 +136,7 @@ const PortalLayout = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/dashboard')}
-                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-bold text-[11px] px-4 hover:bg-surface-container transition-all"
+                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-medium text-xs px-4 hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
                             >
                                 <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                                 <span>Admin Panel</span>
@@ -149,15 +149,15 @@ const PortalLayout = () => {
                             {/* User Menu */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-9 w-9 p-0 rounded-full hover:bg-surface-container transition-all">
+                                    <Button variant="ghost" className="h-9 w-9 p-0 rounded-full hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]">
                                         <Avatar name={getTokenUserID(localStorage.getItem('token')) || 'user'} size={28} className="h-7 w-7" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-64 rounded-lg border-none shadow-2xl p-1 bg-card">
+                                <DropdownMenuContent align="end" className="w-64 rounded-lg border-none shadow-overlay p-1 bg-card">
                                     <DropdownMenuLabel className="p-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/50 mb-1">Authenticated Account</span>
-                                            <span className="text-sm font-bold text-on-surface truncate">{userName}</span>
+                                            <span className="text-xs font-medium text-on-surface-subtle mb-1">Authenticated Account</span>
+                                            <span className="text-sm font-medium text-on-surface truncate">{userName}</span>
                                         </div>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
@@ -200,36 +200,36 @@ const PortalLayout = () => {
                 <div className="flex items-center justify-between mb-4 border-b border-on-surface/5 pb-3">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-1.5 bg-success rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                            <span className="text-[10px] font-bold tracking-tight text-on-surface uppercase">Secure connection</span>
+                            <div className="h-1.5 w-1.5 bg-success rounded-full" />
+                            <span className="text-xs font-medium tracking-tight text-on-surface ">Secure connection</span>
                         </div>
                         <div className="flex items-center gap-2 opacity-40">
                             <Activity className="w-3 h-3" />
-                            <span className="text-[10px] font-bold tracking-tight uppercase">Encrypted</span>
+                            <span className="text-xs font-medium tracking-tight ">Encrypted</span>
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-3">
-                        <span className="text-[9px] font-bold text-muted-foreground tracking-tight px-3 border-l border-on-surface/5 uppercase">WardSeal Identity Platform</span>
+                        <span className="text-xs font-medium text-muted-foreground tracking-tight px-3 border-l border-on-surface/5 ">WardSeal Identity Platform</span>
                     </div>
                 </div>
 
                 <Outlet />
             </main>
 
-            <footer className="border-t border-on-surface/5 py-4 bg-card/50">
+            <footer className="border-t border-on-surface/5 py-4 bg-card">
                 <div className="container mx-auto px-5 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                             <img src="/wardseal.svg" alt="WardSeal" height={16} width={16} className="w-3.5 h-3.5" />
-                            <p className="text-[10px] font-bold text-muted-foreground tracking-tight uppercase">Secured by WardSeal</p>
+                            <p className="text-xs font-medium text-muted-foreground tracking-tight ">Secured by WardSeal</p>
                         </div>
-                        <p className="text-[9px] font-medium text-muted-foreground tracking-tight">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
+                        <p className="text-xs font-medium text-muted-foreground tracking-tight">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center gap-6">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight">Terms</a>
-                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight">Security Policies</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight">Terms</a>
+                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight">Security Policies</a>
                     </div>
                 </div>
             </footer>

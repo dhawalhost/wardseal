@@ -44,7 +44,7 @@ const PortalDashboard = () => {
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-border pb-8">
                     <div className="space-y-3 max-w-xl">
                         <p className="text-xs font-semibold text-secondary">User portal</p>
-                        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Your applications</h1>
+                        <h1 className="text-3xl font-medium tracking-tight text-on-surface">Your applications</h1>
                         <p className="text-muted-foreground text-sm leading-relaxed">
                             Launch assigned apps and manage access from one place.
                         </p>
@@ -80,7 +80,7 @@ const PortalDashboard = () => {
                     ) : filteredApps.length === 0 ? (
                         <GlassCard className="py-16 text-center border border-dashed border-border bg-card shadow-none rounded-xl">
                             <Box className="h-10 w-10 text-muted-foreground mb-4 mx-auto" />
-                            <h3 className="text-lg font-bold text-on-surface tracking-tight">No applications yet</h3>
+                            <h3 className="text-lg font-medium text-on-surface tracking-tight">No applications yet</h3>
                             <p className="text-muted-foreground text-sm mt-2 max-w-xs mx-auto">
                                 {searchQuery ? `No matches for “${searchQuery}”.` : 'When your admin assigns apps, they will appear here.'}
                             </p>

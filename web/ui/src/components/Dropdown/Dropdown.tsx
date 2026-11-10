@@ -159,7 +159,7 @@ DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 /** Visual hint only — the shortcut itself must be wired by the app. */
 const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
   <span
-    className={cn("ml-auto pl-4 font-mono text-xs tracking-wide text-on-surface-subtle", className)}
+    className={cn("ml-auto pl-4 font-mono text-xs text-on-surface-subtle", className)}
     aria-hidden
     {...props}
   />

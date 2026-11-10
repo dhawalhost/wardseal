@@ -45,13 +45,14 @@
 
 - **Heading Font:** Plus Jakarta Sans
 - **Body Font:** Plus Jakarta Sans
-- **Mood:** enterprise, saas, b2b, professional, indigo, modern, approachable, legible, ios dynamic type, android scaling
-- **Google Fonts:** [Plus Jakarta Sans + Plus Jakarta Sans](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400)
+- **Mono partner:** JetBrains Mono — IDs, timestamps, counts, figures in meta lines
+- **Character:** exact, sober, quietly sure. World: a notary's desk — signed records, ink on paper, the seal
+- **Weights:** 400 and 500; 600 only for the wordmark and rare emphasis. No 700/800 headings. Sentence case everywhere, no uppercase tracked labels
+- **Google Fonts:** [Plus Jakarta Sans](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap) + [JetBrains Mono](https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap)
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
-```
+**CSS Import:** `tokens.css` from the kit already imports Plus Jakarta Sans; apps add JetBrains Mono.
+
+**Signature detail:** a mono "seal chip" (`ed25519:8fa1…0b93` with a small success dot) beside verified decisions — hero record, audit rows, live status. Nowhere else.
 
 ### Spacing Variables
 
@@ -67,12 +68,12 @@
 
 ### Shadow Depths
 
-| Level | Value | Usage |
+Runtime values live in the kit `tokens.css`. Depth comes from surface steps and hairlines first.
+
+| Level | Light | Usage |
 |-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+| `--shadow-xs` / `--shadow-sm` / `--shadow-card` | `0 1px 2px rgb(15 23 42 / 0.04–0.05)` | Controls, cards (dark mode: none) |
+| `--shadow-overlay` | `0 8px 24px -4px rgb(15 23 42 / 0.10)` + hairline | Menus, dialogs, sheets |
 
 ---
 
@@ -88,68 +89,11 @@ Runtime kit mapping (`@dhawalhost/wardseal-ui-kit` `Button`):
 | CTA / Accent | `secondary` (**default**) | `#0369A1` blue | Product actions, landing CTAs |
 | Outline | `outline` | transparent + border | Secondary actions |
 
-```css
-/* Primary — navy ink (kit variant="primary") */
-.btn-primary {
-  background: #0F172A;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* CTA — brand blue (kit variant="secondary", default Button) */
-.btn-cta {
-  background: #0369A1;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-cta:hover {
-  opacity: 0.9;
-}
-
-/* Outline */
-.btn-outline {
-  background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
+Shared button rules (kit `Button`): weight 500, radius 8px on every size, heights 32 / 36 / 44, `transition-[color,background-color,border-color,transform]` 150ms, `active:scale-[0.98]`, no hover lift. Filled variants carry an inset top highlight (`inset 0 1px 0 rgb(255 255 255 / 0.12)`) instead of a drop shadow. One primary action per view.
 
 ### Cards
 
-```css
-.card {
-  background: #F8FAFC;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
+Kit `Card` / `GlassCard`: `bg-card`, 1px `border-border`, radius 12–16px, padding 20–24px, no hover lift. A clickable card changes border or surface on hover, never position or shadow size. Stat cards are label + number + one line of context — no icon tiles, sparklines or badges.
 
 ### Inputs
 
@@ -173,15 +117,14 @@ Runtime kit mapping (`@dhawalhost/wardseal-ui-kit` `Button`):
 
 ```css
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(2, 6, 23, 0.5); /* kit .overlay-scrim — no blur */
 }
 
 .modal {
   background: white;
   border-radius: 16px;
   padding: 32px;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-overlay);
   max-width: 500px;
   width: 90%;
 }
@@ -213,7 +156,11 @@ Runtime kit mapping (`@dhawalhost/wardseal-ui-kit` `Button`):
 
 - ❌ Playful design
 - ❌ Hidden credentials
-- ❌ AI purple/pink gradients
+- ❌ AI purple/pink gradients, and hue gradients of any kind on surfaces, buttons or text
+- ❌ Coloured glows, glass blur, pulsing or pinging status dots on things that are not live
+- ❌ Uppercase tracked labels, 700+ weight headings, exclamation marks, greeting headlines
+- ❌ Unverified trust claims (certifications, uptime, customer counts) — state them only when real and sourced
+- ❌ `transition: all`, hover lifts and hover scale
 
 ### Additional Forbidden Patterns
 
@@ -230,10 +177,11 @@ Runtime kit mapping (`@dhawalhost/wardseal-ui-kit` `Button`):
 
 Before delivering any UI code, verify:
 
+- [ ] `npm run check:craft` passes in `web/` (kit craft rules — see kit `THEMES.md`)
 - [ ] No emojis used as icons (use SVG instead)
 - [ ] All icons from consistent icon set (Heroicons/Lucide)
 - [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
+- [ ] Hover states are colour or surface steps, 120–180ms, named properties only
 - [ ] Light mode: text contrast 4.5:1 minimum
 - [ ] Focus states visible for keyboard navigation
 - [ ] `prefers-reduced-motion` respected

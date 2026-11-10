@@ -86,19 +86,19 @@ export const Standard: Story = {
                 <Avatar name={identity.username} size={28} />
                 <div>
                   <div className="text-on-surface font-semibold text-sm">{identity.name}</div>
-                  <div className="text-on-surface-variant/40 text-xs">@{identity.username}</div>
+                  <div className="text-on-surface-subtle text-xs">@{identity.username}</div>
                 </div>
               </TableCell>
-              <TableCell className="text-on-surface-variant/80 font-medium text-xs">
+              <TableCell className="text-on-surface-variant font-medium text-xs">
                 {identity.role}
               </TableCell>
               <TableCell>
                 <Badge variant={identity.status as any}>{identity.statusLabel}</Badge>
               </TableCell>
-              <TableCell className="text-on-surface-variant/60 font-semibold text-xs">
+              <TableCell className="text-on-surface-subtle font-semibold text-xs">
                 {identity.lastActive}
               </TableCell>
-              <TableCell className="text-right font-mono text-[11px] text-on-surface-variant/50">
+              <TableCell className="text-right font-mono text-xs text-on-surface-subtle">
                 {identity.key}
               </TableCell>
             </TableRow>
@@ -130,19 +130,19 @@ export const Glass: Story = {
                 <Avatar name={identity.username} size={28} />
                 <div>
                   <div className="text-on-surface font-semibold text-sm">{identity.name}</div>
-                  <div className="text-on-surface-variant/40 text-xs">@{identity.username}</div>
+                  <div className="text-on-surface-subtle text-xs">@{identity.username}</div>
                 </div>
               </TableCell>
-              <TableCell className="text-on-surface-variant/80 font-medium text-xs">
+              <TableCell className="text-on-surface-variant font-medium text-xs">
                 {identity.role}
               </TableCell>
               <TableCell>
                 <Badge variant={identity.status as any}>{identity.statusLabel}</Badge>
               </TableCell>
-              <TableCell className="text-on-surface-variant/60 font-semibold text-xs">
+              <TableCell className="text-on-surface-subtle font-semibold text-xs">
                 {identity.lastActive}
               </TableCell>
-              <TableCell className="text-right font-mono text-[11px] text-on-surface-variant/50">
+              <TableCell className="text-right font-mono text-xs text-on-surface-subtle">
                 {identity.key}
               </TableCell>
             </GlassTableRow>
@@ -174,8 +174,8 @@ function CardWrapper({
       }
     >
       <div className="flex flex-col space-y-1.5 mb-6">
-        <h3 className="text-base font-bold leading-none tracking-tight text-on-surface">{title}</h3>
-        <p className="text-xs font-semibold text-on-surface-variant/40 uppercase tracking-tight mt-0.5">
+        <h3 className="text-base font-medium leading-none tracking-tight text-on-surface">{title}</h3>
+        <p className="text-xs font-semibold text-on-surface-subtle tracking-tight mt-0.5">
           {description}
         </p>
       </div>

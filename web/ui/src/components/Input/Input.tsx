@@ -9,7 +9,7 @@ import { useFormControlProps } from "../Form/Form";
  * invalid state keys off aria-invalid so it can't drift from semantics.
  */
 export const controlBaseClass =
-  "w-full rounded-lg border border-input bg-card text-sm text-on-surface shadow-xs " +
+  "w-full rounded-md border border-input bg-card text-sm text-on-surface shadow-xs " +
   "transition-colors duration-fast " +
   "placeholder:text-on-surface-subtle " +
   "hover:border-on-surface-subtle " +
@@ -47,7 +47,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           type={type}
           className={cn(
             controlBaseClass,
-            "flex h-10 px-3 py-2 read-only:bg-muted file:border-0 file:bg-transparent file:text-sm file:font-medium",
+            "flex h-9 px-3 py-2 read-only:bg-muted file:border-0 file:bg-transparent file:text-sm file:font-medium",
             icon && "pl-10",
             className
           )}

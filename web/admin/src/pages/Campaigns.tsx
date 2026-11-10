@@ -222,29 +222,29 @@ export default function Campaigns() {
                                         <div className="p-2 bg-secondary-foreground/10 rounded-lg">
                                             <Plus className="w-4 h-4 text-secondary-foreground" />
                                         </div>
-                                        <GlassCardTitle className="text-base font-bold tracking-tight text-secondary-foreground">New campaign</GlassCardTitle>
+                                        <GlassCardTitle className="text-base font-medium tracking-tight text-secondary-foreground">New campaign</GlassCardTitle>
                                     </div>
                                 </GlassCardHeader>
                                 <GlassCardContent className="p-card">
                                     <form onSubmit={handleCreateCampaign} className="space-y-4">
                                          <div className="space-y-2">
-                                            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Campaign name</Label>
+                                            <Label className="text-xs font-semibold text-muted-foreground">Campaign name</Label>
                                             <Input
                                                 placeholder="e.g. Q3 privilege audit"
-                                                className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium"
+                                                className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium"
                                                 value={newCampaign.name}
                                                 onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
                                                 required
                                             />
                                         </div>
                                          <div className="space-y-2">
-                                            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Reviewer</Label>
+                                            <Label className="text-xs font-semibold text-muted-foreground">Reviewer</Label>
                                             <Select
                                                 value={newCampaign.reviewerId}
                                                 onValueChange={(v) => setNewCampaign({ ...newCampaign, reviewerId: v })}
                                                 required
                                             >
-                                                <SelectTrigger className="h-10 border border-border rounded-lg bg-card focus:ring-secondary/20 font-medium text-sm">
+                                                <SelectTrigger className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm">
                                                     <SelectValue placeholder="Select a reviewer..." />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border border-border shadow-sm">
@@ -269,11 +269,11 @@ export default function Campaigns() {
                             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden flex flex-col h-[560px] rounded-xl">
                                 <GlassCardHeader className="py-card px-card border-b border-border">
                                          <div className="flex items-center justify-between">
-                                        <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Campaigns</GlassCardTitle>
+                                        <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Campaigns</GlassCardTitle>
                                         <div className="flex items-center gap-2 bg-muted px-2 py-1 rounded-lg border border-border">
                                             <Filter className="w-3.5 h-3.5 text-muted-foreground" />
                                             <select
-                                                className="text-xs font-semibold bg-transparent border-none p-0 h-4 focus:ring-0 cursor-pointer text-muted-foreground"
+                                                className="text-xs font-semibold bg-transparent border-none p-0 h-4 cursor-pointer text-muted-foreground"
                                                 value={statusFilter}
                                                 onChange={(e) => setStatusFilter(e.target.value)}
                                             >
@@ -304,10 +304,10 @@ export default function Campaigns() {
                                                 </div>
                                                  <div className="flex items-center gap-2 mt-1">
                                                     <Badge className={cn(
-                                                        "rounded-md font-semibold text-[10px] px-2 py-0.5 border-none",
-                                                        campaign.status === 'active' ? 'bg-success-subtle text-success' :
+                                                        "rounded-md font-semibold text-xs px-2 py-0.5 border-none",
+                                                        campaign.status === 'active' ? 'bg-success-subtle text-success-subtle-foreground' :
                                                         campaign.status === 'completed' ? 'bg-muted text-muted-foreground' :
-                                                            'bg-warning/10 text-warning'
+                                                            'bg-warning/10 text-warning-subtle-foreground'
                                                     )}>
                                                         {campaign.status}
                                                     </Badge>
@@ -318,12 +318,12 @@ export default function Campaigns() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 {campaign.status === 'draft' && (
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-success hover:bg-success-subtle" onClick={(e) => { e.stopPropagation(); handleStartCampaign(campaign.id); }}>
+                                                    <Button aria-label="Start campaign" size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-success hover:bg-success-subtle" onClick={(e) => { e.stopPropagation(); handleStartCampaign(campaign.id); }}>
                                                         <Play className="h-3.5 w-3.5" />
                                                     </Button>
                                                 )}
                                                 {campaign.status === 'active' && (
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleCompleteCampaign(campaign.id); }}>
+                                                    <Button aria-label="Stop campaign" size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleCompleteCampaign(campaign.id); }}>
                                                         <Square className="h-3.5 w-3.5" />
                                                     </Button>
                                                 )}
@@ -345,7 +345,7 @@ export default function Campaigns() {
                                                      <div className="p-2 bg-secondary/10 rounded-lg shrink-0">
                                                         <Target className="w-5 h-5 text-secondary" />
                                                     </div>
-                                                    <h2 className="text-xl font-bold tracking-tight text-on-surface truncate">{selectedCampaign.name}</h2>
+                                                    <h2 className="text-xl font-medium tracking-tight text-on-surface truncate">{selectedCampaign.name}</h2>
                                                 </div>
                                                 <p className="text-sm font-medium text-muted-foreground">Reviewer: <span className="text-secondary">{selectedCampaign.reviewer_id}</span></p>
                                             </div>
@@ -371,19 +371,19 @@ export default function Campaigns() {
                                         <div className="bg-muted/30 border-b border-border p-card">
                                             <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-4 gap-card items-end">
                                                  <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">User ID</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">User ID</Label>
                                                     <Input
                                                         placeholder="User ID"
-                                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium"
+                                                        className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium"
                                                         value={newItem.user_id}
                                                         onChange={(e) => setNewItem({ ...newItem, user_id: e.target.value })}
                                                         required
                                                     />
                                                 </div>
                                                  <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Resource type</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Resource type</Label>
                                                     <select
-                                                        className="flex h-10 w-full border border-border rounded-lg bg-card focus:ring-secondary/20 font-medium text-sm px-3"
+                                                        className="flex h-10 w-full border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm px-3"
                                                         value={newItem.resource_type}
                                                         onChange={(e) => setNewItem({ ...newItem, resource_type: e.target.value })}
                                                     >
@@ -394,10 +394,10 @@ export default function Campaigns() {
                                                     </select>
                                                 </div>
                                                  <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Resource ID</Label>
+                                                    <Label className="text-xs font-semibold text-muted-foreground">Resource ID</Label>
                                                     <Input
                                                         placeholder="Resource ID"
-                                                        className="h-10 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium"
+                                                        className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium"
                                                         value={newItem.resource_id}
                                                         onChange={(e) => setNewItem({ ...newItem, resource_id: e.target.value })}
                                                         required
@@ -420,10 +420,10 @@ export default function Campaigns() {
                                                  <GlassTable>
                                                     <GlassTableHeader>
                                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">User</GlassTableHead>
-                                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Resource</GlassTableHead>
-                                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
-                                                            <GlassTableHead className="text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
+                                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
+                                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
+                                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
+                                                            <GlassTableHead className="text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
                                                         </GlassTableRow>
                                                     </GlassTableHeader>
                                                     <TableBody>
@@ -434,7 +434,7 @@ export default function Campaigns() {
                                                                 </TableCell>
                                                                 <TableCell className="py-card">
                                                                     <div className="flex items-center gap-2">
-                                                                        <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-[10px] px-2 py-0.5 uppercase">{item.resource_type}</Badge>
+                                                                        <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 ">{item.resource_type}</Badge>
                                                                         <span className="text-sm font-medium text-on-surface">{item.resource_name || item.resource_id}</span>
                                                                     </div>
                                                                 </TableCell>
@@ -442,7 +442,7 @@ export default function Campaigns() {
                                                                     {item.decision ? (
                                                                         <Badge className={cn(
                                                                             "rounded-md font-semibold text-xs px-2 py-0.5 border-none",
-                                                                            item.decision === 'approve' ? 'bg-success-subtle text-success' : 'bg-destructive/10 text-destructive'
+                                                                            item.decision === 'approve' ? 'bg-success-subtle text-success-subtle-foreground' : 'bg-destructive/10 text-error-subtle-foreground'
                                                                         )}>
                                                                             {item.decision}
                                                                         </Badge>
@@ -476,7 +476,7 @@ export default function Campaigns() {
                                          <div className="w-14 h-14 bg-secondary/10 rounded-xl flex items-center justify-center mb-4">
                                             <Target className="h-6 w-6 text-secondary" />
                                         </div>
-                                        <h3 className="text-base font-bold tracking-tight text-on-surface mb-2">Select a campaign</h3>
+                                        <h3 className="text-base font-medium tracking-tight text-on-surface mb-2">Select a campaign</h3>
                                         <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-xs">Choose a campaign from the list to view its details and items.</p>
                                     </div>
                                 </div>
@@ -492,18 +492,18 @@ export default function Campaigns() {
                                         <ShieldCheck className="w-5 h-5 text-secondary-foreground" />
                                     </div>
                                      <div>
-                                        <GlassCardTitle className="text-lg font-bold tracking-tight text-secondary-foreground">Review portal</GlassCardTitle>
-                                        <p className="text-secondary-foreground/80 text-sm mt-0.5">Review and certify access for users assigned to you.</p>
+                                        <GlassCardTitle className="text-lg font-medium tracking-tight text-secondary-foreground">Review portal</GlassCardTitle>
+                                        <p className="text-secondary-foreground text-sm mt-0.5">Review and certify access for users assigned to you.</p>
                                     </div>
                                 </div>
                             </GlassCardHeader>
                             <GlassCardContent className="p-card space-y-page">
                                  <div className="flex flex-col md:flex-row gap-card max-w-2xl">
                                     <div className="flex-1 space-y-2">
-                                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground">Your user ID</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground">Your user ID</Label>
                                         <Input
                                             placeholder="Enter user ID"
-                                            className="h-10 font-mono text-sm border border-border rounded-lg bg-card px-4 focus:ring-secondary/20"
+                                            className="h-10 font-mono text-sm border border-input rounded-lg bg-card px-4 focus-visible:ring-ring"
                                             value={reviewerId}
                                             onChange={(e) => setReviewerId(e.target.value)}
                                         />
@@ -525,9 +525,9 @@ export default function Campaigns() {
                                         <GlassTable>
                                              <GlassTableHeader>
                                                 <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Resource</GlassTableHead>
-                                                    <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">User</GlassTableHead>
-                                                    <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Decisions</GlassTableHead>
+                                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
+                                                    <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
+                                                    <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs text-muted-foreground ">Decisions</GlassTableHead>
                                                 </GlassTableRow>
                                             </GlassTableHeader>
                                             <TableBody>

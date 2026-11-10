@@ -44,7 +44,7 @@ const SignUp: React.FC = () => {
                     <div className="mx-auto w-10 h-10 flex items-center justify-center bg-muted rounded-xl mb-6">
                         <Lock className="w-5 h-5 text-muted-foreground" />
                     </div>
-                    <GlassCardTitle className="mb-3 text-2xl font-bold tracking-tight">Registration disabled</GlassCardTitle>
+                    <GlassCardTitle className="mb-3 text-2xl font-medium tracking-tight">Registration disabled</GlassCardTitle>
                     <GlassCardDescription className="mb-8">
                         Public registration is currently disabled on this server.
                     </GlassCardDescription>
@@ -92,9 +92,9 @@ const SignUp: React.FC = () => {
     return (
         <div className="flex min-h-screen bg-card font-sans selection:bg-primary/10">
             {/* Left Side: Brand & Visual — explicit white text for WCAG contrast on navy */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 xl:p-16 bg-[#0F172A] text-white">
+            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 xl:p-16 bg-primary text-primary-foreground">
                 <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-                    <div className="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full bg-[#0369A1]/25 blur-[100px]" />
+                    <div className="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full bg-secondary/25 blur-[100px]" />
                 </div>
 
                 <div className="relative z-10">
@@ -102,12 +102,12 @@ const SignUp: React.FC = () => {
                         <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 border border-white/10">
                             <Logo variant="icon" className="w-6 h-6" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight text-white">WardSeal</span>
+                        <span className="text-xl font-medium tracking-tight text-white">WardSeal</span>
                     </Link>
                 </div>
 
                 <div className="relative z-10 space-y-8">
-                    <h1 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.15] text-white">
+                    <h1 className="text-4xl xl:text-5xl font-medium tracking-tight leading-[1.15] text-white">
                         The foundation for modern identity trust
                     </h1>
                     <div className="space-y-5">
@@ -117,7 +117,7 @@ const SignUp: React.FC = () => {
                             { icon: <Activity className="w-5 h-5" />, text: "Automated governance & access reviews" }
                         ].map((item, i) => (
                             <div key={i} className="flex items-center gap-4 text-slate-200">
-                                <div className="p-2.5 rounded-lg border border-white/20 bg-white/5 text-sky-300">{item.icon}</div>
+                                <div className="p-2.5 rounded-lg border border-white/20 bg-white/5 text-info">{item.icon}</div>
                                 <span className="text-base font-medium text-slate-200">{item.text}</span>
                             </div>
                         ))}
@@ -139,7 +139,7 @@ const SignUp: React.FC = () => {
                     </div>
 
                     <div className="mb-10 text-center lg:text-left">
-                        <h2 className="text-3xl font-bold tracking-tight text-on-surface">Create your account</h2>
+                        <h2 className="text-3xl font-medium tracking-tight text-on-surface">Create your account</h2>
                         <p className="text-sm text-muted-foreground mt-2">Get started with your free organization</p>
                     </div>
 
@@ -151,7 +151,7 @@ const SignUp: React.FC = () => {
                                 <Input
                                     id="companyName"
                                     placeholder="Acme Corp"
-                                    className="h-14 pl-12 rounded-xl border-border bg-background/50 focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-base"
+                                    className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
                                     value={companyName}
                                     onChange={(e) => setCompanyName(e.target.value)}
                                     required
@@ -167,7 +167,7 @@ const SignUp: React.FC = () => {
                                     id="email"
                                     type="email"
                                     placeholder="name@company.com"
-                                    className="h-14 pl-12 rounded-xl border-border bg-background/50 focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-base"
+                                    className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -184,7 +184,7 @@ const SignUp: React.FC = () => {
                                     type="password"
                                     placeholder="••••••••••••"
                                     minLength={12}
-                                    className="h-14 pl-12 rounded-xl border-border bg-background/50 focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-base"
+                                    className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -204,14 +204,14 @@ const SignUp: React.FC = () => {
 
                     <div className="mt-12 text-center">
                         <p className="text-sm font-medium text-on-surface-variant">
-                            Already have an account? <Link to="/login" className="text-primary font-bold hover:underline decoration-2 underline-offset-4">Sign in</Link>
+                            Already have an account? <Link to="/login" className="text-primary font-medium hover:underline decoration-2 underline-offset-4">Sign in</Link>
                         </p>
                     </div>
 
                     <div className="mt-16 pt-8 border-t border-border flex justify-center gap-8">
-                        <a href="#" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
-                        <a href="#" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
-                        <a href="#" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">Support</a>
+                        <a href="#" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
+                        <a href="#" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
+                        <a href="#" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Support</a>
                     </div>
                 </div>
             </div>

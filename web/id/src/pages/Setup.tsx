@@ -91,7 +91,7 @@ const Setup: React.FC = () => {
 
                 <GlassCard className="shadow-sm border-border bg-card overflow-hidden rounded-xl">
                     <GlassCardHeader className="pt-8 pb-4 px-8 text-center border-b border-border">
-                        <GlassCardTitle className="text-2xl font-bold tracking-tight">Initial setup</GlassCardTitle>
+                        <GlassCardTitle className="text-2xl font-medium tracking-tight">Initial setup</GlassCardTitle>
                         <GlassCardDescription className="mt-2">
                             Create the root administrator account for this WardSeal instance.
                         </GlassCardDescription>
@@ -99,7 +99,7 @@ const Setup: React.FC = () => {
                     <form onSubmit={handleSubmit}>
                         <GlassCardContent className="px-8 pb-8 space-y-6">
                             {error && (
-                                <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
+                                <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
                                     <AlertCircle className="h-5 w-5 shrink-0" />
                                     <span className="text-sm font-medium">{error}</span>
                                 </div>
@@ -113,7 +113,7 @@ const Setup: React.FC = () => {
                                     id="email"
                                     type="email"
                                     placeholder="admin@company.com"
-                                    className="h-12 rounded-lg border-border bg-background shadow-xs"
+                                    className="h-12 rounded-lg border-input bg-background shadow-xs"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -131,7 +131,7 @@ const Setup: React.FC = () => {
                                         id="password"
                                         type="password"
                                         placeholder="Minimum 8 characters"
-                                        className="h-12 pl-10 rounded-lg border-border bg-background shadow-xs"
+                                        className="h-12 pl-10 rounded-lg border-input bg-background shadow-xs"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -148,7 +148,7 @@ const Setup: React.FC = () => {
                                     id="confirmPassword"
                                     type="password"
                                     placeholder="Re-enter password"
-                                    className="h-12 rounded-lg border-border bg-background shadow-xs"
+                                    className="h-12 rounded-lg border-input bg-background shadow-xs"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required

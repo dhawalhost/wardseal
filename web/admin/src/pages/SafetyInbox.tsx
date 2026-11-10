@@ -72,7 +72,7 @@ const SafetyInbox: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-destructive px-5 py-3 rounded-lg flex items-center gap-3 text-sm font-semibold border border-destructive/20">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg flex items-center gap-3 text-sm font-semibold border border-destructive/20">
                     <ShieldAlert className="h-4 w-4" />
                     {error}
                 </div>
@@ -81,11 +81,11 @@ const SafetyInbox: React.FC = () => {
             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                 <GlassCardHeader className="border-b border-border py-card px-card">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-destructive/10 rounded-lg text-destructive">
+                        <div className="p-2 bg-destructive/10 rounded-lg text-error-subtle-foreground">
                             <Activity className="h-4 w-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Pending alerts</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Pending alerts</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">{actions.length} actions awaiting review</p>
                         </div>
                     </div>
@@ -94,12 +94,12 @@ const SafetyInbox: React.FC = () => {
                     <GlassTable>
                         <GlassTableHeader>
                              <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Action type</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Target</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Reason</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Details</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Time</GlassTableHead>
-                                <GlassTableHead className="text-right font-semibold text-xs tracking-wide text-muted-foreground pr-card uppercase">Actions</GlassTableHead>
+                                <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Action type</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Target</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Reason</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Details</GlassTableHead>
+                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Time</GlassTableHead>
+                                <GlassTableHead className="text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
                             </GlassTableRow>
                         </GlassTableHeader>
                         <TableBody>
@@ -118,7 +118,7 @@ const SafetyInbox: React.FC = () => {
                                 actions.map((action) => (
                                     <GlassTableRow key={action.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
                                         <TableCell className="py-card pl-card">
-                                            <Badge className="bg-destructive/10 text-destructive border-none rounded-md font-semibold text-xs px-2 py-0.5">
+                                            <Badge className="bg-destructive/10 text-error-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">
                                                 {action.action_type ? (action.action_type.charAt(0).toUpperCase() + action.action_type.slice(1).toLowerCase()).replaceAll('_', ' ') : 'Unknown Action'}
                                             </Badge>
                                         </TableCell>
@@ -127,7 +127,7 @@ const SafetyInbox: React.FC = () => {
                                         <TableCell className="py-card">
                                             <div className="flex gap-1.5 flex-wrap">
                                                 {Array.isArray(action.metadata?.org_ids) && action.metadata.org_ids.map((org: string) => (
-                                                    <Badge key={org} className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-[10px] px-2 py-0.5">
+                                                    <Badge key={org} className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">
                                                         {org}
                                                     </Badge>
                                                 ))}

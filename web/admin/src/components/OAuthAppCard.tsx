@@ -38,25 +38,25 @@ export const OAuthAppCard: React.FC<OAuthAppCardProps> = ({
     handleViewLogs
 }) => {
     return (
-        <GlassCard className="group border-none shadow-xl shadow-on-surface/5 hover:shadow-2xl hover:shadow-sm transition-all overflow-hidden rounded-xl bg-card ring-1 ring-on-surface/5">
+        <GlassCard className="group border-none shadow-overlay shadow-on-surface/5 hover:shadow-overlay hover:shadow-sm transition-[color,background-color,border-color,opacity,transform] overflow-hidden rounded-xl bg-card ring-1 ring-on-surface/5">
             <GlassCardHeader className="bg-surface-container p-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.03] transition-transform group-hover:scale-125">
+                <div className="absolute top-0 right-0 p-4 opacity-[0.03] transition-transform ">
                     <Box className="w-24 h-24" />
                 </div>
                 <div className="relative z-10 flex justify-between items-start">
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <Badge className="rounded-lg bg-primary/10 text-primary font-bold text-[8px] tracking-tight px-2 border-none h-5">{app.app_type}</Badge>
-                            <span className="text-[9px] font-semibold tracking-tight text-muted-foreground uppercase">ID: {app.client_id}</span>
+                            <Badge className="rounded-lg bg-primary/10 text-primary font-medium text-xs tracking-tight px-2 border-none h-5">{app.app_type}</Badge>
+                            <span className="text-xs font-semibold tracking-tight text-muted-foreground ">ID: {app.client_id}</span>
                         </div>
-                        <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface transition-colors">{app.name}</GlassCardTitle>
-                        <p className="text-[11px] font-medium text-muted-foreground line-clamp-1">{app.description || "Default application configuration."}</p>
+                        <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface transition-colors">{app.name}</GlassCardTitle>
+                        <p className="text-xs font-medium text-muted-foreground line-clamp-1">{app.description || "Default application configuration."}</p>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-card hover:text-primary rounded-lg" onClick={() => handleOpenEditApp(app)}>
+                        <Button aria-label="Edit app" size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-card hover:text-primary rounded-lg" onClick={() => handleOpenEditApp(app)}>
                             <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg" onClick={() => handleDeleteApp(app.id)}>
+                        <Button aria-label="Delete app" size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg" onClick={() => handleDeleteApp(app.id)}>
                             <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                     </div>
@@ -65,39 +65,39 @@ export const OAuthAppCard: React.FC<OAuthAppCardProps> = ({
             <GlassCardContent className="p-5 space-y-6 bg-card">
                 <div className="grid grid-cols-2 gap-6 pb-6 border-b border-on-surface/5">
                     <div>
-                        <span className="text-[10px] font-bold tracking-tight text-muted-foreground uppercase">Permissions</span>
+                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">Permissions</span>
                         <div className="flex flex-wrap gap-1.5 mt-2.5">
                             {(app.scopes && app.scopes.length > 0 ? app.scopes : ['openid', 'profile', 'email']).map(scope => (
-                                <span key={scope} className="text-[9px] font-bold tracking-tight px-2 py-1 bg-surface-container/50 text-muted-foreground rounded-md ring-1 ring-on-surface/5">{scope}</span>
+                                <span key={scope} className="text-xs font-medium tracking-tight px-2 py-1 bg-surface-container text-muted-foreground rounded-md ring-1 ring-on-surface/5">{scope}</span>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <span className="text-[11px] font-bold tracking-tight text-muted-foreground">Login Flows</span>
+                        <span className="text-xs font-medium tracking-tight text-muted-foreground">Login Flows</span>
                         <div className="flex flex-wrap gap-2 mt-4">
                             {(app.grant_types && app.grant_types.length > 0 ? app.grant_types : ['authorization_code', 'refresh_token']).map(grantType => (
-                                <span key={grantType} className="text-[10px] font-bold tracking-tight px-3 py-1.5 bg-primary/5 text-primary rounded-lg ring-1 ring-primary/10">{grantType.replace('_', ' ')}</span>
+                                <span key={grantType} className="text-xs font-medium tracking-tight px-3 py-1.5 bg-primary/5 text-primary rounded-lg ring-1 ring-primary/10">{grantType.replace('_', ' ')}</span>
                             ))}
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-primary hover:text-primary-foreground transition-all p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => handleRotateSecret(app.id)}>
-                        <RefreshCw className="h-3 w-3 text-muted-foreground group-hover/btn:text-white transition-colors" />
-                        <span className="text-[9px] font-bold tracking-tight">Rotate</span>
+                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => handleRotateSecret(app.id)}>
+                        <RefreshCw className="h-3 w-3 text-muted-foreground group-hover/btn:text-primary-foreground transition-colors" />
+                        <span className="text-xs font-medium tracking-tight">Rotate</span>
                     </Button>
-                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-primary hover:text-primary-foreground transition-all p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => handleManageAssignments(app)}>
-                        <Users className="h-3 w-3 text-muted-foreground group-hover/btn:text-white transition-colors" />
-                        <span className="text-[9px] font-bold tracking-tight">Assign</span>
+                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => handleManageAssignments(app)}>
+                        <Users className="h-3 w-3 text-muted-foreground group-hover/btn:text-primary-foreground transition-colors" />
+                        <span className="text-xs font-medium tracking-tight">Assign</span>
                     </Button>
-                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-primary hover:text-primary-foreground transition-all p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => setQuickstartApp(app)}>
-                        <Terminal className="h-3 w-3 text-muted-foreground group-hover/btn:text-white transition-colors" />
-                        <span className="text-[9px] font-bold tracking-tight">Setup</span>
+                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => setQuickstartApp(app)}>
+                        <Terminal className="h-3 w-3 text-muted-foreground group-hover/btn:text-primary-foreground transition-colors" />
+                        <span className="text-xs font-medium tracking-tight">Setup</span>
                     </Button>
-                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-success hover:text-white transition-all p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => handleViewLogs(app.id, app.name, 'app')}>
-                        <Activity className="h-3 w-3 text-muted-foreground group-hover/btn:text-white transition-colors" />
-                        <span className="text-[9px] font-bold tracking-tight">Audit</span>
+                    <Button variant="ghost" className="h-10 rounded-lg bg-surface-container/30 hover:bg-success hover:text-success-foreground transition-[color,background-color,border-color,opacity,transform] p-0 flex flex-col justify-center gap-0.5 group/btn" onClick={() => handleViewLogs(app.id, app.name, 'app')}>
+                        <Activity className="h-3 w-3 text-muted-foreground group-hover/btn:text-success-foreground transition-colors" />
+                        <span className="text-xs font-medium tracking-tight">Audit</span>
                     </Button>
                 </div>
             </GlassCardContent>

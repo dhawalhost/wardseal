@@ -50,21 +50,21 @@ const CopilotWidget = () => {
     <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-4">
       {/* Chat Window */}
       {isOpen && (
-        <GlassCard className="w-96 h-[550px] shadow-2xl flex flex-col overflow-hidden border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
+        <GlassCard className="w-96 h-[550px] shadow-overlay flex flex-col overflow-hidden border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
           <div className="h-16 flex items-center justify-between px-6 border-b bg-primary/5">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-lg">
                 <Sparkles className="w-4.5 h-4.5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-bold text-on-surface leading-none">Security Copilot</p>
+                <p className="text-sm font-medium text-on-surface leading-none">Security Copilot</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                  <p className="text-[10px] font-semibold text-success">Online</p>
+                  <p className="text-xs font-semibold text-success">Online</p>
                 </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 rounded-lg hover:bg-black/5">
+            <Button aria-label="Close assistant" variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 rounded-lg hover:bg-black/5">
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -90,7 +90,7 @@ const CopilotWidget = () => {
                   <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                     <Loader2 className="w-4 h-4 animate-spin" />
                   </div>
-                  <div className="p-4 rounded-2xl bg-card border text-[13px] font-bold italic text-muted-foreground">
+                  <div className="p-4 rounded-2xl bg-card border text-[13px] font-medium italic text-muted-foreground">
                     Analyzing identity graph...
                   </div>
                 </div>
@@ -105,9 +105,9 @@ const CopilotWidget = () => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                className="h-12 pr-12 rounded-xl border-none bg-surface-container font-medium text-sm focus-visible:ring-primary/20"
+                className="h-12 pr-12 rounded-xl border-none bg-surface-container font-medium text-sm focus-visible:ring-ring"
               />
-              <Button
+              <Button aria-label="Send message"
                 onClick={handleSend}
                 disabled={!query.trim() || loading}
                 size="icon"

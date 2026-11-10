@@ -68,7 +68,7 @@ export const DashboardComposition: Story = {
                 </CardHeader>
                 <CardContent>
                   <Stack gap="md">
-                    <p className="text-3xl font-bold tabular-nums text-success">94%</p>
+                    <p className="text-3xl font-medium tabular-nums text-success">94%</p>
                     <p className="text-sm text-muted-foreground">Hygiene score</p>
                   </Stack>
                 </CardContent>
@@ -86,7 +86,7 @@ export const ContainerAndStack: Story = {
     <div className="min-h-screen bg-background py-10">
       <Container size="md" padded>
         <Stack gap="section">
-          <h1 className="text-2xl font-bold text-on-surface">Container + Stack</h1>
+          <h1 className="text-2xl font-medium text-on-surface">Container + Stack</h1>
           <Stack direction="horizontal" gap="card" wrap>
             <Card className="flex-1 min-w-[200px]">
               <CardContent>Card A</CardContent>

@@ -362,7 +362,7 @@ const Login: React.FC = () => {
                             <div className="mx-auto w-10 h-10 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-sm">
                                 <ShieldCheck className="w-5 h-5 text-primary-foreground" />
                             </div>
-                            <GlassCardTitle className="text-2xl font-bold tracking-tight">Set up MFA</GlassCardTitle>
+                            <GlassCardTitle className="text-2xl font-medium tracking-tight">Set up MFA</GlassCardTitle>
                             <GlassCardDescription className="mt-2">
                                 Multi-factor authentication is required to access the platform
                             </GlassCardDescription>
@@ -382,7 +382,7 @@ const Login: React.FC = () => {
                                     {secret && (
                                         <div className="text-center space-y-2 w-full bg-muted/40 p-4 rounded-lg border border-border">
                                             <Label className="text-sm font-semibold text-muted-foreground">Manual setup key</Label>
-                                            <div className="font-mono text-xs font-semibold tracking-wide select-all text-primary">{secret}</div>
+                                            <div className="font-mono text-xs font-semibold select-all text-primary">{secret}</div>
                                         </div>
                                     )}
                                 </div>
@@ -393,14 +393,14 @@ const Login: React.FC = () => {
                                         value={totpCode}
                                         onChange={(e) => setTotpCode(e.target.value)}
                                         placeholder="000000"
-                                        className="h-14 text-center text-2xl font-semibold tracking-[0.15em] border-border bg-background rounded-lg shadow-xs"
+                                        className="h-14 text-center text-2xl font-semibold border-border bg-background rounded-lg shadow-xs"
                                         maxLength={6}
                                         autoFocus
                                     />
                                 </div>
 
                                 {error && (
-                                    <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
+                                    <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
                                         <ShieldAlert className="w-5 h-5 shrink-0" />
                                         <span className="text-sm font-medium">{error}</span>
                                     </div>
@@ -423,7 +423,7 @@ const Login: React.FC = () => {
                         <div className="mx-auto w-10 h-10 bg-secondary rounded-xl flex items-center justify-center mb-5 shadow-sm">
                             <ShieldCheck className="w-5 h-5 text-secondary-foreground" />
                         </div>
-                        <GlassCardTitle className="text-2xl font-bold tracking-tight">Enter verification code</GlassCardTitle>
+                        <GlassCardTitle className="text-2xl font-medium tracking-tight">Enter verification code</GlassCardTitle>
                         <GlassCardDescription className="mt-2">
                             Multi-factor authentication is required to continue
                         </GlassCardDescription>
@@ -436,13 +436,13 @@ const Login: React.FC = () => {
                                     value={totpCode}
                                     onChange={(e) => setTotpCode(e.target.value)}
                                     placeholder="000000"
-                                    className="h-14 text-center text-2xl font-semibold tracking-[0.15em] border-border bg-background rounded-lg shadow-xs"
+                                    className="h-14 text-center text-2xl font-semibold border-border bg-background rounded-lg shadow-xs"
                                     maxLength={6}
                                     autoFocus
                                 />
                             </div>
                             {error && (
-                                <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
+                                <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
                                     <ShieldAlert className="w-5 h-5 shrink-0" />
                                     <span className="text-sm font-medium">{error}</span>
                                 </div>
@@ -462,9 +462,9 @@ const Login: React.FC = () => {
             className="min-h-screen flex flex-col lg:flex-row bg-background text-on-surface selection:bg-primary/20"
         >
             {/* Left Side: Brand & Visual — explicit white text for WCAG contrast on navy */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 xl:p-16 bg-[#0F172A] text-white">
+            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 xl:p-16 bg-primary text-primary-foreground">
                 <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-                    <div className="absolute -top-[20%] -right-[10%] w-[55%] h-[55%] rounded-full bg-[#0369A1]/25 blur-[100px]" />
+                    <div className="absolute -top-[20%] -right-[10%] w-[55%] h-[55%] rounded-full bg-secondary/25 blur-[100px]" />
                 </div>
 
                 <div className="relative z-10">
@@ -476,14 +476,14 @@ const Login: React.FC = () => {
                                 <Logo variant="icon" className="w-6 h-6" />
                             )}
                         </div>
-                        <span className="text-xl font-bold tracking-tight text-white">
+                        <span className="text-xl font-medium tracking-tight text-white">
                             {branding.tenant_name || "WardSeal"}
                         </span>
                     </div>
                 </div>
 
                 <div className="relative z-10 max-w-md space-y-5">
-                    <h1 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.15] text-white">
+                    <h1 className="text-4xl xl:text-5xl font-medium tracking-tight leading-[1.15] text-white">
                         Enterprise identity for modern workspaces
                     </h1>
                     <p className="text-base text-slate-300 font-medium leading-relaxed">
@@ -511,7 +511,7 @@ const Login: React.FC = () => {
                     </div>
 
                     <div className="mb-10 text-center lg:text-left">
-                        <h2 className="text-3xl font-bold tracking-tight text-on-surface mb-2">
+                        <h2 className="text-3xl font-medium tracking-tight text-on-surface mb-2">
                             {branding.tenant_name ? `Sign in to ${branding.tenant_name}` : "Welcome back"}
                         </h2>
                         <p className="text-muted-foreground text-sm">
@@ -531,7 +531,7 @@ const Login: React.FC = () => {
                                         id="email"
                                         type="email"
                                         placeholder="name@company.com"
-                                        className="h-14 pl-12 rounded-xl border-border bg-background/50 focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-base"
+                                        className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
@@ -541,7 +541,7 @@ const Login: React.FC = () => {
                             </div>
 
                             {error && (
-                                <div className="p-4 bg-destructive/10 text-destructive rounded-xl flex items-center gap-3 border border-destructive/20">
+                                <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-xl flex items-center gap-3 border border-destructive/20">
                                     <ShieldAlert className="w-5 h-5 shrink-0" />
                                     <span className="text-sm font-medium">{error}</span>
                                 </div>
@@ -575,7 +575,7 @@ const Login: React.FC = () => {
                                                 key={provider.id}
                                                 type="button"
                                                 variant="outline"
-                                                className="w-full h-14 rounded-xl border-border bg-background/50 hover:bg-surface-container transition-all font-bold text-sm shadow-sm"
+                                                className="w-full h-14 rounded-xl border-border bg-background hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform] font-medium text-sm shadow-sm"
                                                 onClick={() => handleSocialLogin(provider.name)}
                                             >
                                                 Sign in with {provider.name}
@@ -590,7 +590,7 @@ const Login: React.FC = () => {
                             {webAuthnEnabled && (
                                 <Button
                                     type="button"
-                                    className="w-full h-14 rounded-xl border-none bg-primary/5 text-primary hover:bg-primary/10 transition-all font-bold flex items-center justify-center gap-3"
+                                    className="w-full h-14 rounded-xl border-none bg-primary/5 text-primary hover:bg-primary/10 transition-[color,background-color,border-color,opacity,transform] font-medium flex items-center justify-center gap-3"
                                     onClick={handlePasskeyLogin}
                                     disabled={loading}
                                 >
@@ -622,7 +622,7 @@ const Login: React.FC = () => {
                                             id="password"
                                             type="password"
                                             placeholder="••••••••"
-                                            className="h-14 pl-12 rounded-xl border-border bg-background/50 focus:bg-card focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-base"
+                                            className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
@@ -632,7 +632,7 @@ const Login: React.FC = () => {
                                 </div>
 
                                 {error && (
-                                    <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 border border-destructive/20">
+                                    <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
                                         <ShieldAlert className="w-5 h-5 shrink-0" />
                                         <span className="text-sm font-medium">{error}</span>
                                     </div>
@@ -647,14 +647,14 @@ const Login: React.FC = () => {
 
                     <div className="mt-12 text-center">
                         <p className="text-sm font-medium text-on-surface-variant">
-                            Don't have an account? <a href="/signup" className="text-primary font-bold hover:underline decoration-2 underline-offset-4">Get started</a>
+                            Don't have an account? <a href="/signup" className="text-primary font-medium hover:underline decoration-2 underline-offset-4">Get started</a>
                         </p>
                     </div>
 
                     <div className="mt-24 pt-8 border-t border-border flex justify-center gap-8">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#terms`} target="_blank" rel="noreferrer" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">Terms</a>
-                        <a href={`${policyBaseUrl}/support`} target="_blank" rel="noreferrer" className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors">Support</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#terms`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Terms</a>
+                        <a href={`${policyBaseUrl}/support`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Support</a>
                     </div>
                 </div>
             </div>

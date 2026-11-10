@@ -29,7 +29,7 @@ export const SecureMode: Story = {
         <Label htmlFor="secure-mode" className="text-on-surface font-semibold text-xs">
           Strict Cryptographic Enforcement
         </Label>
-        <p className="text-[10px] text-on-surface-variant/40 leading-normal font-medium">
+        <p className="text-xs text-on-surface-subtle leading-normal font-medium">
           Require strict signature checking and block legacy public access keys on all gateways.
         </p>
       </div>

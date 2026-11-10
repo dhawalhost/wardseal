@@ -133,7 +133,7 @@ const Discovery: React.FC = () => {
             {currentJob && isScanning && (
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg relative">
                     <div 
-                        className="absolute top-0 left-0 h-1 bg-secondary transition-all duration-1000" 
+                        className="absolute top-0 left-0 h-1 bg-secondary transition-[color,background-color,border-color,opacity,transform] duration-1000" 
                         style={{ width: `${currentJob.progress}%` }}
                     />
                     <GlassCardContent className="p-card flex flex-col md:flex-row items-center justify-between gap-card">
@@ -143,19 +143,19 @@ const Discovery: React.FC = () => {
                             </div>
                             <div className="space-y-0.5">
                                 <span className="text-xs font-semibold text-secondary">Scan in Progress</span>
-                                <h3 className="text-base font-bold tracking-tight text-on-surface">{currentJob.message || 'Scanning network...'}</h3>
+                                <h3 className="text-base font-medium tracking-tight text-on-surface">{currentJob.message || 'Scanning network...'}</h3>
                                 <span className="text-xs font-medium text-muted-foreground">Job ID: {currentJob.id?.substring(0, 8).toLowerCase()}</span>
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className="text-3xl font-bold tracking-tight tabular-nums text-on-surface">{currentJob.progress}<span className="text-lg ml-1 text-muted-foreground">%</span></span>
+                            <span className="text-3xl font-medium tracking-tight tabular-nums text-on-surface">{currentJob.progress}<span className="text-lg ml-1 text-muted-foreground">%</span></span>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
             )}
 
             {message && (
-                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className={`border rounded-lg p-4 flex items-center gap-3 ${message.type === 'error' ? 'bg-destructive/5 text-destructive border-destructive/20' : 'bg-success-subtle text-success border-success/20'}`}>
+                <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className={`border rounded-lg p-4 flex items-center gap-3 ${message.type === 'error' ? 'bg-destructive/5 text-error-subtle-foreground border-destructive/20' : 'bg-success-subtle text-success-subtle-foreground border-success/20'}`}>
                     <div className={`p-2 rounded-lg ${message.type === 'error' ? 'bg-destructive/10' : 'bg-success/10'}`}>
                         {message.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <ShieldPlus className="h-4 w-4" />}
                     </div>
@@ -167,8 +167,8 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total Found</span>
-                            <span className="text-3xl font-bold tracking-tight tabular-nums text-on-surface">{resources.length}</span>
+                            <span className="text-xs font-semibold text-muted-foreground ">Total Found</span>
+                            <span className="text-3xl font-medium tracking-tight tabular-nums text-on-surface">{resources.length}</span>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
@@ -176,8 +176,8 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Unmanaged</span>
-                            <span className="text-3xl font-bold tracking-tight tabular-nums text-on-surface">
+                            <span className="text-xs font-semibold text-muted-foreground ">Unmanaged</span>
+                            <span className="text-3xl font-medium tracking-tight tabular-nums text-on-surface">
                                 {Math.round((resources.filter(r => r.status === 'discovered').length / (resources.length || 1)) * 100)}<span className="text-lg text-muted-foreground ml-1">%</span>
                             </span>
                         </div>
@@ -187,8 +187,8 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Managed</span>
-                            <span className="text-3xl font-bold tracking-tight tabular-nums text-success">
+                            <span className="text-xs font-semibold text-muted-foreground ">Managed</span>
+                            <span className="text-3xl font-medium tracking-tight tabular-nums text-success">
                                 {resources.filter(r => r.status === 'promoted').length}
                             </span>
                         </div>
@@ -198,7 +198,7 @@ const Discovery: React.FC = () => {
 
             <div className="space-y-page">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex-shrink-0">Asset List</h2>
+                    <h2 className="text-xs font-semibold text-muted-foreground flex-shrink-0">Asset List</h2>
                     <div className="h-px flex-1 bg-border" />
                 </div>
 
@@ -209,7 +209,7 @@ const Discovery: React.FC = () => {
                                 <Search className="w-4 h-4 text-secondary" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Discovered Assets</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Discovered Assets</GlassCardTitle>
                                 <p className="text-muted-foreground text-sm mt-0.5">Users and resources found on your network.</p>
                             </div>
                         </div>
@@ -227,11 +227,11 @@ const Discovery: React.FC = () => {
                                 <GlassTable>
                                     <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Name</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Source</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Type</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs tracking-wide text-muted-foreground uppercase">Status</GlassTableHead>
-                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Name</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Source</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Type</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
+                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>
@@ -263,7 +263,7 @@ const Discovery: React.FC = () => {
                                                 </TableCell>
                                                 <TableCell className="py-card">
                                                     {resource.status === 'promoted' ? (
-                                                        <Badge className="bg-success-subtle text-success border-none rounded-md font-semibold text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
+                                                        <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
                                                             <CheckCircle2 className="w-3 h-3" /> Managed
                                                         </Badge>
                                                     ) : (

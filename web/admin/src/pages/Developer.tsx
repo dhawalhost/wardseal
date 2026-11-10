@@ -22,7 +22,7 @@ const Developer: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-card">
                 <div className="lg:col-span-1 space-y-6">
                     <div className="space-y-3">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Developer Resources</p>
+                        <p className="text-xs font-semibold text-muted-foreground ">Developer Resources</p>
                         <div className="space-y-1">
                             {[
                                 { label: 'Go SDK Client', icon: <Cpu className="w-4 h-4" /> },
@@ -38,13 +38,13 @@ const Developer: React.FC = () => {
                     </div>
 
                     <GlassCard className="bg-secondary text-secondary-foreground border border-secondary/20 shadow-sm overflow-hidden relative rounded-lg">
-                        <div className="absolute top-0 right-0 p-4 text-secondary-foreground/10">
+                        <div className="absolute top-0 right-0 p-4 text-secondary-foreground">
                             <Terminal className="w-20 h-20 rotate-12" />
                         </div>
                         <GlassCardContent className="p-card space-y-4 relative z-10">
                             <div className="space-y-1">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-secondary-foreground/80">Go SDK</p>
-                                <h4 className="text-lg font-bold tracking-tight">wardseal/pkg/client</h4>
+                                <p className="text-xs font-semibold text-secondary-foreground">Go SDK</p>
+                                <h4 className="text-lg font-medium tracking-tight">wardseal/pkg/client</h4>
                             </div>
                             <div className="bg-secondary-foreground/10 p-3 rounded-lg font-mono text-xs border border-secondary-foreground/10">
                                 <code>go get github.com/dhawalhost/wardseal/pkg/client</code>
@@ -60,7 +60,7 @@ const Developer: React.FC = () => {
                                 <div className="p-2 bg-secondary/10 rounded-lg">
                                     <Code2 className="w-4 h-4 text-secondary" />
                                 </div>
-                                <GlassCardTitle className="text-base font-bold tracking-tight">API Reference</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium tracking-tight">API Reference</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0">

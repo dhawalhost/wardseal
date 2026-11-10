@@ -67,7 +67,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
                 <Input
                     placeholder={placeholder}
-                    className="pl-9 h-9 border-none rounded-lg bg-card ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium text-sm"
+                    className="pl-9 h-9 border-none rounded-lg bg-card ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] font-medium text-sm"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                 />
@@ -80,7 +80,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             {showFilterButton && (
                 <Button
                     type="submit"
-                    className="h-9 rounded-lg px-4 font-bold text-[11px] tracking-tight shadow-sm transition-all shrink-0"
+                    className="h-9 rounded-lg px-4 font-medium text-xs tracking-tight shadow-sm transition-[color,background-color,border-color,opacity,transform] shrink-0"
                 >
                     <Filter className="mr-2 h-3.5 w-3.5" />
                     {submitLabel}

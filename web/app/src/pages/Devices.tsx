@@ -69,19 +69,19 @@ const Devices: React.FC = () => {
         switch (status) {
             case 'trusted':
                 return (
-                    <Badge className="bg-success/10 text-success border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
+                    <Badge className="bg-success/10 text-success-subtle-foreground border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
                         <ShieldCheck className="w-3.5 h-3.5" /> Verified
                     </Badge>
                 );
             case 'untrusted':
                 return (
-                    <Badge className="bg-destructive/10 text-destructive border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
+                    <Badge className="bg-destructive/10 text-error-subtle-foreground border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
                         <ShieldAlert className="w-3.5 h-3.5" /> Blocked
                     </Badge>
                 );
             default:
                 return (
-                    <Badge className="bg-amber-500/10 text-amber-700 border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
+                    <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
                         <Activity className="w-3.5 h-3.5" /> Pending
                     </Badge>
                 );
@@ -113,12 +113,12 @@ const Devices: React.FC = () => {
                             {
                                 label: 'Pending',
                                 value: devices.filter((d) => d.trust_status === 'pending').length,
-                                color: 'text-amber-600',
+                                color: 'text-warning',
                             },
                         ].map((stat, i) => (
                             <GlassCard key={i} className="min-w-[140px] shadow-sm border-border bg-card rounded-xl p-4">
                                 <div className="flex flex-col items-center gap-1">
-                                    <span className={`text-2xl font-bold tracking-tight ${stat.color}`}>{stat.value}</span>
+                                    <span className={`text-2xl font-medium tracking-tight ${stat.color}`}>{stat.value}</span>
                                     <span className="text-xs font-semibold text-muted-foreground">{stat.label}</span>
                                 </div>
                             </GlassCard>
@@ -130,7 +130,7 @@ const Devices: React.FC = () => {
             {error && (
                 <Alert
                     variant="destructive"
-                    className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive"
+                    className="rounded-lg border border-destructive/20 bg-destructive/10 text-error-subtle-foreground"
                 >
                     <AlertDescription className="text-sm font-medium flex items-center gap-3">
                         <ShieldAlert className="w-4 h-4" />
@@ -146,7 +146,7 @@ const Devices: React.FC = () => {
                             <Lock className="w-5 h-5" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-xl font-bold tracking-tight text-on-surface">
+                            <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface">
                                 Device directory
                             </GlassCardTitle>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -200,8 +200,8 @@ const Devices: React.FC = () => {
                         <Activity className="w-6 h-6" />
                     </div>
                     <div className="space-y-1 flex-1 text-center md:text-left">
-                        <h3 className="text-lg font-bold tracking-tight">Device security policy</h3>
-                        <p className="text-sm text-secondary-foreground/80 max-w-2xl leading-relaxed">
+                        <h3 className="text-lg font-medium tracking-tight">Device security policy</h3>
+                        <p className="text-sm text-secondary-foreground max-w-2xl leading-relaxed">
                             Devices must be verified to access company data. Unrecognized devices may be blocked by policy.
                         </p>
                     </div>

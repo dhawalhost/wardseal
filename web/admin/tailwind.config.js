@@ -16,8 +16,7 @@ export default {
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       fontSize: {
-        detail: ["10px", { lineHeight: "1.4", letterSpacing: "-0.01em" }],
-        label: ["11px", { lineHeight: "1.4", letterSpacing: "-0.01em", fontWeight: "700" }],
+        // `label` comes from the kit preset (12px floor) — do not override here.
         caption: ["12px", { lineHeight: "1.5", letterSpacing: "-0.01em" }],
         body: ["14px", { lineHeight: "1.5" }],
         "body-lg": ["16px", { lineHeight: "1.5" }],

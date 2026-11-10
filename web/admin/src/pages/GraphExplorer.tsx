@@ -85,7 +85,7 @@ const GraphExplorer: React.FC = () => {
                                     <Activity className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Current View</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Current View</GlassCardTitle>
                                     <p className="text-sm font-medium text-muted-foreground mt-0.5">Active access relationship map</p>
                                 </div>
                             </div>
@@ -93,7 +93,7 @@ const GraphExplorer: React.FC = () => {
                         <GlassCardContent className="p-card">
                             <form onSubmit={handleSearch} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="subject" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Subject</Label>
+                                    <Label htmlFor="subject" className="text-xs font-semibold text-muted-foreground ">Subject</Label>
                                     <div className="relative group">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-secondary transition-colors">
                                             <Search className="h-4 w-4" />
@@ -103,7 +103,7 @@ const GraphExplorer: React.FC = () => {
                                             value={subjectID}
                                             onChange={e => setSubjectID(e.target.value)}
                                             placeholder="e.g. j.doe@wardseal.io"
-                                            className="h-11 border border-border rounded-lg bg-card focus-visible:ring-2 focus-visible:ring-secondary/20 font-medium pl-10"
+                                            className="h-11 border border-border rounded-lg bg-card focus-visible:ring-2 focus-visible:ring-ring font-medium pl-10"
                                             required
                                         />
                                     </div>
@@ -129,19 +129,19 @@ const GraphExplorer: React.FC = () => {
                             <Database className="w-5 h-5" />
                             <span className="text-sm font-semibold">Graph metadata</span>
                         </div>
-                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground/80">
+                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground">
                             Shows relationships between subjects, roles, and resources in your organization.
                         </p>
                         <div className="pt-3 border-t border-secondary-foreground/10 flex items-center justify-between">
-                            <span className="text-xs font-semibold text-secondary-foreground/80">Consistency</span>
-                            <Badge className="bg-success/20 text-success border-none rounded-md font-semibold text-xs px-2 py-0.5 shadow-none">Synchronized</Badge>
+                            <span className="text-xs font-semibold text-secondary-foreground">Consistency</span>
+                            <Badge className="bg-success/20 text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 shadow-none">Synchronized</Badge>
                         </div>
                     </div>
                 </div>
 
                 <div className="lg:col-span-8">
                     <div className="flex items-center gap-4 mb-4">
-                        <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex-shrink-0">Relationships</h2>
+                        <h2 className="text-xs font-semibold text-muted-foreground flex-shrink-0">Relationships</h2>
                         <div className="h-px flex-1 bg-border" />
                     </div>
 
@@ -151,10 +151,10 @@ const GraphExplorer: React.FC = () => {
                                 <GlassTable>
                                     <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Subject</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Relation</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Object</GlassTableHead>
-                                            <GlassTableHead className="text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Subject</GlassTableHead>
+                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Relation</GlassTableHead>
+                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Object</GlassTableHead>
+                                            <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>
@@ -212,7 +212,7 @@ const GraphExplorer: React.FC = () => {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-card text-right pr-card">
-                                                        <Button variant="ghost" size="icon" className="rounded-lg hover:bg-muted text-muted-foreground h-8 w-8">
+                                                        <Button aria-label="Enter full screen" variant="ghost" size="icon" className="rounded-lg hover:bg-muted text-muted-foreground h-8 w-8">
                                                             <Maximize2 className="h-4 w-4" />
                                                         </Button>
                                                     </TableCell>

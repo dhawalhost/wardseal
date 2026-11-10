@@ -62,7 +62,7 @@ const PortalProfile = () => {
                     </div>
                     <span className="text-xs font-semibold text-muted-foreground">Profile</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-on-surface">Account settings</h1>
+                <h1 className="text-3xl font-medium tracking-tight text-on-surface">Account settings</h1>
                 <p className="text-sm text-muted-foreground max-w-xl">
                     Manage your profile details, password, and MFA settings.
                 </p>
@@ -76,7 +76,7 @@ const PortalProfile = () => {
                                 <User className="w-5 h-5" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-lg font-bold tracking-tight text-on-surface leading-none">
+                                <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface leading-none">
                                     Profile
                                 </GlassCardTitle>
                                 <p className="text-sm text-muted-foreground mt-1.5">Your name and email address.</p>
@@ -89,7 +89,7 @@ const PortalProfile = () => {
                                 <Label className="text-sm font-semibold text-muted-foreground">First name</Label>
                                 <Input
                                     defaultValue={userProfile?.firstName || ''}
-                                    className="h-10 rounded-lg border-border bg-background shadow-xs text-sm"
+                                    className="h-10 rounded-lg border-input bg-background shadow-xs text-sm"
                                     placeholder="First name"
                                 />
                             </div>
@@ -97,7 +97,7 @@ const PortalProfile = () => {
                                 <Label className="text-sm font-semibold text-muted-foreground">Last name</Label>
                                 <Input
                                     defaultValue={userProfile?.lastName || ''}
-                                    className="h-10 rounded-lg border-border bg-background shadow-xs text-sm"
+                                    className="h-10 rounded-lg border-input bg-background shadow-xs text-sm"
                                     placeholder="Last name"
                                 />
                             </div>
@@ -109,7 +109,7 @@ const PortalProfile = () => {
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <Input
                                     type="email"
-                                    className="h-10 pl-10 rounded-lg border-border bg-muted/40 text-sm cursor-not-allowed"
+                                    className="h-10 pl-10 rounded-lg border-input bg-muted/40 text-sm cursor-not-allowed"
                                     defaultValue={userProfile?.email || ''}
                                     disabled
                                 />
@@ -129,10 +129,10 @@ const PortalProfile = () => {
                                 <Lock className="w-5 h-5" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-lg font-bold tracking-tight text-secondary-foreground leading-none">
+                                <GlassCardTitle className="text-lg font-medium tracking-tight text-secondary-foreground leading-none">
                                     Security
                                 </GlassCardTitle>
-                                <p className="text-secondary-foreground/80 text-sm mt-1.5">Password and MFA settings</p>
+                                <p className="text-secondary-foreground text-sm mt-1.5">Password and MFA settings</p>
                             </div>
                         </div>
                     </GlassCardHeader>
@@ -164,9 +164,9 @@ const PortalProfile = () => {
                         {saveMessage && (
                             <div
                                 className={`p-4 rounded-lg text-sm font-medium flex items-center gap-3 ${
-                                    saveMessage.includes('successful')
-                                        ? 'bg-success-subtle text-success border border-success/20'
-                                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+         saveMessage.includes('successful')
+                                        ? 'bg-success-subtle text-success-subtle-foreground border border-success/20'
+                                        : 'bg-destructive/10 text-error-subtle-foreground border border-destructive/20'
                                 }`}
                             >
                                 <Activity className="h-4 w-4" />

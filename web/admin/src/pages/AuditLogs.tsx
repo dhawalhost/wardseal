@@ -171,9 +171,9 @@ export default function AuditLogs() {
                 <GlassCard className="border border-border shadow-sm bg-card">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Total events (14d)</span>
+                            <span className="text-xs font-semibold text-muted-foreground ">Total events (14d)</span>
                             <div className="mt-1 flex items-end gap-2 leading-none">
-                                <span className="text-2xl font-bold tracking-tight text-on-surface">{statsLoading ? '—' : stats?.total_events.toLocaleString()}</span>
+                                <span className="text-2xl font-medium tracking-tight text-on-surface">{statsLoading ? '—' : stats?.total_events.toLocaleString()}</span>
                                 <Database className="h-4 w-4 text-muted-foreground mb-1" />
                             </div>
                         </div>
@@ -183,9 +183,9 @@ export default function AuditLogs() {
                 <GlassCard className="border border-border shadow-sm bg-card">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold tracking-wide text-destructive uppercase">Failures</span>
+                            <span className="text-xs font-semibold text-destructive ">Failures</span>
                             <div className="mt-1 flex items-end gap-2 leading-none">
-                                <span className="text-2xl font-bold tracking-tight text-destructive">{statsLoading ? '—' : stats?.failure_count}</span>
+                                <span className="text-2xl font-medium tracking-tight text-destructive">{statsLoading ? '—' : stats?.failure_count}</span>
                                 <ShieldAlert className="h-4 w-4 text-destructive mb-1" />
                             </div>
                         </div>
@@ -194,7 +194,7 @@ export default function AuditLogs() {
 
                 <GlassCard className="lg:col-span-2 border border-border shadow-sm bg-secondary text-secondary-foreground">
                     <GlassCardContent className="h-full flex items-center p-card">
-                        <p className="text-sm font-medium text-secondary-foreground/80 leading-relaxed">
+                        <p className="text-sm font-medium text-secondary-foreground leading-relaxed">
                             Audit logs provide visibility into system activity for compliance and security review.
                         </p>
                     </GlassCardContent>
@@ -208,7 +208,7 @@ export default function AuditLogs() {
                             <Activity className="w-4 h-4 text-secondary" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-bold tracking-tight text-on-surface">Activity trend</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Activity trend</GlassCardTitle>
                             <p className="text-sm text-muted-foreground mt-0.5">System activity over the last 14 days</p>
                         </div>
                     </div>
@@ -266,7 +266,7 @@ export default function AuditLogs() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors" />
                             <Input
                                 placeholder="Filter by action..."
-                                className="h-9 border border-border rounded-lg bg-card focus-visible:ring-secondary/20 font-medium text-sm pl-9"
+                                className="h-9 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm pl-9"
                                 value={filters.action}
                                 onChange={(e) => setFilters({ ...filters, action: e.target.value })}
                             />
@@ -287,12 +287,12 @@ export default function AuditLogs() {
                             <GlassTable>
                                 <GlassTableHeader>
                                     <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                        <GlassTableHead className="py-3 pl-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Timestamp</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Action</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Resource</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Actor</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs tracking-wide text-muted-foreground uppercase">Result</GlassTableHead>
-                                        <GlassTableHead className="w-[80px] text-right pr-card font-semibold text-xs tracking-wide text-muted-foreground uppercase">Details</GlassTableHead>
+                                        <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Timestamp</GlassTableHead>
+                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Action</GlassTableHead>
+                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
+                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Actor</GlassTableHead>
+                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Result</GlassTableHead>
+                                        <GlassTableHead className="w-[80px] text-right pr-card font-semibold text-xs text-muted-foreground ">Details</GlassTableHead>
                                     </GlassTableRow>
                                 </GlassTableHeader>
                                 <TableBody>

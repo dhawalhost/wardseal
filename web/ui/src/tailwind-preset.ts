@@ -102,9 +102,9 @@ export const tailwindPreset = {
       },
 
       // ── Type tokens ──
-      // `label`: 12px semibold — the floor for UI labels, table headers, captions.
+      // `label`: 12px medium, sentence case — the floor for UI labels, table headers, captions.
       fontSize: {
-        label: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }],
+        label: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0", fontWeight: "500" }],
       },
 
       fontFamily: {

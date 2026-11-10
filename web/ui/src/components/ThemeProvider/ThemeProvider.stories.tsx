@@ -31,7 +31,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card text-on-surface text-xs font-semibold transition-all hover:bg-accent"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card text-on-surface text-xs font-semibold transition-[color,background-color,border-color,opacity,transform] hover:bg-accent"
     >
       {theme === "dark" ? (
         <><Sun className="w-3.5 h-3.5 text-primary" /> Light Mode</>
@@ -50,11 +50,11 @@ function FullThemeShowcase() {
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-border bg-card">
         <div className="flex items-center justify-between px-6 py-3">
           <Logo variant="full" logoColor="brand" textColor={theme === "dark" ? "white" : "mono"} className="h-7 w-auto" />
           <div className="flex items-center gap-3">
-            <Badge variant="success" className="text-[10px]">Live Preview</Badge>
+            <Badge variant="success" className="text-xs">Live Preview</Badge>
             <ThemeToggle />
           </div>
         </div>
@@ -68,18 +68,18 @@ function FullThemeShowcase() {
             ? <Moon className="w-5 h-5 text-primary flex-shrink-0" />
             : <Sun className="w-5 h-5 text-primary flex-shrink-0" />}
           <div>
-            <p className="text-sm font-bold text-on-surface">
+            <p className="text-sm font-medium text-on-surface">
               {theme === "dark" ? "Dark Mode" : "Light Mode"} Active
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              All components adapt to the current theme via CSS variable overrides on the <code className="text-primary bg-primary/10 px-1 py-0.5 rounded text-[10px]">.{theme}</code> document class.
+              All components adapt to the current theme via CSS variable overrides on the <code className="text-primary bg-primary/10 px-1 py-0.5 rounded text-xs">.{theme}</code> document class.
             </p>
           </div>
         </div>
 
         {/* ── Buttons ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Buttons</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Buttons</h2>
           <div className="flex flex-wrap gap-3">
             <Button variant="primary">Primary Action</Button>
             <Button variant="secondary">Secondary</Button>
@@ -100,7 +100,7 @@ function FullThemeShowcase() {
 
         {/* ── Badges ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Badges</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Badges</h2>
           <div className="flex flex-wrap gap-2">
             <Badge variant="default">Default</Badge>
             <Badge variant="primary">Primary</Badge>
@@ -118,7 +118,7 @@ function FullThemeShowcase() {
 
         {/* ── Cards ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Cards</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Cards</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
@@ -147,7 +147,7 @@ function FullThemeShowcase() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Badge variant="primary" className="text-[10px]">Glass Morphism</Badge>
+                <Badge variant="primary" className="text-xs">Glass Morphism</Badge>
               </CardFooter>
             </Card>
 
@@ -175,7 +175,7 @@ function FullThemeShowcase() {
 
         {/* ── Inputs ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Inputs & Controls</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Inputs & Controls</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <Input placeholder="Search users, groups, policies…" />
@@ -188,14 +188,14 @@ function FullThemeShowcase() {
                   <p className="text-sm font-semibold text-on-surface">MFA Enforcement</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Require 2FA for all admin users</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch defaultChecked aria-label="MFA enforcement" />
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
                 <div>
                   <p className="text-sm font-semibold text-on-surface">Audit Logging</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Record all access events</p>
                 </div>
-                <Switch />
+                <Switch aria-label="Audit logging" />
               </div>
             </div>
           </div>
@@ -205,7 +205,7 @@ function FullThemeShowcase() {
 
         {/* ── Avatars & Users ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Avatars</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Avatars</h2>
           <div className="flex items-center gap-4 flex-wrap">
             <Avatar name="Dhawal Dyavanpalli" size={24} />
             <Avatar name="Arjun Sharma" size={32} />
@@ -219,27 +219,27 @@ function FullThemeShowcase() {
 
         {/* ── State Colors ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Semantic States</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Semantic States</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="flex items-center gap-3 p-3 rounded-lg border border-success/30 bg-success-subtle">
               <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
               <div>
-                <p className="text-xs font-bold text-success">Connection Active</p>
-                <p className="text-[10px] text-muted-foreground">All services operational</p>
+                <p className="text-xs font-medium text-success-subtle-foreground">Connection Active</p>
+                <p className="text-xs text-muted-foreground">All services operational</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-warning/30 bg-warning-subtle">
               <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
               <div>
-                <p className="text-xs font-bold text-warning">Certificate Expiring</p>
-                <p className="text-[10px] text-muted-foreground">Renew within 14 days</p>
+                <p className="text-xs font-medium text-warning-subtle-foreground">Certificate Expiring</p>
+                <p className="text-xs text-muted-foreground">Renew within 14 days</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-error/30 bg-error-subtle">
               <XCircle className="w-4 h-4 text-error flex-shrink-0" />
               <div>
-                <p className="text-xs font-bold text-error">Policy Violation</p>
-                <p className="text-[10px] text-muted-foreground">3 critical alerts</p>
+                <p className="text-xs font-medium text-error-subtle-foreground">Policy Violation</p>
+                <p className="text-xs text-muted-foreground">3 critical alerts</p>
               </div>
             </div>
           </div>
@@ -249,27 +249,27 @@ function FullThemeShowcase() {
 
         {/* ── Progress & Metrics ── */}
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Progress & Metrics</h2>
+          <h2 className="text-xs font-medium text-on-surface-variant ">Progress & Metrics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-on-surface font-semibold">SSO Coverage</span>
-                  <span className="text-primary font-bold">94%</span>
+                  <span className="text-primary font-medium">94%</span>
                 </div>
                 <Progress value={94} />
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-on-surface font-semibold">MFA Compliance</span>
-                  <span className="text-warning font-bold">67%</span>
+                  <span className="text-warning font-medium">67%</span>
                 </div>
                 <Progress value={67} />
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-on-surface font-semibold">Policy Sync Rate</span>
-                  <span className="text-error font-bold">31%</span>
+                  <span className="text-error font-medium">31%</span>
                 </div>
                 <Progress value={31} />
               </div>
@@ -285,8 +285,8 @@ function FullThemeShowcase() {
                 <Card key={label}>
                   <CardContent className="p-4 flex flex-col gap-2">
                     {icon}
-                    <p className="text-xl font-bold text-on-surface">{value}</p>
-                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">{label}</p>
+                    <p className="text-xl font-medium text-on-surface">{value}</p>
+                    <p className="text-xs text-muted-foreground font-semibold ">{label}</p>
                   </CardContent>
                 </Card>
               ))}

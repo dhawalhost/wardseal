@@ -36,9 +36,9 @@ const Logout: React.FC = () => {
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                         <LogOut className="w-8 h-8 text-primary" />
                     </div>
-                    <h1 className="text-2xl font-bold text-on-surface mb-2">Logging you out</h1>
+                    <h1 className="text-2xl font-medium text-on-surface mb-2">Logging you out</h1>
                     <p className="text-on-surface-variant mb-8">Please wait while we secure your session...</p>
-                    <Loader2 className="w-6 h-6 animate-spin text-primary/60" />
+                    <Loader2 className="w-6 h-6 animate-spin text-on-surface-subtle" />
                 </GlassCardContent>
             </GlassCard>
         </div>

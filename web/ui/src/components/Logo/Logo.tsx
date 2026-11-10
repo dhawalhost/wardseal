@@ -4,7 +4,8 @@ import { cn } from "../../lib/utils";
 export interface LogoProps extends React.SVGAttributes<SVGSVGElement> {
   variant?: "icon" | "full";
   logoColor?: "brand" | "mono"; // 'brand' uses solid navy #001C41 shield with white mark, 'mono' inherits currentColor
-  textColor?: "white" | "mono";  // 'white' uses Zinc-50 white, 'mono' inherits currentColor
+  /** 'mono' (default) inherits currentColor; 'white' forces #fafafa for dark backgrounds. */
+  textColor?: "white" | "mono";
 }
 
 export const Logo = React.forwardRef<SVGSVGElement, LogoProps>(
@@ -12,7 +13,7 @@ export const Logo = React.forwardRef<SVGSVGElement, LogoProps>(
     {
       variant = "full",
       logoColor = "brand",
-      textColor = "white",
+      textColor = "mono",
       className,
       width,
       height,

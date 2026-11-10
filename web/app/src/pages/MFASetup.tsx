@@ -119,12 +119,12 @@ const MFASetup: React.FC = () => {
                 description="Protect your account with a time-based one-time password (TOTP) authenticator."
                 actions={
                     verified ? (
-                        <Badge className="bg-success/10 text-success border-none rounded-lg font-semibold text-xs px-3 py-1.5 flex items-center gap-2">
+                        <Badge className="bg-success/10 text-success-subtle-foreground border-none rounded-lg font-semibold text-xs px-3 py-1.5 flex items-center gap-2">
                             <ShieldCheck className="w-3.5 h-3.5" />
                             MFA enabled
                         </Badge>
                     ) : (
-                        <Badge className="bg-amber-500/10 text-amber-700 border-none rounded-lg font-semibold text-xs px-3 py-1.5 flex items-center gap-2">
+                        <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none rounded-lg font-semibold text-xs px-3 py-1.5 flex items-center gap-2">
                             <ShieldAlert className="w-3.5 h-3.5" />
                             Not enabled
                         </Badge>
@@ -141,7 +141,7 @@ const MFASetup: React.FC = () => {
                                     <Key className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-xl font-bold tracking-tight">
+                                    <GlassCardTitle className="text-xl font-medium tracking-tight">
                                         Authenticator app
                                     </GlassCardTitle>
                                     <p className="text-sm text-muted-foreground mt-1">
@@ -154,7 +154,7 @@ const MFASetup: React.FC = () => {
                             {error && (
                                 <Alert
                                     variant="destructive"
-                                    className="mb-8 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive"
+                                    className="mb-8 rounded-lg border border-destructive/20 bg-destructive/10 text-error-subtle-foreground"
                                 >
                                     <AlertDescription className="text-sm font-medium flex items-center gap-3">
                                         <XCircle className="w-4 h-4" />
@@ -168,11 +168,11 @@ const MFASetup: React.FC = () => {
                                     <div className="mx-auto w-20 h-20 bg-muted rounded-xl flex items-center justify-center relative">
                                         <Unlock className="h-10 w-10 text-muted-foreground" />
                                         <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-card border border-border rounded-lg shadow-sm flex items-center justify-center">
-                                            <ShieldAlert className="w-4 h-4 text-amber-600" />
+                                            <ShieldAlert className="w-4 h-4 text-warning" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-xl font-bold tracking-tight text-on-surface">
+                                        <h3 className="text-xl font-medium tracking-tight text-on-surface">
                                             MFA not enabled
                                         </h3>
                                         <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
@@ -215,7 +215,7 @@ const MFASetup: React.FC = () => {
                                                 <Terminal className="w-4 h-4" />
                                                 Manual setup key
                                             </Label>
-                                            <div className="font-mono text-xs font-semibold tracking-wide text-center select-all bg-card py-3 rounded-lg border border-border shadow-sm text-primary">
+                                            <div className="font-mono text-xs font-semibold text-center select-all bg-card py-3 rounded-lg border border-border shadow-sm text-primary">
                                                 {secret}
                                             </div>
                                         </div>
@@ -231,7 +231,7 @@ const MFASetup: React.FC = () => {
                                                 value={verifyCode}
                                                 onChange={(e) => setVerifyCode(e.target.value)}
                                                 placeholder="000000"
-                                                className="h-14 text-center text-2xl font-semibold tracking-[0.15em] border-border bg-background rounded-lg shadow-xs font-mono"
+                                                className="h-14 text-center text-2xl font-semibold border-border bg-background rounded-lg shadow-xs font-mono"
                                                 maxLength={6}
                                                 autoFocus
                                             />
@@ -261,7 +261,7 @@ const MFASetup: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <h3 className="text-xl font-bold tracking-tight text-on-surface">
+                                            <h3 className="text-xl font-medium tracking-tight text-on-surface">
                                                 MFA enabled
                                             </h3>
                                             <div className="flex items-center gap-2 justify-center py-1 px-4 bg-success-subtle rounded-full border border-success/20 w-fit mx-auto">
@@ -297,7 +297,7 @@ const MFASetup: React.FC = () => {
                                 <div className="p-2 bg-secondary-foreground/10 rounded-lg">
                                     <Info className="w-5 h-5" />
                                 </div>
-                                <h4 className="text-base font-bold tracking-tight">Security overview</h4>
+                                <h4 className="text-base font-medium tracking-tight">Security overview</h4>
                             </div>
 
                             <div className="space-y-4">
@@ -327,8 +327,8 @@ const MFASetup: React.FC = () => {
                                         className="flex items-center justify-between border-b border-secondary-foreground/10 pb-3 last:border-0 last:pb-0"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="text-secondary-foreground/80">{stat.icon}</div>
-                                            <span className="text-xs font-semibold text-secondary-foreground/70">
+                                            <div className="text-secondary-foreground">{stat.icon}</div>
+                                            <span className="text-xs font-semibold text-secondary-foreground">
                                                 {stat.label}
                                             </span>
                                         </div>
@@ -338,7 +338,7 @@ const MFASetup: React.FC = () => {
                             </div>
 
                             <div className="bg-secondary-foreground/5 p-4 rounded-lg border border-secondary-foreground/10">
-                                <p className="text-xs leading-relaxed text-secondary-foreground/70">
+                                <p className="text-xs leading-relaxed text-secondary-foreground">
                                     Your organization may require multi-factor authentication for all users.
                                 </p>
                             </div>

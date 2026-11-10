@@ -70,16 +70,16 @@ const SocialCallback: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-screen p-6 bg-surface">
                 <div className="w-full max-w-md">
-                    <Alert variant="destructive" className="border-2 shadow-xl bg-card">
+                    <Alert variant="destructive" className="border-2 shadow-overlay bg-card">
                         <AlertCircle className="h-5 w-5" />
-                        <AlertTitle className="font-bold">Authentication Error</AlertTitle>
+                        <AlertTitle className="font-medium">Authentication Error</AlertTitle>
                         <AlertDescription className="mt-2 text-sm opacity-90">
                             {error}
                         </AlertDescription>
                     </Alert>
                     <button
                         onClick={() => navigate('/login')}
-                        className="w-full mt-6 py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold shadow-sm transition-opacity hover:opacity-90"
+                        className="w-full mt-6 py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium shadow-sm transition-opacity hover:opacity-90"
                     >
                         Return to Login
                     </button>
@@ -91,11 +91,10 @@ const SocialCallback: React.FC = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-surface space-y-6">
             <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
                 <Loader2 className="w-16 h-16 animate-spin text-primary relative z-10" />
             </div>
             <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold tracking-tight">Completing Login</h2>
+                <h2 className="text-2xl font-medium tracking-tight">Completing Login</h2>
                 <p className="text-muted-foreground animate-pulse">Syncing with your identity provider...</p>
             </div>
         </div>
