@@ -1,5 +1,5 @@
 /**
- * App Button — wraps @dhawalhost/wardseal-ui-kit@0.3.2.
+ * App Button — wraps @dhawalhost/wardseal-ui-kit@0.4.0.
  * Maps legacy shadcn `default` → kit `secondary` (CTA).
  */
 import * as React from "react";

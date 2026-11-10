@@ -21,7 +21,7 @@ export const IPPolicyTableRow: React.FC<IPPolicyTableRowProps> = ({ policy, onDe
                     </div>
                     <div className="flex flex-col">
                         <span className="text-lg font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors">{policy.cidr || policy.country_code || (policy as any).country}</span>
-                        <span className="text-xs font-medium font-mono tracking-tight text-muted-foreground mt-1 italic">Id: {policy.id.substring(0, 8)}</span>
+                        <span className="text-xs font-medium font-mono text-muted-foreground mt-1">Id: {policy.id.substring(0, 8)}</span>
                     </div>
                 </div>
             </TableCell>
@@ -35,7 +35,7 @@ export const IPPolicyTableRow: React.FC<IPPolicyTableRowProps> = ({ policy, onDe
             </TableCell>
             <TableCell className="py-8">
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2.5 text-xs font-medium tracking-tight text-muted-foreground group-hover:text-on-surface transition-colors italic">
+                    <div className="flex items-center gap-2.5 text-xs font-medium text-muted-foreground group-hover:text-on-surface transition-colors">
                         {policy.cidr ? (
                             <><Network className="w-4 h-4 text-primary opacity-40 group-hover:opacity-100" /> Cidr range</>
                         ) : (
@@ -51,7 +51,7 @@ export const IPPolicyTableRow: React.FC<IPPolicyTableRowProps> = ({ policy, onDe
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 px-4 rounded-lg bg-destructive/5 text-error-subtle-foreground border border-destructive/10 hover:bg-destructive hover:text-destructive-foreground transition-[color,background-color,border-color,opacity,transform] font-medium text-xs "
+                    className="h-9 px-4 rounded-lg bg-destructive/5 text-error-subtle-foreground border border-destructive/10 hover:bg-destructive hover:text-destructive-foreground transition-[color,background-color,border-color,opacity,transform] font-medium text-xs"
                     onClick={() => onDelete(policy.id)}
                 >
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Revoke

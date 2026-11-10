@@ -70,7 +70,7 @@ const GraphExplorer: React.FC = () => {
                 title="Access Map"
                 description="Visualize how users, groups, and roles are connected to resources. Understand access paths across your organization."
                 actions={
-                    <Button onClick={syncGraph} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                    <Button onClick={syncGraph} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm px-4 shadow-sm">
                         <RefreshCcw className="w-4 h-4 mr-2" /> Refresh Map
                     </Button>
                 }
@@ -85,7 +85,7 @@ const GraphExplorer: React.FC = () => {
                                     <Activity className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Current View</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Current View</GlassCardTitle>
                                     <p className="text-sm font-medium text-muted-foreground mt-0.5">Active access relationship map</p>
                                 </div>
                             </div>
@@ -93,7 +93,7 @@ const GraphExplorer: React.FC = () => {
                         <GlassCardContent className="p-card">
                             <form onSubmit={handleSearch} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="subject" className="text-xs font-semibold text-muted-foreground ">Subject</Label>
+                                    <Label htmlFor="subject" className="text-xs font-medium text-muted-foreground">Subject</Label>
                                     <div className="relative group">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-secondary transition-colors">
                                             <Search className="h-4 w-4" />
@@ -115,7 +115,7 @@ const GraphExplorer: React.FC = () => {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-11 rounded-lg font-semibold text-sm bg-secondary text-secondary-foreground shadow-sm"
+                                    className="w-full h-11 rounded-lg font-medium text-sm bg-secondary text-secondary-foreground shadow-sm"
                                 >
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                                     Search relationships
@@ -127,21 +127,21 @@ const GraphExplorer: React.FC = () => {
                     <div className="bg-secondary text-secondary-foreground p-card rounded-lg space-y-4 shadow-sm border border-secondary/20">
                         <div className="flex items-center gap-3 text-secondary-foreground">
                             <Database className="w-5 h-5" />
-                            <span className="text-sm font-semibold">Graph metadata</span>
+                            <span className="text-sm font-medium">Graph metadata</span>
                         </div>
                         <p className="text-sm font-medium leading-relaxed text-secondary-foreground">
                             Shows relationships between subjects, roles, and resources in your organization.
                         </p>
                         <div className="pt-3 border-t border-secondary-foreground/10 flex items-center justify-between">
-                            <span className="text-xs font-semibold text-secondary-foreground">Consistency</span>
-                            <Badge className="bg-success/20 text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 shadow-none">Synchronized</Badge>
+                            <span className="text-xs font-medium text-secondary-foreground">Consistency</span>
+                            <Badge className="bg-success/20 text-success-subtle-foreground border-none rounded-md font-medium text-xs px-2 py-0.5 shadow-none">Synchronized</Badge>
                         </div>
                     </div>
                 </div>
 
                 <div className="lg:col-span-8">
                     <div className="flex items-center gap-4 mb-4">
-                        <h2 className="text-xs font-semibold text-muted-foreground flex-shrink-0">Relationships</h2>
+                        <h2 className="text-xs font-medium text-muted-foreground flex-shrink-0">Relationships</h2>
                         <div className="h-px flex-1 bg-border" />
                     </div>
 
@@ -151,10 +151,10 @@ const GraphExplorer: React.FC = () => {
                                 <GlassTable>
                                     <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Subject</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Relation</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Object</GlassTableHead>
-                                            <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Subject</GlassTableHead>
+                                            <GlassTableHead className="font-medium text-xs text-muted-foreground">Relation</GlassTableHead>
+                                            <GlassTableHead className="font-medium text-xs text-muted-foreground">Object</GlassTableHead>
+                                            <GlassTableHead className="text-right pr-card font-medium text-xs text-muted-foreground">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>
@@ -185,7 +185,7 @@ const GraphExplorer: React.FC = () => {
                                                                 <User className="w-4 h-4" />
                                                             </div>
                                                             <div className="flex flex-col min-w-0">
-                                                                <span className="text-sm font-semibold tracking-tight text-on-surface truncate">{res.subject_name || res.subject_id}</span>
+                                                                <span className="text-sm font-medium text-on-surface truncate">{res.subject_name || res.subject_id}</span>
                                                                 <span className="text-xs font-medium text-muted-foreground mt-0.5">{res.subject_type}</span>
                                                             </div>
                                                         </div>
@@ -195,7 +195,7 @@ const GraphExplorer: React.FC = () => {
                                                             <div className="p-1.5 bg-secondary/10 rounded-md">
                                                                 <ArrowRight className="w-3.5 h-3.5 text-secondary" />
                                                             </div>
-                                                            <Badge className="bg-card border border-border text-on-surface font-semibold text-xs px-2 py-0.5 shadow-none">
+                                                            <Badge className="bg-card border border-border text-on-surface font-medium text-xs px-2 py-0.5 shadow-none">
                                                                 {res.relation}
                                                             </Badge>
                                                         </div>
@@ -206,7 +206,7 @@ const GraphExplorer: React.FC = () => {
                                                                 <Shield className="w-4 h-4" />
                                                             </div>
                                                             <div className="flex flex-col min-w-0">
-                                                                <span className="text-sm font-semibold tracking-tight text-on-surface truncate">{res.object_name || res.object_id}</span>
+                                                                <span className="text-sm font-medium text-on-surface truncate">{res.object_name || res.object_id}</span>
                                                                 <span className="text-xs font-medium text-muted-foreground mt-0.5">{res.namespace || 'node'}</span>
                                                             </div>
                                                         </div>

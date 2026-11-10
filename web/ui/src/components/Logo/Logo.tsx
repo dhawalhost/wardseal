@@ -97,7 +97,7 @@ export const Logo = React.forwardRef<SVGSVGElement, LogoProps>(
         <text
           x="420"
           y="300"
-          fontFamily="Plus Jakarta Sans, system-ui, sans-serif"
+          fontFamily="Geist, system-ui, sans-serif"
           fontWeight="800"
           fontSize="280"
           fill={textFill}

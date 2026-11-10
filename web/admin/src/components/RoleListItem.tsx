@@ -37,7 +37,7 @@ export const RoleListItem: React.FC<RoleListItemProps> = ({
                     <Fingerprint className={`h-4.5 w-4.5 opacity-40 ${isSelected ? 'text-primary opacity-100' : ''}`} />
                     {role.name}
                 </div>
-                <div className="text-xs font-medium text-muted-foreground truncate mt-1.5 tracking-tight">
+                <div className="text-xs font-medium text-muted-foreground truncate mt-1.5">
                     {role.description || 'No description provided'}
                 </div>
             </div>

@@ -25,7 +25,10 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-display);
-    font-feature-settings: "ss01", "cv11";
+    font-size: 14px;
+    line-height: 1.43;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "liga", "calt";
   }
 
   @media (prefers-reduced-motion: reduce) {

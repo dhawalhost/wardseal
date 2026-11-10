@@ -19,7 +19,7 @@ const PopoverContent = React.forwardRef<
       sideOffset={sideOffset}
       className={cn(
         overlaySurface,
-        "z-50 w-72 max-w-[calc(100vw-2rem)] rounded-lg p-4 text-sm outline-none",
+        "z-50 w-72 max-w-[calc(100vw-2rem)] rounded-[10px] p-4 text-sm outline-none",
         "data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
         className
       )}

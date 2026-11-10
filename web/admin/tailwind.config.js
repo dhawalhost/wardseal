@@ -11,19 +11,6 @@ export default {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
-      },
-      fontSize: {
-        // `label` comes from the kit preset (12px floor) — do not override here.
-        caption: ["12px", { lineHeight: "1.5", letterSpacing: "-0.01em" }],
-        body: ["14px", { lineHeight: "1.5" }],
-        "body-lg": ["16px", { lineHeight: "1.5" }],
-        heading: ["20px", { lineHeight: "1.3", letterSpacing: "-0.02em", fontWeight: "700" }],
-        title: ["24px", { lineHeight: "1.25", letterSpacing: "-0.02em", fontWeight: "700" }],
-        hero: ["32px", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "800" }],
-      },
       // Concrete px — do not use var(--space-*) here. If those CSS vars fail to load,
       // p-card / gap-section / px-page collapse to zero padding (dashboard "no space").
       spacing: {

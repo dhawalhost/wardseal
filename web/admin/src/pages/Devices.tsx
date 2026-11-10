@@ -54,11 +54,11 @@ const Devices: React.FC = () => {
     const getStatusBadge = (status: string) => {
         switch (status) {
              case 'trusted':
-                return <Badge className="bg-success-subtle text-success-subtle-foreground border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><ShieldCheck className="w-3.5 h-3.5" /> Verified</Badge>;
+                return <Badge className="bg-success-subtle text-success-subtle-foreground border-none gap-2 rounded-md font-medium text-xs px-2 py-0.5 shadow-none"><ShieldCheck className="w-3.5 h-3.5" /> Verified</Badge>;
             case 'untrusted':
-                return <Badge className="bg-destructive/10 text-error-subtle-foreground border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><ShieldAlert className="w-3.5 h-3.5" /> Blocked</Badge>;
+                return <Badge className="bg-destructive/10 text-error-subtle-foreground border-none gap-2 rounded-md font-medium text-xs px-2 py-0.5 shadow-none"><ShieldAlert className="w-3.5 h-3.5" /> Blocked</Badge>;
             default:
-                return <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none gap-2 rounded-md font-semibold text-xs px-2 py-0.5 shadow-none"><Activity className="w-3.5 h-3.5" /> Pending</Badge>;
+                return <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none gap-2 rounded-md font-medium text-xs px-2 py-0.5 shadow-none"><Activity className="w-3.5 h-3.5" /> Pending</Badge>;
         }
     };
 
@@ -90,7 +90,7 @@ const Devices: React.FC = () => {
 
              {error && (
                 <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground">
-                    <AlertDescription className="font-semibold text-sm flex items-center gap-3">
+                    <AlertDescription className="font-medium text-sm flex items-center gap-3">
                         <ShieldAlert className="w-4 h-4" />
                         Device error: {error}
                     </AlertDescription>
@@ -104,7 +104,7 @@ const Devices: React.FC = () => {
                             <Lock className="w-4 h-4" />
                         </div>
                          <div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Device Directory</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface">Device Directory</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">List of devices allowed to access company resources.</p>
                         </div>
                     </div>
@@ -114,12 +114,12 @@ const Devices: React.FC = () => {
                         <GlassTable>
                             <GlassTableHeader>
                                  <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Serial Number</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Platform</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Security Status</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Last Seen</GlassTableHead>
-                                    <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
+                                    <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Serial Number</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">User</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">Platform</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">Security Status</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">Last Seen</GlassTableHead>
+                                    <GlassTableHead className="text-right pr-card font-medium text-xs text-muted-foreground">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
@@ -159,7 +159,7 @@ const Devices: React.FC = () => {
                              All devices must be verified to access company data. Unrecognized devices will be blocked automatically according to global security policies.
                          </p>
                      </div>
-                     <Button variant="outline" className="h-9 px-4 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-semibold text-sm hidden lg:flex">
+                     <Button variant="outline" className="h-9 px-4 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-medium text-sm hidden lg:flex">
                          View Policy
                      </Button>
                 </div>

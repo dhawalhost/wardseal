@@ -64,7 +64,7 @@ const AccessRequests: React.FC = () => {
                 description="Review and manage requests for temporary access to restricted resources."
                 actions={
                     <Link to="/request-access">
-                        <Button className="rounded-lg font-semibold text-sm h-10 px-5 shadow-sm bg-secondary text-secondary-foreground">
+                        <Button className="rounded-lg font-medium text-sm h-10 px-5 shadow-sm bg-secondary text-secondary-foreground">
                             <Plus className="mr-2 h-4 w-4" /> New request
                         </Button>
                     </Link>
@@ -82,7 +82,7 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                     <GlassCardContent className="p-6">
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground">Pending</span>
+                            <span className="text-xs font-medium text-muted-foreground">Pending</span>
                             <div className="mt-2 flex items-end gap-3 leading-none">
                                 <span className="text-3xl font-medium tracking-tight text-on-surface">
                                     {requests.filter((r) => r.status === 'pending').length}
@@ -96,7 +96,7 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                     <GlassCardContent className="p-6">
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground">Approved</span>
+                            <span className="text-xs font-medium text-muted-foreground">Approved</span>
                             <div className="mt-2 flex items-end gap-3 leading-none">
                                 <span className="text-3xl font-medium tracking-tight text-on-surface">
                                     {requests.filter((r) => r.status === 'approved').length}
@@ -122,7 +122,7 @@ const AccessRequests: React.FC = () => {
 
             <div className="space-y-card">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-sm font-semibold text-muted-foreground flex-shrink-0">Request queue</h2>
+                    <h2 className="text-sm font-medium text-muted-foreground flex-shrink-0">Request queue</h2>
                     <div className="h-px flex-1 bg-border" />
                 </div>
 

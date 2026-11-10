@@ -56,7 +56,7 @@ export const OrganizationRow: React.FC<OrganizationRowProps> = ({
                         Run validation
                     </Button>
                 ) : (
-                    <span className="text-xs font-medium opacity-20 italic">Pending bind</span>
+                    <span className="text-xs font-medium opacity-20">Pending bind</span>
                 )}
             </TableCell>
             <TableCell className="py-3 text-right pr-6">

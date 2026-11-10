@@ -125,7 +125,7 @@ const PortalLayout = () => {
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-medium text-lg tracking-tight text-on-surface leading-none">WardSeal</span>
-                                <span className="text-xs font-medium tracking-tight text-muted-foreground leading-none mt-0.5 ">Developer portal</span>
+                                <span className="text-xs font-medium text-muted-foreground leading-none mt-0.5">Developer portal</span>
                             </div>
                         </Link>
                     </div>
@@ -201,15 +201,15 @@ const PortalLayout = () => {
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <div className="h-1.5 w-1.5 bg-success rounded-full" />
-                            <span className="text-xs font-medium tracking-tight text-on-surface ">Secure connection</span>
+                            <span className="text-xs font-medium text-on-surface">Secure connection</span>
                         </div>
                         <div className="flex items-center gap-2 opacity-40">
                             <Activity className="w-3 h-3" />
-                            <span className="text-xs font-medium tracking-tight ">Encrypted</span>
+                            <span className="text-xs font-medium">Encrypted</span>
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-3">
-                        <span className="text-xs font-medium text-muted-foreground tracking-tight px-3 border-l border-on-surface/5 ">WardSeal Identity Platform</span>
+                        <span className="text-xs font-medium text-muted-foreground px-3 border-l border-on-surface/5">WardSeal Identity Platform</span>
                     </div>
                 </div>
 
@@ -221,15 +221,15 @@ const PortalLayout = () => {
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                             <img src="/wardseal.svg" alt="WardSeal" height={16} width={16} className="w-3.5 h-3.5" />
-                            <p className="text-xs font-medium text-muted-foreground tracking-tight ">Secured by WardSeal</p>
+                            <p className="text-xs font-medium text-muted-foreground">Secured by WardSeal</p>
                         </div>
-                        <p className="text-xs font-medium text-muted-foreground tracking-tight">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
+                        <p className="text-xs font-medium text-muted-foreground">&copy; 2026 WardSeal Managed Security. Identity & Access Platform.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center gap-6">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight">Terms</a>
-                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight">Security Policies</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Terms</a>
+                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Security Policies</a>
                     </div>
                 </div>
             </footer>

@@ -51,7 +51,7 @@ const CopilotWidget = () => {
       {/* Chat Window */}
       {isOpen && (
         <GlassCard className="w-96 h-[550px] shadow-overlay flex flex-col overflow-hidden border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="h-16 flex items-center justify-between px-6 border-b bg-primary/5">
+          <div className="h-16 flex items-center justify-between px-6 border-b bg-surface-container-low">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center bg-primary rounded-lg">
                 <Sparkles className="w-4.5 h-4.5 text-white" />
@@ -60,7 +60,7 @@ const CopilotWidget = () => {
                 <p className="text-sm font-medium text-on-surface leading-none">Security Copilot</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                  <p className="text-xs font-semibold text-success">Online</p>
+                  <p className="text-xs font-medium text-success">Online</p>
                 </div>
               </div>
             </div>
@@ -77,7 +77,7 @@ const CopilotWidget = () => {
                     m.role === 'bot' ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground")}>
                     {m.role === 'bot' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
                   </div>
-                  <div className={cn("max-w-[80%] p-4 rounded-2xl text-[13px] font-medium leading-relaxed shadow-sm",
+                  <div className={cn("max-w-[80%] p-4 rounded-xl text-[13px] font-medium leading-relaxed shadow-sm",
                     m.role === 'bot'
                       ? "bg-card border text-on-surface"
                       : "bg-primary text-primary-foreground")}>
@@ -90,7 +90,7 @@ const CopilotWidget = () => {
                   <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                     <Loader2 className="w-4 h-4 animate-spin" />
                   </div>
-                  <div className="p-4 rounded-2xl bg-card border text-[13px] font-medium italic text-muted-foreground">
+                  <div className="p-4 rounded-xl bg-card border text-[13px] font-medium text-muted-foreground">
                     Analyzing identity graph...
                   </div>
                 </div>
@@ -101,7 +101,7 @@ const CopilotWidget = () => {
           <div className="p-4 border-t bg-card">
             <div className="relative group">
               <Input
-                placeholder="Ask a security question..."
+                placeholder="Ask a security question"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}

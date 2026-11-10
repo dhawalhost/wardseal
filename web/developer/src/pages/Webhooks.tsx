@@ -117,12 +117,12 @@ const Webhooks: React.FC = () => {
                                 <div className="p-2 bg-primary rounded-lg text-primary-foreground shadow-sm">
                                     <Activity className="w-4 h-4" />
                                 </div>
-                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Provision Tunnel</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium text-on-surface">Provision Tunnel</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-4 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Endpoint vector</Label>
+                                <Label className="text-xs font-medium text-muted-foreground ml-1">Endpoint vector</Label>
                                 <div className="relative">
                                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
                                         <Globe className="h-4 w-4" />
@@ -137,7 +137,7 @@ const Webhooks: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Subscription</Label>
+                                <Label className="text-xs font-medium text-muted-foreground ml-1">Subscription</Label>
                                 <div className="grid grid-cols-1 gap-1.5 bg-surface-container/30 rounded-lg p-3 border border-border">
                                     {availableEvents.map(ev => (
                                         <div key={ev} className="flex items-center space-x-3 group cursor-pointer select-none" onClick={() => toggleEvent(ev)}>
@@ -153,14 +153,14 @@ const Webhooks: React.FC = () => {
                             </div>
 
                             {error && (
-                                <div className="text-error-subtle-foreground text-xs font-medium tracking-tight bg-destructive/5 p-2 rounded-lg border border-destructive/10">
+                                <div className="text-error-subtle-foreground text-xs font-medium bg-destructive/5 p-2 rounded-lg border border-destructive/10">
                                     {error}
                                 </div>
                             )}
 
                             <Button
                                 onClick={handleCreate}
-                                className="w-full h-9 rounded-lg font-medium text-xs tracking-tight shadow-sm transition-[color,background-color,border-color,opacity,transform]"
+                                className="w-full h-9 rounded-lg font-medium text-xs shadow-sm transition-[color,background-color,border-color,opacity,transform]"
                                 disabled={creating}
                             >
                                 {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -177,8 +177,8 @@ const Webhooks: React.FC = () => {
                             <Lock className="w-4 h-4 text-primary" />
                         </div>
                         <div className="space-y-1">
-                            <h4 className="text-xs font-medium tracking-tight text-on-surface">Security protocol</h4>
-                            <p className="text-xs font-medium leading-relaxed text-muted-foreground tracking-tight">
+                            <h4 className="text-xs font-medium text-on-surface">Security protocol</h4>
+                            <p className="text-xs font-medium leading-relaxed text-muted-foreground">
                                 HMAC-SHA256 signed.
                             </p>
                         </div>
@@ -189,22 +189,22 @@ const Webhooks: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardHeader className="py-4 px-6 border-b border-on-surface/5">
                             <div className="flex items-center gap-4">
-                                <div className="p-2.5 bg-primary/5 rounded-xl">
+                                <div className="p-2.5 bg-surface-container-low rounded-xl">
                                     <ShieldCheck className="w-5 h-5 text-primary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Tunnel Registry</GlassCardTitle>
-                                    <p className="text-muted-foreground font-medium text-xs mt-0.5 tracking-tight">Active orchestration pipelines ({webhooks.length})</p>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Tunnel Registry</GlassCardTitle>
+                                    <p className="text-muted-foreground font-medium text-xs mt-0.5">Active orchestration pipelines ({webhooks.length})</p>
                                 </div>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0">
                             {webhooks.length === 0 ? (
                                 <div className="py-32 text-center text-muted-foreground flex flex-col items-center gap-6">
-                                    <div className="w-20 h-20 rounded-3xl bg-surface-container flex items-center justify-center">
+                                    <div className="w-20 h-20 rounded-xl bg-surface-container flex items-center justify-center">
                                         <WebhookIcon className="h-10 w-10 opacity-20" />
                                     </div>
-                                    <span className="max-w-xs font-medium text-xs tracking-tight leading-relaxed opacity-60">System silence // Zero communication vectors established.</span>
+                                    <span className="max-w-xs font-medium text-xs leading-relaxed opacity-60">System silence // Zero communication vectors established.</span>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">

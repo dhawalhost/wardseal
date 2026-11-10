@@ -1,4 +1,4 @@
-/** SoT: @dhawalhost/wardseal-ui-kit@0.3.2 — plus types for the app toast hook. */
+/** SoT: @dhawalhost/wardseal-ui-kit@0.4.0 — plus types for the app toast hook. */
 import type * as React from "react";
 
 export {

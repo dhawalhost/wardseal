@@ -113,7 +113,7 @@ const SlackIntegration: React.FC = () => {
                 description="Connect Slack for identity alerts, access requests, and ChatOps commands."
                 actions={
                     isConfigured && (
-                        <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-3 py-1.5 flex items-center gap-2 shadow-none">
+                        <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-medium text-xs px-3 py-1.5 flex items-center gap-2 shadow-none">
                             <ShieldCheck className="w-4 h-4" />
                             Connected
                         </Badge>
@@ -125,7 +125,7 @@ const SlackIntegration: React.FC = () => {
                 <div className="space-y-3">
                     {error && (
                         <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground">
-                            <AlertDescription className="font-semibold text-sm flex items-center gap-3">
+                            <AlertDescription className="font-medium text-sm flex items-center gap-3">
                                 <ShieldAlert className="w-4 h-4" />
                                 {error}
                             </AlertDescription>
@@ -133,7 +133,7 @@ const SlackIntegration: React.FC = () => {
                     )}
                     {success && (
                         <Alert className="rounded-lg border border-success/20 bg-success-subtle text-success-subtle-foreground">
-                            <AlertDescription className="font-semibold text-sm flex items-center gap-3">
+                            <AlertDescription className="font-medium text-sm flex items-center gap-3">
                                 <ShieldCheck className="w-4 h-4" />
                                 {success}
                             </AlertDescription>
@@ -151,7 +151,7 @@ const SlackIntegration: React.FC = () => {
                                     <Zap className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Connection status</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Connection status</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Current Slack workspace</p>
                                 </div>
                             </div>
@@ -177,14 +177,14 @@ const SlackIntegration: React.FC = () => {
                                     <div className="w-full space-y-3 pt-2">
                                         <Button 
                                             variant="outline" 
-                                            className="w-full h-10 rounded-lg border border-border font-semibold text-sm hover:bg-muted/50 shadow-sm" 
+                                            className="w-full h-10 rounded-lg border border-border font-medium text-sm hover:bg-muted/50 shadow-sm" 
                                             onClick={fetchStatus}
                                         >
                                             <RefreshCcw className="w-4 h-4 mr-2" /> Refresh status
                                         </Button>
                                         <Button 
                                             variant="ghost" 
-                                            className="w-full h-10 text-destructive font-semibold text-sm hover:bg-destructive/10 hover:text-destructive rounded-lg" 
+                                            className="w-full h-10 text-destructive font-medium text-sm hover:bg-destructive/10 hover:text-destructive rounded-lg" 
                                             onClick={handleDisconnect}
                                         >
                                             <Trash2 className="w-4 h-4 mr-2" /> Disconnect
@@ -200,7 +200,7 @@ const SlackIntegration: React.FC = () => {
                                         <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[220px]">
                                             No Slack workspace connected yet.
                                         </p>
-                                        <Button variant="outline" className="h-10 rounded-lg border border-border font-semibold text-sm px-4" asChild>
+                                        <Button variant="outline" className="h-10 rounded-lg border border-border font-medium text-sm px-4" asChild>
                                             <a href="https://api.slack.com/apps" target="_blank" rel="noreferrer">
                                                 <ExternalLink className="w-4 h-4 mr-2" /> Slack API portal
                                             </a>
@@ -227,7 +227,7 @@ const SlackIntegration: React.FC = () => {
                                     <Layout className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Configuration</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Configuration</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Slack app credentials and endpoints</p>
                                 </div>
                             </div>
@@ -236,7 +236,7 @@ const SlackIntegration: React.FC = () => {
                             <GlassCardContent className="p-card space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                             <Hash className="w-3.5 h-3.5" />
                                             Team ID
                                         </Label>
@@ -249,7 +249,7 @@ const SlackIntegration: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                             <Monitor className="w-3.5 h-3.5" />
                                             App ID
                                         </Label>
@@ -264,7 +264,7 @@ const SlackIntegration: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                         <Lock className="w-3.5 h-3.5" />
                                         Bot user token (OAuth)
                                     </Label>
@@ -282,7 +282,7 @@ const SlackIntegration: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                         <ShieldCheck className="w-3.5 h-3.5" />
                                         Signing secret
                                     </Label>
@@ -297,12 +297,12 @@ const SlackIntegration: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                    <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                         <Webhook className="w-3.5 h-3.5" />
                                         Incoming webhook URL
                                     </Label>
                                     <Input 
-                                        placeholder="https://hooks.slack.com/services/..."
+                                        placeholder="https://hooks.slack.com/services/"
                                         className="h-11 rounded-lg border border-input bg-card focus-visible:ring-2 focus-visible:ring-ring font-medium text-sm font-mono"
                                         value={form.webhook_url}
                                         onChange={e => setForm({...form, webhook_url: e.target.value})}
@@ -313,11 +313,11 @@ const SlackIntegration: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2.5 h-2.5 rounded-full ${form.enabled ? 'bg-success' : 'bg-muted-foreground'}`} />
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-semibold text-on-surface">{form.enabled ? 'Enabled' : 'Disabled'}</span>
+                                        <span className="text-sm font-medium text-on-surface">{form.enabled ? 'Enabled' : 'Disabled'}</span>
                                         <span className="text-xs font-medium text-muted-foreground">Integration state</span>
                                     </div>
                                 </div>
-                                <Button type="submit" disabled={saving} className="h-11 rounded-lg font-semibold text-sm px-6 bg-secondary text-secondary-foreground shadow-sm w-full md:w-auto">
+                                <Button type="submit" disabled={saving} className="h-11 rounded-lg font-medium text-sm px-6 bg-secondary text-secondary-foreground shadow-sm w-full md:w-auto">
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save configuration'}
                                 </Button>
                             </GlassCardFooter>
@@ -344,7 +344,7 @@ const SlackIntegration: React.FC = () => {
                                 <div className="p-2 bg-secondary-foreground/10 rounded-lg">
                                     <Terminal className="h-4 w-4 text-secondary-foreground" />
                                 </div>
-                                <code className="font-mono text-sm font-semibold text-secondary-foreground select-all break-all">
+                                <code className="font-mono text-sm font-medium text-secondary-foreground select-all break-all">
                                     {window.location.origin}/integrations/slack/commands
                                 </code>
                             </div>
@@ -354,7 +354,7 @@ const SlackIntegration: React.FC = () => {
                             {['/wardseal-whoami', '/wardseal-lock', '/wardseal-audit'].map(cmd => (
                                 <div key={cmd} className="flex items-center gap-3 py-3 px-4 rounded-lg bg-secondary-foreground/5 border border-secondary-foreground/10">
                                     <Command className="h-4 w-4 text-secondary-foreground" />
-                                    <span className="font-mono text-xs font-semibold text-secondary-foreground">{cmd}</span>
+                                    <span className="font-mono text-xs font-medium text-secondary-foreground">{cmd}</span>
                                 </div>
                             ))}
                         </div>

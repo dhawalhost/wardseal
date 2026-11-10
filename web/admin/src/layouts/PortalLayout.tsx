@@ -126,7 +126,7 @@ const PortalLayout = () => {
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-medium text-xl tracking-tight text-on-surface leading-none">WardSeal</span>
-                                <span className="text-xs font-semibold tracking-tight text-on-surface-subtle leading-none mt-0.5">User portal</span>
+                                <span className="text-xs font-medium text-on-surface-subtle leading-none mt-0.5">User portal</span>
                             </div>
                         </Link>
                     </div>
@@ -137,7 +137,7 @@ const PortalLayout = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/dashboard')}
-                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-semibold text-xs px-4 hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
+                                className="hidden md:flex gap-2 h-9 border-outline/20 rounded-lg font-medium text-xs px-4 hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
                             >
                                 <ShieldCheck className="w-4 h-4 text-primary" />
                                 <span>Admin Panel</span>
@@ -202,15 +202,15 @@ const PortalLayout = () => {
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">
                             <div className="h-1.5 w-1.5 bg-success rounded-full" />
-                            <span className="text-xs font-semibold tracking-tight text-on-surface">Secure connection</span>
+                            <span className="text-xs font-medium text-on-surface">Secure connection</span>
                         </div>
                         <div className="flex items-center gap-3 opacity-40">
                             <Activity className="w-3.5 h-3.5" />
-                            <span className="text-xs font-medium italic">End-to-end encrypted</span>
+                            <span className="text-xs font-medium">End-to-end encrypted</span>
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-4">
-                        <span className="text-xs font-medium text-muted-foreground tracking-tight px-4 border-l italic">WardSeal Identity Platform</span>
+                        <span className="text-xs font-medium text-muted-foreground px-4 border-l">WardSeal Identity Platform</span>
                     </div>
                 </div>
 
@@ -228,9 +228,9 @@ const PortalLayout = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center gap-10">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Terms</a>
-                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Security Policies</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors">Privacy</a>
+                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors">Terms</a>
+                        <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors">Security Policies</a>
                     </div>
                 </div>
             </footer>

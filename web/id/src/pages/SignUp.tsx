@@ -11,13 +11,8 @@ import Config from '../config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Logo } from '@/components/ui/logo';
-import { ShieldCheck, ArrowRight, Building, Lock, Mail, Loader2, Fingerprint, Activity } from 'lucide-react';
-import {
-    GlassCard,
-    GlassCardTitle,
-    GlassCardDescription
-} from '@/components/layout';
+import { ArrowRight, Building, Lock, Mail } from 'lucide-react';
+import { AuthLayout } from '@dhawalhost/wardseal-ui-kit';
 
 const SignUp: React.FC = () => {
     const navigate = useNavigate();
@@ -37,22 +32,23 @@ const SignUp: React.FC = () => {
         document.title = 'WardSeal — Create account';
     }, []);
 
+    const footerLinks = [
+        { label: 'Privacy', href: `${policyBaseUrl}/policies#privacy` },
+        { label: 'Terms', href: `${policyBaseUrl}/policies#terms` },
+        { label: 'Support', href: `${policyBaseUrl}/support` },
+    ];
+
     if (!Config.features.publicSignup) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background p-4">
-                <GlassCard className="w-full max-w-md shadow-sm border-border bg-card text-center p-10 rounded-xl">
-                    <div className="mx-auto w-10 h-10 flex items-center justify-center bg-muted rounded-xl mb-6">
-                        <Lock className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <GlassCardTitle className="mb-3 text-2xl font-medium tracking-tight">Registration disabled</GlassCardTitle>
-                    <GlassCardDescription className="mb-8">
-                        Public registration is currently disabled on this server.
-                    </GlassCardDescription>
-                    <Button variant="outline" className="h-11 px-6 rounded-lg font-semibold text-sm border-border" onClick={() => navigate('/login')}>
-                        Return to login
-                    </Button>
-                </GlassCard>
-            </div>
+            <AuthLayout
+                title="Registration is closed"
+                description="Public sign-up is turned off on this server. Ask an administrator for an invitation."
+                footerLinks={footerLinks}
+            >
+                <Button variant="outline" size="lg" className="w-full" onClick={() => navigate('/login')}>
+                    Back to sign in
+                </Button>
+            </AuthLayout>
         );
     }
 
@@ -80,9 +76,9 @@ const SignUp: React.FC = () => {
         } catch (err: any) {
             console.error(err);
             if (err.response?.status === 409) {
-                setError("Domain segment already assigned.");
+                setError("An organization with this name or domain already exists");
             } else {
-                setError(err.response?.data?.error_description || err.response?.data?.error || 'Initialization failed.');
+                setError(err.response?.data?.error_description || err.response?.data?.error || 'We could not create the organization. Try again.');
             }
         } finally {
             setLoading(false);
@@ -90,132 +86,76 @@ const SignUp: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-card font-sans selection:bg-primary/10">
-            {/* Left Side: Brand & Visual — explicit white text for WCAG contrast on navy */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 xl:p-16 bg-primary text-primary-foreground">
-                <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-                    <div className="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full bg-secondary/25 blur-[100px]" />
-                </div>
-
-                <div className="relative z-10">
-                    <Link to="/" className="flex items-center gap-3 text-white hover:opacity-90 transition-opacity">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 border border-white/10">
-                            <Logo variant="icon" className="w-6 h-6" />
-                        </div>
-                        <span className="text-xl font-medium tracking-tight text-white">WardSeal</span>
+        <AuthLayout
+            title="Create your organization"
+            description="You will be its first administrator. Invite your team and connect apps afterwards."
+            footnote={
+                <>
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-medium text-on-surface underline-offset-4 hover:underline">
+                        Sign in
                     </Link>
+                </>
+            }
+            footerLinks={footerLinks}
+        >
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                    <Label htmlFor="company">Organization name</Label>
+                    <Input
+                        id="company"
+                        icon={<Building />}
+                        placeholder="Northwind"
+                        autoComplete="organization"
+                        className="h-11"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        required
+                        autoFocus
+                    />
                 </div>
-
-                <div className="relative z-10 space-y-8">
-                    <h1 className="text-4xl xl:text-5xl font-medium tracking-tight leading-[1.15] text-white">
-                        The foundation for modern identity trust
-                    </h1>
-                    <div className="space-y-5">
-                        {[
-                            { icon: <ShieldCheck className="w-5 h-5" />, text: "Enterprise SSO with OIDC & SAML 2.0" },
-                            { icon: <Fingerprint className="w-5 h-5" />, text: "Passkey & biometric authentication" },
-                            { icon: <Activity className="w-5 h-5" />, text: "Automated governance & access reviews" }
-                        ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-4 text-slate-200">
-                                <div className="p-2.5 rounded-lg border border-white/20 bg-white/5 text-info">{item.icon}</div>
-                                <span className="text-base font-medium text-slate-200">{item.text}</span>
-                            </div>
-                        ))}
-                    </div>
+                <div className="space-y-2">
+                    <Label htmlFor="email">Work email</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        icon={<Mail />}
+                        placeholder="name@company.com"
+                        autoComplete="email"
+                        className="h-11"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
                 </div>
-
-                <div className="relative z-10 flex flex-wrap gap-3 text-xs font-semibold text-slate-300">
-                    <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5">Free org signup</span>
-                    <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5">Admin console included</span>
+                <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                        id="password"
+                        type="password"
+                        icon={<Lock />}
+                        autoComplete="new-password"
+                        className="h-11"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        aria-describedby="password-hint"
+                        required
+                    />
+                    <p id="password-hint" className="text-xs text-on-surface-subtle">
+                        At least 12 characters with upper and lower case, a number and a symbol
+                    </p>
                 </div>
-            </div>
-
-            {/* Right Side: Signup Form */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 py-12">
-                <div className="w-full max-w-md mx-auto">
-                    {/* Mobile Logo Only */}
-                    <div className="lg:hidden mb-12 flex justify-center">
-                        <Logo variant="icon" className="w-12 h-12" />
+                {error && (
+                    <div role="alert" className="rounded-lg border border-error/20 bg-error-subtle px-3 py-2.5 text-sm text-error-subtle-foreground">
+                        {error}
                     </div>
-
-                    <div className="mb-10 text-center lg:text-left">
-                        <h2 className="text-3xl font-medium tracking-tight text-on-surface">Create your account</h2>
-                        <p className="text-sm text-muted-foreground mt-2">Get started with your free organization</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="companyName" className="text-sm font-semibold text-on-surface ml-1">Company name</Label>
-                            <div className="relative group">
-                                <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <Input
-                                    id="companyName"
-                                    placeholder="Acme Corp"
-                                    className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-semibold text-on-surface ml-1">Work email</Label>
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="name@company.com"
-                                    className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password" className="text-sm font-semibold text-on-surface ml-1">Create password</Label>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••••••"
-                                    minLength={12}
-                                    className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground ml-1">
-                                At least 12 characters, with upper, lower, number, and special character.
-                            </p>
-                        </div>
-
-                        <Button type="submit" className="w-full h-12 rounded-lg bg-secondary text-secondary-foreground font-semibold text-base shadow-sm hover:opacity-90 transition-opacity group" disabled={loading}>
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                                <>Create organization <ArrowRight className="ml-2 w-5 h-5" /></>
-                            )}
-                        </Button>
-                    </form>
-
-                    <div className="mt-12 text-center">
-                        <p className="text-sm font-medium text-on-surface-variant">
-                            Already have an account? <Link to="/login" className="text-primary font-medium hover:underline decoration-2 underline-offset-4">Sign in</Link>
-                        </p>
-                    </div>
-
-                    <div className="mt-16 pt-8 border-t border-border flex justify-center gap-8">
-                        <a href="#" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
-                        <a href="#" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
-                        <a href="#" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Support</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+                )}
+                <Button type="submit" size="lg" className="w-full gap-2" isLoading={loading}>
+                    Create organization
+                    {!loading && <ArrowRight className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+                </Button>
+            </form>
+        </AuthLayout>
     );
 };
 

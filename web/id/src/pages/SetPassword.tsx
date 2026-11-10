@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Lock } from 'lucide-react';
+import { AuthLayout } from '@dhawalhost/wardseal-ui-kit';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { completePasswordSetup } from '../api';
 
 const SetPassword: React.FC = () => {
@@ -24,84 +24,52 @@ const SetPassword: React.FC = () => {
     setSuccess('');
 
     if (!token) {
-      setError('Invalid or missing setup token.');
+      setError('This link is missing its setup token. Ask for a new invitation.');
       return;
     }
     if (password.length < 12) {
-      setError('Password must be at least 12 characters with upper, lower, number, and special character.');
+      setError('Use at least 12 characters with upper and lower case, a number and a symbol');
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('The passwords do not match');
       return;
     }
 
     setLoading(true);
     try {
       await completePasswordSetup(token, password);
-      setSuccess('Password set successfully. You can now sign in.');
+      setSuccess('Password saved. Taking you to sign in');
       setTimeout(() => navigate('/login'), 1200);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to set password. Link may be expired or invalid.');
+      setError(err.response?.data?.error || 'This link has expired or was already used. Ask for a new invitation.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <Card className="w-full max-w-md border-border shadow-sm rounded-xl bg-card">
-        <CardHeader className="border-b border-border">
-          <CardTitle className="text-xl font-medium tracking-tight">Set password</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
-            Choose a secure password for your account.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4 pt-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {success && (
-              <Alert>
-                <AlertDescription>{success}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-semibold">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                className="h-11 rounded-lg border-input shadow-xs"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-semibold">Confirm password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                className="h-11 rounded-lg border-input shadow-xs"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end border-t border-border bg-muted/40">
-            <Button type="submit" className="rounded-lg font-semibold shadow-sm bg-secondary text-secondary-foreground" disabled={loading}>
-              {loading ? 'Saving…' : 'Set password'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+    <AuthLayout title="Choose a password" description="Use at least 12 characters with upper and lower case, a number and a symbol">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="password">New password</Label>
+          <Input id="password" type="password" icon={<Lock />} autoComplete="new-password" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Input id="confirmPassword" type="password" icon={<Lock />} autoComplete="new-password" className="h-11" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+        </div>
+        {error && (
+          <div role="alert" className="rounded-lg border border-error/20 bg-error-subtle px-3 py-2.5 text-sm text-error-subtle-foreground">{error}</div>
+        )}
+        {success && (
+          <div role="status" className="rounded-lg border border-success/20 bg-success-subtle px-3 py-2.5 text-sm text-success-subtle-foreground">{success}</div>
+        )}
+        <Button type="submit" size="lg" className="w-full" isLoading={loading}>
+          Set password
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 

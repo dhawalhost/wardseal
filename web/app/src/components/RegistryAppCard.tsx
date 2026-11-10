@@ -32,9 +32,9 @@ export const RegistryAppCard: React.FC<RegistryAppCardProps> = ({ app, onLaunch 
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1.5">
                                 <div className="w-1.5 h-1.5 bg-success rounded-full" />
-                                <span className="font-semibold text-xs text-success ">Active</span>
+                                <span className="font-medium text-xs text-success">Active</span>
                             </div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface leading-none">{app.name}</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface leading-none">{app.name}</GlassCardTitle>
                         </div>
                     </div>
                 </div>
@@ -51,7 +51,7 @@ export const RegistryAppCard: React.FC<RegistryAppCardProps> = ({ app, onLaunch 
                     <Button
                         onClick={() => onLaunch(app)}
                         variant="outline"
-                        className="w-full h-9 rounded-lg font-semibold text-sm"
+                        className="w-full h-9 rounded-lg font-medium text-sm"
                     >
                         Launch
                         <ExternalLink className="ml-1.5 h-3.5 w-3.5 opacity-50" />

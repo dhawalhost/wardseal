@@ -100,18 +100,18 @@ const Users: React.FC = () => {
                 "flex flex-col transition-[color,background-color,border-color,opacity,transform] duration-300",
                 selectedUser ? "w-[420px] min-w-[420px]" : "flex-1"
             )}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+                <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
                     <div>
-                        <h1 className="text-sm font-medium tracking-tight text-on-surface">Users</h1>
+                        <h1 className="text-title text-on-surface">Users</h1>
                         <p className="text-xs text-muted-foreground font-medium mt-0.5">
                             {users.length} total accounts
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="relative group">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors z-10" />
                             <Input
-                                placeholder="Search users..."
+                                placeholder="Search users"
                                 className="h-8 w-44 rounded-lg text-xs pl-8 border border-input bg-card focus-visible:ring-ring font-medium"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -119,7 +119,7 @@ const Users: React.FC = () => {
                         </div>
                         <Button
                             onClick={() => navigate('/users/new')}
-                            className="h-8 rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs px-3 shadow-sm"
+                            className="h-8 rounded-lg bg-secondary text-secondary-foreground font-medium text-xs px-3 shadow-sm"
                         >
                             <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Add user
                         </Button>
@@ -154,7 +154,7 @@ const Users: React.FC = () => {
                                         <Avatar name={email} size={32} className="h-8 w-8 rounded-lg border border-border overflow-hidden shrink-0" />
                                         <div className="flex-1 min-w-0">
                                             <p className={cn(
-                                                "text-sm font-semibold truncate transition-colors",
+                                                "text-sm font-medium truncate transition-colors",
                                                 isSelected ? "text-secondary" : "text-on-surface"
                                             )}>
                                                 {user.displayName || user.userName}
@@ -165,7 +165,7 @@ const Users: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
                                             <Badge className={cn(
-                                                "text-xs font-semibold px-1.5 py-0 rounded-md border-none",
+                                                "text-xs font-medium px-1.5 py-0 rounded-md border-none",
                                                 user.active
                                                     ? "bg-success-subtle text-success-subtle-foreground"
                                                     : "bg-destructive/10 text-error-subtle-foreground"
@@ -192,14 +192,14 @@ const Users: React.FC = () => {
                             <div className="flex items-center gap-4">
                                 <Avatar name={selectedUser.emails?.[0]?.value || selectedUser.userName} size={48} className="h-12 w-12 rounded-xl border border-secondary-foreground/20 overflow-hidden" />
                                 <div>
-                                    <h2 className="text-base font-medium tracking-tight text-secondary-foreground">
+                                    <h2 className="text-base font-medium text-secondary-foreground">
                                         {selectedUser.displayName || selectedUser.userName}
                                     </h2>
                                     <p className="text-secondary-foreground text-xs font-medium mt-0.5">
                                         {selectedUser.emails?.[0]?.value || 'No email'}
                                     </p>
                                     <Badge className={cn(
-                                        "mt-2 text-xs font-semibold px-2 py-0.5 rounded-md border-none",
+                                        "mt-2 text-xs font-medium px-2 py-0.5 rounded-md border-none",
                                         selectedUser.active
                                             ? "bg-secondary-foreground/10 text-secondary-foreground"
                                             : "bg-secondary-foreground/20 text-secondary-foreground"
@@ -221,7 +221,7 @@ const Users: React.FC = () => {
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-card space-y-4">
                         <section>
-                            <h3 className="text-xs font-semibold text-muted-foreground mb-2">Identity</h3>
+                            <h3 className="text-xs font-medium text-muted-foreground mb-2">Identity</h3>
                             <div className="bg-muted/50 rounded-xl divide-y divide-border border border-border">
                                 {[
                                     { label: 'Username', value: selectedUser.userName },
@@ -231,14 +231,14 @@ const Users: React.FC = () => {
                                 ].map(({ label, value }) => (
                                     <div key={label} className="flex items-center justify-between px-3 py-2.5">
                                         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-                                        <span className="text-sm font-semibold text-on-surface truncate max-w-[180px]">{value}</span>
+                                        <span className="text-sm font-medium text-on-surface truncate max-w-[180px]">{value}</span>
                                     </div>
                                 ))}
                             </div>
                         </section>
 
                         <section>
-                            <h3 className="text-xs font-semibold text-muted-foreground mb-2">
+                            <h3 className="text-xs font-medium text-muted-foreground mb-2">
                                 Groups ({(selectedUser.groups || []).length})
                             </h3>
                             {(selectedUser.groups || []).length === 0 ? (
@@ -246,7 +246,7 @@ const Users: React.FC = () => {
                             ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                     {(selectedUser.groups || []).map((g: any) => (
-                                        <Badge key={g.value} className="bg-secondary/10 text-secondary border border-border rounded-lg text-xs font-semibold px-2 py-0.5">
+                                        <Badge key={g.value} className="bg-secondary/10 text-secondary border border-border rounded-lg text-xs font-medium px-2 py-0.5">
                                             {g.display}
                                         </Badge>
                                     ))}
@@ -255,13 +255,13 @@ const Users: React.FC = () => {
                         </section>
 
                         <section>
-                            <h3 className="text-xs font-semibold text-muted-foreground mb-2">Actions</h3>
+                            <h3 className="text-xs font-medium text-muted-foreground mb-2">Actions</h3>
                             <div className="grid grid-cols-2 gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => navigate(`/users/edit/${selectedUser.id}`)}
-                                    className="h-8 rounded-lg text-xs font-semibold border-border hover:bg-muted transition-colors"
+                                    className="h-8 rounded-lg text-xs font-medium border-border hover:bg-muted transition-colors"
                                 >
                                     <Edit className="w-3.5 h-3.5 mr-1.5" /> Edit profile
                                 </Button>
@@ -269,7 +269,7 @@ const Users: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => { setIsPasswordDialogOpen(true); }}
-                                    className="h-8 rounded-lg text-xs font-semibold border-border hover:bg-muted transition-colors"
+                                    className="h-8 rounded-lg text-xs font-medium border-border hover:bg-muted transition-colors"
                                 >
                                     <Key className="w-3.5 h-3.5 mr-1.5" /> Set password
                                 </Button>
@@ -277,7 +277,7 @@ const Users: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleSendResetLink(selectedUser.id)}
-                                    className="h-8 rounded-lg text-xs font-semibold border-border hover:bg-muted transition-colors"
+                                    className="h-8 rounded-lg text-xs font-medium border-border hover:bg-muted transition-colors"
                                 >
                                     <Mail className="w-3.5 h-3.5 mr-1.5" /> Reset link
                                 </Button>
@@ -285,7 +285,7 @@ const Users: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => navigate('/groups')}
-                                    className="h-8 rounded-lg text-xs font-semibold border-border hover:bg-muted transition-colors"
+                                    className="h-8 rounded-lg text-xs font-medium border-border hover:bg-muted transition-colors"
                                 >
                                     <Shield className="w-3.5 h-3.5 mr-1.5" /> Manage groups
                                 </Button>
@@ -293,12 +293,12 @@ const Users: React.FC = () => {
                         </section>
 
                         <section className="pt-2 border-t border-border">
-                            <h3 className="text-xs font-semibold text-destructive mb-2">Danger zone</h3>
+                            <h3 className="text-xs font-medium text-destructive mb-2">Danger zone</h3>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDeleteUser(selectedUser.id)}
-                                className="w-full h-8 rounded-lg text-xs font-semibold border-destructive/20 text-destructive hover:bg-destructive/5 transition-colors"
+                                className="w-full h-8 rounded-lg text-xs font-medium border-destructive/20 text-destructive hover:bg-destructive/5 transition-colors"
                             >
                                 <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete user account
                             </Button>
@@ -310,19 +310,19 @@ const Users: React.FC = () => {
             <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
                 <DialogContent className="sm:max-w-[360px] rounded-xl border border-border bg-card shadow-sm p-card">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-medium tracking-tight text-on-surface flex items-center gap-2.5">
+                        <DialogTitle className="text-base font-medium text-on-surface flex items-center gap-2.5">
                             <div className="p-1.5 bg-secondary/10 rounded-lg">
                                 <Lock className="w-3.5 h-3.5 text-secondary" />
                             </div>
                             Set password
                         </DialogTitle>
                         <DialogDescription className="text-sm font-medium text-muted-foreground mt-1">
-                            Set a new password for <span className="text-on-surface font-semibold">{selectedUser?.displayName || selectedUser?.userName}</span>.
+                            Set a new password for <span className="text-on-surface font-medium">{selectedUser?.displayName || selectedUser?.userName}</span>.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-3 space-y-3">
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold text-muted-foreground ml-1 ">New password</Label>
+                            <Label className="text-xs font-medium text-muted-foreground ml-1">New password</Label>
                             <Input
                                 type="password"
                                 placeholder="At least 8 characters"
@@ -333,11 +333,11 @@ const Users: React.FC = () => {
                         </div>
                     </div>
                     <DialogFooter className="gap-2">
-                        <Button variant="ghost" onClick={() => setIsPasswordDialogOpen(false)} className="rounded-lg font-semibold text-xs h-8">Cancel</Button>
+                        <Button variant="ghost" onClick={() => setIsPasswordDialogOpen(false)} className="rounded-lg font-medium text-xs h-8">Cancel</Button>
                         <Button
                             onClick={handleSetPassword}
                             disabled={!newPassword || newPassword.length < 8 || loading}
-                            className="rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs px-4 h-8 shadow-sm"
+                            className="rounded-lg bg-secondary text-secondary-foreground font-medium text-xs px-4 h-8 shadow-sm"
                         >
                             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Update password"}
                         </Button>

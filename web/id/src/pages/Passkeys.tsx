@@ -100,7 +100,7 @@ const Passkeys: React.FC = () => {
                     <Button
                         onClick={handleRegister}
                         size="lg"
-                        className="w-full h-12 rounded-lg text-sm font-semibold shadow-sm bg-secondary text-secondary-foreground"
+                        className="w-full h-12 rounded-lg text-sm font-medium shadow-sm bg-secondary text-secondary-foreground"
                         disabled={isRegistering}
                     >
                         {isRegistering ? (

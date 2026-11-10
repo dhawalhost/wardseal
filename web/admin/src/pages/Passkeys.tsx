@@ -85,13 +85,13 @@ const Passkeys: React.FC = () => {
                 </GlassCardHeader>
                 <GlassCardContent className="p-card space-y-6">
                     {message && (
-                        <div className="bg-success-subtle border border-success/20 text-success-subtle-foreground p-4 rounded-lg flex items-center gap-3 font-semibold text-sm">
+                        <div className="bg-success-subtle border border-success/20 text-success-subtle-foreground p-4 rounded-lg flex items-center gap-3 font-medium text-sm">
                             <Check className="h-5 w-5 shrink-0" />
                             {message}
                         </div>
                     )}
                     {error && (
-                        <div className="bg-destructive/5 border border-destructive/20 text-error-subtle-foreground p-4 rounded-lg flex items-center gap-3 font-semibold text-sm">
+                        <div className="bg-destructive/5 border border-destructive/20 text-error-subtle-foreground p-4 rounded-lg flex items-center gap-3 font-medium text-sm">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             {error}
                         </div>
@@ -100,7 +100,7 @@ const Passkeys: React.FC = () => {
                     <Button
                         onClick={handleRegister}
                         size="lg"
-                        className="w-full h-11 rounded-lg text-sm font-semibold bg-secondary text-secondary-foreground shadow-sm"
+                        className="w-full h-11 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground shadow-sm"
                         disabled={isRegistering}
                     >
                         {isRegistering ? (

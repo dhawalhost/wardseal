@@ -19,7 +19,7 @@ const Switch = React.forwardRef<
     <SwitchPrimitive.Root
       ref={ref}
       className={cn(
-        "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-input bg-surface-container-high p-0.5 transition-colors duration-fast",
+        "peer inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-surface-container-highest p-0.5 transition-colors duration-fast",
         "data-[state=checked]:border-primary data-[state=checked]:bg-primary",
         "disabled:cursor-not-allowed disabled:opacity-50",
         focusRing,
@@ -31,7 +31,7 @@ const Switch = React.forwardRef<
       <SwitchPrimitive.Thumb
         className={cn(
           "pointer-events-none block h-[18px] w-[18px] rounded-full bg-card shadow-sm ring-1 ring-border transition-transform duration-fast",
-          "data-[state=unchecked]:translate-x-0 data-[state=checked]:translate-x-5 data-[state=checked]:ring-0"
+          "data-[state=unchecked]:translate-x-0 data-[state=checked]:translate-x-4 data-[state=checked]:ring-0"
         )}
       />
     </SwitchPrimitive.Root>

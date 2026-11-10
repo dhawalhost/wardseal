@@ -21,7 +21,7 @@ const SelectTrigger = React.forwardRef<
       ref={ref}
       className={cn(
         controlBaseClass,
-        "flex h-10 items-center justify-between gap-2 px-3 py-2 text-left",
+        "flex h-9 items-center justify-between gap-2 px-3 py-2 text-left",
         "data-[placeholder]:text-on-surface-subtle [&>span]:truncate",
         className
       )}
@@ -45,7 +45,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-[var(--radix-select-content-available-height)] min-w-[8rem] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-overlay",
+        "relative z-50 max-h-[var(--radix-select-content-available-height)] min-w-[8rem] overflow-hidden rounded-[10px] border border-border bg-popover text-popover-foreground shadow-overlay",
         "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
@@ -88,8 +88,8 @@ const SelectItem = React.forwardRef<
     ref={ref}
     className={cn(
       // Radix moves focus to the highlighted item, so data-[highlighted] covers mouse + keyboard.
-      "relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm text-on-surface outline-none transition-colors duration-fast",
-      "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+      "relative flex h-8 w-full cursor-pointer select-none items-center rounded-[6px] pl-8 pr-2 text-sm text-on-surface outline-none transition-colors duration-fast",
+      "data-[highlighted]:bg-surface-container-high",
       "data-[state=checked]:font-semibold",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
@@ -98,7 +98,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-secondary" aria-hidden />
+        <Check className="h-4 w-4 text-on-surface" strokeWidth={1.75} aria-hidden />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

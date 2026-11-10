@@ -35,15 +35,15 @@ export const PortalAccessRequestRow: React.FC<PortalAccessRequestRowProps> = ({
                     </div>
                      <div className="flex flex-col">
                         <span className="text-lg font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors">{req.requester_id}</span>
-                        <span className="text-xs font-medium font-mono tracking-tight text-muted-foreground mt-1 italic">ID: {req.id.substring(0, 8).toLowerCase()}</span>
+                        <span className="text-xs font-medium font-mono text-muted-foreground mt-1">ID: {req.id.substring(0, 8).toLowerCase()}</span>
                     </div>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                 <div className="flex flex-col gap-2">
                      <div className="flex items-center gap-2">
-                        <Badge className="bg-surface-container text-on-surface-variant border-none rounded-lg font-medium text-xs px-2.5 py-1 tracking-tight">{req.resource_type}</Badge>
-                        <span className="text-xs font-medium text-muted-foreground tracking-tight flex items-center gap-2 italic">
+                        <Badge className="bg-surface-container text-on-surface-variant border-none rounded-lg font-medium text-xs px-2.5 py-1">{req.resource_type}</Badge>
+                        <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                             <Terminal className="w-3.5 h-3.5" />
                             {req.resource_id}
                         </span>
@@ -55,12 +55,12 @@ export const PortalAccessRequestRow: React.FC<PortalAccessRequestRowProps> = ({
             </TableCell>
             <TableCell className="py-8">
                  {req.duration ? (
-                    <div className="flex items-center gap-2 text-xs font-medium text-primary tracking-tight">
+                    <div className="flex items-center gap-2 text-xs font-medium text-primary">
                         <Clock className="w-3.5 h-3.5 opacity-40" />
                         {req.duration}
                     </div>
                 ) : (
-                    <span className="text-xs font-medium text-muted-foreground tracking-tight italic">Permanent</span>
+                    <span className="text-xs font-medium text-muted-foreground">Permanent</span>
                 )}
             </TableCell>
             <TableCell className="py-8">

@@ -119,12 +119,12 @@ const MFASetup: React.FC = () => {
                 description="Protect your account with a time-based one-time password (TOTP) authenticator."
                 actions={
                     verified ? (
-                        <Badge className="bg-success/10 text-success-subtle-foreground border-none rounded-lg font-semibold text-xs px-3 py-1.5 flex items-center gap-2">
+                        <Badge className="bg-success/10 text-success-subtle-foreground border-none rounded-lg font-medium text-xs px-3 py-1.5 flex items-center gap-2">
                             <ShieldCheck className="w-3.5 h-3.5" />
                             MFA enabled
                         </Badge>
                     ) : (
-                        <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none rounded-lg font-semibold text-xs px-3 py-1.5 flex items-center gap-2">
+                        <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none rounded-lg font-medium text-xs px-3 py-1.5 flex items-center gap-2">
                             <ShieldAlert className="w-3.5 h-3.5" />
                             Not enabled
                         </Badge>
@@ -182,7 +182,7 @@ const MFASetup: React.FC = () => {
                                     <Button
                                         onClick={handleEnroll}
                                         disabled={enrolling}
-                                        className="h-11 px-8 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground"
+                                        className="h-11 px-8 rounded-lg font-medium text-sm shadow-sm bg-secondary text-secondary-foreground"
                                     >
                                         {enrolling ? (
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -198,7 +198,7 @@ const MFASetup: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div className="space-y-3">
-                                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                                 <QrCode className="w-4 h-4" />
                                                 Scan QR code
                                             </Label>
@@ -211,11 +211,11 @@ const MFASetup: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="space-y-3 bg-muted/40 p-5 rounded-xl border border-border">
-                                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                                 <Terminal className="w-4 h-4" />
                                                 Manual setup key
                                             </Label>
-                                            <div className="font-mono text-xs font-semibold text-center select-all bg-card py-3 rounded-lg border border-border shadow-sm text-primary">
+                                            <div className="font-mono text-xs font-medium text-center select-all bg-card py-3 rounded-lg border border-border shadow-sm text-primary">
                                                 {secret}
                                             </div>
                                         </div>
@@ -223,7 +223,7 @@ const MFASetup: React.FC = () => {
 
                                     <div className="flex flex-col justify-center space-y-6">
                                         <div className="space-y-3">
-                                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                                 <Activity className="w-4 h-4" />
                                                 Verification code
                                             </Label>
@@ -231,7 +231,7 @@ const MFASetup: React.FC = () => {
                                                 value={verifyCode}
                                                 onChange={(e) => setVerifyCode(e.target.value)}
                                                 placeholder="000000"
-                                                className="h-14 text-center text-2xl font-semibold border-border bg-background rounded-lg shadow-xs font-mono"
+                                                className="h-14 text-center text-2xl font-medium border-border bg-background rounded-lg shadow-xs font-mono"
                                                 maxLength={6}
                                                 autoFocus
                                             />
@@ -241,7 +241,7 @@ const MFASetup: React.FC = () => {
                                         </div>
                                         <Button
                                             onClick={handleVerify}
-                                            className="h-11 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground"
+                                            className="h-11 rounded-lg font-medium text-sm shadow-sm bg-secondary text-secondary-foreground"
                                         >
                                             Verify code
                                         </Button>
@@ -266,7 +266,7 @@ const MFASetup: React.FC = () => {
                                             </h3>
                                             <div className="flex items-center gap-2 justify-center py-1 px-4 bg-success-subtle rounded-full border border-success/20 w-fit mx-auto">
                                                 <div className="w-1.5 h-1.5 bg-success rounded-full" />
-                                                <span className="text-xs font-semibold text-success">Verified</span>
+                                                <span className="text-xs font-medium text-success">Verified</span>
                                             </div>
                                         </div>
                                     </div>
@@ -278,7 +278,7 @@ const MFASetup: React.FC = () => {
                                     <div className="pt-8 border-t border-border">
                                         <Button
                                             variant="ghost"
-                                            className="h-10 px-6 rounded-lg font-semibold text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                            className="h-10 px-6 rounded-lg font-medium text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
                                             onClick={handleDisable}
                                         >
                                             <Trash2 className="mr-2 h-4 w-4" /> Disable MFA
@@ -297,7 +297,7 @@ const MFASetup: React.FC = () => {
                                 <div className="p-2 bg-secondary-foreground/10 rounded-lg">
                                     <Info className="w-5 h-5" />
                                 </div>
-                                <h4 className="text-base font-medium tracking-tight">Security overview</h4>
+                                <h4 className="text-base font-medium">Security overview</h4>
                             </div>
 
                             <div className="space-y-4">
@@ -328,11 +328,11 @@ const MFASetup: React.FC = () => {
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="text-secondary-foreground">{stat.icon}</div>
-                                            <span className="text-xs font-semibold text-secondary-foreground">
+                                            <span className="text-xs font-medium text-secondary-foreground">
                                                 {stat.label}
                                             </span>
                                         </div>
-                                        <span className="text-xs font-semibold font-mono">{stat.value}</span>
+                                        <span className="text-xs font-medium font-mono">{stat.value}</span>
                                     </div>
                                 ))}
                             </div>
@@ -350,7 +350,7 @@ const MFASetup: React.FC = () => {
                             <ShieldCheck className="h-6 w-6 text-primary" />
                         </div>
                         <div className="text-center space-y-1">
-                            <h5 className="font-semibold text-sm text-on-surface">Trusted device</h5>
+                            <h5 className="font-medium text-sm text-on-surface">Trusted device</h5>
                             <p className="text-xs text-muted-foreground leading-relaxed">
                                 Sign-ins are verified against your authenticator when MFA is enabled.
                             </p>

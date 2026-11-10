@@ -102,7 +102,7 @@ const PortalProfile = () => {
                     <div className="p-2 bg-primary/10 rounded-lg">
                         <Fingerprint className="w-5 h-5" />
                     </div>
-                    <span className="text-xs font-semibold text-muted-foreground">Profile</span>
+                    <span className="text-xs font-medium text-muted-foreground">Profile</span>
                 </div>
                 <h1 className="text-3xl font-medium tracking-tight text-on-surface">Account settings</h1>
                 <p className="text-sm text-muted-foreground max-w-xl">
@@ -128,7 +128,7 @@ const PortalProfile = () => {
                     <GlassCardContent key={userProfile?.email || 'loading'} className="p-6 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-muted-foreground">First name</Label>
+                                <Label className="text-sm font-medium text-muted-foreground">First name</Label>
                                 <Input
                                     defaultValue={userProfile?.firstName || ''}
                                     className="h-10 rounded-lg border-input bg-background shadow-xs text-sm"
@@ -136,7 +136,7 @@ const PortalProfile = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-muted-foreground">Last name</Label>
+                                <Label className="text-sm font-medium text-muted-foreground">Last name</Label>
                                 <Input
                                     defaultValue={userProfile?.lastName || ''}
                                     className="h-10 rounded-lg border-input bg-background shadow-xs text-sm"
@@ -146,9 +146,9 @@ const PortalProfile = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-muted-foreground">Email</Label>
+                            <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                                 <Input
                                     type="email"
                                     className="h-10 pl-10 rounded-lg border-input bg-muted/40 text-sm cursor-not-allowed"
@@ -181,9 +181,9 @@ const PortalProfile = () => {
                     <GlassCardContent className="p-6 space-y-6">
                         <div className="flex flex-col md:flex-row items-center gap-4 p-5 rounded-lg bg-muted/40 border border-dashed border-border">
                             <div className="flex-1 space-y-2 w-full">
-                                <Label className="text-sm font-semibold text-muted-foreground">New password</Label>
+                                <Label className="text-sm font-medium text-muted-foreground">New password</Label>
                                 <div className="relative">
-                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                                     <Input
                                         type="password"
                                         placeholder="Enter a new password"
@@ -196,7 +196,7 @@ const PortalProfile = () => {
                             <Button
                                 onClick={handleSaveProfile}
                                 disabled={isSaving}
-                                className="h-10 bg-primary text-primary-foreground hover:opacity-90 rounded-lg px-6 font-semibold text-sm shadow-sm"
+                                className="h-10 bg-primary text-primary-foreground hover:opacity-90 rounded-lg px-6 font-medium text-sm shadow-sm"
                             >
                                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                                 Update password
@@ -224,13 +224,13 @@ const PortalProfile = () => {
                                     <Shield className="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-semibold text-on-surface">Multi-factor authentication</h4>
+                                    <h4 className="text-sm font-medium text-on-surface">Multi-factor authentication</h4>
                                     <p className="text-xs text-muted-foreground mt-0.5">Add a second verification step at sign-in</p>
                                 </div>
                             </div>
                             <Button
                                 variant="outline"
-                                className="h-9 border-border font-semibold text-sm rounded-lg px-5"
+                                className="h-9 border-border font-medium text-sm rounded-lg px-5"
                                 onClick={() => navigate('/mfa')}
                             >
                                 Configure MFA
@@ -267,7 +267,7 @@ const PortalProfile = () => {
                                     <Download className="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-semibold text-on-surface">Export your data</h4>
+                                    <h4 className="text-sm font-medium text-on-surface">Export your data</h4>
                                     <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
                                         Download an archive of personal data tied to your account.
                                     </p>
@@ -275,7 +275,7 @@ const PortalProfile = () => {
                             </div>
                             <Button
                                 variant="outline"
-                                className="h-9 border-border font-semibold text-sm rounded-lg px-5"
+                                className="h-9 border-border font-medium text-sm rounded-lg px-5"
                                 onClick={handleExportData}
                                 disabled={isExporting}
                             >
@@ -290,7 +290,7 @@ const PortalProfile = () => {
                                     <AlertTriangle className="h-5 w-5 text-destructive" />
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-semibold text-destructive">Delete account</h4>
+                                    <h4 className="text-sm font-medium text-destructive">Delete account</h4>
                                     <p className="text-xs text-error-subtle-foreground mt-0.5 max-w-md">
                                         Permanently delete your account and associated personal data.
                                     </p>
@@ -298,7 +298,7 @@ const PortalProfile = () => {
                             </div>
                             <Button
                                 variant="destructive"
-                                className="h-9 font-semibold text-sm rounded-lg px-5 shadow-sm"
+                                className="h-9 font-medium text-sm rounded-lg px-5 shadow-sm"
                                 onClick={handleDeleteAccount}
                                 disabled={isDeleting}
                             >

@@ -196,8 +196,8 @@ export function CommandMenu({
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => run(item)}
                         className={cn(
-                          "flex cursor-pointer select-none items-center justify-between gap-4 rounded-md px-2 py-2 text-sm transition-colors duration-fast",
-                          active ? "bg-accent text-accent-foreground" : "text-on-surface",
+                          "flex h-9 cursor-pointer select-none items-center justify-between gap-4 rounded-[6px] px-2 text-sm transition-colors duration-fast",
+                          active ? "bg-surface-container-high text-on-surface" : "text-on-surface",
                           !item.onClick && "cursor-default opacity-50"
                         )}
                       >

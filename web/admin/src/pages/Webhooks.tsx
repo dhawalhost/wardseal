@@ -118,12 +118,12 @@ const Webhooks: React.FC = () => {
                                 <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
                                     <Activity className="w-4 h-4" />
                                 </div>
-                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Add webhook</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium text-on-surface">Add webhook</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-card space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-xs font-semibold text-muted-foreground">Endpoint URL</Label>
+                                <Label className="text-xs font-medium text-muted-foreground">Endpoint URL</Label>
                                 <div className="relative">
                                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                                         <Globe className="h-4 w-4" />
@@ -138,7 +138,7 @@ const Webhooks: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-xs font-semibold text-muted-foreground">Events</Label>
+                                <Label className="text-xs font-medium text-muted-foreground">Events</Label>
                                 <div className="grid grid-cols-1 gap-2 bg-muted/50 rounded-xl p-card border border-border">
                                     {availableEvents.map(ev => (
                                         <div key={ev} className="flex items-center space-x-3 group cursor-pointer select-none" onClick={() => toggleEvent(ev)}>
@@ -154,14 +154,14 @@ const Webhooks: React.FC = () => {
                             </div>
 
                             {error && (
-                                <div className="bg-destructive/5 text-error-subtle-foreground p-3 rounded-lg border border-destructive/20 font-semibold text-sm">
+                                <div className="bg-destructive/5 text-error-subtle-foreground p-3 rounded-lg border border-destructive/20 font-medium text-sm">
                                     {error}
                                 </div>
                             )}
 
                             <Button
                                 onClick={handleCreate}
-                                className="w-full h-10 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm"
+                                className="w-full h-10 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm"
                                 disabled={creating}
                             >
                                 {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -175,7 +175,7 @@ const Webhooks: React.FC = () => {
                             <Lock className="w-4 h-4 text-secondary" />
                         </div>
                         <div className="space-y-1">
-                            <h4 className="text-sm font-semibold text-on-surface">Signed deliveries</h4>
+                            <h4 className="text-sm font-medium text-on-surface">Signed deliveries</h4>
                             <p className="text-sm font-medium leading-relaxed text-muted-foreground">
                                 Outbound webhooks are signed with HMAC-SHA256 for integrity verification.
                             </p>
@@ -191,7 +191,7 @@ const Webhooks: React.FC = () => {
                                     <ShieldCheck className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Configured webhooks</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Configured webhooks</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">{webhooks.length} endpoints</p>
                                 </div>
                             </div>
@@ -209,10 +209,10 @@ const Webhooks: React.FC = () => {
                                     <GlassTable>
                                         <GlassTableHeader>
                                             <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                                <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Endpoint</GlassTableHead>
-                                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Events</GlassTableHead>
-                                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
-                                                <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
+                                                <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Endpoint</GlassTableHead>
+                                                <GlassTableHead className="font-medium text-xs text-muted-foreground">Events</GlassTableHead>
+                                                <GlassTableHead className="font-medium text-xs text-muted-foreground">Status</GlassTableHead>
+                                                <GlassTableHead className="text-right pr-card font-medium text-xs text-muted-foreground">Actions</GlassTableHead>
                                             </GlassTableRow>
                                         </GlassTableHeader>
                                         <TableBody>

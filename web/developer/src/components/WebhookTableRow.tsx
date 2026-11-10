@@ -30,15 +30,15 @@ export const WebhookTableRow: React.FC<WebhookTableRowProps> = ({
                         <ExternalLink className="h-3.5 w-3.5" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-xs font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors truncate max-w-[180px]">{webhook.url}</span>
-                        <span className="text-xs font-medium font-mono tracking-tight text-muted-foreground ">id // {webhook.id?.substring(0, 8)}</span>
+                        <span className="text-xs font-medium text-on-surface group-hover:text-primary transition-colors truncate max-w-[180px]">{webhook.url}</span>
+                        <span className="text-xs font-medium font-mono text-muted-foreground">id // {webhook.id?.substring(0, 8)}</span>
                     </div>
                 </div>
             </TableCell>
             <TableCell className="py-3">
                 <div className="flex flex-wrap gap-1.5">
                     {webhook.events.map(ev => (
-                        <Badge key={ev} className="bg-surface-container text-muted-foreground border-none rounded-md font-medium text-xs tracking-tight px-2 py-0.5 group-hover:bg-primary/5 group-hover:text-primary transition-[color,background-color,border-color,opacity,transform] ">
+                        <Badge key={ev} className="bg-surface-container text-muted-foreground border-none rounded-md font-medium text-xs px-2 py-0.5 group-hover:bg-primary/5 group-hover:text-primary transition-[color,background-color,border-color,opacity,transform]">
                             {ev.split('.')[1]}
                         </Badge>
                     ))}

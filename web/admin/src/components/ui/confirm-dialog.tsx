@@ -87,7 +87,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                             <DialogTitle className="text-2xl font-medium tracking-tight text-on-surface">
                                 {title}
                             </DialogTitle>
-                            <DialogDescription className="text-muted-foreground font-medium text-xs mt-2 italic">
+                            <DialogDescription className="text-muted-foreground font-medium text-xs mt-2">
                                 This action may be irreversible.
                             </DialogDescription>
                         </div>

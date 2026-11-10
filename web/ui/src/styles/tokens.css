@@ -33,7 +33,7 @@
  *   import "@dhawalhost/wardseal-ui-kit/tokens.css";
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap");
 
 /* ═══════════════════════════════════════════════════════════════
    THEME-INDEPENDENT TOKENS
@@ -61,8 +61,8 @@
   --space-card: 24px;
 
   /* ── Typography ── */
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
 
   /* ── Motion (DESIGN.md: micro-interactions 150–200ms ease-in-out) ── */
   --duration-fast: 150ms;
@@ -79,55 +79,55 @@
 :root,
 .light {
   /* ── Surfaces ── */
-  --background: 210 40% 98%;
-  --foreground: 222 47% 6%;
+  --background: 220 20% 97%;
+  --foreground: 222 32% 9%;
 
-  --surface: 210 40% 98%;
-  --surface-dim: 214 32% 94%;
+  --surface: 220 20% 97%;
+  --surface-dim: 220 16% 94%;
   --surface-bright: 0 0% 100%;
   --surface-container-lowest: 0 0% 100%;
-  --surface-container-low: 210 40% 98%;
-  --surface-container: 214 32% 96%;
-  --surface-container-high: 214 32% 91%;
-  --surface-container-highest: 215 25% 87%;
+  --surface-container-low: 220 20% 98%;
+  --surface-container: 220 16% 95.5%;
+  --surface-container-high: 220 14% 91%;
+  --surface-container-highest: 220 12% 86%;
 
   /* ── Text tiers ── */
-  --on-surface: 222 47% 6%;
-  --on-surface-variant: 215 16% 35%;
-  --on-surface-subtle: 215 14% 41%;
+  --on-surface: 222 32% 9%;
+  --on-surface-variant: 220 12% 33%;
+  --on-surface-subtle: 220 10% 40%;
 
   /* ── Lines ── */
-  --outline: 214 16% 55%;
-  --outline-variant: 214 25% 88%;
+  --outline: 220 9% 50%;
+  --outline-variant: 220 14% 89%;
 
   /* ── Brand ── */
-  --primary: 222 47% 11%;
+  --primary: 222 44% 12%;
   --on-primary: 0 0% 100%;
-  --primary-container: 214 32% 91%;
-  --on-primary-container: 222 47% 11%;
+  --primary-container: 220 14% 91%;
+  --on-primary-container: 222 44% 12%;
 
-  --secondary: 201 96% 32%;
+  --secondary: 206 92% 33%;
   --on-secondary: 0 0% 100%;
-  --secondary-container: 199 89% 94%;
-  --on-secondary-container: 201 96% 24%;
+  --secondary-container: 206 80% 95%;
+  --on-secondary-container: 206 92% 24%;
 
   /* Soft fill — not the CTA */
-  --accent: 199 89% 94%;
-  --accent-foreground: 201 96% 24%;
+  --accent: 206 60% 95%;
+  --accent-foreground: 206 92% 24%;
 
   /* ── Components ── */
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 6%;
+  --card-foreground: 222 32% 9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 6%;
-  --muted: 214 32% 94%;
-  --muted-foreground: 215 16% 35%;
-  --border: 214 32% 91%;
-  --input: 214 16% 55%;
-  --ring: 201 96% 32%;
+  --popover-foreground: 222 32% 9%;
+  --muted: 220 16% 95%;
+  --muted-foreground: 220 12% 33%;
+  --border: 220 14% 90%;
+  --input: 220 9% 50%;
+  --ring: 206 92% 33%;
 
-  --surface-inverse: 222 47% 11%;
-  --on-surface-inverse: 210 40% 98%;
+  --surface-inverse: 222 44% 12%;
+  --on-surface-inverse: 220 20% 97%;
 
   /* ── Semantic ── */
   --success: 142 72% 29%;
@@ -138,20 +138,20 @@
   --warning-foreground: 0 0% 100%;
   --warning-subtle: 48 90% 93%;
   --warning-subtle-foreground: 26 90% 30%;
-  --error: 0 72% 51%;
+  --error: 0 72% 47%;
   --error-foreground: 0 0% 100%;
   --error-subtle: 0 80% 95%;
   --error-subtle-foreground: 0 74% 40%;
   /* Alias of --error for shadcn compat — prefer error-* in new code */
   --destructive: var(--error);
   --destructive-foreground: var(--error-foreground);
-  --info: 201 96% 32%;
+  --info: 206 92% 33%;
   --info-foreground: 0 0% 100%;
-  --info-subtle: 199 89% 94%;
-  --info-subtle-foreground: 201 96% 24%;
+  --info-subtle: 206 80% 95%;
+  --info-subtle-foreground: 206 92% 24%;
 
   /* ── Overlay (modal scrim) ── */
-  --overlay: 222 47% 6%;
+  --overlay: 224 30% 6%;
   --overlay-opacity: 0.55;
 
   /* ── Elevation ── */
@@ -165,50 +165,50 @@
    DARK THEME — colour + elevation only
    ═══════════════════════════════════════════════════════════════ */
 .dark {
-  --background: 222 47% 6%;
-  --foreground: 210 40% 98%;
+  --background: 224 28% 6%;
+  --foreground: 220 20% 95%;
 
-  --surface: 222 47% 6%;
-  --surface-dim: 222 47% 4%;
-  --surface-bright: 217 33% 12%;
-  --surface-container-lowest: 222 47% 4%;
-  --surface-container-low: 222 47% 7%;
-  --surface-container: 217 33% 10%;
-  --surface-container-high: 217 33% 14%;
-  --surface-container-highest: 215 25% 18%;
+  --surface: 224 28% 6%;
+  --surface-dim: 224 30% 4%;
+  --surface-bright: 222 20% 11%;
+  --surface-container-lowest: 224 30% 4%;
+  --surface-container-low: 224 26% 7%;
+  --surface-container: 222 20% 9.5%;
+  --surface-container-high: 220 16% 13%;
+  --surface-container-highest: 220 14% 17%;
 
-  --on-surface: 210 40% 98%;
-  --on-surface-variant: 215 20% 65%;
-  --on-surface-subtle: 215 16% 56%;
+  --on-surface: 220 20% 95%;
+  --on-surface-variant: 220 12% 70%;
+  --on-surface-subtle: 220 9% 60%;
 
-  --outline: 215 16% 44%;
-  --outline-variant: 217 33% 18%;
+  --outline: 220 9% 46%;
+  --outline-variant: 220 14% 16%;
 
-  --primary: 210 40% 96%;
-  --on-primary: 222 47% 11%;
-  --primary-container: 217 33% 18%;
-  --on-primary-container: 210 40% 96%;
+  --primary: 220 20% 95%;
+  --on-primary: 224 28% 8%;
+  --primary-container: 220 16% 16%;
+  --on-primary-container: 220 20% 95%;
 
-  --secondary: 199 80% 48%;
-  --on-secondary: 222 47% 6%;
-  --secondary-container: 201 50% 18%;
-  --on-secondary-container: 199 89% 88%;
+  --secondary: 207 88% 60%;
+  --on-secondary: 224 30% 6%;
+  --secondary-container: 208 40% 16%;
+  --on-secondary-container: 207 90% 82%;
 
-  --accent: 217 33% 14%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 220 16% 13%;
+  --accent-foreground: 220 20% 95%;
 
-  --card: 217 33% 10%;
-  --card-foreground: 210 40% 98%;
-  --popover: 217 33% 10%;
-  --popover-foreground: 210 40% 98%;
-  --muted: 217 33% 14%;
-  --muted-foreground: 215 20% 65%;
-  --border: 217 33% 18%;
-  --input: 215 16% 44%;
-  --ring: 199 80% 48%;
+  --card: 222 20% 9%;
+  --card-foreground: 220 20% 95%;
+  --popover: 222 20% 10%;
+  --popover-foreground: 220 20% 95%;
+  --muted: 220 16% 13%;
+  --muted-foreground: 220 12% 70%;
+  --border: 220 14% 15%;
+  --input: 220 9% 46%;
+  --ring: 207 88% 60%;
 
-  --surface-inverse: 210 40% 98%;
-  --on-surface-inverse: 222 47% 11%;
+  --surface-inverse: 220 20% 95%;
+  --on-surface-inverse: 224 28% 8%;
 
   /* Bright fills in dark mode take dark ink text (white fails on these) */
   --success: 152 55% 40%;
@@ -225,12 +225,12 @@
   --error-subtle-foreground: 0 85% 75%;
   --destructive: var(--error);
   --destructive-foreground: var(--error-foreground);
-  --info: 199 80% 48%;
+  --info: 207 88% 60%;
   --info-foreground: 222 47% 6%;
-  --info-subtle: 201 50% 18%;
-  --info-subtle-foreground: 199 89% 80%;
+  --info-subtle: 208 40% 16%;
+  --info-subtle-foreground: 207 90% 82%;
 
-  --overlay: 222 47% 4%;
+  --overlay: 224 30% 3%;
   --overlay-opacity: 0.7;
 
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.2);

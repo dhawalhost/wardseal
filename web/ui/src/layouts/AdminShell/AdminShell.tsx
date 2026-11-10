@@ -123,8 +123,8 @@ function NavItem({
     "group/nav relative flex h-8 w-full items-center justify-between gap-2 rounded-md px-3 text-left text-sm font-medium transition-colors duration-fast",
     focusRing,
     item.isActive
-      ? "bg-surface-container-high text-on-surface shadow-[inset_0_0_0_1px_hsl(var(--on-surface)/0.06)]"
-      : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+      ? "bg-card text-on-surface shadow-[0_1px_2px_rgb(0_0_0/0.05),0_0_0_1px_hsl(var(--on-surface)/0.06)]"
+      : "text-on-surface-variant hover:bg-on-surface/[0.045] hover:text-on-surface"
   );
   const current = item.isActive ? ("page" as const) : undefined;
   const handleClick = () => {
@@ -185,7 +185,7 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 shrink-0 items-center border-b border-border px-5">
+      <div className="flex h-14 shrink-0 items-center px-5">
         {brandHref
           ? renderLink({
               href: brandHref,
@@ -196,10 +196,10 @@ function SidebarContent({
           : brand}
       </div>
 
-      {sidebarHeader && <div className="shrink-0 border-b border-border p-3">{sidebarHeader}</div>}
+      {sidebarHeader && <div className="shrink-0 px-3 pb-2">{sidebarHeader}</div>}
 
       {navFilter && (
-        <div className="shrink-0 px-3 pt-3">
+        <div className="shrink-0 px-3 pt-1">
           <label htmlFor={`${navId}-filter`} className="sr-only">
             {filterOpts.label ?? "Filter pages"}
           </label>
@@ -216,15 +216,14 @@ function SidebarContent({
               placeholder={filterOpts.placeholder ?? "Jump to page…"}
               autoComplete="off"
               className={cn(
-                "h-9 w-full rounded-lg border border-input bg-card pl-8 pr-3 text-sm text-on-surface placeholder:text-on-surface-subtle",
-                focusRing
+                "h-8 w-full rounded-md border border-border bg-card pl-8 pr-3 text-sm text-on-surface shadow-xs placeholder:text-on-surface-subtle transition-[border-color,box-shadow] duration-fast focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20"
               )}
             />
           </div>
         </div>
       )}
 
-      <nav aria-label="Primary" className="custom-scrollbar flex-1 space-y-6 overflow-y-auto px-3 py-4">
+      <nav aria-label="Primary" className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {groups.length === 0 && (
           <p className="px-3 py-2 text-sm text-on-surface-subtle" role="status">
             No pages match “{query.trim()}”
@@ -281,7 +280,7 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="shrink-0 border-t border-border p-3">
+      <div className="shrink-0 p-3">
         <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <Avatar name={user.name} size={32} aria-hidden />
@@ -384,7 +383,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
       <TooltipProvider delayDuration={300}>
         <div
           ref={ref}
-          className={cn("flex h-dvh w-full overflow-hidden bg-background font-sans text-on-surface", className)}
+          className={cn("flex h-dvh w-full overflow-hidden bg-surface-dim font-sans text-on-surface", className)}
           {...props}
         >
           <SkipLink targetId={mainId} />
@@ -392,7 +391,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
           {/* Desktop rail — hidden (and out of the tab order) below md */}
           <aside
             className={cn(
-              "hidden w-64 shrink-0 border-r border-border bg-surface-container-low md:block",
+              "hidden w-60 shrink-0 md:block",
               sidebarClassName
             )}
           >
@@ -411,7 +410,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
               }}
               side="left"
               id={`${navId}-drawer`}
-              className="w-72 gap-0 bg-surface-container-low p-0 sm:max-w-xs"
+              className="w-72 gap-0 bg-surface-dim p-0 sm:max-w-xs"
               closeLabel="Close navigation"
               aria-describedby={undefined}
             >
@@ -424,8 +423,8 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
             </SheetContent>
           </Sheet>
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 md:px-6">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background md:my-2 md:mr-2 md:rounded-xl md:border md:border-border md:shadow-card">
+            <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border px-4 md:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   ref={menuButtonRef}
@@ -447,14 +446,14 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
                     onClick={onSearchClick}
                     aria-keyshortcuts="Meta+K Control+K"
                     className={cn(
-                      "hidden h-9 w-64 items-center gap-2 rounded-lg border border-input bg-card px-3 text-left text-sm text-on-surface-subtle transition-colors duration-fast hover:border-on-surface-subtle hover:text-on-surface-variant md:flex",
+                      "hidden h-8 w-64 items-center gap-2 rounded-md border border-border bg-card px-2.5 text-left text-sm text-on-surface-subtle shadow-xs transition-colors duration-fast hover:border-input/60 hover:text-on-surface-variant md:flex",
                       focusRing
                     )}
                   >
                     <Search className="h-4 w-4 shrink-0" aria-hidden />
                     <span className="flex-1 truncate">{searchLabel}</span>
                     <kbd
-                      className="rounded border border-border bg-surface-container px-1.5 font-mono text-xs text-on-surface-subtle"
+                      className="rounded-[4px] border border-border bg-surface-container-low px-1 font-mono text-[11px] leading-4 text-on-surface-subtle"
                       aria-hidden
                     >
                       ⌘K
@@ -506,7 +505,7 @@ const AdminShell = React.forwardRef<HTMLDivElement, AdminShellProps>(
             </main>
 
             {footer && (
-              <footer className="shrink-0 border-t border-border bg-card px-4 py-2.5 text-xs text-on-surface-variant md:px-6">
+              <footer className="shrink-0 border-t border-border px-4 py-2 text-xs text-on-surface-subtle md:px-6">
                 {footer}
               </footer>
             )}

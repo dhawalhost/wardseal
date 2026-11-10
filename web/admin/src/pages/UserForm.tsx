@@ -191,7 +191,7 @@ export default function UserForm() {
                     <Button 
                         variant="outline" 
                         onClick={() => navigate('/users')}
-                        className="h-9 rounded-lg bg-card border border-border font-semibold text-[13px] px-6 shadow-sm transition-[color,background-color,border-color,opacity,transform] hover:bg-muted/50"
+                        className="h-9 rounded-lg bg-card border border-border font-medium text-[13px] px-6 shadow-sm transition-[color,background-color,border-color,opacity,transform] hover:bg-muted/50"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
                     </Button>
@@ -201,7 +201,7 @@ export default function UserForm() {
             <form onSubmit={handleSubmit} className="space-y-8">
                 {error && (
                     <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground animate-in slide-in-from-top-2">
-                        <AlertDescription className="font-semibold text-sm flex items-center gap-3">
+                        <AlertDescription className="font-medium text-sm flex items-center gap-3">
                             <ShieldCheck className="w-4 h-4" />
                             Error: {error}
                         </AlertDescription>
@@ -218,14 +218,14 @@ export default function UserForm() {
                                     </div>
                                     <div>
                                         <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface">Core Information</GlassCardTitle>
-                                        <p className="text-muted-foreground font-medium text-xs tracking-tight mt-1">Basic user details.</p>
+                                        <p className="text-muted-foreground font-medium text-xs mt-1">Basic user details.</p>
                                     </div>
                                 </div>
                             </GlassCardHeader>
                             <GlassCardContent className="p-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <Mail className="w-3 h-3" />
                                             Username (Email)
                                         </Label>
@@ -238,7 +238,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <User className="w-3 h-3" />
                                             Display Name
                                         </Label>
@@ -251,7 +251,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <Globe className="w-3 h-3" />
                                             Contact Email
                                         </Label>
@@ -265,7 +265,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <ShieldCheck className="w-3 h-3" />
                                             External ID (IdP Reference)
                                         </Label>
@@ -277,7 +277,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <Building2 className="w-3 h-3" />
                                             Department
                                         </Label>
@@ -289,7 +289,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <Info className="w-3 h-3" />
                                             Job Title
                                         </Label>
@@ -301,7 +301,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <Globe className="w-3 h-3" />
                                             Timezone
                                         </Label>
@@ -313,7 +313,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <Globe className="w-3 h-3" />
                                             Work Phone
                                         </Label>
@@ -325,7 +325,7 @@ export default function UserForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <ShieldCheck className="w-3 h-3" />
                                             Account Status
                                         </Label>
@@ -339,7 +339,7 @@ export default function UserForm() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                             <ShieldCheck className="w-3 h-3" />
                                             {isEdit ? 'Change Password (Optional)' : 'Initial Password (Optional)'}
                                         </Label>
@@ -353,7 +353,7 @@ export default function UserForm() {
                                     </div>
                                     {!isEdit && (
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                            <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                                 <Mail className="w-3 h-3" />
                                                 Setup Workflow
                                             </Label>
@@ -370,7 +370,7 @@ export default function UserForm() {
                                     
                                     {isEdit && (
                                         <div className="space-y-2 pt-4 border-t border-border">
-                                            <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1 flex items-center gap-2">
+                                            <Label className="text-xs font-medium text-muted-foreground ml-1 flex items-center gap-2">
                                                 <KeyRound className="w-3 h-3" />
                                                 Password Management
                                             </Label>
@@ -404,7 +404,7 @@ export default function UserForm() {
                                         </div>
                                         <div>
                                             <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface">Organization</GlassCardTitle>
-                                            <p className="text-muted-foreground font-medium text-xs tracking-tight mt-0.5">Assign user to an organization.</p>
+                                            <p className="text-muted-foreground font-medium text-xs mt-0.5">Assign user to an organization.</p>
                                         </div>
                                     </div>
                                 </GlassCardHeader>
@@ -421,14 +421,14 @@ export default function UserForm() {
                                                 <div className={`w-2.5 h-2.5 rounded-full transition-[color,background-color,border-color,opacity,transform] ${formData.organizationId === org.id ? 'bg-primary scale-110' : 'bg-on-surface/10'}`} />
                                                 <div className="flex flex-col">
                                                     <span className={`text-[13px] font-medium tracking-tight transition-colors ${formData.organizationId === org.id ? 'text-primary' : 'text-on-surface'}`}>{org.name}</span>
-                                                    <span className="text-xs font-mono text-muted-foreground tracking-tight">ID: {org.id.substring(0, 10)}</span>
+                                                    <span className="text-xs font-mono text-muted-foreground">ID: {org.id.substring(0, 10)}</span>
                                                 </div>
                                             </div>
                                             {formData.organizationId === org.id && <CheckCircle2 className="w-4 h-4 text-primary animate-in zoom-in-50" />}
                                         </div>
                                     ))}
                                     {orgs.length === 0 && (
-                                        <div className="py-8 text-center text-muted-foreground italic text-xs font-medium">No organizations registered.</div>
+                                        <div className="py-8 text-center text-muted-foreground text-xs font-medium">No organizations registered.</div>
                                     )}
                                 </GlassCardContent>
                             </GlassCard>
@@ -441,7 +441,7 @@ export default function UserForm() {
                                         </div>
                                         <div>
                                             <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface">Group Memberships</GlassCardTitle>
-                                            <p className="text-muted-foreground font-medium text-xs tracking-tight mt-0.5">Assign user to security groups.</p>
+                                            <p className="text-muted-foreground font-medium text-xs mt-0.5">Assign user to security groups.</p>
                                         </div>
                                     </div>
                                 </GlassCardHeader>
@@ -457,7 +457,7 @@ export default function UserForm() {
                                             >
                                                 <div className="flex flex-col">
                                                     <span className={`text-[13px] font-medium tracking-tight transition-colors ${formData.groups.includes(group.id) ? 'text-primary' : 'text-on-surface'}`}>{group.displayName}</span>
-                                                    <span className="text-xs font-medium text-muted-foreground tracking-tight mt-0.5">{group.members?.length || 0} members</span>
+                                                    <span className="text-xs font-medium text-muted-foreground mt-0.5">{group.members?.length || 0} members</span>
                                                 </div>
                                                 <div className={`w-5 h-5 rounded border flex items-center justify-center transition-[color,background-color,border-color,opacity,transform] ${formData.groups.includes(group.id) 
              ? 'bg-primary border-primary text-primary-foreground' 
@@ -467,7 +467,7 @@ export default function UserForm() {
                                             </div>
                                         ))}
                                         {groups.length === 0 && (
-                                            <div className="py-8 text-center text-muted-foreground italic text-xs font-medium">No authorization groups defined.</div>
+                                            <div className="py-8 text-center text-muted-foreground text-xs font-medium">No authorization groups defined.</div>
                                         )}
                                     </div>
                                 </GlassCardContent>
@@ -478,7 +478,7 @@ export default function UserForm() {
                             <Button 
                                 type="submit" 
                                 disabled={submitting} 
-                                className="flex-1 h-10 rounded-lg font-semibold text-sm bg-secondary text-secondary-foreground shadow-sm"
+                                className="flex-1 h-10 rounded-lg font-medium text-sm bg-secondary text-secondary-foreground shadow-sm"
                             >
                                 {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                                 {isEdit ? "Save Changes" : "Create User"}

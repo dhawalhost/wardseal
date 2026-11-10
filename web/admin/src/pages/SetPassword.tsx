@@ -64,7 +64,7 @@ const SetPassword: React.FC = () => {
               <KeyRound className="w-4 h-4" />
             </div>
             <div>
-              <GlassCardTitle className="text-base font-medium tracking-tight">Set Password</GlassCardTitle>
+              <GlassCardTitle className="text-base font-medium">Set Password</GlassCardTitle>
               <GlassCardDescription className="text-sm text-muted-foreground mt-0.5">Choose a secure password for your account.</GlassCardDescription>
             </div>
           </div>
@@ -73,17 +73,17 @@ const SetPassword: React.FC = () => {
           <GlassCardContent className="p-card space-y-4">
             {error && (
               <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5">
-                <AlertDescription className="text-sm font-semibold">{error}</AlertDescription>
+                <AlertDescription className="text-sm font-medium">{error}</AlertDescription>
               </Alert>
             )}
             {success && (
               <Alert className="rounded-lg border border-success/20 bg-success-subtle text-success-subtle-foreground">
-                <AlertDescription className="text-sm font-semibold">{success}</AlertDescription>
+                <AlertDescription className="text-sm font-medium">{success}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground ">New Password</Label>
+              <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">New Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -95,7 +95,7 @@ const SetPassword: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-xs font-semibold text-muted-foreground ">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-xs font-medium text-muted-foreground">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -109,7 +109,7 @@ const SetPassword: React.FC = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm"
+              className="w-full h-11 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm"
             >
               {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : 'Set Password'}
             </Button>

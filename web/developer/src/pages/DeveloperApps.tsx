@@ -522,20 +522,20 @@ const DeveloperApps: React.FC = () => {
 
  {/* Secret/Key Alerts: MODERNIST */}
  {(createdSecret || createdAPIKey) && (
- <div className="bg-success-subtle ring-1 ring-success/30 p-6 rounded-2xl relative overflow-hidden group animate-in slide-in-from-top-4">
+ <div className="bg-success-subtle ring-1 ring-success/30 p-6 rounded-xl relative overflow-hidden group animate-in slide-in-from-top-4">
  <div className="absolute top-0 right-0 p-4 opacity-5">
  <Lock className="w-16 h-16 text-success-subtle-foreground" />
  </div>
  <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
- <div className="p-4 bg-card rounded-2xl shadow-sm">
+ <div className="p-4 bg-card rounded-xl shadow-sm">
  <ShieldCheck className="h-10 w-10 text-success-subtle-foreground" />
  </div>
  <div className="flex-1 space-y-4">
  <h4 className="text-2xl font-medium tracking-tight text-success-subtle-foreground">Secret Created</h4>
- <p className="text-[12px] font-semibold text-success-subtle-foreground max-w-2xl">
+ <p className="text-[12px] font-medium text-success-subtle-foreground max-w-2xl">
  Your new secret has been generated. Please copy and save it securely; it will not be shown again.
  </p>
- <div className="bg-card p-6 font-mono text-sm break-all rounded-2xl ring-1 ring-success/30 flex items-center justify-between">
+ <div className="bg-card p-6 font-mono text-sm break-all rounded-xl ring-1 ring-success/30 flex items-center justify-between">
  <span className="text-success-subtle-foreground font-medium tracking-tight">{createdSecret || createdAPIKey}</span>
  <Button aria-label="Copy credential"
  variant="ghost"
@@ -547,7 +547,7 @@ const DeveloperApps: React.FC = () => {
  </Button>
  </div>
  <Button
- className="bg-success text-success-foreground rounded-lg font-medium text-xs px-6 h-8 hover:bg-success shadow-card "
+ className="bg-success text-success-foreground rounded-lg font-medium text-xs px-6 h-8 hover:bg-success shadow-card"
  onClick={() => { setCreatedSecret(null); setCreatedAPIKey(null); }}
  >
  Done
@@ -559,7 +559,7 @@ const DeveloperApps: React.FC = () => {
 
  {/* Success/Error Alerts */}
  {successMessage && (
- <div className="bg-success-subtle ring-1 ring-success/30 rounded-2xl p-5 text-success-subtle-foreground font-medium text-[12px] tracking-tight flex items-center gap-3">
+ <div className="bg-success-subtle ring-1 ring-success/30 rounded-xl p-5 text-success-subtle-foreground font-medium text-[12px] tracking-tight flex items-center gap-3">
  <div className="p-1 bg-success/10 rounded-lg">
  <Check className="h-3.5 w-3.5 text-success-subtle-foreground" />
  </div>
@@ -567,7 +567,7 @@ const DeveloperApps: React.FC = () => {
  </div>
  )}
  {error && (
- <div className="bg-destructive/10 ring-1 ring-destructive/20 rounded-2xl p-5 text-error font-medium text-[12px] tracking-tight flex items-center gap-3">
+ <div className="bg-destructive/10 ring-1 ring-destructive/20 rounded-xl p-5 text-error font-medium text-[12px] tracking-tight flex items-center gap-3">
  <div className="p-1 bg-destructive/100/10 rounded-lg">
  <AlertTriangle className="h-3.5 w-3.5 text-error-subtle-foreground" />
  </div>
@@ -580,25 +580,25 @@ const DeveloperApps: React.FC = () => {
  <TabsList className="h-auto p-1 bg-surface-container rounded-xl border border-border flex flex-wrap gap-1 mb-6">
  <TabsTrigger
  value="apps"
- className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs tracking-tight transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
+ className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
  >
  <Smartphone className="mr-2 h-3.5 w-3.5" /> Apps
  </TabsTrigger>
  <TabsTrigger
  value="keys"
- className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs tracking-tight transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
+ className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
  >
  <Key className="mr-2 h-3.5 w-3.5" /> Keys
  </TabsTrigger>
  <TabsTrigger
  value="idp"
- className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs tracking-tight transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
+ className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
  >
  <Shield className="mr-2 h-3.5 w-3.5" /> SAML
  </TabsTrigger>
  <TabsTrigger
  value="scim"
- className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs tracking-tight transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
+ className="h-9 px-4 rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm font-medium text-xs transition-[color,background-color,border-color,opacity,transform] text-muted-foreground hover:text-on-surface"
  >
  <RefreshCw className="mr-2 h-3.5 w-3.5" /> SCIM
  </TabsTrigger>
@@ -612,8 +612,8 @@ const DeveloperApps: React.FC = () => {
  <Zap className="w-5 h-5 text-primary" />
  </div>
  <div className="flex flex-col">
- <span className="text-on-surface font-medium text-base tracking-tight">Register Application</span>
- <span className="text-muted-foreground font-medium text-xs mt-0.5 tracking-tight">Create a new OAuth2 client to integrate with WardSeal.</span>
+ <span className="text-on-surface font-medium text-base">Register Application</span>
+ <span className="text-muted-foreground font-medium text-xs mt-0.5">Create a new OAuth2 client to integrate with WardSeal.</span>
  </div>
  </div>
  <Button
@@ -634,7 +634,7 @@ const DeveloperApps: React.FC = () => {
                                 <form onSubmit={handleCreateApp} className="space-y-4">
                                     <div className="grid gap-6 md:grid-cols-2">
                                         <div className="space-y-1.5">
-                                            <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Application Name</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground ml-1">Application Name</Label>
                                             <Input
                                                 placeholder="e.g. CORE_SERVICE"
                                                 value={newApp.name}
@@ -644,7 +644,7 @@ const DeveloperApps: React.FC = () => {
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Application Type</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground ml-1">Application Type</Label>
                                             <select
                                                 className="flex h-8 w-full rounded-lg border-none bg-surface-container/30 px-3 font-medium text-xs border border-input outline-none focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] appearance-none"
                                                 value={newApp.app_type}
@@ -659,7 +659,7 @@ const DeveloperApps: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Redirect URIs (comma-separated)</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1">Redirect URIs (comma-separated)</Label>
                                         <Input
                                             placeholder="https://app.domain/callback"
                                             value={newApp.redirect_uris}
@@ -670,7 +670,7 @@ const DeveloperApps: React.FC = () => {
 
                                     <div className="grid gap-6 md:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Permissions (Scopes)</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground ml-1">Permissions (Scopes)</Label>
                                             <div className="grid grid-cols-2 gap-2">
                                                 {AVAILABLE_SCOPES.map(scope => (
                                                     <label key={scope} className={`flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-[color,background-color,border-color,opacity,transform] ring-1 ${newApp.scopes.includes(scope) ? 'bg-primary/5 ring-primary/20' : 'bg-surface-container/10 border-border hover:border-border'}`}>
@@ -680,13 +680,13 @@ const DeveloperApps: React.FC = () => {
                                                             onChange={() => toggleScope('new', scope)}
                                                             className="h-3.5 w-3.5 rounded border-on-surface/20 text-primary focus-visible:ring-ring"
                                                         />
-                                                        <span className="text-xs font-medium tracking-tight text-on-surface-subtle">{scope}</span>
+                                                        <span className="text-xs font-medium text-on-surface-subtle">{scope}</span>
                                                     </label>
                                                 ))}
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Login Flows</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground ml-1">Login Flows</Label>
                                             <div className="space-y-2">
                                                 {AVAILABLE_GRANT_TYPES.map(grantType => (
                                                     <label key={grantType} className={`flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-[color,background-color,border-color,opacity,transform] ring-1 ${newApp.grant_types.includes(grantType) ? 'bg-primary/5 ring-primary/20 text-primary' : 'bg-surface-container/10 border-border hover:border-border text-on-surface-subtle'}`}>
@@ -696,14 +696,14 @@ const DeveloperApps: React.FC = () => {
                                                             onChange={() => toggleGrantType('new', grantType)}
                                                             className="h-3.5 w-3.5 rounded border-on-surface/20 text-primary focus-visible:ring-ring"
                                                         />
-                                                        <span className="text-xs font-medium tracking-tight">{grantType.replace('_', ' ')}</span>
+                                                        <span className="text-xs font-medium">{grantType.replace('_', ' ')}</span>
                                                     </label>
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <Button type="submit" className="w-full h-8 rounded-lg font-medium text-xs tracking-tight shadow-sm">
+                                    <Button type="submit" className="w-full h-8 rounded-lg font-medium text-xs shadow-sm">
                                         Establish Orchestration Client
                                     </Button>
                                 </form>
@@ -748,7 +748,7 @@ const DeveloperApps: React.FC = () => {
                             <GlassCardContent className="p-6">
                                 <form onSubmit={handleCreateAPIKey} className="space-y-6">
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Key Alias</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1">Key Alias</Label>
                                         <Input
                                             placeholder="PROGRAMMATIC_LABEL"
                                             value={newKeyName}
@@ -757,7 +757,7 @@ const DeveloperApps: React.FC = () => {
                                             className="h-10 border-none rounded-lg bg-surface-container/30 border border-border focus-visible:ring-2 focus-visible:ring-ring font-medium text-xs px-4"
                                         />
                                     </div>
-                                    <Button type="submit" className="w-full h-8 rounded-lg font-medium text-xs tracking-tight shadow-sm">
+                                    <Button type="submit" className="w-full h-8 rounded-lg font-medium text-xs shadow-sm">
                                         Generate Cryptographic Key
                                     </Button>
                                 </form>
@@ -772,8 +772,8 @@ const DeveloperApps: React.FC = () => {
                                     <Terminal className="w-5 h-5 text-primary" />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface leading-none">All API Keys</GlassCardTitle>
-                                    <p className="text-xs font-medium tracking-tight text-muted-foreground">{apiKeys.length} Active keys</p>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface leading-none">All API Keys</GlassCardTitle>
+                                    <p className="text-xs font-medium text-muted-foreground">{apiKeys.length} Active keys</p>
                                 </div>
                             </div>
                         </GlassCardHeader>
@@ -806,11 +806,11 @@ const DeveloperApps: React.FC = () => {
                                 </div>
                                 <div className="relative z-10 space-y-2">
                                     <div className="flex items-center gap-3">
-                                        <Badge className="bg-primary/10 text-primary rounded-lg h-5 font-medium text-xs tracking-tight px-2 border-none">Protocol</Badge>
-                                        <span className="text-xs font-medium tracking-tight text-muted-foreground">OpenID Connect</span>
+                                        <Badge className="bg-primary/10 text-primary rounded-lg h-5 font-medium text-xs px-2 border-none">Protocol</Badge>
+                                        <span className="text-xs font-medium text-muted-foreground">OpenID Connect</span>
                                     </div>
                                     <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface leading-none">OIDC Configuration</GlassCardTitle>
-                                    <p className="text-xs font-medium text-muted-foreground tracking-tight">Public endpoints for your OIDC integration.</p>
+                                    <p className="text-xs font-medium text-muted-foreground">Public endpoints for your OIDC integration.</p>
                                 </div>
                             </GlassCardHeader>
                             <GlassCardContent className="p-4 space-y-4">
@@ -824,10 +824,10 @@ const DeveloperApps: React.FC = () => {
                                             </Button>
                                         </div>
                                     </div>
-                                    <div className="p-3 bg-primary/5 rounded-xl ring-1 ring-primary/10 space-y-2">
+                                    <div className="p-3 bg-surface-container-low rounded-xl ring-1 ring-primary/10 space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Shield className="h-3 w-3 text-primary" />
-                                            <span className="text-xs font-semibold text-primary">Quick start</span>
+                                            <span className="text-xs font-medium text-primary">Quick start</span>
                                         </div>
                                         <div className="font-mono text-xs text-muted-foreground truncate bg-card p-2 rounded-md border border-border">
                                             {currentIssuerBaseURL}/.well-known/openid-configuration
@@ -844,11 +844,11 @@ const DeveloperApps: React.FC = () => {
                                 </div>
                                 <div className="relative z-10 space-y-2">
                                     <div className="flex items-center gap-3">
-                                        <Badge className="bg-primary/10 text-primary rounded-lg h-5 font-medium text-xs tracking-tight px-2 border-none">Enterprise</Badge>
-                                        <span className="text-xs font-medium tracking-tight text-muted-foreground">SAML 2.0</span>
+                                        <Badge className="bg-primary/10 text-primary rounded-lg h-5 font-medium text-xs px-2 border-none">Enterprise</Badge>
+                                        <span className="text-xs font-medium text-muted-foreground">SAML 2.0</span>
                                     </div>
                                     <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface leading-none">SAML Configuration</GlassCardTitle>
-                                    <p className="text-xs font-medium text-muted-foreground tracking-tight">Public endpoints for your SAML integration.</p>
+                                    <p className="text-xs font-medium text-muted-foreground">Public endpoints for your SAML integration.</p>
                                 </div>
                             </GlassCardHeader>
                             <GlassCardContent className="p-4 space-y-4">
@@ -884,8 +884,8 @@ const DeveloperApps: React.FC = () => {
                                     <Zap className="w-4 h-4 text-white" />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <GlassCardTitle className="text-sm font-medium tracking-tight text-on-surface">Service Providers</GlassCardTitle>
-                                    <p className="text-xs font-medium tracking-tight text-muted-foreground">SAML Federation Registry</p>
+                                    <GlassCardTitle className="text-sm font-medium text-on-surface">Service Providers</GlassCardTitle>
+                                    <p className="text-xs font-medium text-muted-foreground">SAML Federation Registry</p>
                                 </div>
                             </div>
                             <Button
@@ -901,7 +901,7 @@ const DeveloperApps: React.FC = () => {
                                     <form onSubmit={handleCreateSAMLProvider} className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-1.5">
-                                                <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Entity ID</Label>
+                                                <Label className="text-xs font-medium text-muted-foreground ml-1">Entity ID</Label>
                                                 <Input
                                                     placeholder="https://sp.provider.com/saml"
                                                     value={newSAMLProvider.entity_id}
@@ -911,7 +911,7 @@ const DeveloperApps: React.FC = () => {
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">ACS URL</Label>
+                                                <Label className="text-xs font-medium text-muted-foreground ml-1">ACS URL</Label>
                                                 <Input
                                                     placeholder="https://sp.provider.com/saml/acs"
                                                     value={newSAMLProvider.acs_url}
@@ -930,7 +930,7 @@ const DeveloperApps: React.FC = () => {
                                                     className="data-[state=checked]:bg-success scale-75"
                                                 />
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-medium tracking-tight text-on-surface">Sign Response</span>
+                                                    <span className="text-xs font-medium text-on-surface">Sign Response</span>
                                                     <span className="text-xs font-medium text-muted-foreground">Crypto Integrity</span>
                                                 </div>
                                             </div>
@@ -941,7 +941,7 @@ const DeveloperApps: React.FC = () => {
                                                     className="data-[state=checked]:bg-success scale-75"
                                                 />
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-medium tracking-tight text-on-surface">Encrypt Response</span>
+                                                    <span className="text-xs font-medium text-on-surface">Encrypt Response</span>
                                                     <span className="text-xs font-medium text-muted-foreground">Data Privacy</span>
                                                 </div>
                                             </div>
@@ -972,15 +972,15 @@ const DeveloperApps: React.FC = () => {
                 </TabsContent>
 
                 <TabsContent value="scim" className="space-y-6 animate-in fade-in duration-500">
-                    <GlassCard className="border border-border shadow-sm bg-card rounded-2xl overflow-hidden border border-border">
+                    <GlassCard className="border border-border shadow-sm bg-card rounded-xl overflow-hidden border border-border">
                         <GlassCardHeader className="bg-surface-container p-6 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-6 opacity-[0.02]">
                                 <RefreshCw className="w-24 h-24" />
                             </div>
                             <div className="relative z-10 space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <Badge className="bg-primary/10 text-primary rounded-lg h-6 font-medium text-xs tracking-tight px-3">Provisioning</Badge>
-                                    <span className="text-xs font-medium tracking-tight text-muted-foreground">Enabled</span>
+                                    <Badge className="bg-primary/10 text-primary rounded-lg h-6 font-medium text-xs px-3">Provisioning</Badge>
+                                    <span className="text-xs font-medium text-muted-foreground">Enabled</span>
                                 </div>
                                 <GlassCardTitle className="text-3xl font-medium tracking-tight text-on-surface leading-tight">SCIM Directory Sync</GlassCardTitle>
                                 <p className="text-xs font-medium text-muted-foreground max-w-2xl leading-relaxed">
@@ -991,10 +991,10 @@ const DeveloperApps: React.FC = () => {
                         <GlassCardContent className="p-6 space-y-8">
                             {/* Connection Specs */}
                             <div className="space-y-6">
-                                <h3 className="text-xs font-medium tracking-tight text-muted-foreground border-b border-on-surface/5 pb-4">SCIM Settings</h3>
+                                <h3 className="text-xs font-medium text-muted-foreground border-b border-on-surface/5 pb-4">SCIM Settings</h3>
                                 <div className="grid gap-6 md:grid-cols-2">
-                                    <div className="p-6 bg-card border border-border rounded-2xl space-y-3 shadow-sm">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">SCIM URL</Label>
+                                    <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-sm">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1">SCIM URL</Label>
                                         <div className="flex gap-2">
                                             <Input readOnly value={`${window.location.origin}/scim/v2`} className="h-9 border-none rounded-lg bg-surface-container/30 border border-input font-mono text-xs px-3" />
                                             <Button variant="ghost" className="h-9 w-9 rounded-lg bg-surface-container/30 border border-border p-0 hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] shadow-sm" onClick={() => handleCopyValue('SCIM URL', `${window.location.origin}/scim/v2`)}>
@@ -1002,14 +1002,14 @@ const DeveloperApps: React.FC = () => {
                                             </Button>
                                         </div>
                                     </div>
-                                    <div className="p-6 bg-card border border-border rounded-2xl space-y-3 shadow-sm">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Authentication Flow</Label>
-                                        <div className="h-9 flex items-center px-4 bg-primary/10 rounded-lg text-primary font-medium text-xs tracking-tight ring-1 ring-primary/20">
+                                    <div className="p-6 bg-card border border-border rounded-xl space-y-3 shadow-sm">
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1">Authentication Flow</Label>
+                                        <div className="h-9 flex items-center px-4 bg-primary/10 rounded-lg text-primary font-medium text-xs ring-1 ring-primary/20">
                                             HTTP Bearer Token (OAuth2)
                                         </div>
                                     </div>
                                 </div>
-                                <div className="p-6 bg-surface-container/30 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 border border-border border-2 border-dashed border-on-surface/5">
+                                <div className="p-6 bg-surface-container/30 rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-border border-2 border-dashed border-on-surface/5">
                                     <div className="flex items-center gap-6">
                                         <div className="p-3 bg-card rounded-xl shadow-sm cursor-pointer hover:bg-primary/5 transition-[color,background-color,border-color,opacity,transform] border border-border" onClick={() => setActiveTab('keys')}>
                                             <Key className="w-6 h-6 text-primary" />
@@ -1051,7 +1051,7 @@ const DeveloperApps: React.FC = () => {
 
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-4 border-b border-primary/20 pb-4">
-                                        <div className="h-8 w-8 bg-primary/5 rounded-lg flex items-center justify-center text-primary font-medium text-xs ring-1 ring-primary/20 shadow-sm">OK</div>
+                                        <div className="h-8 w-8 bg-surface-container-low rounded-lg flex items-center justify-center text-primary font-medium text-xs ring-1 ring-primary/20 shadow-sm">OK</div>
                                         <h4 className="text-xl font-medium tracking-tight text-on-surface">Okta Setup</h4>
                                     </div>
                                     <ul className="space-y-4">
@@ -1082,7 +1082,7 @@ const DeveloperApps: React.FC = () => {
             {/* Quickstart Overlay */}
             {quickstartApp && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-on-surface/20 animate-in fade-in duration-300">
-                    <GlassCard className="w-full max-w-3xl border border-border shadow-sm overflow-hidden rounded-2xl scale-in-center bg-card">
+                    <GlassCard className="w-full max-w-3xl border border-border shadow-sm overflow-hidden rounded-xl scale-in-center bg-card">
                         <GlassCardHeader className="bg-surface-container p-12 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-12 opacity-[0.03]">
                                 <Terminal className="w-40 h-40" />
@@ -1090,7 +1090,7 @@ const DeveloperApps: React.FC = () => {
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
                                     <GlassCardTitle className="text-4xl font-medium tracking-tight text-on-surface leading-tight">Application Quickstart</GlassCardTitle>
-                                    <p className="text-primary font-medium tracking-tight text-xs mt-4">App: {quickstartApp.name}</p>
+                                    <p className="text-primary font-medium text-xs mt-4">App: {quickstartApp.name}</p>
                                 </div>
                                 <Button
                                     variant="ghost"
@@ -1151,28 +1151,28 @@ const DeveloperApps: React.FC = () => {
             {/* Edit App Overlay */}
             {editAppOpen && editingApp && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-on-surface/20 animate-in fade-in duration-300">
-                    <GlassCard className="w-full max-w-xl border border-border shadow-sm overflow-hidden rounded-2xl scale-in-center bg-card">
+                    <GlassCard className="w-full max-w-xl border border-border shadow-sm overflow-hidden rounded-xl scale-in-center bg-card">
                         <GlassCardHeader className="bg-surface-container p-6">
                             <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface">Edit Application</GlassCardTitle>
-                            <p className="text-muted-foreground font-medium text-xs tracking-tight mt-1">Update application settings.</p>
+                            <p className="text-muted-foreground font-medium text-xs mt-1">Update application settings.</p>
                         </GlassCardHeader>
                         <GlassCardContent className="p-6 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar bg-card">
                             <form id="edit-app-form" onSubmit={handleUpdateApp} className="space-y-5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Application Name</Label>
+                                    <Label className="text-xs font-medium text-muted-foreground ml-1">Application Name</Label>
                                     <Input value={editingApp.name} onChange={(e) => setEditingApp({ ...editingApp, name: e.target.value })} required className="h-9 border-none rounded-lg bg-surface-container/30 border border-border focus-visible:ring-2 focus-visible:ring-ring font-medium px-4" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Description</Label>
+                                    <Label className="text-xs font-medium text-muted-foreground ml-1">Description</Label>
                                     <Input value={editingApp.description} onChange={(e) => setEditingApp({ ...editingApp, description: e.target.value })} className="h-9 border-none rounded-lg bg-surface-container/30 border border-border focus-visible:ring-2 focus-visible:ring-ring font-medium text-xs px-4" />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Redirect URIs</Label>
+                                    <Label className="text-xs font-medium text-muted-foreground ml-1">Redirect URIs</Label>
                                     <Input value={editingApp.redirect_uris} onChange={(e) => setEditingApp({ ...editingApp, redirect_uris: e.target.value })} className="h-9 border-none rounded-lg bg-surface-container/30 border border-border focus-visible:ring-2 focus-visible:ring-ring font-mono text-xs px-4" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Application Type</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1">Application Type</Label>
                                         <select
                                             className="flex h-9 w-full rounded-lg border-none bg-surface-container/30 px-4 font-medium text-xs border border-input focus-visible:ring-2 focus-visible:ring-ring outline-none appearance-none"
                                             value={editingApp.app_type}
@@ -1185,7 +1185,7 @@ const DeveloperApps: React.FC = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-medium tracking-tight text-muted-foreground ml-1">App ID</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground ml-1">App ID</Label>
                                         <div className="h-9 flex items-center px-4 bg-surface-container rounded-lg font-mono text-xs text-on-surface truncate border border-border">{editingApp.id}</div>
                                     </div>
                                 </div>
@@ -1202,30 +1202,30 @@ const DeveloperApps: React.FC = () => {
             {/* Assignments Overlay */}
             {assignmentsOpen && selectedAppAssignments && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-on-surface/20 animate-in fade-in duration-300">
-                    <GlassCard className="w-full max-w-xl border border-border shadow-sm overflow-hidden rounded-2xl scale-in-center bg-card">
+                    <GlassCard className="w-full max-w-xl border border-border shadow-sm overflow-hidden rounded-xl scale-in-center bg-card">
                         <GlassCardHeader className="bg-surface-container p-6 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
                                 <Users className="w-24 h-24" />
                             </div>
                             <div className="relative z-10 space-y-2">
                                 <div className="flex items-center gap-3">
-                                    <Badge className="bg-primary/10 text-primary rounded-lg h-6 font-medium text-xs tracking-tight px-3 border-none">Access Control</Badge>
+                                    <Badge className="bg-primary/10 text-primary rounded-lg h-6 font-medium text-xs px-3 border-none">Access Control</Badge>
                                 </div>
                                 <GlassCardTitle className="text-xl font-medium tracking-tight text-on-surface leading-tight">User Permissions</GlassCardTitle>
-                                <p className="text-muted-foreground font-medium text-xs tracking-tight mt-1">App: {selectedAppAssignments.name}</p>
+                                <p className="text-muted-foreground font-medium text-xs mt-1">App: {selectedAppAssignments.name}</p>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-6 space-y-6 bg-card">
                             <form onSubmit={handleAssignUser} className="flex gap-3">
                                 <div className="relative flex-1 group">
                                     <Input
-                                        placeholder="Enter User ID or Email..."
+                                        placeholder="Enter User ID or Email"
                                         value={newAssignUser}
                                         onChange={(e) => setNewAssignUser(e.target.value)}
                                         required
                                         className="h-10 border-none rounded-lg bg-surface-container/30 border border-border focus-visible:ring-2 focus-visible:ring-ring font-medium px-4 pl-10"
                                     />
-                                    <UserPlus className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-20 group-focus-within:opacity-100 transition-opacity text-primary" />
+                                    <UserPlus className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-20 group-focus-within:opacity-100 transition-opacity text-primary z-10" />
                                 </div>
                                 <Button type="submit" className="h-10 bg-primary text-primary-foreground rounded-lg font-medium text-xs px-6 shadow-sm transition-[color,background-color,border-color,opacity,transform]">
                                     Add User
@@ -1234,7 +1234,7 @@ const DeveloperApps: React.FC = () => {
 
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center border-b border-on-surface/5 pb-4">
-                                    <span className="text-xs font-medium tracking-tight text-muted-foreground ml-1">Assigned Users</span>
+                                    <span className="text-xs font-medium text-muted-foreground ml-1">Assigned Users</span>
                                     <Badge className="rounded-lg bg-surface-container text-muted-foreground font-medium text-xs px-3 h-6 border-none">{assignedUsers.length} Users</Badge>
                                 </div>
 
@@ -1271,7 +1271,7 @@ const DeveloperApps: React.FC = () => {
             {/* Logs Overlay */}
             {logsOpen && selectedLogApp && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-on-surface/20 animate-in fade-in duration-300">
-                    <GlassCard className="w-full max-w-4xl border border-border shadow-sm overflow-hidden rounded-2xl scale-in-center bg-card h-[85vh] flex flex-col">
+                    <GlassCard className="w-full max-w-4xl border border-border shadow-sm overflow-hidden rounded-xl scale-in-center bg-card h-[85vh] flex flex-col">
                         <GlassCardHeader className="bg-surface-container p-8 relative overflow-hidden shrink-0">
                             <div className="absolute top-0 right-0 p-8 opacity-[0.02]">
                                 <Activity className="w-32 h-32" />
@@ -1279,10 +1279,10 @@ const DeveloperApps: React.FC = () => {
                             <div className="relative z-10 flex items-center justify-between">
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3">
-                                        <Badge className="bg-primary/10 text-primary rounded-lg h-6 font-medium text-xs tracking-tight px-3 border-none">App Activity</Badge>
+                                        <Badge className="bg-primary/10 text-primary rounded-lg h-6 font-medium text-xs px-3 border-none">App Activity</Badge>
                                     </div>
                                     <GlassCardTitle className="text-3xl font-medium tracking-tight text-on-surface leading-tight">Audit Logs</GlassCardTitle>
-                                    <p className="text-muted-foreground font-medium tracking-tight text-xs mt-1">App: {selectedLogApp.name} // Type: {selectedLogApp.type}</p>
+                                    <p className="text-muted-foreground font-medium text-xs mt-1">App: {selectedLogApp.name} // Type: {selectedLogApp.type}</p>
                                 </div>
                                 <Button
                                     variant="ghost"
@@ -1311,7 +1311,7 @@ const DeveloperApps: React.FC = () => {
                                                         <div className={`w-12 h-7 flex items-center justify-center font-medium text-xs rounded-lg shadow-sm border border-border ${log.status_code >= 400 ? 'bg-destructive/10 text-destructive' : 'bg-success-subtle text-success'}`}>
                                                             {log.status_code}
                                                         </div>
-                                                        <div className="w-16 text-sm font-medium tracking-tight group-hover:text-primary transition-colors">{log.method}</div>
+                                                        <div className="w-16 text-sm font-medium group-hover:text-primary transition-colors">{log.method}</div>
                                                         <div className="font-mono text-xs text-muted-foreground max-w-[300px] truncate">{log.path}</div>
                                                     </div>
                                                     <div className="flex items-center gap-6 text-xs font-medium text-muted-foreground">
@@ -1324,7 +1324,7 @@ const DeveloperApps: React.FC = () => {
                                                     <div className="p-6 bg-surface-container/10 border-t border-on-surface/5 grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
                                                         <div className="space-y-3 flex flex-col h-[350px]">
                                                             <div className="flex items-center justify-between border-b border-on-surface/5 pb-2.5 ml-1">
-                                                                <h4 className="text-xs font-medium tracking-tight text-muted-foreground">Request Data</h4>
+                                                                <h4 className="text-xs font-medium text-muted-foreground">Request Data</h4>
                                                                 <Badge className="bg-on-surface/5 text-muted-foreground rounded-lg text-xs font-medium px-2 h-5 border-none">JSON</Badge>
                                                             </div>
                                                             <div className="bg-on-surface text-primary p-4 rounded-xl font-mono text-xs whitespace-pre-wrap overflow-auto flex-1 shadow-sm ring-1 ring-on-inverse/10 custom-scrollbar leading-relaxed">
@@ -1333,7 +1333,7 @@ const DeveloperApps: React.FC = () => {
  </div>
  <div className="space-y-3 flex flex-col h-[350px]">
  <div className="flex items-center justify-between border-b border-on-surface/5 pb-2.5 ml-1">
- <h4 className="text-xs font-medium tracking-tight text-muted-foreground">Response Data</h4>
+ <h4 className="text-xs font-medium text-muted-foreground">Response Data</h4>
  <Badge className="bg-success/10 text-success-subtle-foreground rounded-lg text-xs font-medium px-2 h-5 border-none">JSON</Badge>
  </div>
  <div className="bg-on-surface text-success-subtle-foreground p-4 rounded-xl font-mono text-xs whitespace-pre-wrap overflow-auto flex-1 shadow-sm ring-1 ring-on-inverse/10 custom-scrollbar leading-relaxed">
@@ -1351,7 +1351,7 @@ const DeveloperApps: React.FC = () => {
                         <div className="bg-surface-container p-5 flex justify-between items-center shrink-0 border-t border-on-surface/5">
                             <div className="flex items-center gap-3 text-muted-foreground">
                                 <Terminal className="w-4 h-4" />
-                                <span className="text-xs font-medium tracking-tight text-muted-foreground">Logs stored for 72h.</span>
+                                <span className="text-xs font-medium text-muted-foreground">Logs stored for 72h.</span>
                             </div>
                             <Button className="bg-primary text-primary-foreground rounded-lg font-medium text-xs px-8 h-9 shadow-sm transition-[color,background-color,border-color,opacity,transform]" onClick={() => setLogsOpen(false)}>Done</Button>
                         </div>

@@ -196,7 +196,7 @@ export default function Campaigns() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setActiveTab('all')}
-                            className={cn("rounded-md font-semibold text-xs h-8 px-4", activeTab === 'all' ? 'bg-card text-secondary shadow-sm' : 'text-muted-foreground')}
+                            className={cn("rounded-md font-medium text-xs h-8 px-4", activeTab === 'all' ? 'bg-card text-secondary shadow-sm' : 'text-muted-foreground')}
                         >
                             All campaigns
                         </Button>
@@ -204,7 +204,7 @@ export default function Campaigns() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setActiveTab('reviews')}
-                            className={cn("rounded-md font-semibold text-xs h-8 px-4", activeTab === 'reviews' ? 'bg-card text-secondary shadow-sm' : 'text-muted-foreground')}
+                            className={cn("rounded-md font-medium text-xs h-8 px-4", activeTab === 'reviews' ? 'bg-card text-secondary shadow-sm' : 'text-muted-foreground')}
                         >
                             My reviews
                         </Button>
@@ -222,13 +222,13 @@ export default function Campaigns() {
                                         <div className="p-2 bg-secondary-foreground/10 rounded-lg">
                                             <Plus className="w-4 h-4 text-secondary-foreground" />
                                         </div>
-                                        <GlassCardTitle className="text-base font-medium tracking-tight text-secondary-foreground">New campaign</GlassCardTitle>
+                                        <GlassCardTitle className="text-base font-medium text-secondary-foreground">New campaign</GlassCardTitle>
                                     </div>
                                 </GlassCardHeader>
                                 <GlassCardContent className="p-card">
                                     <form onSubmit={handleCreateCampaign} className="space-y-4">
                                          <div className="space-y-2">
-                                            <Label className="text-xs font-semibold text-muted-foreground">Campaign name</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground">Campaign name</Label>
                                             <Input
                                                 placeholder="e.g. Q3 privilege audit"
                                                 className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium"
@@ -238,14 +238,14 @@ export default function Campaigns() {
                                             />
                                         </div>
                                          <div className="space-y-2">
-                                            <Label className="text-xs font-semibold text-muted-foreground">Reviewer</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground">Reviewer</Label>
                                             <Select
                                                 value={newCampaign.reviewerId}
                                                 onValueChange={(v) => setNewCampaign({ ...newCampaign, reviewerId: v })}
                                                 required
                                             >
                                                 <SelectTrigger className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm">
-                                                    <SelectValue placeholder="Select a reviewer..." />
+                                                    <SelectValue placeholder="Select a reviewer" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border border-border shadow-sm">
                                                     {allUsers.map((u: any) => {
@@ -259,7 +259,7 @@ export default function Campaigns() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                         <Button type="submit" className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                                         <Button type="submit" className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm">
                                             Create campaign
                                         </Button>
                                     </form>
@@ -269,11 +269,11 @@ export default function Campaigns() {
                             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden flex flex-col h-[560px] rounded-xl">
                                 <GlassCardHeader className="py-card px-card border-b border-border">
                                          <div className="flex items-center justify-between">
-                                        <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Campaigns</GlassCardTitle>
+                                        <GlassCardTitle className="text-base font-medium text-on-surface">Campaigns</GlassCardTitle>
                                         <div className="flex items-center gap-2 bg-muted px-2 py-1 rounded-lg border border-border">
                                             <Filter className="w-3.5 h-3.5 text-muted-foreground" />
                                             <select
-                                                className="text-xs font-semibold bg-transparent border-none p-0 h-4 cursor-pointer text-muted-foreground"
+                                                className="text-xs font-medium bg-transparent border-none p-0 h-4 cursor-pointer text-muted-foreground"
                                                 value={statusFilter}
                                                 onChange={(e) => setStatusFilter(e.target.value)}
                                             >
@@ -298,13 +298,13 @@ export default function Campaigns() {
                                             )}
                                         >
                                             <div className="min-w-0 pr-3">
-                                                <div className={cn("font-semibold text-sm tracking-tight truncate flex items-center gap-2", selectedCampaign?.id === campaign.id ? 'text-secondary' : 'text-on-surface')}>
+                                                <div className={cn("font-medium text-sm truncate flex items-center gap-2", selectedCampaign?.id === campaign.id ? 'text-secondary' : 'text-on-surface')}>
                                                     <Target className="h-3.5 w-3.5 text-muted-foreground" />
                                                     {campaign.name}
                                                 </div>
                                                  <div className="flex items-center gap-2 mt-1">
                                                     <Badge className={cn(
-                                                        "rounded-md font-semibold text-xs px-2 py-0.5 border-none",
+                                                        "rounded-md font-medium text-xs px-2 py-0.5 border-none",
                                                         campaign.status === 'active' ? 'bg-success-subtle text-success-subtle-foreground' :
                                                         campaign.status === 'completed' ? 'bg-muted text-muted-foreground' :
                                                             'bg-warning/10 text-warning-subtle-foreground'
@@ -350,13 +350,13 @@ export default function Campaigns() {
                                                 <p className="text-sm font-medium text-muted-foreground">Reviewer: <span className="text-secondary">{selectedCampaign.reviewer_id}</span></p>
                                             </div>
                                             <div className="flex flex-col items-end gap-2 shrink-0">
-                                                 <Badge className="bg-card text-muted-foreground border border-border rounded-md h-7 px-3 text-xs font-semibold">
+                                                 <Badge className="bg-card text-muted-foreground border border-border rounded-md h-7 px-3 text-xs font-medium">
                                                     {selectedCampaign.status}
                                                 </Badge>
                                                 {selectedCampaign.status === 'draft' && (
                                                     <Button
                                                         onClick={() => setShowAddItem(!showAddItem)}
-                                                        className="h-9 rounded-lg font-semibold text-sm shadow-sm px-4 bg-secondary text-secondary-foreground"
+                                                        className="h-9 rounded-lg font-medium text-sm shadow-sm px-4 bg-secondary text-secondary-foreground"
                                                         variant={showAddItem ? "ghost" : "default"}
                                                     >
                                                         {showAddItem ? <XCircle className="h-4 w-4 mr-1.5" /> : <Plus className="h-4 w-4 mr-1.5" />}
@@ -371,7 +371,7 @@ export default function Campaigns() {
                                         <div className="bg-muted/30 border-b border-border p-card">
                                             <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-4 gap-card items-end">
                                                  <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold text-muted-foreground">User ID</Label>
+                                                    <Label className="text-xs font-medium text-muted-foreground">User ID</Label>
                                                     <Input
                                                         placeholder="User ID"
                                                         className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium"
@@ -381,7 +381,7 @@ export default function Campaigns() {
                                                     />
                                                 </div>
                                                  <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold text-muted-foreground">Resource type</Label>
+                                                    <Label className="text-xs font-medium text-muted-foreground">Resource type</Label>
                                                     <select
                                                         className="flex h-10 w-full border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm px-3"
                                                         value={newItem.resource_type}
@@ -394,7 +394,7 @@ export default function Campaigns() {
                                                     </select>
                                                 </div>
                                                  <div className="space-y-2">
-                                                    <Label className="text-xs font-semibold text-muted-foreground">Resource ID</Label>
+                                                    <Label className="text-xs font-medium text-muted-foreground">Resource ID</Label>
                                                     <Input
                                                         placeholder="Resource ID"
                                                         className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium"
@@ -403,7 +403,7 @@ export default function Campaigns() {
                                                         required
                                                     />
                                                 </div>
-                                                <Button type="submit" className="h-10 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                                                <Button type="submit" className="h-10 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm">
                                                     Add to review
                                                 </Button>
                                             </form>
@@ -420,43 +420,43 @@ export default function Campaigns() {
                                                  <GlassTable>
                                                     <GlassTableHeader>
                                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
-                                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
-                                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
-                                                            <GlassTableHead className="text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
+                                                            <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">User</GlassTableHead>
+                                                            <GlassTableHead className="font-medium text-xs text-muted-foreground">Resource</GlassTableHead>
+                                                            <GlassTableHead className="font-medium text-xs text-muted-foreground">Status</GlassTableHead>
+                                                            <GlassTableHead className="text-right font-medium text-xs text-muted-foreground pr-card">Actions</GlassTableHead>
                                                         </GlassTableRow>
                                                     </GlassTableHeader>
                                                     <TableBody>
                                                         {items.map(item => (
                                                             <GlassTableRow key={item.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
                                                                 <TableCell className="py-card pl-card">
-                                                                    <span className="text-sm font-semibold text-on-surface">{item.user_id}</span>
+                                                                    <span className="text-sm font-medium text-on-surface">{item.user_id}</span>
                                                                 </TableCell>
                                                                 <TableCell className="py-card">
                                                                     <div className="flex items-center gap-2">
-                                                                        <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 ">{item.resource_type}</Badge>
+                                                                        <Badge className="bg-muted text-muted-foreground border-none rounded-md font-medium text-xs px-2 py-0.5">{item.resource_type}</Badge>
                                                                         <span className="text-sm font-medium text-on-surface">{item.resource_name || item.resource_id}</span>
                                                                     </div>
                                                                 </TableCell>
                                                                  <TableCell className="py-card">
                                                                     {item.decision ? (
                                                                         <Badge className={cn(
-                                                                            "rounded-md font-semibold text-xs px-2 py-0.5 border-none",
+                                                                            "rounded-md font-medium text-xs px-2 py-0.5 border-none",
                                                                             item.decision === 'approve' ? 'bg-success-subtle text-success-subtle-foreground' : 'bg-destructive/10 text-error-subtle-foreground'
                                                                         )}>
                                                                             {item.decision}
                                                                         </Badge>
                                                                     ) : (
-                                                                        <span className="text-xs font-semibold text-warning">Pending</span>
+                                                                        <span className="text-xs font-medium text-warning">Pending</span>
                                                                     )}
                                                                 </TableCell>
                                                                 <TableCell className="py-card text-right pr-card">
                                                                      {!item.decision && selectedCampaign.status === 'active' && (
                                                                         <div className="flex items-center justify-end gap-2">
-                                                                            <Button size="sm" onClick={() => handleAction(item.id, 'approve')} className="h-8 rounded-lg bg-success text-secondary-foreground hover:opacity-90 font-semibold text-xs px-3 shadow-sm border-none">
+                                                                            <Button size="sm" onClick={() => handleAction(item.id, 'approve')} className="h-8 rounded-lg bg-success text-secondary-foreground hover:opacity-90 font-medium text-xs px-3 shadow-sm border-none">
                                                                                 Approve
                                                                             </Button>
-                                                                            <Button size="sm" variant="ghost" onClick={() => handleAction(item.id, 'revoke')} className="h-8 rounded-lg text-destructive hover:bg-destructive/10 font-semibold text-xs px-3">
+                                                                            <Button size="sm" variant="ghost" onClick={() => handleAction(item.id, 'revoke')} className="h-8 rounded-lg text-destructive hover:bg-destructive/10 font-medium text-xs px-3">
                                                                                 Revoke
                                                                             </Button>
                                                                         </div>
@@ -476,7 +476,7 @@ export default function Campaigns() {
                                          <div className="w-14 h-14 bg-secondary/10 rounded-xl flex items-center justify-center mb-4">
                                             <Target className="h-6 w-6 text-secondary" />
                                         </div>
-                                        <h3 className="text-base font-medium tracking-tight text-on-surface mb-2">Select a campaign</h3>
+                                        <h3 className="text-base font-medium text-on-surface mb-2">Select a campaign</h3>
                                         <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-xs">Choose a campaign from the list to view its details and items.</p>
                                     </div>
                                 </div>
@@ -500,7 +500,7 @@ export default function Campaigns() {
                             <GlassCardContent className="p-card space-y-page">
                                  <div className="flex flex-col md:flex-row gap-card max-w-2xl">
                                     <div className="flex-1 space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground">Your user ID</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Your user ID</Label>
                                         <Input
                                             placeholder="Enter user ID"
                                             className="h-10 font-mono text-sm border border-input rounded-lg bg-card px-4 focus-visible:ring-ring"
@@ -509,7 +509,7 @@ export default function Campaigns() {
                                         />
                                     </div>
                                      <Button
-                                        className="h-10 rounded-lg px-6 bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm self-end"
+                                        className="h-10 rounded-lg px-6 bg-secondary text-secondary-foreground font-medium text-sm shadow-sm self-end"
                                         onClick={() => loadMyReviews(reviewerId)}
                                     >
                                         <Search className="mr-1.5 h-4 w-4" /> View my reviews
@@ -525,9 +525,9 @@ export default function Campaigns() {
                                         <GlassTable>
                                              <GlassTableHeader>
                                                 <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
-                                                    <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
-                                                    <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs text-muted-foreground ">Decisions</GlassTableHead>
+                                                    <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Resource</GlassTableHead>
+                                                    <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">User</GlassTableHead>
+                                                    <GlassTableHead className="py-3 text-right pr-card font-medium text-xs text-muted-foreground">Decisions</GlassTableHead>
                                                 </GlassTableRow>
                                             </GlassTableHeader>
                                             <TableBody>
@@ -535,7 +535,7 @@ export default function Campaigns() {
                                                     <GlassTableRow key={item.id} className="border-b border-border last:border-0 group hover:bg-muted/50 transition-colors">
                                                         <TableCell className="py-card pl-card">
                                                              <div className="flex flex-col">
-                                                                <span className="text-sm font-semibold tracking-tight text-on-surface">{item.resource_name || item.resource_id}</span>
+                                                                <span className="text-sm font-medium text-on-surface">{item.resource_name || item.resource_id}</span>
                                                                 <span className="text-xs font-medium text-muted-foreground mt-0.5">{item.resource_type}</span>
                                                             </div>
                                                         </TableCell>
@@ -544,10 +544,10 @@ export default function Campaigns() {
                                                         </TableCell>
                                                          <TableCell className="py-card pr-card text-right">
                                                             <div className="flex justify-end gap-2">
-                                                                <Button className="h-8 rounded-lg bg-success text-secondary-foreground font-semibold text-xs px-4 shadow-sm border-none" onClick={() => handleMyReviewAction(item, 'approve')}>
+                                                                <Button className="h-8 rounded-lg bg-success text-secondary-foreground font-medium text-xs px-4 shadow-sm border-none" onClick={() => handleMyReviewAction(item, 'approve')}>
                                                                     Approve
                                                                 </Button>
-                                                                <Button className="h-8 rounded-lg bg-destructive text-secondary-foreground font-semibold text-xs px-4 shadow-sm border-none" onClick={() => handleMyReviewAction(item, 'revoke')}>
+                                                                <Button className="h-8 rounded-lg bg-destructive text-secondary-foreground font-medium text-xs px-4 shadow-sm border-none" onClick={() => handleMyReviewAction(item, 'revoke')}>
                                                                     Revoke
                                                                 </Button>
                                                             </div>

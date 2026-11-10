@@ -112,7 +112,7 @@ const IPPolicies: React.FC = () => {
                 actions={
                     <Dialog open={showCreate} onOpenChange={setShowCreate}>
                         <DialogTrigger asChild>
-                            <Button className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                            <Button className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm px-4 shadow-sm">
                                 <Plus className="w-4 h-4 mr-1.5" /> Add IP rule
                             </Button>
                         </DialogTrigger>
@@ -126,7 +126,7 @@ const IPPolicies: React.FC = () => {
                             <form onSubmit={handleCreatePolicy} className="p-card space-y-4 bg-card">
                                 <div className="grid grid-cols-2 gap-card">
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground">Rule type</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Rule type</Label>
                                         <Select value={newRuleKind} onValueChange={(v: any) => setNewRuleKind(v)}>
                                             <SelectTrigger className="h-10 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm">
                                                 <SelectValue />
@@ -138,7 +138,7 @@ const IPPolicies: React.FC = () => {
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground">Action</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">Action</Label>
                                         <Select value={newAction} onValueChange={(v: any) => setNewAction(v)}>
                                             <SelectTrigger className={`h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium text-sm ${newAction === 'allow' ? 'text-success' : 'text-destructive'}`}>
                                                 <SelectValue />
@@ -152,7 +152,7 @@ const IPPolicies: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-muted-foreground">{newRuleKind === 'cidr' ? 'IP CIDR range' : 'Country ISO code'}</Label>
+                                    <Label className="text-xs font-medium text-muted-foreground">{newRuleKind === 'cidr' ? 'IP CIDR range' : 'Country ISO code'}</Label>
                                     <Input
                                         value={newValue}
                                         onChange={(e) => setNewValue(e.target.value)}
@@ -163,17 +163,17 @@ const IPPolicies: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-muted-foreground">Description</Label>
+                                    <Label className="text-xs font-medium text-muted-foreground">Description</Label>
                                     <Input
                                         value={newDesc}
                                         onChange={(e) => setNewDesc(e.target.value)}
                                         className="h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium text-sm px-4"
-                                        placeholder="Purpose of this access rule..."
+                                        placeholder="Purpose of this access rule"
                                     />
                                 </div>
 
                                 <DialogFooter className="pt-2">
-                                    <Button type="submit" disabled={creating} className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                                    <Button type="submit" disabled={creating} className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm">
                                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create rule'}
                                     </Button>
                                 </DialogFooter>
@@ -184,7 +184,7 @@ const IPPolicies: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 text-sm font-medium">
                     {error}
                 </div>
             )}
@@ -197,16 +197,16 @@ const IPPolicies: React.FC = () => {
                                 <div className="p-2 bg-secondary/10 rounded-lg">
                                     <Activity className="w-4 h-4 text-secondary" />
                                 </div>
-                                <GlassCardTitle className="text-base font-medium tracking-tight">Status</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium">Status</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-card space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Enforcement</span>
-                                <Badge className="bg-success-subtle text-success-subtle-foreground rounded-md font-semibold text-xs px-2 py-0.5 border-none">Active</Badge>
+                                <span className="text-xs font-medium text-muted-foreground">Enforcement</span>
+                                <Badge className="bg-success-subtle text-success-subtle-foreground rounded-md font-medium text-xs px-2 py-0.5 border-none">Active</Badge>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground">Total rules</span>
+                                <span className="text-xs font-medium text-muted-foreground">Total rules</span>
                                 <span className="text-2xl font-medium tracking-tight text-on-surface tabular-nums">{policies.length}</span>
                             </div>
                         </GlassCardContent>
@@ -228,7 +228,7 @@ const IPPolicies: React.FC = () => {
                                     <Network className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Active IP rules</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Active IP rules</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">
                                         {policies.length} rules configured
                                     </p>
@@ -240,10 +240,10 @@ const IPPolicies: React.FC = () => {
                                 <GlassTable>
                                     <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">IP rule / location</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Type</GlassTableHead>
-                                            <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Description</GlassTableHead>
-                                            <GlassTableHead className="text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">IP rule / location</GlassTableHead>
+                                            <GlassTableHead className="font-medium text-xs text-muted-foreground">Type</GlassTableHead>
+                                            <GlassTableHead className="font-medium text-xs text-muted-foreground">Description</GlassTableHead>
+                                            <GlassTableHead className="text-right font-medium text-xs text-muted-foreground pr-card">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>

@@ -116,7 +116,7 @@ const CopilotPage: React.FC = () => {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-card overflow-hidden">
         <div className="lg:col-span-1 space-y-6 h-full overflow-y-auto pr-2 hidden lg:block custom-scrollbar">
             <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground ">System status</p>
+                <p className="text-xs font-medium text-muted-foreground">System status</p>
                 <div className="space-y-2">
                     {[
                         { label: 'Identity Graph', status: 'Healthy', icon: <History className="w-3.5 h-3.5" /> },
@@ -126,16 +126,16 @@ const CopilotPage: React.FC = () => {
                         <div key={item.label} className="p-3 rounded-lg bg-card shadow-sm border border-border flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="text-secondary">{item.icon}</div>
-                                <span className="text-sm font-semibold text-on-surface">{item.label}</span>
+                                <span className="text-sm font-medium text-on-surface">{item.label}</span>
                             </div>
-                            <span className="text-xs font-semibold text-success-subtle-foreground bg-success-subtle px-2 py-0.5 rounded-md">{item.status}</span>
+                            <span className="text-xs font-medium text-success-subtle-foreground bg-success-subtle px-2 py-0.5 rounded-md">{item.status}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
             <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground ">Recent Activity</p>
+                <p className="text-xs font-medium text-muted-foreground">Recent Activity</p>
                 <div className="space-y-2">
                     {logsLoading ? (
                         [1, 2, 3].map(i => <div key={i} className="h-14 bg-muted/30 animate-pulse rounded-lg" />)
@@ -147,7 +147,7 @@ const CopilotPage: React.FC = () => {
                         auditLogs.map((log, i) => (
                             <div key={log.id || i} className="p-3 rounded-lg bg-card shadow-sm border border-border space-y-1">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-muted-foreground">{log.action}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">{log.action}</span>
                                     <span className="text-xs font-medium text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                 </div>
                                 <p className="text-xs font-medium text-on-surface leading-tight line-clamp-2">
@@ -157,11 +157,11 @@ const CopilotPage: React.FC = () => {
                         ))
                     )}
                 </div>
-                <Button variant="ghost" onClick={() => window.location.href='/audit'} className="w-full text-xs font-semibold text-secondary hover:text-secondary hover:bg-secondary/5">View Full Audit Log</Button>
+                <Button variant="ghost" onClick={() => window.location.href='/audit'} className="w-full text-xs font-medium text-secondary hover:text-secondary hover:bg-secondary/5">View Full Audit Log</Button>
             </div>
 
             <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground ">Suggested questions</p>
+                <p className="text-xs font-medium text-muted-foreground">Suggested questions</p>
                 <div className="flex flex-col gap-2">
                     {SUGGESTED_PROMPTS.map(p => (
                         <button 
@@ -183,10 +183,10 @@ const CopilotPage: React.FC = () => {
                         <Bot className="w-5 h-5 text-secondary-foreground" />
                     </div>
                     <div>
-                        <h4 className="text-base font-medium tracking-tight text-on-surface">WardSeal Copilot</h4>
+                        <h4 className="text-base font-medium text-on-surface">WardSeal Copilot</h4>
                         <div className="flex items-center gap-2 mt-0.5">
                             <div className="w-2 h-2 bg-success rounded-full" />
-                            <span className="text-xs font-semibold text-success">Online</span>
+                            <span className="text-xs font-medium text-success">Online</span>
                         </div>
                     </div>
                 </div>
@@ -239,7 +239,7 @@ const CopilotPage: React.FC = () => {
             <div className="p-card bg-card border-t border-border shrink-0">
                 <div className="relative max-w-5xl mx-auto border border-border rounded-lg focus-within:ring-2 focus-within:ring-secondary/20 transition-shadow overflow-hidden">
                     <Input
-                        placeholder="Ask about access, risk, or recent governance events…"
+                        placeholder="Ask about access, risk, or recent governance events"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}

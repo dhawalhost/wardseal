@@ -83,7 +83,7 @@ const RequestAccess: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                     <Info className="w-3.5 h-3.5" />
                                     Resource type
                                 </Label>
@@ -100,7 +100,7 @@ const RequestAccess: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-muted-foreground">Resource ID</Label>
+                                <Label className="text-sm font-medium text-muted-foreground">Resource ID</Label>
                                 <Input
                                     value={resourceID}
                                     onChange={(e) => setResourceID(e.target.value)}
@@ -115,7 +115,7 @@ const RequestAccess: React.FC = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <Clock className="w-3.5 h-3.5" />
                                 Access duration
                             </Label>
@@ -133,14 +133,14 @@ const RequestAccess: React.FC = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                            <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <MessageSquare className="w-3.5 h-3.5" />
                                 Business justification
                             </Label>
                             <Textarea
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
-                                placeholder="Explain why you need this access…"
+                                placeholder="Explain why you need this access"
                                 required
                                 rows={4}
                                 className="rounded-lg border-border bg-background shadow-xs text-sm p-4 resize-none"
@@ -150,7 +150,7 @@ const RequestAccess: React.FC = () => {
                         <div className="pt-2 flex flex-col gap-3">
                             <Button
                                 type="submit"
-                                className="w-full h-11 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground"
+                                className="w-full h-11 rounded-lg font-medium text-sm shadow-sm bg-secondary text-secondary-foreground"
                                 disabled={loading}
                             >
                                 {loading ? (
@@ -167,7 +167,7 @@ const RequestAccess: React.FC = () => {
                             <Button
                                 variant="ghost"
                                 type="button"
-                                className="w-full h-10 font-semibold text-sm text-muted-foreground hover:text-on-surface rounded-lg"
+                                className="w-full h-10 font-medium text-sm text-muted-foreground hover:text-on-surface rounded-lg"
                                 onClick={() => navigate('/requests')}
                             >
                                 Cancel

@@ -17,16 +17,16 @@ export function BrandMark({
       <Logo
         variant="icon"
         logoColor="mono"
-        width={22}
-        height={26}
+        width={18}
+        height={21}
         className="text-primary"
         aria-hidden
         focusable="false"
       />
       <span className="flex flex-col">
-        <span className="text-[15px] font-semibold leading-tight text-on-surface">{name}</span>
+        <span className="text-[14px] font-semibold leading-tight tracking-[-0.01em] text-on-surface">{name}</span>
         {subtitle && (
-          <span className="text-xs leading-tight text-on-surface-subtle">{subtitle}</span>
+          <span className="text-[11px] leading-tight text-on-surface-subtle">{subtitle}</span>
         )}
       </span>
     </span>

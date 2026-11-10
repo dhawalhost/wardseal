@@ -29,17 +29,17 @@ export const APIKeyRow: React.FC<APIKeyRowProps> = ({
                 </div>
                 <div className="space-y-0.5">
                     <div className="text-lg font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors leading-none">{apiKey.name}</div>
-                    <div className="flex items-center gap-3 text-xs font-semibold tracking-tight text-muted-foreground">
+                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
                         <span className="font-mono bg-surface-container px-1.5 py-0.5 rounded text-xs">{apiKey.key_prefix}...</span>
                         <span>• {new Date(apiKey.created_at).toLocaleDateString()}</span>
                     </div>
                 </div>
             </div>
             <div className="flex gap-2">
-                <Button variant="ghost" className="h-9 rounded-xl bg-surface-container font-medium text-xs tracking-tight hover:bg-primary hover:text-primary-foreground px-4 transition-[color,background-color,border-color,opacity,transform]" onClick={() => handleViewLogs(apiKey.id, apiKey.name, 'key')}>
+                <Button variant="ghost" className="h-9 rounded-xl bg-surface-container font-medium text-xs hover:bg-primary hover:text-primary-foreground px-4 transition-[color,background-color,border-color,opacity,transform]" onClick={() => handleViewLogs(apiKey.id, apiKey.name, 'key')}>
                     <Activity className="mr-2 h-3.5 w-3.5 opacity-40" /> Logs
                 </Button>
-                <Button variant="ghost" className="h-9 rounded-xl bg-surface-container font-medium text-xs tracking-tight hover:bg-destructive/100 hover:text-destructive-foreground px-4 text-destructive transition-[color,background-color,border-color,opacity,transform]" onClick={() => handleRevokeKey(apiKey.id)}>
+                <Button variant="ghost" className="h-9 rounded-xl bg-surface-container font-medium text-xs hover:bg-destructive/100 hover:text-destructive-foreground px-4 text-destructive transition-[color,background-color,border-color,opacity,transform]" onClick={() => handleRevokeKey(apiKey.id)}>
                     Revoke
                 </Button>
             </div>

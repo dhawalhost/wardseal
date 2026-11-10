@@ -28,18 +28,18 @@ export const APIKeyRow: React.FC<APIKeyRowProps> = ({
                     <Fingerprint className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <div className="space-y-0.5">
-                    <div className="text-[13px] font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors leading-none ">{apiKey.name}</div>
-                    <div className="flex items-center gap-3 text-xs font-medium tracking-tight text-muted-foreground ">
+                    <div className="text-[13px] font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors leading-none">{apiKey.name}</div>
+                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
                         <span className="font-mono bg-surface-container px-1.5 py-0.5 rounded text-xs">{apiKey.key_prefix}...</span>
                         <span>• {new Date(apiKey.created_at).toLocaleDateString()}</span>
                     </div>
                 </div>
             </div>
             <div className="flex gap-2">
-                <Button variant="ghost" className="h-7 rounded-lg bg-surface-container font-medium text-xs tracking-tight hover:bg-primary hover:text-primary-foreground px-3 transition-[color,background-color,border-color,opacity,transform] " onClick={() => handleViewLogs(apiKey.id, apiKey.name, 'key')}>
+                <Button variant="ghost" className="h-7 rounded-lg bg-surface-container font-medium text-xs hover:bg-primary hover:text-primary-foreground px-3 transition-[color,background-color,border-color,opacity,transform]" onClick={() => handleViewLogs(apiKey.id, apiKey.name, 'key')}>
                     Logs
                 </Button>
-                <Button variant="ghost" className="h-7 rounded-lg bg-surface-container font-medium text-xs tracking-tight hover:bg-destructive/100 hover:text-destructive-foreground px-3 text-destructive transition-[color,background-color,border-color,opacity,transform] " onClick={() => handleRevokeKey(apiKey.id)}>
+                <Button variant="ghost" className="h-7 rounded-lg bg-surface-container font-medium text-xs hover:bg-destructive/100 hover:text-destructive-foreground px-3 text-destructive transition-[color,background-color,border-color,opacity,transform]" onClick={() => handleRevokeKey(apiKey.id)}>
                     Revoke
                 </Button>
             </div>

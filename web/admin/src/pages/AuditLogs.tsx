@@ -152,14 +152,14 @@ export default function AuditLogs() {
                             variant="outline"
                             size="sm"
                             onClick={loadStats}
-                            className="rounded-lg font-semibold text-xs h-9 px-4 border-border"
+                            className="rounded-lg font-medium text-xs h-9 px-4 border-border"
                         >
                             <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Refresh
                         </Button>
                         <Button
                             size="sm"
                             onClick={handleExport}
-                            className="bg-secondary text-secondary-foreground rounded-lg h-9 px-4 font-semibold text-xs shadow-sm"
+                            className="bg-secondary text-secondary-foreground rounded-lg h-9 px-4 font-medium text-xs shadow-sm"
                         >
                             <Download className="mr-1.5 h-3.5 w-3.5" /> Export
                         </Button>
@@ -171,9 +171,9 @@ export default function AuditLogs() {
                 <GlassCard className="border border-border shadow-sm bg-card">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-muted-foreground ">Total events (14d)</span>
+                            <span className="text-xs font-medium text-muted-foreground">Total events (14d)</span>
                             <div className="mt-1 flex items-end gap-2 leading-none">
-                                <span className="text-2xl font-medium tracking-tight text-on-surface">{statsLoading ? '—' : stats?.total_events.toLocaleString()}</span>
+                                <span className="text-2xl font-medium tracking-tight text-on-surface">{statsLoading ? '—' : (stats?.total_events ?? 0).toLocaleString()}</span>
                                 <Database className="h-4 w-4 text-muted-foreground mb-1" />
                             </div>
                         </div>
@@ -183,7 +183,7 @@ export default function AuditLogs() {
                 <GlassCard className="border border-border shadow-sm bg-card">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-destructive ">Failures</span>
+                            <span className="text-xs font-medium text-destructive">Failures</span>
                             <div className="mt-1 flex items-end gap-2 leading-none">
                                 <span className="text-2xl font-medium tracking-tight text-destructive">{statsLoading ? '—' : stats?.failure_count}</span>
                                 <ShieldAlert className="h-4 w-4 text-destructive mb-1" />
@@ -208,7 +208,7 @@ export default function AuditLogs() {
                             <Activity className="w-4 h-4 text-secondary" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Activity trend</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface">Activity trend</GlassCardTitle>
                             <p className="text-sm text-muted-foreground mt-0.5">System activity over the last 14 days</p>
                         </div>
                     </div>
@@ -263,15 +263,15 @@ export default function AuditLogs() {
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <form onSubmit={handleFilterSubmit} className="flex flex-col md:flex-row gap-card w-full items-center">
                         <div className="relative w-64 group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-secondary transition-colors z-10" />
                             <Input
-                                placeholder="Filter by action..."
+                                placeholder="Filter by action"
                                 className="h-9 border border-input rounded-lg bg-card focus-visible:ring-ring font-medium text-sm pl-9"
                                 value={filters.action}
                                 onChange={(e) => setFilters({ ...filters, action: e.target.value })}
                             />
                         </div>
-                        <Button type="submit" className="h-9 rounded-lg px-4 bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                        <Button type="submit" className="h-9 rounded-lg px-4 bg-secondary text-secondary-foreground font-medium text-sm shadow-sm">
                             <Filter className="mr-1.5 h-3.5 w-3.5" /> Filter
                         </Button>
                     </form>
@@ -287,12 +287,12 @@ export default function AuditLogs() {
                             <GlassTable>
                                 <GlassTableHeader>
                                     <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                        <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Timestamp</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Action</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Actor</GlassTableHead>
-                                        <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Result</GlassTableHead>
-                                        <GlassTableHead className="w-[80px] text-right pr-card font-semibold text-xs text-muted-foreground ">Details</GlassTableHead>
+                                        <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Timestamp</GlassTableHead>
+                                        <GlassTableHead className="font-medium text-xs text-muted-foreground">Action</GlassTableHead>
+                                        <GlassTableHead className="font-medium text-xs text-muted-foreground">Resource</GlassTableHead>
+                                        <GlassTableHead className="font-medium text-xs text-muted-foreground">Actor</GlassTableHead>
+                                        <GlassTableHead className="font-medium text-xs text-muted-foreground">Result</GlassTableHead>
+                                        <GlassTableHead className="w-[80px] text-right pr-card font-medium text-xs text-muted-foreground">Details</GlassTableHead>
                                     </GlassTableRow>
                                 </GlassTableHeader>
                                 <TableBody>
@@ -325,7 +325,7 @@ export default function AuditLogs() {
                     <div className="flex gap-2 order-1 md:order-2">
                         <Button
                             variant="outline"
-                            className="h-8 rounded-lg px-4 font-semibold text-xs border-border"
+                            className="h-8 rounded-lg px-4 font-medium text-xs border-border"
                             onClick={() => handlePageChange('prev')}
                             disabled={filters.offset === 0}
                         >
@@ -333,7 +333,7 @@ export default function AuditLogs() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-8 rounded-lg px-4 font-semibold text-xs border-border"
+                            className="h-8 rounded-lg px-4 font-medium text-xs border-border"
                             onClick={() => handlePageChange('next')}
                             disabled={filters.offset + filters.limit >= total}
                         >

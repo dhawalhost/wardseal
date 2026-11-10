@@ -50,7 +50,7 @@ const RequestAccess: React.FC = () => {
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                          <div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">New access request</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface">New access request</GlassCardTitle>
                             <GlassCardDescription className="text-muted-foreground text-sm mt-0.5">
                                 Provide resource details and a business justification
                             </GlassCardDescription>
@@ -62,13 +62,13 @@ const RequestAccess: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                          {error && (
                             <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground">
-                                <AlertDescription className="font-semibold text-sm">{error}</AlertDescription>
+                                <AlertDescription className="font-medium text-sm">{error}</AlertDescription>
                             </Alert>
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
                              <div className="space-y-2">
-                                <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                     <Info className="w-3.5 h-3.5" />
                                     Resource type
                                 </Label>
@@ -85,7 +85,7 @@ const RequestAccess: React.FC = () => {
                             </div>
 
                              <div className="space-y-2">
-                                <Label className="text-xs font-semibold text-muted-foreground ">Resource ID</Label>
+                                <Label className="text-xs font-medium text-muted-foreground">Resource ID</Label>
                                 <Input
                                     value={resourceID}
                                     onChange={(e) => setResourceID(e.target.value)}
@@ -100,7 +100,7 @@ const RequestAccess: React.FC = () => {
                         </div>
 
                          <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                 <Clock className="w-3.5 h-3.5" />
                                 Access duration
                             </Label>
@@ -118,14 +118,14 @@ const RequestAccess: React.FC = () => {
                         </div>
 
                          <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                 <MessageSquare className="w-3.5 h-3.5" />
                                 Business justification
                             </Label>
                             <Textarea
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
-                                placeholder="Explain why you need this access..."
+                                placeholder="Explain why you need this access"
                                 required
                                 rows={4}
                                 className="rounded-lg border border-border bg-card focus-visible:ring-2 focus-visible:ring-ring font-medium text-sm p-4 resize-none"
@@ -133,7 +133,7 @@ const RequestAccess: React.FC = () => {
                         </div>
 
                         <div className="pt-2 flex flex-col gap-3">
-                             <Button type="submit" className="w-full h-11 rounded-lg font-semibold text-sm bg-secondary text-secondary-foreground shadow-sm" disabled={loading}>
+                             <Button type="submit" className="w-full h-11 rounded-lg font-medium text-sm bg-secondary text-secondary-foreground shadow-sm" disabled={loading}>
                                 {loading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…
@@ -148,7 +148,7 @@ const RequestAccess: React.FC = () => {
                              <Button 
                                 variant="ghost" 
                                 type="button" 
-                                className="w-full h-10 font-semibold text-sm text-muted-foreground hover:text-on-surface hover:bg-muted/50 rounded-lg" 
+                                className="w-full h-10 font-medium text-sm text-muted-foreground hover:text-on-surface hover:bg-muted/50 rounded-lg" 
                                 onClick={() => navigate('/requests')}
                             >
                                 Cancel

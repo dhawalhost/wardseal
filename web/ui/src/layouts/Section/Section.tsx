@@ -31,16 +31,16 @@ const Section = React.forwardRef<HTMLElement, SectionProps>(
           >
             <div className="min-w-0 space-y-1">
               {title && (
-                <h2 className="text-base font-medium text-on-surface">{title}</h2>
+                <h2 className="text-heading text-on-surface">{title}</h2>
               )}
               {description && (
-                <p className="text-sm font-medium text-muted-foreground max-w-2xl">
+                <p className="max-w-2xl text-body text-on-surface-subtle">
                   {description}
                 </p>
               )}
             </div>
             {actions && (
-              <div className="flex flex-wrap items-center gap-3 shrink-0">{actions}</div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>
             )}
           </div>
         )}

@@ -75,7 +75,7 @@ const Branding: React.FC = () => {
                     <Button
                         variant="outline"
                         onClick={loadBranding}
-                        className="h-9 rounded-lg bg-card border border-border font-semibold text-sm px-4 shadow-sm"
+                        className="h-9 rounded-lg bg-card border border-border font-medium text-sm px-4 shadow-sm"
                     >
                         <RefreshCw className="h-4 w-4 mr-1.5" /> Reset
                     </Button>
@@ -91,7 +91,7 @@ const Branding: React.FC = () => {
                                     <LayoutTemplate className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Design settings</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Design settings</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Configure brand colors and logo.</p>
                                 </div>
                             </div>
@@ -99,7 +99,7 @@ const Branding: React.FC = () => {
                         <GlassCardContent className="p-card">
                             <form id="branding-form" onSubmit={handleSave} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="logo" className="text-xs font-semibold text-muted-foreground">
+                                    <Label htmlFor="logo" className="text-xs font-medium text-muted-foreground">
                                         Logo URL
                                     </Label>
                                     <Input
@@ -115,7 +115,7 @@ const Branding: React.FC = () => {
 
                                 <div className="grid grid-cols-2 gap-card">
                                     <div className="space-y-2">
-                                        <Label htmlFor="primary" className="text-xs font-semibold text-muted-foreground">Primary color</Label>
+                                        <Label htmlFor="primary" className="text-xs font-medium text-muted-foreground">Primary color</Label>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 id="primary"
@@ -127,13 +127,13 @@ const Branding: React.FC = () => {
                                             <Input
                                                 value={config.primary_color}
                                                 onChange={e => setConfig({ ...config, primary_color: e.target.value })}
-                                                className=" font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
+                                                className="font-mono text-xs font-medium h-10 rounded-lg border border-border bg-card px-3"
                                                 maxLength={7}
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="bg" className="text-xs font-semibold text-muted-foreground">Background</Label>
+                                        <Label htmlFor="bg" className="text-xs font-medium text-muted-foreground">Background</Label>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 id="bg"
@@ -145,7 +145,7 @@ const Branding: React.FC = () => {
                                             <Input
                                                 value={config.background_color}
                                                 onChange={e => setConfig({ ...config, background_color: e.target.value })}
-                                                className=" font-mono text-xs font-semibold h-10 rounded-lg border border-border bg-card px-3"
+                                                className="font-mono text-xs font-medium h-10 rounded-lg border border-border bg-card px-3"
                                                 maxLength={7}
                                             />
                                         </div>
@@ -153,7 +153,7 @@ const Branding: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="css" className="text-xs font-semibold text-muted-foreground">Custom CSS</Label>
+                                    <Label htmlFor="css" className="text-xs font-medium text-muted-foreground">Custom CSS</Label>
                                     <Textarea
                                         id="css"
                                         value={config.css_override}
@@ -167,12 +167,12 @@ const Branding: React.FC = () => {
 
                                 <div className="pt-2">
                                     {error && (
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-error-subtle-foreground bg-destructive/5 p-3 rounded-lg border border-destructive/20 mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-medium text-error-subtle-foreground bg-destructive/5 p-3 rounded-lg border border-destructive/20 mb-3">
                                             {error}
                                         </div>
                                     )}
                                     {success && (
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-success-subtle-foreground bg-success-subtle p-3 rounded-lg border border-success/20 mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-medium text-success-subtle-foreground bg-success-subtle p-3 rounded-lg border border-success/20 mb-3">
                                             {success}
                                         </div>
                                     )}
@@ -180,7 +180,7 @@ const Branding: React.FC = () => {
                                         type="submit"
                                         form="branding-form"
                                         disabled={saving}
-                                        className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm"
+                                        className="w-full h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm"
                                     >
                                         {saving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
                                         Save branding
@@ -196,10 +196,10 @@ const Branding: React.FC = () => {
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Preview</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Preview</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">How your login page will look to users.</p>
                                 </div>
-                                <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Live preview</Badge>
+                                <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-medium text-xs px-2 py-0.5">Live preview</Badge>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0 bg-muted/30">
@@ -222,15 +222,15 @@ const Branding: React.FC = () => {
 
                                     <div className="space-y-3">
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-semibold text-muted-foreground">Email</label>
+                                            <label className="text-xs font-medium text-muted-foreground">Email</label>
                                             <div className="h-10 w-full rounded-lg bg-muted/50 border border-border px-4 py-2 text-sm text-on-surface font-medium flex items-center select-none">
                                                 admin@wardseal.io
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
                                             <div className="flex justify-between items-end">
-                                                <label className="text-xs font-semibold text-muted-foreground">Password</label>
-                                                <span className="text-xs font-semibold text-secondary cursor-pointer">Forgot password?</span>
+                                                <label className="text-xs font-medium text-muted-foreground">Password</label>
+                                                <span className="text-xs font-medium text-secondary cursor-pointer">Forgot password?</span>
                                             </div>
                                             <div className="h-10 w-full rounded-lg bg-muted/50 border border-border px-4 py-2 flex items-center">
                                                 <div className="flex gap-1.5 text-muted-foreground">
@@ -240,7 +240,7 @@ const Branding: React.FC = () => {
                                         </div>
 
                                         <button
-                                            className="w-full h-10 rounded-lg text-white font-semibold text-sm mt-1 shadow-sm"
+                                            className="w-full h-10 rounded-lg text-white font-medium text-sm mt-1 shadow-sm"
                                             style={{ backgroundColor: config.primary_color }}
                                         >
                                             Sign in
@@ -248,10 +248,10 @@ const Branding: React.FC = () => {
 
                                         <div className="relative my-6">
                                             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-                                            <div className="relative flex justify-center text-xs font-semibold"><span className="bg-card px-3 text-muted-foreground">Or continue with</span></div>
+                                            <div className="relative flex justify-center text-xs font-medium"><span className="bg-card px-3 text-muted-foreground">Or continue with</span></div>
                                         </div>
 
-                                        <div className="h-10 rounded-lg border border-border bg-card text-on-surface flex items-center justify-center font-semibold text-sm shadow-sm">
+                                        <div className="h-10 rounded-lg border border-border bg-card text-on-surface flex items-center justify-center font-medium text-sm shadow-sm">
                                             Sign in with SSO
                                         </div>
                                     </div>

@@ -30,15 +30,15 @@ export const WebhookTableRow: React.FC<WebhookTableRowProps> = ({
                         <ExternalLink className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <span className="text-base font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors truncate max-w-[280px]">{webhook.url}</span>
-                        <span className="text-xs font-medium font-mono tracking-tight text-muted-foreground italic">id // {webhook.id?.substring(0, 8).toLowerCase() || 'external'}</span>
+                        <span className="text-base font-medium text-on-surface group-hover:text-primary transition-colors truncate max-w-[280px]">{webhook.url}</span>
+                        <span className="text-xs font-medium font-mono text-muted-foreground">id // {webhook.id?.substring(0, 8).toLowerCase() || 'external'}</span>
                     </div>
                 </div>
             </TableCell>
             <TableCell className="py-8">
                 <div className="flex flex-wrap gap-2">
                     {webhook.events.map(ev => (
-                        <Badge key={ev} className="bg-surface-container text-muted-foreground border-none rounded-lg font-medium text-xs tracking-tight px-3 py-1 group-hover:bg-primary/5 group-hover:text-primary transition-[color,background-color,border-color,opacity,transform]">
+                        <Badge key={ev} className="bg-surface-container text-muted-foreground border-none rounded-lg font-medium text-xs px-3 py-1 group-hover:bg-primary/5 group-hover:text-primary transition-[color,background-color,border-color,opacity,transform]">
                             {ev.split('.')[1]}
                         </Badge>
                     ))}

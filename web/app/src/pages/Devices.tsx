@@ -69,19 +69,19 @@ const Devices: React.FC = () => {
         switch (status) {
             case 'trusted':
                 return (
-                    <Badge className="bg-success/10 text-success-subtle-foreground border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
+                    <Badge className="bg-success/10 text-success-subtle-foreground border-none gap-2 rounded-lg font-medium text-xs px-3 py-1">
                         <ShieldCheck className="w-3.5 h-3.5" /> Verified
                     </Badge>
                 );
             case 'untrusted':
                 return (
-                    <Badge className="bg-destructive/10 text-error-subtle-foreground border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
+                    <Badge className="bg-destructive/10 text-error-subtle-foreground border-none gap-2 rounded-lg font-medium text-xs px-3 py-1">
                         <ShieldAlert className="w-3.5 h-3.5" /> Blocked
                     </Badge>
                 );
             default:
                 return (
-                    <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none gap-2 rounded-lg font-semibold text-xs px-3 py-1">
+                    <Badge className="bg-warning-subtle text-warning-subtle-foreground border-none gap-2 rounded-lg font-medium text-xs px-3 py-1">
                         <Activity className="w-3.5 h-3.5" /> Pending
                     </Badge>
                 );
@@ -119,7 +119,7 @@ const Devices: React.FC = () => {
                             <GlassCard key={i} className="min-w-[140px] shadow-sm border-border bg-card rounded-xl p-4">
                                 <div className="flex flex-col items-center gap-1">
                                     <span className={`text-2xl font-medium tracking-tight ${stat.color}`}>{stat.value}</span>
-                                    <span className="text-xs font-semibold text-muted-foreground">{stat.label}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
                                 </div>
                             </GlassCard>
                         ))}
@@ -207,7 +207,7 @@ const Devices: React.FC = () => {
                     </div>
                     <Button
                         variant="outline"
-                        className="h-10 px-5 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/5 hover:bg-secondary-foreground/10 text-secondary-foreground font-semibold text-sm hidden lg:flex"
+                        className="h-10 px-5 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/5 hover:bg-secondary-foreground/10 text-secondary-foreground font-medium text-sm hidden lg:flex"
                     >
                         View policy
                     </Button>

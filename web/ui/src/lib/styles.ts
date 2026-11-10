@@ -23,11 +23,15 @@ export const iconButton =
  * data-[highlighted] covers keyboard and pointer.
  */
 export const menuItem =
-  "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md px-2 py-2 text-sm text-on-surface outline-none " +
+  "relative flex h-8 w-full cursor-pointer select-none items-center gap-2 rounded-[6px] px-2 text-sm text-on-surface outline-none " +
   "transition-colors duration-fast " +
-  "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground " +
+  "data-[highlighted]:bg-surface-container-high " +
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-50 " +
-  "[&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0";
+  "[&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-on-surface-subtle";
 
 /** Section label inside menus and lists. */
-export const menuLabel = "px-2 py-1.5 text-label text-on-surface-subtle";
+export const menuLabel = "px-2 pb-1 pt-2 text-label text-on-surface-subtle";
+
+/** Soft focus halo for text controls: accent border + 3px translucent ring, no offset. */
+export const controlFocus =
+  "focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20";

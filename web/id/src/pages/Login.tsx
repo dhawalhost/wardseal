@@ -4,17 +4,10 @@ import { login, getBranding, completeMfaLogin, lookupUser, beginLogin, finishLog
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShieldCheck, Fingerprint, ArrowRight, User as UserIcon, Lock, ShieldAlert, Loader2 } from 'lucide-react';
+import { Fingerprint, ArrowRight, User as UserIcon, Lock, ShieldAlert, Loader2 } from 'lucide-react';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { v4 as uuidv4 } from 'uuid';
-import {
-    GlassCard,
-    GlassCardHeader,
-    GlassCardTitle,
-    GlassCardContent,
-    GlassCardDescription,
-    Logo,
-} from '@dhawalhost/wardseal-ui-kit';
+import { AuthLayout, AuthDivider } from '@dhawalhost/wardseal-ui-kit';
 import { navigateSafeRedirect, resolveSafeRedirect, seedSessionFromAuthResponse } from '@wardseal/shared';
 
 const Login: React.FC = () => {
@@ -353,312 +346,206 @@ const Login: React.FC = () => {
             setLoading(false);
         }
     };
+    const footerLinks = [
+        { label: 'Privacy', href: `${policyBaseUrl}/policies#privacy` },
+        { label: 'Terms', href: `${policyBaseUrl}/policies#terms` },
+        { label: 'Support', href: `${policyBaseUrl}/support` },
+    ];
+    const tenantBrand = branding.logo_url ? (
+        <span className="flex items-center gap-2.5">
+            <img src={branding.logo_url} alt="" className="h-6 w-6 object-contain" />
+            <span className="text-sm font-medium text-on-surface">{branding.tenant_name || 'WardSeal'}</span>
+        </span>
+    ) : undefined;
+    const errorBox = error && (
+        <div role="alert" className="flex items-start gap-2.5 rounded-lg border border-error/20 bg-error-subtle px-3 py-2.5 text-sm text-error-subtle-foreground">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
+            <span>{error}</span>
+        </div>
+    );
+    const codeInput = (
+        <Input
+            id="totp"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={totpCode}
+            onChange={(e) => setTotpCode(e.target.value)}
+            placeholder="000000"
+            className="h-12 text-center font-mono text-xl tracking-[0.4em] tabular-nums"
+            maxLength={6}
+            autoFocus
+        />
+    );
+
     if (mfaRequired) {
         if (!mfaEnrolled) {
             return (
-                <div className="flex items-center justify-center min-h-screen bg-background px-6">
-                    <GlassCard className="w-full max-w-[450px] shadow-sm border-border bg-card overflow-hidden rounded-xl animate-in fade-in duration-500">
-                        <GlassCardHeader className="pt-10 pb-4 px-8 text-center border-b border-border">
-                            <div className="mx-auto w-10 h-10 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-sm">
-                                <ShieldCheck className="w-5 h-5 text-primary-foreground" />
-                            </div>
-                            <GlassCardTitle className="text-2xl font-medium tracking-tight">Set up MFA</GlassCardTitle>
-                            <GlassCardDescription className="mt-2">
-                                Multi-factor authentication is required to access the platform
-                            </GlassCardDescription>
-                        </GlassCardHeader>
-                        <GlassCardContent className="px-8 pb-10">
-                            <form onSubmit={handleMfaSetupVerify} className="space-y-6">
-                                <div className="flex flex-col items-center justify-center gap-5">
-                                    {qrCode ? (
-                                        <div className="bg-card p-4 rounded-xl border border-border flex justify-center shadow-sm max-w-[200px]">
-                                            <img src={`data:image/png;base64,${qrCode}`} alt="TOTP QR Code" className="w-full aspect-square mix-blend-multiply" />
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center h-[200px]">
-                                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                                        </div>
-                                    )}
-                                    {secret && (
-                                        <div className="text-center space-y-2 w-full bg-muted/40 p-4 rounded-lg border border-border">
-                                            <Label className="text-sm font-semibold text-muted-foreground">Manual setup key</Label>
-                                            <div className="font-mono text-xs font-semibold select-all text-primary">{secret}</div>
-                                        </div>
-                                    )}
+                <AuthLayout
+                    brand={tenantBrand}
+                    title="Set up two-step verification"
+                    description="Scan the code with an authenticator app, then enter the six digits it shows"
+                    footerLinks={footerLinks}
+                >
+                    <form onSubmit={handleMfaSetupVerify} className="space-y-5">
+                        <div className="flex items-start gap-4 rounded-xl border border-border bg-card p-4">
+                            {qrCode ? (
+                                <img src={`data:image/png;base64,${qrCode}`} alt="Authenticator QR code" className="h-32 w-32 shrink-0 rounded-md mix-blend-multiply" />
+                            ) : (
+                                <div className="flex h-32 w-32 shrink-0 items-center justify-center">
+                                    <Loader2 className="h-5 w-5 animate-spin text-on-surface-subtle" aria-hidden />
                                 </div>
-
-                                <div className="space-y-3 text-center">
-                                    <Label className="text-sm font-semibold text-muted-foreground">Authentication code</Label>
-                                    <Input
-                                        value={totpCode}
-                                        onChange={(e) => setTotpCode(e.target.value)}
-                                        placeholder="000000"
-                                        className="h-14 text-center text-2xl font-semibold border-border bg-background rounded-lg shadow-xs"
-                                        maxLength={6}
-                                        autoFocus
-                                    />
+                            )}
+                            {secret && (
+                                <div className="min-w-0 space-y-1.5">
+                                    <p className="text-xs text-on-surface-subtle">Or enter this key</p>
+                                    <p className="select-all break-all font-mono text-xs leading-relaxed text-on-surface">{secret}</p>
                                 </div>
-
-                                {error && (
-                                    <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
-                                        <ShieldAlert className="w-5 h-5 shrink-0" />
-                                        <span className="text-sm font-medium">{error}</span>
-                                    </div>
-                                )}
-
-                                <Button type="submit" className="w-full h-12 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground" disabled={loading}>
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify and continue'}
-                                </Button>
-                            </form>
-                        </GlassCardContent>
-                    </GlassCard>
-                </div>
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="totp">Authentication code</Label>
+                            {codeInput}
+                        </div>
+                        {errorBox}
+                        <Button type="submit" size="lg" className="w-full" isLoading={loading}>
+                            Verify and continue
+                        </Button>
+                    </form>
+                </AuthLayout>
             );
         }
 
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background px-6">
-                <GlassCard className="w-full max-w-[400px] shadow-sm border-border bg-card overflow-hidden rounded-xl animate-in fade-in duration-500">
-                    <GlassCardHeader className="pt-10 pb-4 px-8 text-center border-b border-border">
-                        <div className="mx-auto w-10 h-10 bg-secondary rounded-xl flex items-center justify-center mb-5 shadow-sm">
-                            <ShieldCheck className="w-5 h-5 text-secondary-foreground" />
-                        </div>
-                        <GlassCardTitle className="text-2xl font-medium tracking-tight">Enter verification code</GlassCardTitle>
-                        <GlassCardDescription className="mt-2">
-                            Multi-factor authentication is required to continue
-                        </GlassCardDescription>
-                    </GlassCardHeader>
-                    <GlassCardContent className="px-8 pb-10">
-                        <form onSubmit={handleMfaSubmit} className="space-y-6">
-                            <div className="space-y-3 text-center">
-                                <Label className="text-sm font-semibold text-muted-foreground">Authentication code</Label>
-                                <Input
-                                    value={totpCode}
-                                    onChange={(e) => setTotpCode(e.target.value)}
-                                    placeholder="000000"
-                                    className="h-14 text-center text-2xl font-semibold border-border bg-background rounded-lg shadow-xs"
-                                    maxLength={6}
-                                    autoFocus
-                                />
-                            </div>
-                            {error && (
-                                <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
-                                    <ShieldAlert className="w-5 h-5 shrink-0" />
-                                    <span className="text-sm font-medium">{error}</span>
-                                </div>
-                            )}
-                            <Button type="submit" className="w-full h-12 rounded-lg font-semibold text-sm shadow-sm bg-secondary text-secondary-foreground" disabled={loading}>
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify'}
-                            </Button>
-                        </form>
-                    </GlassCardContent>
-                </GlassCard>
-            </div>
+            <AuthLayout
+                brand={tenantBrand}
+                title="Enter verification code"
+                description="Open your authenticator app and enter the current six-digit code"
+                footerLinks={footerLinks}
+            >
+                <form onSubmit={handleMfaSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                        <Label htmlFor="totp">Authentication code</Label>
+                        {codeInput}
+                    </div>
+                    {errorBox}
+                    <Button type="submit" size="lg" className="w-full" isLoading={loading}>
+                        Verify
+                    </Button>
+                </form>
+            </AuthLayout>
         );
     }
 
     return (
-        <div 
-            className="min-h-screen flex flex-col lg:flex-row bg-background text-on-surface selection:bg-primary/20"
+        <AuthLayout
+            brand={tenantBrand}
+            title={branding.tenant_name ? `Sign in to ${branding.tenant_name}` : 'Sign in to WardSeal'}
+            description={step === 'identifier' ? 'Use your work email to continue' : undefined}
+            footnote={
+                <>
+                    New to WardSeal?{' '}
+                    <a href="/signup" className="font-medium text-on-surface underline-offset-4 hover:underline">
+                        Create an organization
+                    </a>
+                </>
+            }
+            footerLinks={footerLinks}
         >
-            {/* Left Side: Brand & Visual — explicit white text for WCAG contrast on navy */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12 xl:p-16 bg-primary text-primary-foreground">
-                <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-                    <div className="absolute -top-[20%] -right-[10%] w-[55%] h-[55%] rounded-full bg-secondary/25 blur-[100px]" />
-                </div>
-
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 border border-white/10">
-                            {branding.logo_url ? (
-                                <img src={branding.logo_url} alt="" className="w-6 h-6 object-contain" />
-                            ) : (
-                                <Logo variant="icon" className="w-6 h-6" />
-                            )}
-                        </div>
-                        <span className="text-xl font-medium tracking-tight text-white">
-                            {branding.tenant_name || "WardSeal"}
-                        </span>
+            {step === 'identifier' ? (
+                <form onSubmit={handleIdentifierSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Work email</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            autoComplete="username"
+                            placeholder="name@company.com"
+                            icon={<UserIcon />}
+                            className="h-11"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            autoFocus
+                        />
                     </div>
-                </div>
+                    {errorBox}
+                    <Button
+                        type="submit"
+                        size="lg"
+                        className="w-full gap-2"
+                        style={branding.primary_color ? { backgroundColor: branding.primary_color } : undefined}
+                        isLoading={loading}
+                    >
+                        Continue
+                        {!loading && <ArrowRight className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+                    </Button>
 
-                <div className="relative z-10 max-w-md space-y-5">
-                    <h1 className="text-4xl xl:text-5xl font-medium tracking-tight leading-[1.15] text-white">
-                        Enterprise identity for modern workspaces
-                    </h1>
-                    <p className="text-base text-slate-300 font-medium leading-relaxed">
-                        OIDC, SAML, and adaptive MFA with directory sync — built for teams that take access seriously.
-                    </p>
-                </div>
-
-                <div className="relative z-10 flex flex-wrap gap-3 text-xs font-semibold text-slate-300">
-                    <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5">SOC 2 ready</span>
-                    <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5">SCIM 2.0</span>
-                    <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5">Passkeys + TOTP</span>
-                </div>
-            </div>
-
-            {/* Right Side: Authentication Form */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 py-12">
-                <div className="w-full max-w-md mx-auto">
-                    {/* Mobile Logo Only */}
-                    <div className="lg:hidden mb-12 flex justify-center">
-                        {branding.logo_url ? (
-                            <img src={branding.logo_url} alt={branding.tenant_name || "WardSeal"} className="w-12 h-12 object-contain" />
-                        ) : (
-                            <Logo variant="icon" className="w-12 h-12" />
-                        )}
-                    </div>
-
-                    <div className="mb-10 text-center lg:text-left">
-                        <h2 className="text-3xl font-medium tracking-tight text-on-surface mb-2">
-                            {branding.tenant_name ? `Sign in to ${branding.tenant_name}` : "Welcome back"}
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            {step === 'identifier' 
-                                ? 'Enter your email to continue' 
-                                : `Sign in as ${email}`}
-                        </p>
-                    </div>
-
-                    {step === 'identifier' ? (
-                        <form onSubmit={handleIdentifierSubmit} className="space-y-6">
+                    {ssoProviders.length > 0 && (
+                        <>
+                            <AuthDivider>or</AuthDivider>
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-semibold text-on-surface ml-1">Email address</Label>
-                                <div className="relative group">
-                                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="name@company.com"
-                                        className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        autoFocus
-                                    />
-                                </div>
+                                {ssoProviders.map((provider) => (
+                                    <Button
+                                        key={provider.id}
+                                        type="button"
+                                        variant="outline"
+                                        size="lg"
+                                        className="w-full"
+                                        onClick={() => handleSocialLogin(provider.name)}
+                                    >
+                                        Continue with {provider.name}
+                                    </Button>
+                                ))}
                             </div>
+                        </>
+                    )}
+                </form>
+            ) : (
+                <div>
+                    <div className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
+                        <span className="min-w-0 truncate text-sm text-on-surface">{email}</span>
+                        <button
+                            type="button"
+                            onClick={() => setStep('identifier')}
+                            className="shrink-0 rounded text-xs font-medium text-on-surface-subtle transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            Change
+                        </button>
+                    </div>
 
-                            {error && (
-                                <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-xl flex items-center gap-3 border border-destructive/20">
-                                    <ShieldAlert className="w-5 h-5 shrink-0" />
-                                    <span className="text-sm font-medium">{error}</span>
-                                </div>
-                            )}
-
-                            <Button 
-                                type="submit" 
-                                className="w-full h-12 rounded-lg text-primary-foreground font-semibold text-base shadow-sm transition-opacity hover:opacity-90 group" 
-                                style={{ backgroundColor: branding.primary_color }}
-                                disabled={loading}
-                            >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                                    <>Continue <ArrowRight className="ml-2 w-5 h-5" /></>
-                                )}
+                    {webAuthnEnabled && (
+                        <>
+                            <Button type="button" size="lg" className="w-full gap-2" onClick={handlePasskeyLogin} disabled={loading}>
+                                <Fingerprint className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                                Sign in with a passkey
                             </Button>
-
-                            {ssoProviders.length > 0 && (
-                                <>
-                                    <div className="relative py-4">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t border-border" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs font-semibold">
-                                            <span className="bg-background px-4 text-muted-foreground">Or sign in with</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        {ssoProviders.map(provider => (
-                                            <Button
-                                                key={provider.id}
-                                                type="button"
-                                                variant="outline"
-                                                className="w-full h-14 rounded-xl border-border bg-background hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform] font-medium text-sm shadow-sm"
-                                                onClick={() => handleSocialLogin(provider.name)}
-                                            >
-                                                Sign in with {provider.name}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </form>
-                    ) : (
-                        <div className="space-y-6">
-                            {webAuthnEnabled && (
-                                <Button
-                                    type="button"
-                                    className="w-full h-14 rounded-xl border-none bg-primary/5 text-primary hover:bg-primary/10 transition-[color,background-color,border-color,opacity,transform] font-medium flex items-center justify-center gap-3"
-                                    onClick={handlePasskeyLogin}
-                                    disabled={loading}
-                                >
-                                    <Fingerprint className="w-5 h-5" />
-                                    Sign in with Passkey
-                                </Button>
-                            )}
-
-                            {webAuthnEnabled && (
-                                <div className="relative py-2">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-border" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs font-semibold">
-                                        <span className="bg-background px-4 text-muted-foreground">or use password</span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <form onSubmit={handlePasswordLogin} className="space-y-6">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center px-1">
-                                        <Label htmlFor="password" className="text-sm font-semibold text-on-surface">Password</Label>
-                                        <button type="button" onClick={() => setStep('identifier')} className="text-xs font-semibold text-primary hover:opacity-70 transition-opacity">Change email</button>
-                                    </div>
-                                    <div className="relative group">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            className="h-14 pl-12 rounded-xl border-input bg-background focus:bg-card focus-visible:ring-2 focus-visible:ring-ring focus:border-primary transition-[color,background-color,border-color,opacity,transform] text-base"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            required
-                                            autoFocus={!webAuthnEnabled}
-                                        />
-                                    </div>
-                                </div>
-
-                                {error && (
-                                    <div className="p-4 bg-destructive/10 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
-                                        <ShieldAlert className="w-5 h-5 shrink-0" />
-                                        <span className="text-sm font-medium">{error}</span>
-                                    </div>
-                                )}
-
-                                <Button type="submit" className="w-full h-12 rounded-lg bg-secondary text-secondary-foreground font-semibold text-base shadow-sm hover:opacity-90 transition-opacity" disabled={loading}>
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign in'}
-                                </Button>
-                            </form>
-                        </div>
+                            <AuthDivider>or use your password</AuthDivider>
+                        </>
                     )}
 
-                    <div className="mt-12 text-center">
-                        <p className="text-sm font-medium text-on-surface-variant">
-                            Don't have an account? <a href="/signup" className="text-primary font-medium hover:underline decoration-2 underline-offset-4">Get started</a>
-                        </p>
-                    </div>
-
-                    <div className="mt-24 pt-8 border-t border-border flex justify-center gap-8">
-                        <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Privacy</a>
-                        <a href={`${policyBaseUrl}/policies#terms`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Terms</a>
-                        <a href={`${policyBaseUrl}/support`} target="_blank" rel="noreferrer" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">Support</a>
-                    </div>
+                    <form onSubmit={handlePasswordLogin} className="space-y-5">
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                autoComplete="current-password"
+                                icon={<Lock />}
+                                className="h-11"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                autoFocus={!webAuthnEnabled}
+                            />
+                        </div>
+                        {errorBox}
+                        <Button type="submit" size="lg" variant={webAuthnEnabled ? 'outline' : 'secondary'} className="w-full" isLoading={loading}>
+                            Sign in
+                        </Button>
+                    </form>
                 </div>
-            </div>
-        </div>
+            )}
+        </AuthLayout>
     );
 };
 

@@ -50,7 +50,7 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
                 <div className="flex items-center gap-2.5">
                     <Avatar name={user.emails?.[0]?.value || user.userName} size={24} className="h-6 w-6 border-none ring-1 ring-on-surface/5 rounded-md overflow-hidden transition-transform" />
                     <div className="flex flex-col">
-                        <span className="font-medium text-xs tracking-tight text-on-surface group-hover:text-primary transition-colors">
+                        <span className="font-medium text-xs text-on-surface group-hover:text-primary transition-colors">
                             {user.displayName || user.userName}
                         </span>
                         <span className="text-xs font-medium text-muted-foreground mt-0 flex items-center gap-2">
@@ -75,7 +75,7 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
                         </Badge>
                     ))}
                     {(!user.groups || user.groups.length === 0) && (
-                        <span className="text-xs font-medium text-muted-foreground italic">No groups</span>
+                        <span className="text-xs font-medium text-muted-foreground">No groups</span>
                     )}
                 </div>
             </TableCell>
@@ -85,7 +85,7 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate(`/users/edit/${user.id}`)}
-                        className="h-7 px-3 rounded-lg bg-primary/5 text-primary border border-primary/10 hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] font-medium text-xs "
+                        className="h-7 px-3 rounded-lg bg-surface-container-low text-primary border border-primary/10 hover:bg-primary hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] font-medium text-xs"
                     >
                         Edit
                     </Button>
@@ -102,7 +102,7 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
                         <DropdownMenuContent align="end" className="w-[160px] rounded-lg border-none shadow-overlay shadow-on-surface/10 p-1 bg-card">
                             <DropdownMenuItem
                                 onClick={() => navigate('/groups')}
-                                className="font-medium text-xs tracking-tight gap-2 py-1.5 px-2.5 rounded-md focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
+                                className="font-medium text-xs gap-2 py-1.5 px-2.5 rounded-md focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
                             >
                                 <Settings2 className="w-3 h-3 opacity-40" /> Manage Groups
                             </DropdownMenuItem>
@@ -111,20 +111,20 @@ export const UserTableRow: React.FC<UserTableRowProps> = ({
                                     setSelectedUser(user);
                                     setIsPasswordDialogOpen(true);
                                 }}
-                                className="font-medium text-xs tracking-tight gap-2 py-1.5 px-2.5 rounded-md focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
+                                className="font-medium text-xs gap-2 py-1.5 px-2.5 rounded-md focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
                             >
                                 <Key className="w-3 h-3 opacity-40" /> Set Password
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => handleSendResetLink(user.id)}
-                                className="font-medium text-xs tracking-tight gap-2 py-1.5 px-2.5 rounded-md focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
+                                className="font-medium text-xs gap-2 py-1.5 px-2.5 rounded-md focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
                             >
                                 <Mail className="w-3 h-3 opacity-40" /> Send Reset Link
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-on-surface/5 my-1 mx-2" />
                             <DropdownMenuItem
                                 onClick={() => handleDeleteUser(user.id)}
-                                className="text-destructive font-medium text-xs tracking-tight gap-2 py-1.5 px-2.5 rounded-md focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
+                                className="text-destructive font-medium text-xs gap-2 py-1.5 px-2.5 rounded-md focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
                             >
                                 <ShieldAlert className="w-3 h-3" /> Delete User
                             </DropdownMenuItem>

@@ -59,7 +59,7 @@ const AccessRequests: React.FC = () => {
                 description="Review and manage requests for temporary access to restricted resources."
                 actions={
                      <Link to="/request-access">
-                        <Button className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                        <Button className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm px-4 shadow-sm">
                             <Plus className="mr-2 h-4 w-4" /> New Request
                         </Button>
                     </Link>
@@ -67,7 +67,7 @@ const AccessRequests: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 text-sm font-semibold flex items-center gap-3">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg border border-destructive/20 text-sm font-medium flex items-center gap-3">
                     <ShieldAlert className="h-4 w-4" />
                     {error}
                 </div>
@@ -77,7 +77,7 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                          <div className="flex flex-col gap-2">
-                             <span className="text-xs font-semibold text-muted-foreground ">Pending</span>
+                             <span className="text-xs font-medium text-muted-foreground">Pending</span>
                             <div className="mt-3 flex items-end gap-3 leading-none">
                                 <span className="text-3xl font-medium tracking-tight text-on-surface tabular-nums">{requests.filter(r => r.status === 'pending').length}</span>
                                 <GitPullRequest className="h-5 w-5 text-muted-foreground mb-1" />
@@ -89,7 +89,7 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                          <div className="flex flex-col gap-2">
-                             <span className="text-xs font-semibold text-muted-foreground ">Approved</span>
+                             <span className="text-xs font-medium text-muted-foreground">Approved</span>
                             <div className="mt-3 flex items-end gap-3 leading-none">
                                 <span className="text-3xl font-medium tracking-tight text-on-surface tabular-nums">{requests.filter(r => r.status === 'approved').length}</span>
                                 <ShieldCheck className="h-5 w-5 text-success mb-1" />
@@ -113,7 +113,7 @@ const AccessRequests: React.FC = () => {
 
             <div className="space-y-page">
                  <div className="flex items-center gap-4">
-                    <h2 className="text-xs font-semibold text-muted-foreground flex-shrink-0 ">Requests Queue</h2>
+                    <h2 className="text-xs font-medium text-muted-foreground flex-shrink-0">Requests Queue</h2>
                     <div className="h-px flex-1 bg-border" />
                 </div>
 
@@ -124,7 +124,7 @@ const AccessRequests: React.FC = () => {
                                 <Activity className="w-4 h-4 text-secondary" />
                             </div>
                              <div>
-                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Request Details</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium text-on-surface">Request Details</GlassCardTitle>
                                 <p className="text-muted-foreground text-sm mt-0.5">List of active requests and their status.</p>
                             </div>
                         </div>
@@ -142,11 +142,11 @@ const AccessRequests: React.FC = () => {
                                 <GlassTable>
                                      <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">User</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Resource</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Duration</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
-                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">User</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Resource</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Duration</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Status</GlassTableHead>
+                                            <GlassTableHead className="py-3 text-right pr-card font-medium text-xs text-muted-foreground">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>

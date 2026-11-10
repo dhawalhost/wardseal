@@ -19,11 +19,11 @@ export const PermissionTableRow: React.FC<PermissionTableRowProps> = ({ permissi
         <GlassTableRow className="hover:bg-surface-container/20 transition-[color,background-color,border-color,opacity,transform] border-b border-on-surface/5 last:border-0 group">
             <TableCell className="py-1.5 pl-4 font-mono text-xs font-medium text-on-surface-subtle">{permission.resource}</TableCell>
             <TableCell className="py-1.5">
-                <Badge className="bg-primary/5 text-primary border-none rounded-md font-medium text-xs tracking-tight px-2 py-0.5 group-hover:bg-primary group-hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] shadow-none ">
+                <Badge className="bg-surface-container-low text-primary border-none rounded-md font-medium text-xs px-2 py-0.5 group-hover:bg-primary group-hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform] shadow-none">
                     {permission.action}
                 </Badge>
             </TableCell>
-            <TableCell className="py-1.5 text-xs font-medium text-muted-foreground italic tracking-tight pr-4">{permission.description || 'No system definition metadata'}</TableCell>
+            <TableCell className="py-1.5 text-xs font-medium text-muted-foreground pr-4">{permission.description || 'No system definition metadata'}</TableCell>
         </GlassTableRow>
     );
 };

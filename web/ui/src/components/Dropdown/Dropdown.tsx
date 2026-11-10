@@ -13,7 +13,7 @@ const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
 const menuContent = cn(
   overlaySurface,
-  "z-50 min-w-[12rem] max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto rounded-lg p-1",
+  "z-50 min-w-[12rem] max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto rounded-[10px] p-1",
   "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out"
 );
 
@@ -27,7 +27,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       menuItem,
-      "cursor-default data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+      "cursor-default data-[state=open]:bg-surface-container-high",
       inset && "pl-8",
       className
     )}

@@ -28,7 +28,7 @@ ToastViewport.displayName = ToastPrimitives.Viewport.displayName;
  * default variant steps the description down to the secondary text tier.
  */
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-start justify-between gap-3 overflow-hidden rounded-lg border p-4 pr-11 shadow-overlay " +
+  "group pointer-events-auto relative flex w-full items-start justify-between gap-3 overflow-hidden rounded-[10px] border p-4 pr-11 shadow-overlay " +
     "transition-transform duration-base " +
     "data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none " +
     "data-[state=open]:animate-slide-up data-[state=closed]:animate-fade-out",
@@ -113,7 +113,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold leading-snug", className)}
+    className={cn("text-sm font-medium leading-snug", className)}
     {...props}
   />
 ));

@@ -132,7 +132,7 @@ const AdminShell: React.FC = () => {
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-[color,background-color,border-color,opacity,transform] duration-200 group relative",
                                     isActive
-                                        ? "bg-primary/5 text-primary"
+                                        ? "bg-surface-container-low text-primary"
                                         : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
                                 )}
                             >
@@ -155,7 +155,7 @@ const AdminShell: React.FC = () => {
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-[color,background-color,border-color,opacity,transform] duration-200 group relative",
                                     isActive
-                                        ? "bg-primary/5 text-primary"
+                                        ? "bg-surface-container-low text-primary"
                                         : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
                                 )}
                             >
@@ -169,9 +169,9 @@ const AdminShell: React.FC = () => {
 
                 <div className="p-6 border-t bg-surface-container-low/30">
                     <div className="flex items-center gap-3 group cursor-pointer" onClick={handleLogout}>
-                        <Avatar name={userId} size={40} className="h-10 w-10 border shadow-sm transition-transform " />
+                        <Avatar name={userId} size={40} className="h-10 w-10 border shadow-sm transition-transform" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
+                            <p className="text-sm font-medium text-on-surface truncate group-hover:text-primary transition-colors">
                                 {userName}
                             </p>
                             <p className="text-xs text-on-surface-variant truncate opacity-60">
@@ -190,16 +190,16 @@ const AdminShell: React.FC = () => {
                         <div className="flex items-center gap-2 text-sm font-medium">
                             <span className="text-muted-foreground">System</span>
                             <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-primary font-semibold">{activeItem?.label || 'Dashboard'}</span>
+                            <span className="text-primary font-medium">{activeItem?.label || 'Dashboard'}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="relative w-72 hidden lg:block group">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                             <Input
                                 type="search"
-                                placeholder="Search everywhere..."
+                                placeholder="Search everywhere"
                                 className="w-full bg-surface-container border-none rounded-xl pl-10 h-10 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] font-medium"
                             />
                         </div>
@@ -208,7 +208,7 @@ const AdminShell: React.FC = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/portal')}
-                                className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
+                                className="rounded-xl font-medium text-xs px-5 h-10 border-border hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
                             >
                                 <Activity className="mr-2 h-4 w-4 text-primary" /> User Portal
                             </Button>
@@ -230,13 +230,13 @@ const AdminShell: React.FC = () => {
                 <footer className="border-t py-8 px-10 bg-card">
                     <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="py-1.5 px-3 bg-surface-container rounded-full text-on-surface-variant font-medium text-xs tracking-tight flex items-center gap-2">
+                            <div className="py-1.5 px-3 bg-surface-container rounded-full text-on-surface-variant font-medium text-xs flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                                 System Status: Online
                             </div>
-                            <span className="text-xs font-medium text-muted-foreground italic">v4.2.0-stable</span>
+                            <span className="text-xs font-medium text-muted-foreground">v4.2.0-stable</span>
                         </div>
-                        <div className="flex items-center gap-8 text-xs font-semibold text-on-surface-variant">
+                        <div className="flex items-center gap-8 text-xs font-medium text-on-surface-variant">
                             <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Privacy</a>
                             <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Compliance</a>
                             <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Security</a>

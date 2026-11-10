@@ -50,7 +50,7 @@ const CopilotWidget = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3">
+    <div className="fixed bottom-14 right-6 z-[100] flex flex-col items-end gap-3">
       {isOpen && (
         <GlassCard className="flex h-[520px] w-[380px] flex-col overflow-hidden border-border shadow-[0_8px_24px_rgba(0,0,0,0.08)] animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="flex h-14 items-center justify-between border-b border-border px-4">
@@ -115,7 +115,7 @@ const CopilotWidget = () => {
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className="h-10 gap-2 rounded-full bg-card px-4 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_4px_12px_rgba(0,0,0,0.06)]"
+        className="h-10 gap-2 rounded-md bg-card px-4 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_4px_12px_rgba(0,0,0,0.06)]"
       >
         {isOpen ? <X className="h-4 w-4" strokeWidth={1.5} aria-hidden /> : <MessagesSquare className="h-4 w-4" strokeWidth={1.5} aria-hidden />}
         {isOpen ? 'Close' : 'Ask copilot'}

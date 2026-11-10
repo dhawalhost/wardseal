@@ -177,35 +177,26 @@ export default function SSOConfig() {
                 <div className="flex flex-col gap-4 px-6 py-5 border-b border-border bg-card/40">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-sm font-medium tracking-tight text-on-surface">SSO Connectors</h1>
+                            <h1 className="text-title text-on-surface">Identity providers</h1>
                             <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                                {providers.length} configured identity providers
+                                {providers.length} {providers.length === 1 ? 'provider' : 'providers'} configured
                             </p>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <Button
-                                size="sm"
-                                onClick={() => startCreate('oidc')}
-                                className="h-7 rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs px-2.5 shadow-sm"
-                            >
-                                <Plus className="w-3 h-3 mr-1" /> +OIDC
+                        <div className="flex items-center gap-2">
+                            <Button size="sm" onClick={() => startCreate('oidc')} className="gap-1.5">
+                                <Plus className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden /> OIDC
                             </Button>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => startCreate('saml')}
-                                className="h-7 rounded-lg bg-card border border-border font-medium text-xs px-2.5 hover:bg-surface-container text-on-surface"
-                            >
-                                <Plus className="w-3 h-3 mr-1" /> +SAML
+                            <Button size="sm" variant="outline" onClick={() => startCreate('saml')} className="gap-1.5">
+                                <Plus className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden /> SAML
                             </Button>
                         </div>
                     </div>
 
                     {/* Search bar */}
                     <div className="relative group">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                         <Input
-                            placeholder="Search providers..."
+                            placeholder="Search providers"
                             className="h-8 w-full border-none rounded-lg text-xs pl-8 bg-surface-container/40 border border-input focus-visible:ring-ring font-medium"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -220,7 +211,7 @@ export default function SSOConfig() {
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : filteredProviders.length === 0 ? (
-                        <div className="py-20 text-center text-xs text-muted-foreground italic font-medium">
+                        <div className="py-20 text-center text-xs text-muted-foreground font-medium">
                             No matching providers found
                         </div>
                     ) : (
@@ -234,7 +225,7 @@ export default function SSOConfig() {
                                         className={cn(
                                             "flex items-center gap-3 px-5 py-4 cursor-pointer transition-[color,background-color,border-color,opacity,transform] group border-l-2",
                                             isSelected
-                                                ? "bg-primary/5 border-primary"
+                                                ? "bg-surface-container-low border-primary"
                                                 : "hover:bg-surface-container/40 border-transparent"
                                         )}
                                     >
@@ -246,21 +237,21 @@ export default function SSOConfig() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className={cn(
-                                                "text-[12px] font-semibold truncate transition-colors",
+                                                "text-[12px] font-medium truncate transition-colors",
                                                 isSelected ? "text-secondary" : "text-on-surface group-hover:text-secondary"
                                             )}>
                                                 {p.name}
                                             </p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Badge className={cn(
-                                                    "text-xs font-medium px-1.5 py-0 rounded border-none  shadow-none",
+                                                    "text-xs font-medium px-1.5 py-0 rounded border-none shadow-none",
                                                     p.type === 'oidc' ? "bg-primary/10 text-secondary" : "bg-warning-subtle text-warning-subtle-foreground"
                                                 )}>
                                                     {p.type}
                                                 </Badge>
                                                 <span className="text-xs text-muted-foreground">•</span>
                                                 <span className={cn(
-                                                    "text-xs font-semibold",
+                                                    "text-xs font-medium",
                                                     p.enabled ? "text-success" : "text-muted-foreground"
                                                 )}>
                                                     {p.enabled ? 'Live' : 'Off'}
@@ -309,7 +300,7 @@ export default function SSOConfig() {
                                                     onCheckedChange={(checked) => handleToggle(selectedProvider.id!, checked)}
                                                     className="h-3.5 w-6 data-[state=checked]:bg-secondary-foreground/40"
                                                 />
-                                                <span className="text-xs font-medium text-secondary-foreground ">
+                                                <span className="text-xs font-medium text-secondary-foreground">
                                                     {selectedProvider.enabled ? 'Live' : 'Inactive'}
                                                 </span>
                                             </div>
@@ -320,7 +311,7 @@ export default function SSOConfig() {
                                     <div className="flex items-center gap-2">
                                         <Button
                                             onClick={() => setIsEditing(!isEditing)}
-                                            className="h-8 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-semibold text-xs px-4 border-none shadow-none"
+                                            className="h-8 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-medium text-xs px-4 border-none shadow-none"
                                         >
                                             {isEditing ? 'View Mode' : 'Edit Configuration'}
                                         </Button>
@@ -340,7 +331,7 @@ export default function SSOConfig() {
                             {isEditing ? (
                                 <form onSubmit={handleSave} className="space-y-6 max-w-3xl">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">01 // Identification alias</Label>
+                                        <Label htmlFor="name" className="text-xs font-medium text-muted-foreground ml-1">01 // Identification alias</Label>
                                         <Input
                                             id="name"
                                             value={selectedProvider.name || ''}
@@ -357,9 +348,9 @@ export default function SSOConfig() {
                                         {selectedProvider.type === 'oidc' && (
                                             <>
                                                 <div className="space-y-2 md:col-span-2">
-                                                    <Label htmlFor="issuer" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">02 // OIDC Issuer Discovery Endpoint</Label>
+                                                    <Label htmlFor="issuer" className="text-xs font-medium text-muted-foreground ml-1">02 // OIDC Issuer Discovery Endpoint</Label>
                                                     <div className="relative">
-                                                        <Activity className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                        <Activity className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                                                         <Input
                                                             id="issuer"
                                                             type="url"
@@ -372,7 +363,7 @@ export default function SSOConfig() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="client_id" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">03 // Handshake Client ID</Label>
+                                                    <Label htmlFor="client_id" className="text-xs font-medium text-muted-foreground ml-1">03 // Handshake Client ID</Label>
                                                     <Input
                                                         id="client_id"
                                                         value={selectedProvider.oidc_client_id || ''}
@@ -383,7 +374,7 @@ export default function SSOConfig() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="client_secret" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">04 // Secret Entropy {isCreating ? '' : '(locked)'}</Label>
+                                                    <Label htmlFor="client_secret" className="text-xs font-medium text-muted-foreground ml-1">04 // Secret Entropy {isCreating ? '' : '(locked)'}</Label>
                                                     <Input
                                                         id="client_secret"
                                                         type="password"
@@ -395,7 +386,7 @@ export default function SSOConfig() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2 md:col-span-2">
-                                                    <Label htmlFor="scopes" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">05 // Claim Scopes</Label>
+                                                    <Label htmlFor="scopes" className="text-xs font-medium text-muted-foreground ml-1">05 // Claim Scopes</Label>
                                                     <Input
                                                         id="scopes"
                                                         value={selectedProvider.oidc_scopes || 'openid profile email'}
@@ -409,7 +400,7 @@ export default function SSOConfig() {
                                         {selectedProvider.type === 'saml' && (
                                             <>
                                                 <div className="space-y-2 md:col-span-2">
-                                                    <Label htmlFor="entity_id" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">02 // SAML Audience Subject Identifier (Entity ID)</Label>
+                                                    <Label htmlFor="entity_id" className="text-xs font-medium text-muted-foreground ml-1">02 // SAML Audience Subject Identifier (Entity ID)</Label>
                                                     <Input
                                                         id="entity_id"
                                                         value={selectedProvider.saml_entity_id || ''}
@@ -420,9 +411,9 @@ export default function SSOConfig() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2 md:col-span-2">
-                                                    <Label htmlFor="sso_url" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">03 // SAML SSO Vector Endpoint URL</Label>
+                                                    <Label htmlFor="sso_url" className="text-xs font-medium text-muted-foreground ml-1">03 // SAML SSO Vector Endpoint URL</Label>
                                                     <div className="relative">
-                                                        <Activity className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                        <Activity className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                                                         <Input
                                                             id="sso_url"
                                                             type="url"
@@ -435,14 +426,14 @@ export default function SSOConfig() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2 md:col-span-2">
-                                                    <Label htmlFor="cert" className="text-xs font-medium tracking-tight text-muted-foreground ml-1 ">04 // PEM Signature Certification Logic</Label>
+                                                    <Label htmlFor="cert" className="text-xs font-medium text-muted-foreground ml-1">04 // PEM Signature Certification Logic</Label>
                                                     <textarea
                                                         id="cert"
                                                         className="flex min-h-[160px] w-full rounded-lg bg-muted/30 border border-input p-4 font-mono text-xs leading-relaxed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring custom-scrollbar text-on-surface"
                                                         value={selectedProvider.saml_certificate || ''}
                                                         onChange={(e) => setSelectedProvider({ ...selectedProvider, saml_certificate: e.target.value })}
                                                         rows={6}
-                                                        placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                                                        placeholder="-----BEGIN CERTIFICATE-----&#10;"
                                                     />
                                                 </div>
 
@@ -456,7 +447,7 @@ export default function SSOConfig() {
                                                         />
                                                         <Label htmlFor="saml-sign-assertions" className="flex items-center gap-1.5 cursor-pointer">
                                                             <ShieldCheck className="h-3.5 w-3.5 text-secondary" />
-                                                            <span className="text-xs font-medium tracking-tight text-muted-foreground group-hover:text-on-surface transition-colors">Sign assertions</span>
+                                                            <span className="text-xs font-medium text-muted-foreground group-hover:text-on-surface transition-colors">Sign assertions</span>
                                                         </Label>
                                                     </div>
                                                     <div className="flex items-center space-x-2.5 group cursor-pointer">
@@ -468,7 +459,7 @@ export default function SSOConfig() {
                                                         />
                                                         <Label htmlFor="saml-encrypt-assertions" className="flex items-center gap-1.5 cursor-pointer">
                                                             <Lock className="h-3.5 w-3.5 text-warning" />
-                                                            <span className="text-xs font-medium tracking-tight text-muted-foreground group-hover:text-on-surface transition-colors">Encrypt assertions</span>
+                                                            <span className="text-xs font-medium text-muted-foreground group-hover:text-on-surface transition-colors">Encrypt assertions</span>
                                                         </Label>
                                                     </div>
                                                 </div>
@@ -476,7 +467,7 @@ export default function SSOConfig() {
                                         )}
                                     </div>
 
-                                    <div className="flex items-center space-x-4 p-4 rounded-lg bg-primary/5 ring-1 ring-primary/10 border-none shadow-none">
+                                    <div className="flex items-center space-x-4 p-4 rounded-lg bg-surface-container-low ring-1 ring-primary/10 border-none shadow-none">
                                         <Switch
                                             id="auto-create"
                                             checked={selectedProvider.auto_create_users ?? true}
@@ -504,7 +495,7 @@ export default function SSOConfig() {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            className="h-9 rounded-lg font-semibold text-sm px-4 shadow-sm bg-secondary text-secondary-foreground"
+                                            className="h-9 rounded-lg font-medium text-sm px-4 shadow-sm bg-secondary text-secondary-foreground"
                                         >
                                             Save Architecture
                                         </Button>
@@ -516,19 +507,19 @@ export default function SSOConfig() {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <GlassCard className="border border-border shadow-sm bg-card rounded-lg">
                                             <GlassCardContent className="p-5 flex flex-col gap-1.5">
-                                                <span className="text-xs font-medium text-muted-foreground ">Federation Type</span>
-                                                <span className="text-lg font-medium text-on-surface ">{selectedProvider.type}</span>
+                                                <span className="text-xs font-medium text-muted-foreground">Federation Type</span>
+                                                <span className="text-lg font-medium text-on-surface">{selectedProvider.type}</span>
                                             </GlassCardContent>
                                         </GlassCard>
                                         <GlassCard className="border border-border shadow-sm bg-card rounded-lg">
                                             <GlassCardContent className="p-5 flex flex-col gap-1.5">
-                                                <span className="text-xs font-medium text-muted-foreground ">Handshake Provisioning</span>
+                                                <span className="text-xs font-medium text-muted-foreground">Handshake Provisioning</span>
                                                 <span className="text-lg font-medium text-on-surface">{selectedProvider.auto_create_users ? 'Auto-Sync' : 'Explicit-Only'}</span>
                                             </GlassCardContent>
                                         </GlassCard>
                                         <GlassCard className="border border-border shadow-sm bg-card rounded-lg">
                                             <GlassCardContent className="p-5 flex flex-col gap-1.5">
-                                                <span className="text-xs font-medium text-muted-foreground ">Tunnel Health State</span>
+                                                <span className="text-xs font-medium text-muted-foreground">Tunnel Health State</span>
                                                 <span className={cn(
                                                     "text-lg font-medium",
                                                     selectedProvider.enabled ? "text-success" : "text-muted-foreground"
@@ -541,37 +532,37 @@ export default function SSOConfig() {
 
                                     {/* Parameters List */}
                                     <div className="space-y-4">
-                                        <h3 className="text-xs font-medium text-muted-foreground italic">SSO Configuration Matrix</h3>
+                                        <h3 className="text-xs font-medium text-muted-foreground">SSO Configuration Matrix</h3>
                                         <GlassCard className="border border-border shadow-sm bg-card rounded-lg divide-y divide-border">
                                             {selectedProvider.type === 'oidc' ? (
                                                 <>
                                                     <div className="p-5 flex flex-col gap-2">
-                                                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">OIDC Discovery Issuer Url</span>
+                                                        <span className="text-xs font-medium text-muted-foreground">OIDC issuer URL</span>
                                                         <span className="font-mono text-xs text-secondary truncate">{selectedProvider.oidc_issuer_url}</span>
                                                     </div>
                                                     <div className="p-5 flex flex-col gap-2">
-                                                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">Client ID Primitives</span>
+                                                        <span className="text-xs font-medium text-muted-foreground">Client ID Primitives</span>
                                                         <span className="font-mono text-xs text-on-surface truncate">{selectedProvider.oidc_client_id}</span>
                                                     </div>
                                                     <div className="p-5 flex flex-col gap-2">
-                                                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">Authorized Sync Scopes</span>
+                                                        <span className="text-xs font-medium text-muted-foreground">Authorized Sync Scopes</span>
                                                         <span className="font-mono text-xs text-on-surface-variant">{selectedProvider.oidc_scopes}</span>
                                                     </div>
                                                 </>
                                             ) : (
                                                 <>
                                                     <div className="p-5 flex flex-col gap-2">
-                                                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">SAML Audience Entity ID</span>
+                                                        <span className="text-xs font-medium text-muted-foreground">SAML audience entity ID</span>
                                                         <span className="font-mono text-xs text-on-surface truncate">{selectedProvider.saml_entity_id}</span>
                                                     </div>
                                                     <div className="p-5 flex flex-col gap-2">
-                                                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">SAML SSO Vector Endpoint</span>
+                                                        <span className="text-xs font-medium text-muted-foreground">SAML SSO endpoint</span>
                                                         <span className="font-mono text-xs text-secondary truncate">{selectedProvider.saml_sso_url}</span>
                                                     </div>
                                                     <div className="p-5 flex flex-col gap-2">
-                                                        <span className="text-xs font-medium tracking-tight text-muted-foreground ">Cryptographic Options</span>
+                                                        <span className="text-xs font-medium text-muted-foreground">Cryptographic Options</span>
                                                         <div className="flex gap-4 mt-1">
-                                                            <Badge className="bg-secondary/10 text-secondary border border-secondary/20 shadow-none text-xs font-semibold">
+                                                            <Badge className="bg-secondary/10 text-secondary border border-secondary/20 shadow-none text-xs font-medium">
                                                                 Sign assertions: {selectedProvider.saml_sign_assertions ? 'Yes' : 'No'}
                                                             </Badge>
                                                             <Badge className="bg-warning-subtle text-warning-subtle-foreground border border-warning/30 shadow-none text-xs font-medium">
@@ -581,7 +572,7 @@ export default function SSOConfig() {
                                                     </div>
                                                     {selectedProvider.saml_certificate && (
                                                         <div className="p-5 flex flex-col gap-2">
-                                                            <span className="text-xs font-medium tracking-tight text-muted-foreground ">Sign Certification PEM block</span>
+                                                            <span className="text-xs font-medium text-muted-foreground">Sign Certification PEM block</span>
                                                             <pre className="p-4 rounded-lg bg-surface-container/30 text-xs font-mono leading-relaxed overflow-x-auto text-on-surface-variant max-h-48 custom-scrollbar">
                                                                 {selectedProvider.saml_certificate}
                                                             </pre>
@@ -609,11 +600,11 @@ export default function SSOConfig() {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground italic p-8">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-8">
                         <div className="w-20 h-20 bg-surface-container/40 rounded-lg flex items-center justify-center mb-6">
                             <Building2 className="w-10 h-10 opacity-30 text-on-surface-variant" />
                         </div>
-                        <h3 className="text-base font-medium text-muted-foreground tracking-tight mb-2">No provider selected</h3>
+                        <h3 className="text-base font-medium text-muted-foreground mb-2">No provider selected</h3>
                         <p className="text-sm font-medium max-w-xs leading-relaxed text-muted-foreground">Select a provider from the list or create a new OIDC or SAML connector.</p>
                     </div>
                 )}

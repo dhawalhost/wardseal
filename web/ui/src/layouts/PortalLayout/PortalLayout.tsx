@@ -87,13 +87,13 @@ function PortalNavLink({
   renderLink: RenderShellLink;
 }) {
   const className = cn(
-    "relative inline-flex shrink-0 items-center rounded-md text-sm transition-colors duration-fast",
-    compact ? "h-10 px-3" : "h-9 px-3",
+    "relative inline-flex shrink-0 items-center rounded-md text-sm font-medium transition-colors duration-fast",
+    compact ? "h-10 px-3" : "h-8 px-2.5",
     focusRing,
     link.isActive
-      ? "font-semibold text-on-surface after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-secondary"
-      : "font-medium text-on-surface-variant hover:bg-muted hover:text-on-surface",
-    compact && link.isActive && "after:-bottom-px"
+      ? "bg-surface-container-high text-on-surface"
+      : "text-on-surface-variant hover:bg-on-surface/[0.045] hover:text-on-surface",
+    compact && link.isActive && "bg-transparent after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-on-surface"
   );
   const current = link.isActive ? ("page" as const) : undefined;
 
@@ -145,8 +145,8 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
       >
         <SkipLink targetId={mainId} />
 
-        <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card">
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-8">
+        <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-background/90 backdrop-blur-[6px]">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
             <div className="flex min-w-0 items-center gap-6">
               {brandHref
                 ? renderLink({ href: brandHref, className: cn("rounded-md", focusRing), children: brand })
@@ -163,15 +163,15 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
             <div className="flex items-center gap-2 sm:gap-3">
               {nodeName && (
                 <div
-                  className="hidden items-center gap-2 rounded-md border border-border bg-muted px-3 py-1.5 lg:flex"
+                  className="hidden h-7 items-center gap-2 rounded-md border border-border bg-card px-2.5 lg:flex"
                   title={`${nodeName} — ${status.label}`}
                 >
-                  <span className={cn("h-2 w-2 shrink-0 rounded-full", status.dot)} aria-hidden />
+                  <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", status.dot)} aria-hidden />
                   <span className="max-w-[180px] truncate font-mono text-xs text-on-surface-variant">{nodeName}</span>
                   {/* Status in text, so it is not conveyed by colour alone */}
                   <span className="sr-only">, status {status.label}</span>
                   {nodeStatus !== "healthy" && (
-                    <span className="text-xs font-semibold text-on-surface" aria-hidden>
+                    <span className="text-xs font-medium text-on-surface" aria-hidden>
                       {status.label}
                     </span>
                   )}
@@ -194,7 +194,7 @@ const PortalLayout = React.forwardRef<HTMLDivElement, PortalLayoutProps>(
                 <DropdownMenuContent className="w-64" align="end">
                   <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
                     {userMenuLabel && <span className="text-label text-on-surface-subtle">{userMenuLabel}</span>}
-                    <span className="truncate text-sm font-semibold text-on-surface">{user.name}</span>
+                    <span className="truncate text-sm font-medium text-on-surface">{user.name}</span>
                     {user.email && (
                       <span className="truncate text-xs font-normal text-on-surface-subtle">{user.email}</span>
                     )}

@@ -43,14 +43,16 @@
 
 ### Typography
 
-- **Heading Font:** Plus Jakarta Sans
-- **Body Font:** Plus Jakarta Sans
-- **Mono partner:** JetBrains Mono — IDs, timestamps, counts, figures in meta lines
+- **Heading Font:** Geist
+- **Body Font:** Geist
+- **Mono partner:** Geist Mono — IDs, timestamps, counts, figures in meta lines
 - **Character:** exact, sober, quietly sure. World: a notary's desk — signed records, ink on paper, the seal
 - **Weights:** 400 and 500; 600 only for the wordmark and rare emphasis. No 700/800 headings. Sentence case everywhere, no uppercase tracked labels
-- **Google Fonts:** [Plus Jakarta Sans](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap) + [JetBrains Mono](https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap)
+- **Google Fonts:** [Geist + Geist Mono](https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap)
 
-**CSS Import:** `tokens.css` from the kit already imports Plus Jakarta Sans; apps add JetBrains Mono.
+**CSS Import:** `tokens.css` from the kit imports both families. Apps must not override `fontFamily` or `fontSize`.
+
+**Surfaces:** cool ink neutral ramp; admin and developer consoles use the inset canvas (dim rail, raised content panel). Sign-in screens use the kit `AuthLayout` with the ink brand plate.
 
 **Signature detail:** a mono "seal chip" (`ed25519:8fa1…0b93` with a small success dot) beside verified decisions — hero record, audit rows, live status. Nowhere else.
 

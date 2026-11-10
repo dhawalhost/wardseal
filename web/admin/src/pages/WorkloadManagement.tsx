@@ -106,7 +106,7 @@ const WorkloadManagement: React.FC = () => {
                 title="Machine Accounts"
                 description="Manage accounts for services, scripts, and automated systems."
                 actions={
-                    <Button onClick={() => setShowCreate(true)} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                    <Button onClick={() => setShowCreate(true)} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm px-4 shadow-sm">
                         <Plus className="w-4 h-4 mr-1.5" /> Add machine account
                     </Button>
                 }
@@ -122,7 +122,7 @@ const WorkloadManagement: React.FC = () => {
                         <GlassCardContent className="p-card">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground font-semibold text-xs ">{stat.label}</p>
+                                    <p className="text-muted-foreground font-medium text-xs">{stat.label}</p>
                                     <p className="text-2xl font-medium tracking-tight text-on-surface tabular-nums">{stat.value}</p>
                                 </div>
                                 <div className={`p-2 rounded-lg ${stat.color}`}>
@@ -141,7 +141,7 @@ const WorkloadManagement: React.FC = () => {
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Accounts</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface">Accounts</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">
                                 {workloads.length} managed accounts
                             </p>
@@ -153,11 +153,11 @@ const WorkloadManagement: React.FC = () => {
                         <GlassTable>
                             <GlassTableHeader>
                                 <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Name</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Service handle</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
-                                    <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Last used</GlassTableHead>
-                                    <GlassTableHead className="text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
+                                    <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Name</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">Service handle</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">Status</GlassTableHead>
+                                    <GlassTableHead className="font-medium text-xs text-muted-foreground">Last used</GlassTableHead>
+                                    <GlassTableHead className="text-right pr-card font-medium text-xs text-muted-foreground">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
@@ -179,7 +179,7 @@ const WorkloadManagement: React.FC = () => {
                                                         <Terminal className="h-4 w-4" />
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-semibold text-sm tracking-tight text-on-surface">
+                                                        <span className="font-medium text-sm text-on-surface">
                                                             {w.name}
                                                         </span>
                                                         <code className="text-xs font-medium text-muted-foreground mt-0.5 font-mono">
@@ -189,7 +189,7 @@ const WorkloadManagement: React.FC = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="py-card">
-                                                <Badge className="bg-muted text-muted-foreground border-none rounded-md text-xs font-semibold py-0.5 px-2">
+                                                <Badge className="bg-muted text-muted-foreground border-none rounded-md text-xs font-medium py-0.5 px-2">
                                                     {w.service_handle}
                                                 </Badge>
                                             </TableCell>
@@ -212,14 +212,14 @@ const WorkloadManagement: React.FC = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-[180px] rounded-lg border border-border shadow-sm p-1 bg-card">
-                                                        <DropdownMenuItem className="font-semibold text-xs gap-2 py-2 px-3 rounded-md cursor-pointer">
+                                                        <DropdownMenuItem className="font-medium text-xs gap-2 py-2 px-3 rounded-md cursor-pointer">
                                                             <RefreshCcw className="w-3.5 h-3.5 text-muted-foreground" /> Reset key
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="font-semibold text-xs gap-2 py-2 px-3 cursor-pointer rounded-md">
+                                                        <DropdownMenuItem className="font-medium text-xs gap-2 py-2 px-3 cursor-pointer rounded-md">
                                                             <Activity className="w-3.5 h-3.5 text-muted-foreground" />
                                                             View activity
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive font-semibold text-xs gap-2 py-2 px-3 cursor-pointer rounded-md focus:bg-destructive/10 focus:text-destructive">
+                                                        <DropdownMenuItem className="text-destructive font-medium text-xs gap-2 py-2 px-3 cursor-pointer rounded-md focus:bg-destructive/10 focus:text-destructive">
                                                             <Trash2 className="w-3.5 h-3.5" />
                                                             Delete
                                                         </DropdownMenuItem>
@@ -253,14 +253,14 @@ const WorkloadManagement: React.FC = () => {
                     <form onSubmit={handleCreateWorkload} className="p-card space-y-4 bg-card">
                         {error && (
                             <Alert variant="destructive" className="rounded-lg border border-destructive/20 bg-destructive/5 text-error-subtle-foreground">
-                                <AlertDescription className="font-semibold text-sm">
+                                <AlertDescription className="font-medium text-sm">
                                     {error}
                                 </AlertDescription>
                             </Alert>
                         )}
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-muted-foreground">Name</Label>
+                            <Label className="text-xs font-medium text-muted-foreground">Name</Label>
                             <Input
                                 value={newName}
                                 onChange={e => setNewName(e.target.value)}
@@ -271,7 +271,7 @@ const WorkloadManagement: React.FC = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-muted-foreground">Service handle</Label>
+                            <Label className="text-xs font-medium text-muted-foreground">Service handle</Label>
                             <Input
                                 value={newHandle}
                                 onChange={e => setNewHandle(e.target.value)}
@@ -282,10 +282,10 @@ const WorkloadManagement: React.FC = () => {
                         </div>
 
                         <DialogFooter className="pt-2 gap-2">
-                            <Button type="button" variant="ghost" onClick={() => setShowCreate(false)} className="h-9 px-4 rounded-lg font-semibold text-sm">
+                            <Button type="button" variant="ghost" onClick={() => setShowCreate(false)} className="h-9 px-4 rounded-lg font-medium text-sm">
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isCreating} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">
+                            <Button type="submit" disabled={isCreating} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm">
                                 {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create account'}
                             </Button>
                         </DialogFooter>

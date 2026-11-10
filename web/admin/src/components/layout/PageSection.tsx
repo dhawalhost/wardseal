@@ -60,7 +60,7 @@ export const PageSection: React.FC<PageSectionProps> = ({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-5">
                         {icon && (
-                            <div className="p-3.5 bg-primary/5 rounded-2xl text-primary">
+                            <div className="p-3.5 bg-surface-container-low rounded-xl text-primary">
                                 {icon}
                             </div>
                         )}
@@ -69,7 +69,7 @@ export const PageSection: React.FC<PageSectionProps> = ({
                                 {title}
                             </GlassCardTitle>
                             {description && (
-                                <p className="text-muted-foreground font-medium text-xs mt-1.5 italic">
+                                <p className="text-muted-foreground font-medium text-xs mt-1.5">
                                     {description}
                                 </p>
                             )}

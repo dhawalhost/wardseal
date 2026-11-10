@@ -209,6 +209,8 @@ export type { FormFieldProps, FormSectionProps } from "./components/Form/Form";
 // Logo
 export { Logo } from "./components/Logo/Logo";
 export type { LogoProps } from "./components/Logo/Logo";
+export { Seal } from "./components/Seal/Seal";
+export type { SealProps } from "./components/Seal/Seal";
 
 // Tailwind Preset
 export { tailwindPreset } from "./tailwind-preset";
@@ -244,6 +246,8 @@ export { Section } from "./layouts/Section/Section";
 export type { SectionProps } from "./layouts/Section/Section";
 
 // AdminShell
+export { AuthLayout, AuthDivider } from "./layouts/AuthLayout/AuthLayout";
+export type { AuthLayoutProps, AuthFooterLink } from "./layouts/AuthLayout/AuthLayout";
 export { AdminShell } from "./layouts/AdminShell/AdminShell";
 export type {
   AdminShellProps,
@@ -251,6 +255,7 @@ export type {
   NavigationItem,
   NavigationGroup,
 } from "./layouts/AdminShell/AdminShell";
+export { BrandMark } from "./layouts/BrandMark";
 export type { ShellLinkProps, RenderShellLink } from "./layouts/BrandMark";
 
 // PortalLayout

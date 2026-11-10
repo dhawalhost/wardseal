@@ -35,7 +35,7 @@ export const DataPill: React.FC<DataPillProps> = ({
                 </div>
             )}
             <Tag
-                className="font-mono text-xs font-medium text-muted-foreground tracking-tight"
+                className="font-mono text-xs font-medium text-muted-foreground"
                 title={showTitle ? value : undefined}
                 {...(props as any)}
             >

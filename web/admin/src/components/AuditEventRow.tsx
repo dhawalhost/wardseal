@@ -42,12 +42,12 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                         </span>
                     </div>
                 </TableCell>
-                <TableCell className="py-2 text-xs font-medium tracking-tight text-on-surface group-hover:text-primary transition-colors">
+                <TableCell className="py-2 text-xs font-medium text-on-surface group-hover:text-primary transition-colors">
                     {event.action}
                 </TableCell>
                 <TableCell className="py-1.5 font-medium text-xs text-on-surface-variant">
                     <div className="flex flex-col">
-                        <span className="text-[7px] font-medium tracking-tight text-primary mb-0 flex items-center opacity-60 ">{event.resource_type}</span>
+                        <span className="text-[7px] font-medium tracking-tight text-primary mb-0 flex items-center opacity-60">{event.resource_type}</span>
                         <span className="truncate max-w-[120px]" title={event.resource_name || event.resource_id}>
                             {event.resource_name || event.resource_id}
                         </span>
@@ -58,7 +58,7 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                         <div className="w-4 h-4 flex items-center justify-center bg-surface-container rounded-md text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-[color,background-color,border-color,opacity,transform]">
                             <Terminal className="h-2.5 w-2.5" />
                         </div>
-                        <code className="text-xs font-medium text-muted-foreground tracking-tight">
+                        <code className="text-xs font-medium text-muted-foreground">
                             {event.actor_id ? event.actor_id.substring(0, 10) : "system"}
                         </code>
                     </div>
@@ -87,13 +87,13 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                         <div className="p-4 space-y-4 animate-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center justify-between border-b border-on-surface/5 pb-4">
                                 <div className="space-y-1">
-                                    <h4 className="text-xs font-medium tracking-tight text-primary flex items-center gap-2">
+                                    <h4 className="text-xs font-medium text-primary flex items-center gap-2">
                                         <Binary className="w-3.5 h-3.5" />
                                         Event Details
                                     </h4>
-                                    <p className="text-muted-foreground font-medium tracking-tight text-xs ">Captured at {new Date(event.timestamp).toISOString()}</p>
+                                    <p className="text-muted-foreground font-medium text-xs">Captured at {new Date(event.timestamp).toISOString()}</p>
                                 </div>
-                                <div className="bg-card p-1.5 px-3 rounded-lg ring-1 ring-on-surface/5 text-xs font-medium text-muted-foreground tracking-tight shadow-sm ">
+                                <div className="bg-card p-1.5 px-3 rounded-lg ring-1 ring-on-surface/5 text-xs font-medium text-muted-foreground shadow-sm">
                                     ID: {event.id.substring(0, 8)}
                                 </div>
                             </div>
@@ -102,7 +102,7 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                                 <div className="md:col-span-2">
                                     <div className="bg-card rounded-xl ring-1 ring-on-surface/5 p-3 relative overflow-hidden shadow-overlay shadow-on-surface/5 group/payload">
                                         <div className="relative z-10 space-y-4">
-                                            <span className="text-xs font-medium tracking-tight text-on-surface-subtle ">// Raw Data</span>
+                                            <span className="text-xs font-medium text-on-surface-subtle">// Raw Data</span>
                                             <pre className="text-on-surface font-mono text-xs leading-relaxed overflow-auto max-h-[300px] custom-scrollbar p-4 bg-surface-container/30 rounded-xl ring-1 ring-on-surface/5">
                                                 {JSON.stringify(event.details, null, 4)}
                                             </pre>
@@ -111,22 +111,22 @@ export const AuditEventRow: React.FC<AuditEventRowProps> = ({
                                 </div>
                                 <div className="space-y-4">
                                     <div className="bg-card rounded-xl ring-1 ring-on-surface/5 p-4 space-y-2 shadow-card shadow-on-surface/5">
-                                        <span className="text-xs font-medium text-muted-foreground ">Actor</span>
+                                        <span className="text-xs font-medium text-muted-foreground">Actor</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-lg bg-primary/5 text-primary flex items-center justify-center font-medium text-xs">@</div>
+                                            <div className="w-6 h-6 rounded-lg bg-surface-container-low text-primary flex items-center justify-center font-medium text-xs">@</div>
                                             <span className="text-xs font-medium text-on-surface truncate">{event.actor_id || 'System'}</span>
                                         </div>
                                     </div>
                                     <div className="bg-card rounded-xl ring-1 ring-on-surface/5 p-4 space-y-2 shadow-card shadow-on-surface/5">
-                                        <span className="text-xs font-medium text-muted-foreground ">Resource</span>
+                                        <span className="text-xs font-medium text-muted-foreground">Resource</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-lg bg-primary/5 text-primary flex items-center justify-center font-medium text-xs">#</div>
+                                            <div className="w-6 h-6 rounded-lg bg-surface-container-low text-primary flex items-center justify-center font-medium text-xs">#</div>
                                             <span className="text-xs font-medium text-on-surface truncate">{event.resource_id}</span>
                                         </div>
                                     </div>
                                     <Button
                                         variant="ghost"
-                                        className="w-full rounded-xl ring-1 ring-on-surface/5 hover:bg-card hover:text-primary font-medium tracking-tight text-xs h-10 transition-[color,background-color,border-color,opacity,transform] shadow-sm"
+                                        className="w-full rounded-xl ring-1 ring-on-surface/5 hover:bg-card hover:text-primary font-medium text-xs h-10 transition-[color,background-color,border-color,opacity,transform] shadow-sm"
                                         onClick={() => setExpandedEventId(null)}
                                     >
                                         Minimize details

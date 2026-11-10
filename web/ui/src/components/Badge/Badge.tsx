@@ -8,11 +8,11 @@ import { cn } from "../../lib/utils";
  * meaningful word — the colour alone must not carry the meaning.
  */
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-transparent px-2 py-0.5 text-xs font-semibold [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0",
+  "inline-flex h-5 items-center gap-1 whitespace-nowrap rounded-[5px] border border-transparent px-1.5 text-xs font-medium leading-none [&_svg]:h-3 [&_svg]:w-3 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-surface-container-high text-on-surface",
+        default: "border-border bg-surface-container-low text-on-surface-variant",
         neutral: "bg-surface-container-high text-on-surface-variant",
         primary: "bg-primary-container text-on-primary-container",
         secondary: "bg-secondary text-secondary-foreground",

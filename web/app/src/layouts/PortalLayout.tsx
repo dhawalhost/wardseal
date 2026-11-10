@@ -157,7 +157,7 @@ const PortalLayout = () => {
             {/* Session context — static labels, no animation (calm trust surface) */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 text-xs">
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                    <span className="flex items-center gap-2 font-semibold text-on-surface">
+                    <span className="flex items-center gap-2 font-medium text-on-surface">
                         <span className="h-2 w-2 rounded-full bg-success" aria-hidden />
                         Secure connection
                     </span>

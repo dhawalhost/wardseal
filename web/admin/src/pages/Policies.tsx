@@ -92,7 +92,7 @@ const Policies: React.FC = () => {
                 title="Security Policies"
                 description="Define security rules for your organization. Control access to resources and data."
                 actions={
-                    <Button onClick={() => setIsCreateOpen(true)} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm">
+                    <Button onClick={() => setIsCreateOpen(true)} className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm px-4 shadow-sm">
                         <Plus className="w-4 h-4 mr-1.5" /> Create policy
                     </Button>
                 }
@@ -100,7 +100,7 @@ const Policies: React.FC = () => {
 
             {message && (
                 <Alert variant={message.type === 'error' ? 'destructive' : 'default'} className="rounded-lg border border-border bg-card shadow-sm">
-                    <AlertDescription className="font-semibold text-sm flex items-center gap-3">
+                    <AlertDescription className="font-medium text-sm flex items-center gap-3">
                         {message.type === 'error' ? <ShieldAlert className="w-4 h-4 text-destructive" /> : <ShieldCheck className="w-4 h-4 text-success" />}
                         {message.text}
                     </AlertDescription>
@@ -116,7 +116,7 @@ const Policies: React.FC = () => {
                                     <FileJson className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Create policy</GlassCardTitle>
+                                    <GlassCardTitle className="text-base font-medium text-on-surface">Create policy</GlassCardTitle>
                                     <p className="text-muted-foreground text-sm mt-0.5">Define access control rules with JSON</p>
                                 </div>
                             </div>
@@ -128,7 +128,7 @@ const Policies: React.FC = () => {
                     <GlassCardContent className="p-card space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-card">
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="text-xs font-semibold text-muted-foreground">Policy name</Label>
+                                <Label htmlFor="name" className="text-xs font-medium text-muted-foreground">Policy name</Label>
                                 <Input
                                     id="name"
                                     placeholder="e.g. Admin access"
@@ -138,7 +138,7 @@ const Policies: React.FC = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="type" className="text-xs font-semibold text-muted-foreground">Rule type</Label>
+                                <Label htmlFor="type" className="text-xs font-medium text-muted-foreground">Rule type</Label>
                                 <Input
                                     id="type"
                                     value={newPolicy.rule_type}
@@ -148,7 +148,7 @@ const Policies: React.FC = () => {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="rule" className="text-xs font-semibold text-muted-foreground">Rule definition (JSON)</Label>
+                            <Label htmlFor="rule" className="text-xs font-medium text-muted-foreground">Rule definition (JSON)</Label>
                             <Textarea
                                 id="rule"
                                 rows={8}
@@ -159,8 +159,8 @@ const Policies: React.FC = () => {
                         </div>
 
                         <div className="flex flex-col md:flex-row justify-end gap-2 pt-2">
-                            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg font-semibold text-sm text-muted-foreground hover:bg-muted">Cancel</Button>
-                            <Button onClick={handleCreate} className="h-9 px-6 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm">Create policy</Button>
+                            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg font-medium text-sm text-muted-foreground hover:bg-muted">Cancel</Button>
+                            <Button onClick={handleCreate} className="h-9 px-6 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm shadow-sm">Create policy</Button>
                         </div>
                     </GlassCardContent>
                 </GlassCard>
@@ -173,7 +173,7 @@ const Policies: React.FC = () => {
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Policies</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface">Policies</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">
                                 {policies.length} active policies
                             </p>
@@ -185,11 +185,11 @@ const Policies: React.FC = () => {
                         <GlassTable>
                             <GlassTableHeader>
                                 <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                    <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Policy name</GlassTableHead>
-                                    <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Rules</GlassTableHead>
-                                    <GlassTableHead className="py-3 text-center font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
-                                    <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Created</GlassTableHead>
-                                    <GlassTableHead className="py-3 text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
+                                    <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Policy name</GlassTableHead>
+                                    <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Rules</GlassTableHead>
+                                    <GlassTableHead className="py-3 text-center font-medium text-xs text-muted-foreground">Status</GlassTableHead>
+                                    <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Created</GlassTableHead>
+                                    <GlassTableHead className="py-3 text-right font-medium text-xs text-muted-foreground pr-card">Actions</GlassTableHead>
                                 </GlassTableRow>
                             </GlassTableHeader>
                             <TableBody>
@@ -208,7 +208,7 @@ const Policies: React.FC = () => {
                                                         <FileJson className="w-4 h-4" />
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
-                                                        <span className="text-sm font-semibold tracking-tight text-on-surface truncate">{policy.name}</span>
+                                                        <span className="text-sm font-medium text-on-surface truncate">{policy.name}</span>
                                                         <span className="text-xs text-muted-foreground font-mono mt-0.5">ID: {policy.id.substring(0, 12)}…</span>
                                                     </div>
                                                 </div>
@@ -218,8 +218,8 @@ const Policies: React.FC = () => {
                                             </TableCell>
                                             <TableCell className="text-center py-card">
                                                 {policy.is_enabled ?
-                                                    <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Active</Badge> :
-                                                    <Badge className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">Disabled</Badge>
+                                                    <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-medium text-xs px-2 py-0.5">Active</Badge> :
+                                                    <Badge className="bg-muted text-muted-foreground border-none rounded-md font-medium text-xs px-2 py-0.5">Disabled</Badge>
                                                 }
                                             </TableCell>
                                             <TableCell className="py-card text-sm font-medium text-muted-foreground">
@@ -230,7 +230,7 @@ const Policies: React.FC = () => {
                                                     <Button
                                                         variant="ghost"
                                                         onClick={() => navigate(`/policies/${policy.id}`)}
-                                                        className="h-8 rounded-lg px-3 font-semibold text-xs text-secondary border border-border hover:bg-muted"
+                                                        className="h-8 rounded-lg px-3 font-medium text-xs text-secondary border border-border hover:bg-muted"
                                                     >
                                                         <ArrowUpRight className="w-3.5 h-3.5 mr-1.5" /> View
                                                     </Button>
@@ -260,10 +260,10 @@ const Policies: React.FC = () => {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => navigate('/policies')} className="h-9 px-4 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-semibold text-sm">
+                        <Button variant="outline" onClick={() => navigate('/policies')} className="h-9 px-4 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-medium text-sm">
                             View policies
                         </Button>
-                        <Button onClick={() => navigate('/audit')} className="h-9 px-4 rounded-lg bg-secondary-foreground text-secondary font-semibold text-sm shadow-sm">
+                        <Button onClick={() => navigate('/audit')} className="h-9 px-4 rounded-lg bg-secondary-foreground text-secondary font-medium text-sm shadow-sm">
                             Audit logs
                         </Button>
                     </div>

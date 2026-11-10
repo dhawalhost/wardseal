@@ -1,255 +1,162 @@
-import React from 'react';
-import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { BarChart3, BookOpen, ChevronRight, Code2, ExternalLink, Webhook } from 'lucide-react';
 import {
-    LayoutDashboard,
-    ClipboardList,
-    Target,
-    ShieldCheck,
-    KeyRound,
-    Plug,
-    FileText,
-    Code2,
-    Settings,
-    Activity,
-    Fingerprint,
-    Palette,
-    Webhook,
-    Smartphone,
-    ShieldAlert,
-    Building2,
-    LogOut,
-    ChevronRight,
-    Search,
-    Bell,
-    Users as UsersIcon,
-    Slack,
-    // UserGroupIcon,
-    Share2,
-    Database,
-    Clock
-} from 'lucide-react';
+    AdminShell as KitAdminShell,
+    type NavigationGroup,
+    type RenderShellLink,
+} from '@dhawalhost/wardseal-ui-kit';
 
-import { cn } from '@/lib/utils';
+import { api } from '@/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Toaster } from '@/components/ui/toaster';
 import { resolveIdUrl } from '@wardseal/shared';
 import CopilotWidget from './CopilotWidget';
 
+interface NavItem {
+    path: string;
+    label: string;
+    icon: React.ElementType;
+}
+
+const navSections: { key: string; label: string; items: NavItem[] }[] = [
+    {
+        key: 'build',
+        label: 'Build',
+        items: [
+            { path: '/developer', label: 'Documentation', icon: BookOpen },
+            { path: '/apps', label: 'Applications', icon: Code2 },
+            { path: '/webhooks', label: 'Webhooks', icon: Webhook },
+        ],
+    },
+    {
+        key: 'observe',
+        label: 'Observe',
+        items: [{ path: '/developer/analytics', label: 'Analytics', icon: BarChart3 }],
+    },
+];
+
+/** Client-side navigation for kit shell links (no full page reloads). */
+const renderRouterLink: RenderShellLink = ({ href, children, ...rest }) => (
+    <Link to={href} {...rest}>
+        {children}
+    </Link>
+);
+
 const AdminShell: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const policyBaseUrl = window.location.hostname.endsWith('.local')
-        ? 'http://wardseal.local'
-        : 'https://wardseal.com';
+    const [userName, setUserName] = useState(
+        localStorage.getItem('userName') || localStorage.getItem('userId') || 'Developer'
+    );
+    const tenantId = localStorage.getItem('tenantID') || 'Default tenant';
+    const policyBaseUrl = window.location.hostname.endsWith('.local') ? 'http://wardseal.local' : 'https://wardseal.com';
 
-    const menuItems = [
-        { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/copilot', label: 'AI Copilot', icon: Activity },
-        { path: '/requests', label: 'Access Requests', icon: ClipboardList },
-        { path: '/discovery', label: 'Discovery', icon: Search },
-        { path: '/safety', label: 'Security Alerts', icon: ShieldAlert },
-        { path: '/users', label: 'Users', icon: UsersIcon },
-        { path: '/groups', label: 'Groups', icon: ShieldCheck },
-        { path: '/roles', label: 'Roles & Permissions', icon: ShieldCheck },
-        { path: '/campaigns', label: 'Access Reviews', icon: Target },
-        { path: '/graph-explorer', label: 'Access Map', icon: Share2 },
-        { path: '/workloads', label: 'Machine Accounts', icon: Database },
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const res = await api.get('/api/v1/user/profile');
+                const name = res.data?.name || res.data?.email;
+                if (name) {
+                    setUserName(name);
+                    localStorage.setItem('userName', name);
+                }
+            } catch (err) {
+                console.error('Failed to fetch profile in AdminShell', err);
+            }
+        };
+        void fetchProfile();
+    }, []);
 
-        { path: '/organizations', label: 'Organizations', icon: Building2 },
-        { path: '/policies', label: 'Security Policies', icon: ShieldCheck },
-        { path: '/policies/ip', label: 'IP Access Policies', icon: ShieldAlert },
-        { path: '/sso', label: 'Single Sign-On', icon: KeyRound },
-        { path: '/integrations/slack', label: 'Slack Integration', icon: Slack },
-        { path: '/connectors', label: 'Connectors', icon: Plug },
+    // Longest matching path wins, so /developer/analytics doesn't also light up /developer.
+    const activePath = useMemo(() => {
+        const all = navSections.flatMap((s) => s.items);
+        const matches = all.filter((i) => location.pathname === i.path || location.pathname.startsWith(`${i.path}/`));
+        return matches.sort((a, b) => b.path.length - a.path.length)[0]?.path;
+    }, [location.pathname]);
 
-        { path: '/mfa', label: 'MFA Setup', icon: ShieldAlert },
-        { path: '/devices', label: 'Devices', icon: Smartphone },
-        { path: '/passkeys', label: 'Passkeys', icon: Fingerprint },
-        { path: '/apps', label: 'Applications', icon: Code2 },
-        { path: '/webhooks', label: 'Webhooks', icon: Webhook },
-        { path: '/branding', label: 'Branding', icon: Palette },
-        { path: '/audit', label: 'Audit Logs', icon: FileText },
-    ];
+    const navigation: NavigationGroup[] = useMemo(
+        () =>
+            navSections.map((section) => ({
+                key: section.key,
+                title: section.label,
+                items: section.items.map(({ path, label, icon: Icon }) => ({
+                    href: path,
+                    label,
+                    icon: <Icon strokeWidth={1.5} />,
+                    isActive: path === activePath,
+                })),
+            })),
+        [activePath]
+    );
 
-    const activeItem = menuItems.find(i => location.pathname.startsWith(i.path));
+    const activeSection = navSections.find((s) => s.items.some((i) => i.path === activePath));
+    const activeItem = activeSection?.items.find((i) => i.path === activePath);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         navigate('/login');
     };
 
-    const [userName, setUserName] = React.useState(localStorage.getItem('userName') || localStorage.getItem('userId') || 'User');
-
-    React.useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const { api } = await import('@/api');
-                const res = await api.get('/api/v1/user/profile');
-                if (res.data && res.data.name) {
-                    setUserName(res.data.name);
-                    localStorage.setItem('userName', res.data.name);
-                } else if (res.data && res.data.email) {
-                    setUserName(res.data.email);
-                    localStorage.setItem('userName', res.data.email);
-                }
-            } catch (err) {
-                console.error("Failed to fetch profile in AdminShell", err);
-            }
-        };
-        fetchProfile();
-    }, []);
-
-    const userInitials = (userName || 'U').substring(0, 2).toUpperCase();
-    const userId = localStorage.getItem('userId') || 'User';
-    const tenantId = localStorage.getItem('tenantID') || 'Default Tenant';
-
     return (
-        <div className="flex min-h-screen font-sans bg-background selection:bg-primary/10 selection:text-primary">
-            {/* Sidebar: Modernist */}
-            <aside className="w-72 border-r bg-surface-container-lowest flex flex-col fixed inset-y-0 z-50 transition-[color,background-color,border-color,opacity,transform] duration-300">
-                <div className="h-20 flex items-center px-8 border-b shrink-0 bg-card">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-xl shadow-sm">
-                            {/* <ShieldCheck className="w-5 h-5 text-white" /> */}
-                            <img src="/wardseal.svg" alt="WardSeal" className="w-10 h-10 text-white" />
-                        </div>
-                        <span className="font-medium text-lg tracking-tight text-on-surface">WardSeal</span>
+        <>
+            <KitAdminShell
+                navigation={navigation}
+                renderLink={renderRouterLink}
+                brandName="WardSeal"
+                brandSubtitle="Developers"
+                brandHref="/developer"
+                user={{ name: userName, subtitle: tenantId }}
+                onLogout={handleLogout}
+                mainClassName="overflow-y-auto custom-scrollbar"
+                headerStart={
+                    <p className="flex min-w-0 items-center gap-1.5 text-sm">
+                        <span className="hidden truncate text-on-surface-variant sm:inline">{activeSection?.label ?? 'Build'}</span>
+                        <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 text-on-surface-subtle sm:block" aria-hidden />
+                        <span className="truncate font-medium text-on-surface">{activeItem?.label ?? 'Documentation'}</span>
+                    </p>
+                }
+                topHeaderActions={
+                    <>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.location.assign(`${resolveIdUrl()}/portal`)}
+                            className="hidden items-center gap-1.5 lg:flex"
+                        >
+                            User portal
+                            <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden />
+                        </Button>
+                        <ModeToggle />
+                    </>
+                }
+                footer={
+                    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+                        <span className="font-mono">API v1</span>
+                        <nav aria-label="Legal">
+                            <ul className="flex items-center gap-5">
+                                <li>
+                                    <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-on-surface">
+                                        Policies<span className="sr-only"> (opens in a new tab)</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://github.com/dhawalhost/wardseal" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-on-surface">
+                                        GitHub <ExternalLink className="h-3 w-3" strokeWidth={1.5} aria-hidden />
+                                        <span className="sr-only"> (opens in a new tab)</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
                     </div>
-                </div>
-
-                <nav className="flex-1 overflow-y-auto py-8 px-4 space-y-1 custom-scrollbar">
-                    <div className="text-[12px] font-medium text-muted-foreground mb-4 px-4 tracking-tight">Main Menu</div>
-                    {menuItems.slice(0, 8).map((item) => {
-                        const isActive = location.pathname.startsWith(item.path);
-                        const Icon = item.icon;
-                        return (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={cn(
-                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-[color,background-color,border-color,opacity,transform] duration-200 group relative",
-                                    isActive
-                                        ? "bg-primary/5 text-primary"
-                                        : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
-                                )}
-                            >
-                                <Icon className={cn("w-4.5 h-4.5 transition-colors", isActive ? "text-primary" : "opacity-50 group-hover:opacity-100")} />
-                                <span className="text-sm font-medium">{item.label}</span>
-                                {isActive && <div className="absolute left-0 w-1 h-5 bg-primary rounded-full -translate-x-1" />}
-                            </Link>
-                        );
-                    })}
-
-                    <div className="h-8" />
-                    <div className="text-[12px] font-medium text-muted-foreground mb-4 px-4 tracking-tight">System Settings</div>
-                    {menuItems.slice(8).map((item) => {
-                        const isActive = location.pathname.startsWith(item.path);
-                        const Icon = item.icon;
-                        return (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={cn(
-                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-[color,background-color,border-color,opacity,transform] duration-200 group relative",
-                                    isActive
-                                        ? "bg-primary/5 text-primary"
-                                        : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
-                                )}
-                            >
-                                <Icon className={cn("w-4.5 h-4.5 transition-colors", isActive ? "text-primary" : "opacity-50 group-hover:opacity-100")} />
-                                <span className="text-sm font-medium">{item.label}</span>
-                                {isActive && <div className="absolute left-0 w-1 h-5 bg-primary rounded-full -translate-x-1" />}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <div className="p-6 border-t bg-surface-container-low/30">
-                    <div className="flex items-center gap-3 group cursor-pointer" onClick={handleLogout}>
-                        <Avatar name={userId} size={40} className="h-10 w-10 border shadow-sm transition-transform " />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors">
-                                {userName}
-                            </p>
-                            <p className="text-xs text-on-surface-variant truncate opacity-60">
-                                {tenantId}
-                            </p>
-                        </div>
-                        <LogOut className="w-4 h-4 text-on-surface-variant hover:text-destructive transition-colors" />
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content: Modernist */}
-            <main className="flex-1 ml-72 min-h-screen flex flex-col relative bg-surface">
-                <header className="h-20 border-b bg-card sticky top-0 z-40 flex items-center justify-between px-10">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                            <span className="text-muted-foreground">System</span>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-primary font-semibold">{activeItem?.label || 'Dashboard'}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                        <div className="relative w-72 hidden lg:block group">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input
-                                type="search"
-                                placeholder="Search everywhere..."
-                                className="w-full bg-surface-container border-none rounded-xl pl-10 h-10 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] font-medium"
-                            />
-                        </div>
-
-                        <div className="flex gap-3">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    window.location.assign(`${resolveIdUrl()}/portal`);
-                                }}
-                                className="rounded-xl font-semibold text-xs px-5 h-10 border-border hover:bg-surface-container transition-[color,background-color,border-color,opacity,transform]"
-                            >
-                                <Activity className="mr-2 h-4 w-4 text-primary" /> User Portal
-                            </Button>
-
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl relative hover:bg-surface-container">
-                                <Bell className="w-5 h-5 text-on-surface-variant" />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-destructive/100 rounded-full" />
-                            </Button>
-
-                            <ModeToggle />
-                        </div>
-                    </div>
-                </header>
-
-                <div className="flex-1 p-10 max-w-[1600px] mx-auto w-full">
-                    <Outlet />
-                </div>
-
-                <footer className="border-t py-8 px-10 bg-card">
-                    <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-6">
-                            <div className="py-1.5 px-3 bg-surface-container rounded-full text-on-surface-variant font-medium text-xs tracking-tight flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                                System Status: Online
-                            </div>
-                            <span className="text-xs font-medium text-muted-foreground italic">v4.2.0-stable</span>
-                        </div>
-                        <div className="flex items-center gap-8 text-xs font-semibold text-on-surface-variant">
-                            <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Privacy</a>
-                            <a href={`${policyBaseUrl}/policies#privacy`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Compliance</a>
-                            <a href={`${policyBaseUrl}/policies`} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Security</a>
-                        </div>
-                    </div>
-                </footer>
-            </main>
+                }
+            >
+                <Outlet />
+            </KitAdminShell>
             <Toaster />
             <CopilotWidget />
-        </div>
+        </>
     );
 };
 

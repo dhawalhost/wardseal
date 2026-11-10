@@ -23,8 +23,8 @@ export const SAMLProviderRow: React.FC<SAMLProviderRowProps> = ({
         <div className="flex flex-col md:flex-row items-center justify-between p-4 hover:bg-surface-container/20 transition-[color,background-color,border-color,opacity,transform] group">
             <div className="flex-1 min-w-0 pr-4 space-y-1">
                 <div className="flex items-center gap-3">
-                    <Badge className="bg-on-surface/5 text-muted-foreground rounded-lg font-medium text-xs tracking-tight px-2 border-none">Provider</Badge>
-                    <div className="text-sm font-medium tracking-tight text-on-surface truncate group-hover:text-primary transition-colors">{sp.entity_id}</div>
+                    <Badge className="bg-on-surface/5 text-muted-foreground rounded-lg font-medium text-xs px-2 border-none">Provider</Badge>
+                    <div className="text-sm font-medium text-on-surface truncate group-hover:text-primary transition-colors">{sp.entity_id}</div>
                 </div>
                 <div className="font-mono text-xs text-muted-foreground truncate ml-1">{sp.acs_url}</div>
                 <div className="flex gap-2 pt-1 ml-1">

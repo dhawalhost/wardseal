@@ -64,7 +64,7 @@ const SafetyInbox: React.FC = () => {
                     <Button
                         variant="outline"
                         onClick={() => fetchActions()}
-                        className="h-9 rounded-lg bg-card border border-border font-semibold text-sm px-4 shadow-sm"
+                        className="h-9 rounded-lg bg-card border border-border font-medium text-sm px-4 shadow-sm"
                     >
                         <History className="mr-1.5 h-4 w-4" /> Refresh
                     </Button>
@@ -72,7 +72,7 @@ const SafetyInbox: React.FC = () => {
             />
 
             {error && (
-                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg flex items-center gap-3 text-sm font-semibold border border-destructive/20">
+                <div className="bg-destructive/5 text-error-subtle-foreground px-5 py-3 rounded-lg flex items-center gap-3 text-sm font-medium border border-destructive/20">
                     <ShieldAlert className="h-4 w-4" />
                     {error}
                 </div>
@@ -85,7 +85,7 @@ const SafetyInbox: React.FC = () => {
                             <Activity className="h-4 w-4" />
                         </div>
                         <div>
-                            <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Pending alerts</GlassCardTitle>
+                            <GlassCardTitle className="text-base font-medium text-on-surface">Pending alerts</GlassCardTitle>
                             <p className="text-muted-foreground text-sm mt-0.5">{actions.length} actions awaiting review</p>
                         </div>
                     </div>
@@ -94,12 +94,12 @@ const SafetyInbox: React.FC = () => {
                     <GlassTable>
                         <GlassTableHeader>
                              <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Action type</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Target</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Reason</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Details</GlassTableHead>
-                                <GlassTableHead className="font-semibold text-xs text-muted-foreground ">Time</GlassTableHead>
-                                <GlassTableHead className="text-right font-semibold text-xs text-muted-foreground pr-card ">Actions</GlassTableHead>
+                                <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Action type</GlassTableHead>
+                                <GlassTableHead className="font-medium text-xs text-muted-foreground">Target</GlassTableHead>
+                                <GlassTableHead className="font-medium text-xs text-muted-foreground">Reason</GlassTableHead>
+                                <GlassTableHead className="font-medium text-xs text-muted-foreground">Details</GlassTableHead>
+                                <GlassTableHead className="font-medium text-xs text-muted-foreground">Time</GlassTableHead>
+                                <GlassTableHead className="text-right font-medium text-xs text-muted-foreground pr-card">Actions</GlassTableHead>
                             </GlassTableRow>
                         </GlassTableHeader>
                         <TableBody>
@@ -118,16 +118,16 @@ const SafetyInbox: React.FC = () => {
                                 actions.map((action) => (
                                     <GlassTableRow key={action.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
                                         <TableCell className="py-card pl-card">
-                                            <Badge className="bg-destructive/10 text-error-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">
+                                            <Badge className="bg-destructive/10 text-error-subtle-foreground border-none rounded-md font-medium text-xs px-2 py-0.5">
                                                 {action.action_type ? (action.action_type.charAt(0).toUpperCase() + action.action_type.slice(1).toLowerCase()).replaceAll('_', ' ') : 'Unknown Action'}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="py-card font-mono text-xs font-semibold text-on-surface">{action.target_id}</TableCell>
+                                        <TableCell className="py-card font-mono text-xs font-medium text-on-surface">{action.target_id}</TableCell>
                                         <TableCell className="py-card max-w-xs text-sm font-medium text-muted-foreground">{action.reason}</TableCell>
                                         <TableCell className="py-card">
                                             <div className="flex gap-1.5 flex-wrap">
                                                 {Array.isArray(action.metadata?.org_ids) && action.metadata.org_ids.map((org: string) => (
-                                                    <Badge key={org} className="bg-muted text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5">
+                                                    <Badge key={org} className="bg-muted text-muted-foreground border-none rounded-md font-medium text-xs px-2 py-0.5">
                                                         {org}
                                                     </Badge>
                                                 ))}
@@ -135,7 +135,7 @@ const SafetyInbox: React.FC = () => {
                                         </TableCell>
                                         <TableCell className="py-card">
                                             <div className="flex flex-col gap-0.5">
-                                                <span className="text-sm font-semibold text-on-surface">{new Date(action.created_at).toLocaleDateString()}</span>
+                                                <span className="text-sm font-medium text-on-surface">{new Date(action.created_at).toLocaleDateString()}</span>
                                                 <span className="text-xs font-mono font-medium text-muted-foreground">{new Date(action.created_at).toLocaleTimeString()}</span>
                                             </div>
                                         </TableCell>
@@ -143,7 +143,7 @@ const SafetyInbox: React.FC = () => {
                                             <div className="flex justify-end gap-2">
                                                  <Button
                                                     size="sm"
-                                                    className="h-8 rounded-lg bg-destructive hover:opacity-90 text-secondary-foreground font-semibold text-xs px-3 shadow-sm"
+                                                    className="h-8 rounded-lg bg-destructive hover:opacity-90 text-secondary-foreground font-medium text-xs px-3 shadow-sm"
                                                     onClick={() => handleConfirm(action.id)}
                                                 >
                                                     <Check className="h-3.5 w-3.5 mr-1.5" /> Confirm
@@ -151,7 +151,7 @@ const SafetyInbox: React.FC = () => {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="h-8 rounded-lg bg-card border border-border font-semibold text-xs px-3 shadow-sm text-muted-foreground"
+                                                    className="h-8 rounded-lg bg-card border border-border font-medium text-xs px-3 shadow-sm text-muted-foreground"
                                                     onClick={() => handleReject(action.id)}
                                                 >
                                                     <X className="h-3.5 w-3.5 mr-1.5" /> Reject

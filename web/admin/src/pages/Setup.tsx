@@ -100,12 +100,12 @@ const Setup: React.FC = () => {
                             {error && (
                                 <div className="p-4 bg-destructive/5 text-error-subtle-foreground rounded-lg flex items-center gap-3 border border-destructive/20">
                                     <AlertCircle className="h-5 w-5 shrink-0" />
-                                    <span className="text-sm font-semibold">{error}</span>
+                                    <span className="text-sm font-medium">{error}</span>
                                 </div>
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground ">Admin email</Label>
+                                <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">Admin email</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -119,9 +119,9 @@ const Setup: React.FC = () => {
                             </div>
                             
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground ">Password</Label>
+                                <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">Password</Label>
                                 <div className="relative group">
-                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-secondary transition-colors" />
+                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-secondary transition-colors z-10" />
                                     <Input
                                         id="password"
                                         type="password"
@@ -136,7 +136,7 @@ const Setup: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword" className="text-xs font-semibold text-muted-foreground ">Confirm password</Label>
+                                <Label htmlFor="confirmPassword" className="text-xs font-medium text-muted-foreground">Confirm password</Label>
                                 <Input
                                     id="confirmPassword"
                                     type="password"
@@ -150,7 +150,7 @@ const Setup: React.FC = () => {
                             </div>
 
                             <div className="pt-2 space-y-4">
-                                <Button type="submit" className="w-full h-11 rounded-lg font-semibold text-sm bg-secondary text-secondary-foreground shadow-sm" disabled={loading}>
+                                <Button type="submit" className="w-full h-11 rounded-lg font-medium text-sm bg-secondary text-secondary-foreground shadow-sm" disabled={loading}>
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Complete setup"}
                                 </Button>
                                 

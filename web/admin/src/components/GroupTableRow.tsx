@@ -70,13 +70,13 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
         <GlassTableRow className="hover:bg-surface-container/20 transition-[color,background-color,border-color,opacity,transform] border-b border-on-surface/5 last:border-0 group">
             <TableCell className="py-1.5 pl-4">
                 <div className="flex items-center gap-2">
-                    <span className="font-medium text-xs tracking-tight text-on-surface group-hover:text-primary transition-colors">
+                    <span className="font-medium text-xs text-on-surface group-hover:text-primary transition-colors">
                         {group.name}
                     </span>
                 </div>
             </TableCell>
             <TableCell className="py-1.5">
-                <code className="bg-surface-container px-2 py-0.5 rounded text-primary font-mono text-xs tracking-tight">
+                <code className="bg-surface-container px-2 py-0.5 rounded text-primary font-mono text-xs">
                     {group.id}
                 </code>
             </TableCell>
@@ -92,7 +92,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                     }
                 }}>
                     <SheetTrigger asChild>
-                        <Button variant="ghost" className="h-7 rounded-md px-2.5 font-medium text-xs tracking-tight text-primary hover:bg-primary/5 transition-[color,background-color,border-color,opacity,transform]">
+                        <Button variant="ghost" className="h-7 rounded-md px-2.5 font-medium text-xs text-primary hover:bg-primary/5 transition-[color,background-color,border-color,opacity,transform]">
                             <Users className="w-3.5 h-3.5 mr-1.5 opacity-60" /> Manage Members
                         </Button>
                     </SheetTrigger>
@@ -100,14 +100,14 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                         <div className="bg-primary p-8 text-primary-foreground">
                             <SheetHeader>
                                 <div className="flex items-center gap-6">
-                                    <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center">
+                                    <div className="w-14 h-14 bg-black/10 rounded-xl flex items-center justify-center">
                                         <Users className="w-7 h-7 text-primary-foreground" />
                                     </div>
                                     <div>
                                         <SheetTitle className="text-2xl font-medium tracking-tight text-primary-foreground">
                                             {group.name}
                                         </SheetTitle>
-                                        <SheetDescription className="text-primary-foreground font-medium text-xs mt-2 tracking-tight ">
+                                        <SheetDescription className="text-primary-foreground font-medium text-xs mt-2">
                                             Manage the members of this group.
                                         </SheetDescription>
                                     </div>
@@ -119,11 +119,11 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                 {/* Current Members Section */}
                                 <section>
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-xs font-medium tracking-tight text-muted-foreground flex items-center gap-2 ">
+                                        <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                             <ShieldCheck className="w-3.5 h-3.5 text-success" />
                                             Current Members
                                         </h3>
-                                        <Badge className="bg-primary/5 text-primary border-none rounded-lg h-6 px-3 text-xs font-medium shadow-none">
+                                        <Badge className="bg-surface-container-low text-primary border-none rounded-lg h-6 px-3 text-xs font-medium shadow-none">
                                             {members.length} Members
                                         </Badge>
                                     </div>
@@ -134,7 +134,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                                 <Loader2 className="w-8 h-8 animate-spin text-on-surface-subtle" />
                                             </div>
                                         ) : members.length === 0 ? (
-                                            <div className="py-12 text-center border-2 border-dashed rounded-2xl bg-surface-container/10">
+                                            <div className="py-12 text-center border-2 border-dashed rounded-xl bg-surface-container/10">
                                                 <ShieldAlert className="w-8 h-8 mx-auto text-on-surface-subtle mb-2" />
                                                 <p className="text-xs font-medium text-muted-foreground">No users are in this group.</p>
                                             </div>
@@ -150,7 +150,7 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                                                         <Avatar name={email || ''} size={32} className="h-8 w-8 rounded-lg ring-1 ring-on-surface/5 overflow-hidden" />
                                                                         <div>
                                                                             <p className="text-xs font-medium text-on-surface">{email || 'Unknown User'}</p>
-                                                                            <p className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center gap-1 tracking-tight">
+                                                                            <p className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center gap-1">
                                                                                 <span className={`h-1.5 w-1.5 rounded-full ${member.status === 'active' ? 'bg-success' : 'bg-destructive/100'}`} />
                                                                                 {member.status === 'active' ? 'Active' : 'Offline'}
                                                                             </p>
@@ -177,14 +177,14 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
                                 {/* Assign New Members Section */}
                                 <section className="space-y-6">
                                     <div className="flex flex-col gap-4">
-                                        <h3 className="text-xs font-medium tracking-tight text-muted-foreground flex items-center gap-2 ">
+                                        <h3 className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                                             <Users className="w-3.5 h-3.5 text-primary" />
                                             Add More Members
                                         </h3>
                                         <div className="relative group">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                                             <Input
-                                                placeholder="Search for users to add..."
+                                                placeholder="Search for users to add"
                                                 className="h-10 border-none rounded-xl font-medium text-xs pl-10 bg-surface-container/30 ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform]"
                                                 value={searchUser}
                                                 onChange={(e) => setSearchUser(e.target.value)}
@@ -194,8 +194,8 @@ export const GroupTableRow: React.FC<GroupTableRowProps> = ({
 
                                     <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                         {filteredAvailableUsers.length === 0 ? (
-                                            <div className="py-8 text-center bg-surface-container/10 rounded-2xl border-2 border-dashed">
-                                                <p className="text-xs font-medium text-muted-foreground tracking-tight ">No users found.</p>
+                                            <div className="py-8 text-center bg-surface-container/10 rounded-xl border-2 border-dashed">
+                                                <p className="text-xs font-medium text-muted-foreground">No users found.</p>
                                             </div>
                                         ) : (
                                             filteredAvailableUsers.map(user => (

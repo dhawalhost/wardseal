@@ -122,7 +122,7 @@ const Discovery: React.FC = () => {
                     <Button 
                         onClick={handleRunScan} 
                         disabled={isScanning}
-                        className="h-9 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm px-4 shadow-sm"
+                        className="h-9 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm px-4 shadow-sm"
                     >
                         {isScanning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
                         {isScanning ? 'Scanning...' : 'Start Scan'}
@@ -142,8 +142,8 @@ const Discovery: React.FC = () => {
                                 <Activity className="w-5 h-5 text-secondary" />
                             </div>
                             <div className="space-y-0.5">
-                                <span className="text-xs font-semibold text-secondary">Scan in Progress</span>
-                                <h3 className="text-base font-medium tracking-tight text-on-surface">{currentJob.message || 'Scanning network...'}</h3>
+                                <span className="text-xs font-medium text-secondary">Scan in Progress</span>
+                                <h3 className="text-base font-medium text-on-surface">{currentJob.message || 'Scanning network...'}</h3>
                                 <span className="text-xs font-medium text-muted-foreground">Job ID: {currentJob.id?.substring(0, 8).toLowerCase()}</span>
                             </div>
                         </div>
@@ -159,7 +159,7 @@ const Discovery: React.FC = () => {
                     <div className={`p-2 rounded-lg ${message.type === 'error' ? 'bg-destructive/10' : 'bg-success/10'}`}>
                         {message.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <ShieldPlus className="h-4 w-4" />}
                     </div>
-                    <AlertDescription className="font-semibold text-sm">{message.text}</AlertDescription>
+                    <AlertDescription className="font-medium text-sm">{message.text}</AlertDescription>
                 </Alert>
             )}
 
@@ -167,7 +167,7 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-muted-foreground ">Total Found</span>
+                            <span className="text-xs font-medium text-muted-foreground">Total Found</span>
                             <span className="text-3xl font-medium tracking-tight tabular-nums text-on-surface">{resources.length}</span>
                         </div>
                     </GlassCardContent>
@@ -176,7 +176,7 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-muted-foreground ">Unmanaged</span>
+                            <span className="text-xs font-medium text-muted-foreground">Unmanaged</span>
                             <span className="text-3xl font-medium tracking-tight tabular-nums text-on-surface">
                                 {Math.round((resources.filter(r => r.status === 'discovered').length / (resources.length || 1)) * 100)}<span className="text-lg text-muted-foreground ml-1">%</span>
                             </span>
@@ -187,7 +187,7 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardContent className="p-card">
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-muted-foreground ">Managed</span>
+                            <span className="text-xs font-medium text-muted-foreground">Managed</span>
                             <span className="text-3xl font-medium tracking-tight tabular-nums text-success">
                                 {resources.filter(r => r.status === 'promoted').length}
                             </span>
@@ -198,7 +198,7 @@ const Discovery: React.FC = () => {
 
             <div className="space-y-page">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-xs font-semibold text-muted-foreground flex-shrink-0">Asset List</h2>
+                    <h2 className="text-xs font-medium text-muted-foreground flex-shrink-0">Asset List</h2>
                     <div className="h-px flex-1 bg-border" />
                 </div>
 
@@ -209,7 +209,7 @@ const Discovery: React.FC = () => {
                                 <Search className="w-4 h-4 text-secondary" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-base font-medium tracking-tight text-on-surface">Discovered Assets</GlassCardTitle>
+                                <GlassCardTitle className="text-base font-medium text-on-surface">Discovered Assets</GlassCardTitle>
                                 <p className="text-muted-foreground text-sm mt-0.5">Users and resources found on your network.</p>
                             </div>
                         </div>
@@ -227,11 +227,11 @@ const Discovery: React.FC = () => {
                                 <GlassTable>
                                     <GlassTableHeader>
                                         <GlassTableRow className="hover:bg-transparent border-b border-border">
-                                            <GlassTableHead className="py-3 pl-card font-semibold text-xs text-muted-foreground ">Name</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Source</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Type</GlassTableHead>
-                                            <GlassTableHead className="py-3 font-semibold text-xs text-muted-foreground ">Status</GlassTableHead>
-                                            <GlassTableHead className="py-3 text-right pr-card font-semibold text-xs text-muted-foreground ">Actions</GlassTableHead>
+                                            <GlassTableHead className="py-3 pl-card font-medium text-xs text-muted-foreground">Name</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Source</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Type</GlassTableHead>
+                                            <GlassTableHead className="py-3 font-medium text-xs text-muted-foreground">Status</GlassTableHead>
+                                            <GlassTableHead className="py-3 text-right pr-card font-medium text-xs text-muted-foreground">Actions</GlassTableHead>
                                         </GlassTableRow>
                                     </GlassTableHeader>
                                     <TableBody>
@@ -243,7 +243,7 @@ const Discovery: React.FC = () => {
                                                             <Fingerprint className="w-4 h-4" />
                                                         </div>
                                                         <div className="flex flex-col gap-0.5 min-w-0">
-                                                            <span className="text-sm font-semibold tracking-tight text-on-surface truncate">{resource.name}</span>
+                                                            <span className="text-sm font-medium text-on-surface truncate">{resource.name}</span>
                                                             <span className="text-xs font-mono text-muted-foreground truncate max-w-[150px]">{resource.external_id}</span>
                                                         </div>
                                                     </div>
@@ -257,17 +257,17 @@ const Discovery: React.FC = () => {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="py-card">
-                                                    <Badge className="bg-muted/50 text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 shadow-none">
+                                                    <Badge className="bg-muted/50 text-muted-foreground border-none rounded-md font-medium text-xs px-2 py-0.5 shadow-none">
                                                         {resource.resource_type}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="py-card">
                                                     {resource.status === 'promoted' ? (
-                                                        <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
+                                                        <Badge className="bg-success-subtle text-success-subtle-foreground border-none rounded-md font-medium text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
                                                             <CheckCircle2 className="w-3 h-3" /> Managed
                                                         </Badge>
                                                     ) : (
-                                                        <Badge className="bg-muted/50 text-muted-foreground border-none rounded-md font-semibold text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
+                                                        <Badge className="bg-muted/50 text-muted-foreground border-none rounded-md font-medium text-xs px-2 py-0.5 flex items-center gap-1.5 w-fit shadow-none">
                                                             <Clock className="w-3 h-3" /> Discovered
                                                         </Badge>
                                                     )}

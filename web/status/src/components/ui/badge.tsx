@@ -1,3 +1,3 @@
-/** SoT: @dhawalhost/wardseal-ui-kit@0.3.2 */
+/** SoT: @dhawalhost/wardseal-ui-kit@0.4.0 */
 export { Badge, badgeVariants } from "@dhawalhost/wardseal-ui-kit";
 export type { BadgeProps } from "@dhawalhost/wardseal-ui-kit";

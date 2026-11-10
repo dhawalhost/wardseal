@@ -9,7 +9,7 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      "font-size": [{ text: ["label"] }],
+      "font-size": [{ text: ["label", "caption", "body", "heading", "title", "title-lg", "display", "figure"] }],
       shadow: [{ shadow: ["xs", "card", "overlay"] }],
       duration: [{ duration: ["fast", "base", "slow"] }],
       ease: [{ ease: ["standard", "enter", "exit"] }],

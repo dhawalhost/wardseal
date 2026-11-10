@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Shield, Zap, Server, Database, Terminal } from 'lucide-react';
-import { GlassCard } from '@/components/layout';
+import { BrandMark } from '@dhawalhost/wardseal-ui-kit';
+
+type Health = 'checking' | 'operational' | 'down';
 
 interface ServiceStatus {
     name: string;
-    status: 'operational' | 'degraded' | 'down';
-    latency: string;
-    uptime: string;
-    icon: any;
+    detail: string;
+    status: Health;
+    latencyMs?: number;
 }
 
 const isLocal =
@@ -20,104 +20,41 @@ const authUrl = `${protocol}://auth.${domain}/healthz`;
 const apiUrl = `${protocol}://api.${domain}`;
 
 const SERVICE_ENDPOINTS = [
-    { name: 'OAuth/OIDC Authentication', url: authUrl, icon: Shield },
-    { name: 'Core Governance API', url: `${apiUrl}/gov/healthz`, icon: Zap },
-    { name: 'Provisioning Gateway', url: `${apiUrl}/provisioning/healthz`, icon: Server },
-    { name: 'Access Policy Engine', url: `${apiUrl}/policy/healthz`, icon: Database },
-    { name: 'Identity Sync Relay', url: `${apiUrl}/scim/healthz`, icon: Terminal },
+    { name: 'Authentication', detail: 'OAuth 2.1, OIDC and SAML sign-in', url: authUrl },
+    { name: 'Governance API', detail: 'Roles, policies, reviews and audit', url: `${apiUrl}/gov/healthz` },
+    { name: 'Provisioning', detail: 'Outbound connectors and SCIM push', url: `${apiUrl}/provisioning/healthz` },
+    { name: 'Policy engine', detail: 'Access decisions at request time', url: `${apiUrl}/policy/healthz` },
+    { name: 'Directory sync', detail: 'Inbound SCIM 2.0 users and groups', url: `${apiUrl}/scim/healthz` },
 ];
 
-interface ServiceStatusItemProps {
-    name: string;
-    status: 'operational' | 'degraded' | 'down';
-    latency: string;
-    uptime: string;
-    icon: React.ComponentType<{ className?: string }>;
-}
-
-const ServiceStatusItem: React.FC<ServiceStatusItemProps> = ({
-    name,
-    status,
-    latency,
-    uptime,
-    icon: Icon,
-}) => {
-    return (
-        <GlassCard className="p-card flex items-center justify-between rounded-xl bg-card shadow-sm border-border">
-            <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center border border-border">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-on-surface tracking-tight">{name}</span>
-                    <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            Latency: <span className="text-on-surface font-medium">{latency}</span>
-                        </span>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            Uptime: <span className="text-on-surface font-medium">{uptime}</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold text-xs ${
-     status === 'operational'
-                        ? 'bg-success/10 border border-success/20 text-success-subtle-foreground'
-                        : 'bg-destructive/10 border border-destructive/20 text-error-subtle-foreground'
-                }`}
-            >
-                <div
-                    className={`h-1.5 w-1.5 rounded-full ${
-      status === 'operational' ? 'bg-success' : 'bg-destructive'
-                    }`}
-                />
-                {status === 'operational' ? 'Active' : 'Offline'}
-            </div>
-        </GlassCard>
-    );
+const dot: Record<Health, string> = {
+    checking: 'bg-on-surface-subtle',
+    operational: 'bg-success',
+    down: 'bg-error',
 };
+const label: Record<Health, string> = { checking: 'Checking', operational: 'Operational', down: 'Unreachable' };
 
 const StatusPage: React.FC = () => {
-    const [overallStatus, setOverallStatus] = useState<'operational' | 'degraded'>('operational');
     const [services, setServices] = useState<ServiceStatus[]>(
-        SERVICE_ENDPOINTS.map((s) => ({
-            ...s,
-            status: 'operational',
-            latency: '...',
-            uptime: '...',
-        }))
+        SERVICE_ENDPOINTS.map(({ name, detail }) => ({ name, detail, status: 'checking' }))
     );
+    const [checkedAt, setCheckedAt] = useState<Date | null>(null);
 
     useEffect(() => {
         const fetchStatus = async () => {
             const results = await Promise.all(
-                SERVICE_ENDPOINTS.map(async (svc) => {
-                    const start = Date.now();
+                SERVICE_ENDPOINTS.map(async ({ name, detail, url }): Promise<ServiceStatus> => {
+                    const start = performance.now();
                     try {
-                        const res = await fetch(svc.url);
-                        const latency = `${Date.now() - start}ms`;
-                        return {
-                            name: svc.name,
-                            status: (res.ok ? 'operational' : 'down') as any,
-                            latency,
-                            uptime: '99.9%',
-                            icon: svc.icon,
-                        };
-                    } catch (e) {
-                        return {
-                            name: svc.name,
-                            status: 'down' as any,
-                            latency: 'N/A',
-                            uptime: '0%',
-                            icon: svc.icon,
-                        };
+                        const res = await fetch(url);
+                        return { name, detail, status: res.ok ? 'operational' : 'down', latencyMs: Math.round(performance.now() - start) };
+                    } catch {
+                        return { name, detail, status: 'down' };
                     }
                 })
             );
             setServices(results);
-            const isAnyDown = results.some((s) => s.status === 'down');
-            setOverallStatus(isAnyDown ? 'degraded' : 'operational');
+            setCheckedAt(new Date());
         };
 
         fetchStatus();
@@ -125,52 +62,60 @@ const StatusPage: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const down = services.filter((s) => s.status === 'down').length;
+    const checking = services.some((s) => s.status === 'checking');
+    const overall: Health = checking ? 'checking' : down ? 'down' : 'operational';
+    const headline = checking
+        ? 'Checking services'
+        : down
+          ? `${down} of ${services.length} services unreachable`
+          : 'All services operational';
+
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-start p-4 animate-in fade-in duration-500">
-            <div className="max-w-3xl w-full space-y-page pt-6">
-                <div className="flex items-center justify-center gap-3">
-                    <img src="/wardseal.svg" alt="WardSeal" className="w-7 h-7" />
-                    <div className="flex flex-col items-start leading-none">
-                        <span className="text-base font-medium tracking-tight text-on-surface">WardSeal</span>
-                        <span className="text-xs font-semibold text-secondary">System status</span>
-                    </div>
-                </div>
-
-                <GlassCard className="p-8 bg-card border border-border shadow-sm rounded-xl flex flex-col items-center text-center space-y-3">
-                    {overallStatus === 'operational' ? (
-                        <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center border border-success/20">
-                            <CheckCircle2 className="h-5 w-5 text-success" />
-                        </div>
-                    ) : (
-                        <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center border border-warning/20">
-                            <AlertCircle className="h-5 w-5 text-warning" />
-                        </div>
+        <div className="min-h-dvh bg-background text-on-surface">
+            <div className="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6">
+                <header className="flex h-16 items-center justify-between">
+                    <BrandMark name="WardSeal" subtitle="Status" />
+                    {checkedAt && (
+                        <span className="font-mono text-xs text-on-surface-subtle tabular-nums">
+                            Checked {checkedAt.toLocaleTimeString('en-GB')}
+                        </span>
                     )}
-                    <h2 className="text-2xl font-medium tracking-tight text-on-surface">
-                        {overallStatus === 'operational' ? 'All systems operational' : 'Degraded performance'}
-                    </h2>
-                    <p className="text-muted-foreground text-sm">Live health checks across core services</p>
-                </GlassCard>
+                </header>
 
-                <div className="space-y-card">
-                    <span className="text-xs font-semibold text-muted-foreground ml-1">Services</span>
-                    <div className="space-y-2">
-                        {services.map((service) => (
-                            <ServiceStatusItem
-                                key={service.name}
-                                name={service.name}
-                                status={service.status}
-                                latency={service.latency}
-                                uptime={service.uptime}
-                                icon={service.icon}
-                            />
+                <section className="mt-10" aria-live="polite">
+                    <p className="flex items-center gap-2.5 text-sm text-on-surface-variant">
+                        <span className={`h-2 w-2 rounded-full ${dot[overall]}`} aria-hidden />
+                        {label[overall]}
+                    </p>
+                    <h1 className="mt-3 text-display text-on-surface">{headline}</h1>
+                    <p className="mt-3 text-body text-on-surface-subtle">Live health checks from your browser, refreshed every 30 seconds</p>
+                </section>
+
+                <section className="mt-12" aria-labelledby="services-title">
+                    <h2 id="services-title" className="mb-3 text-sm text-on-surface-variant">Services</h2>
+                    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
+                        {services.map((s) => (
+                            <li key={s.name} className="flex items-center justify-between gap-4 px-5 py-4">
+                                <div className="min-w-0">
+                                    <p className="text-heading text-on-surface">{s.name}</p>
+                                    <p className="mt-0.5 truncate text-sm text-on-surface-subtle">{s.detail}</p>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-6">
+                                    <span className="hidden w-16 text-right font-mono text-xs text-on-surface-subtle tabular-nums sm:inline">
+                                        {s.latencyMs !== undefined ? `${s.latencyMs} ms` : '—'}
+                                    </span>
+                                    <span className="flex w-28 items-center justify-end gap-2 text-sm text-on-surface-variant">
+                                        <span className={`h-1.5 w-1.5 rounded-full ${dot[s.status]}`} aria-hidden />
+                                        {label[s.status]}
+                                    </span>
+                                </div>
+                            </li>
                         ))}
-                    </div>
-                </div>
+                    </ul>
+                </section>
 
-                <div className="text-center text-xs text-muted-foreground mt-6">
-                    &copy; {new Date().getFullYear()} WardSeal. Status updates every 30 seconds.
-                </div>
+                <footer className="mt-10 text-xs text-on-surface-subtle">© {new Date().getFullYear()} WardSeal</footer>
             </div>
         </div>
     );

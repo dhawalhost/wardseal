@@ -1,16 +1,54 @@
 import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { ExternalLink, LayoutGrid, Search, Loader2, Sparkles, Box } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { resolveManageConsoleUrl } from '@wardseal/shared';
+import { ArrowUpRight, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { getUserApps } from '../api';
-import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent } from '@/components/layout';
-import { RegistryAppCard, Application } from '../components/RegistryAppCard';
-import { MetricCard } from '../components/MetricCard';
+
+interface Application {
+    id: string;
+    name: string;
+    description: string;
+    icon_url?: string;
+    launch_url: string;
+}
+
+const hostOf = (url: string) => {
+    try {
+        return new URL(url).host;
+    } catch {
+        return url;
+    }
+};
+
+/** One launcher tile: monogram or logo, name, host, quiet open affordance. */
+const AppTile = ({ app }: { app: Application }) => (
+    <a
+        href={app.launch_url}
+        target="_blank"
+        rel="noreferrer"
+        className="group flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-card transition-colors duration-fast hover:border-on-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-container-low text-sm font-medium text-on-surface-variant">
+            {app.icon_url ? <img src={app.icon_url} alt="" className="h-6 w-6 object-contain" /> : app.name.slice(0, 2).toUpperCase()}
+        </span>
+        <span className="min-w-0 flex-1">
+            <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-heading text-on-surface">{app.name}</span>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-on-surface-subtle transition-colors group-hover:text-on-surface" strokeWidth={1.5} aria-hidden />
+            </span>
+            <span className="mt-0.5 block truncate font-mono text-xs text-on-surface-subtle">{hostOf(app.launch_url)}</span>
+            {app.description && <span className="mt-2 line-clamp-2 block text-sm text-on-surface-variant">{app.description}</span>}
+        </span>
+        <span className="sr-only">(opens in a new tab)</span>
+    </a>
+);
 
 const PortalDashboard = () => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -24,95 +62,65 @@ const PortalDashboard = () => {
                 setLoading(false);
             }
         };
-
         fetchApplications();
     }, []);
 
-    const filteredApps = applications.filter(app =>
-        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase();
+    const filteredApps = applications.filter(
+        (app) => app.name.toLowerCase().includes(q) || (app.description || '').toLowerCase().includes(q)
     );
 
-    const handleLaunch = (app: Application) => {
-        window.open(app.launch_url, '_blank');
-    };
-
     return (
-        <div className="space-y-page animate-in fade-in duration-700">
-            {/* Header: Standard Modernist */}
-            <div className="flex flex-col gap-card">
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-border pb-8">
-                    <div className="space-y-3 max-w-xl">
-                        <p className="text-xs font-semibold text-secondary">User portal</p>
-                        <h1 className="text-3xl font-medium tracking-tight text-on-surface">Your applications</h1>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                            Launch assigned apps and manage access from one place.
-                        </p>
-                        {localStorage.getItem('isAdmin') === 'true' && (
-                            <Button
-                                onClick={() => { window.location.href = '/dashboard'; }}
-                                className="h-9 px-4 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm flex items-center gap-2"
-                            >
-                                <LayoutGrid className="w-4 h-4" />
-                                Admin console
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="relative w-full max-w-md self-end">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="space-y-8">
+            <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 className="text-title-lg text-on-surface">Applications</h1>
+                    <p className="mt-1 text-body text-on-surface-subtle">
+                        {loading
+                            ? 'Loading your applications'
+                            : `${applications.length} ${applications.length === 1 ? 'app' : 'apps'} assigned to you`}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-full sm:w-72">
                         <Input
-                            placeholder="Search applications..."
+                            icon={<Search />}
+                            placeholder="Search"
+                            aria-label="Search applications"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-10 pl-10 pr-4 rounded-lg border-border bg-card shadow-xs"
                         />
                     </div>
-                </div>
-
-                {/* Applications Grid */}
-                <div className="min-h-[400px]">
-                    {loading ? (
-                        <div className="h-[280px] flex flex-col items-center justify-center border border-dashed border-border rounded-xl bg-muted/40">
-                            <Loader2 className="h-8 w-8 animate-spin mb-3 text-secondary" />
-                            <span className="text-sm text-muted-foreground">Loading applications…</span>
-                        </div>
-                    ) : filteredApps.length === 0 ? (
-                        <GlassCard className="py-16 text-center border border-dashed border-border bg-card shadow-none rounded-xl">
-                            <Box className="h-10 w-10 text-muted-foreground mb-4 mx-auto" />
-                            <h3 className="text-lg font-medium text-on-surface tracking-tight">No applications yet</h3>
-                            <p className="text-muted-foreground text-sm mt-2 max-w-xs mx-auto">
-                                {searchQuery ? `No matches for “${searchQuery}”.` : 'When your admin assigns apps, they will appear here.'}
-                            </p>
-                        </GlassCard>
-                    ) : (
-                        <div className="grid gap-card md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredApps.map((app) => (
-                                <RegistryAppCard key={app.id} app={app} onLaunch={handleLaunch} />
-                            ))}
-                        </div>
+                    {isAdmin && (
+                        <Button variant="outline" onClick={() => window.location.assign(`${resolveManageConsoleUrl()}/dashboard`)}>
+                            Admin console
+                        </Button>
                     )}
                 </div>
+            </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    <MetricCard
-                        label="Showing"
-                        value={filteredApps.length.toString()}
-                        detail={<span className="text-xs text-muted-foreground">Matching search</span>}
-                    />
-                    <MetricCard
-                        label="Assigned"
-                        value={applications.length.toString()}
-                        detail={<span className="text-xs text-muted-foreground">Total applications</span>}
-                    />
-                    <MetricCard label="Session" value="Active">
-                        <div className="flex items-center gap-2 mt-1">
-                            <div className="w-2 h-2 rounded-full bg-success" />
-                            <p className="text-sm font-semibold text-on-surface">Signed in</p>
-                        </div>
-                    </MetricCard>
+            {loading ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-[92px] animate-pulse rounded-xl border border-border bg-card" />
+                    ))}
                 </div>
-            </div>
+            ) : filteredApps.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
+                    <p className="text-heading text-on-surface">{searchQuery ? 'No matching applications' : 'No applications yet'}</p>
+                    <p className="mx-auto mt-1 max-w-sm text-sm text-on-surface-subtle">
+                        {searchQuery
+                            ? `Nothing matches “${searchQuery}”`
+                            : 'Apps your administrator assigns to you will appear here'}
+                    </p>
+                </div>
+            ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {filteredApps.map((app) => (
+                        <AppTile key={app.id} app={app} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

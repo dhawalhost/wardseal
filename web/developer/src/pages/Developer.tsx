@@ -24,7 +24,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ label, icon, onClick }) => {
             <div className="text-muted-foreground group-hover:text-primary transition-colors">
                 {icon}
             </div>
-            <span className="text-sm font-semibold text-on-surface">
+            <span className="text-sm font-medium text-on-surface">
                 {label}
             </span>
         </button>
@@ -43,40 +43,35 @@ const Developer: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-card">
                 <div className="lg:col-span-1 space-y-card">
                     <div className="space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground ml-1">Resources</p>
+                        <p className="text-xs font-medium text-muted-foreground ml-1">Resources</p>
                         <div className="space-y-1">
                             {[
-                                { label: 'Go SDK Client', icon: <Cpu className="w-4 h-4" /> },
-                                { label: 'CLI Reference', icon: <Terminal className="w-4 h-4" /> },
-                                { label: 'OpenAPI Spec', icon: <Code2 className="w-4 h-4" /> },
+                                { label: 'Go client', icon: <Cpu className="w-4 h-4" /> },
+                                { label: 'CLI reference', icon: <Terminal className="w-4 h-4" /> },
+                                { label: 'OpenAPI spec', icon: <Code2 className="w-4 h-4" /> },
                             ].map(link => (
                                 <SidebarLink key={link.label} label={link.label} icon={link.icon} />
                             ))}
                         </div>
                     </div>
 
-                    <GlassCard className="bg-secondary text-secondary-foreground border border-secondary/20 shadow-sm overflow-hidden relative rounded-xl">
-                        <div className="absolute top-0 right-0 p-3 opacity-10">
-                            <Terminal className="w-12 h-12 rotate-12" />
+                    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+                        <div className="border-b border-border px-4 py-3">
+                            <p className="text-heading text-on-surface">Go client</p>
+                            <p className="mt-0.5 text-xs text-on-surface-subtle">Typed client for the management API</p>
                         </div>
-                        <GlassCardContent className="p-card space-y-3 relative z-10">
-                            <div className="space-y-0.5">
-                                <p className="text-xs font-semibold opacity-70">SDK</p>
-                                <h4 className="text-lg font-medium tracking-tight">WardSeal Go</h4>
-                            </div>
-                            <div className="bg-secondary-foreground/10 p-2 rounded-lg font-mono text-xs border border-secondary-foreground/10">
-                                <code>go get github.com/...</code>
-                            </div>
-                        </GlassCardContent>
-                    </GlassCard>
+                        <pre className="overflow-x-auto bg-[hsl(224_40%_8%)] px-4 py-3 font-mono text-xs leading-relaxed text-white/85">
+                            <code>go get github.com/dhawalhost/wardseal/pkg/client</code>
+                        </pre>
+                    </div>
                 </div>
 
                 <div className="lg:col-span-3">
                     <GlassCard className="overflow-hidden border border-border shadow-sm bg-card min-h-[600px] rounded-xl">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-2.5">
-                                <Code2 className="w-4 h-4 text-secondary" />
-                                <GlassCardTitle className="text-base font-medium tracking-tight">API reference</GlassCardTitle>
+                                <Code2 className="w-4 h-4 text-on-surface-subtle" strokeWidth={1.5} />
+                                <GlassCardTitle className="text-base font-medium">API reference</GlassCardTitle>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent className="p-0">

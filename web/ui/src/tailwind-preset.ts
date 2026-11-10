@@ -102,15 +102,23 @@ export const tailwindPreset = {
       },
 
       // ── Type tokens ──
-      // `label`: 12px medium, sentence case — the floor for UI labels, table headers, captions.
+      // ── Type scale (Geist). Sentence case everywhere; hierarchy from size + colour.
+      // `label`: 12px medium — the floor for UI labels, table headers, captions.
       fontSize: {
         label: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0", fontWeight: "500" }],
+        caption: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.005em" }],
+        body: ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "-0.003em" }],
+        heading: ["0.9375rem", { lineHeight: "1.375rem", letterSpacing: "-0.008em", fontWeight: "500" }],
+        title: ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.014em", fontWeight: "500" }],
+        "title-lg": ["1.75rem", { lineHeight: "2.125rem", letterSpacing: "-0.022em", fontWeight: "500" }],
+        display: ["2.5rem", { lineHeight: "2.75rem", letterSpacing: "-0.028em", fontWeight: "500" }],
+        figure: ["1.75rem", { lineHeight: "1", letterSpacing: "-0.02em", fontWeight: "500" }],
       },
 
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-        display: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+        sans: ["Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["Geist Mono", "ui-monospace", "SF Mono", "monospace"],
       },
 
       // ── Border radius scale ──

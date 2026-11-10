@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { resolveManageConsoleUrl } from '@wardseal/shared';
-import { Button } from "@/components/ui/button";
-import { ExternalLink, LayoutGrid, Search, Loader2, Box } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ArrowUpRight, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { getUserApps } from '../api';
-import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent, GlassCardDescription } from '@/components/layout';
 
 interface Application {
     id: string;
@@ -14,13 +13,42 @@ interface Application {
     launch_url: string;
 }
 
+const hostOf = (url: string) => {
+    try {
+        return new URL(url).host;
+    } catch {
+        return url;
+    }
+};
+
+/** One launcher tile: monogram or logo, name, host, quiet open affordance. */
+const AppTile = ({ app }: { app: Application }) => (
+    <a
+        href={app.launch_url}
+        target="_blank"
+        rel="noreferrer"
+        className="group flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-card transition-colors duration-fast hover:border-on-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-container-low text-sm font-medium text-on-surface-variant">
+            {app.icon_url ? <img src={app.icon_url} alt="" className="h-6 w-6 object-contain" /> : app.name.slice(0, 2).toUpperCase()}
+        </span>
+        <span className="min-w-0 flex-1">
+            <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-heading text-on-surface">{app.name}</span>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-on-surface-subtle transition-colors group-hover:text-on-surface" strokeWidth={1.5} aria-hidden />
+            </span>
+            <span className="mt-0.5 block truncate font-mono text-xs text-on-surface-subtle">{hostOf(app.launch_url)}</span>
+            {app.description && <span className="mt-2 line-clamp-2 block text-sm text-on-surface-variant">{app.description}</span>}
+        </span>
+        <span className="sr-only">(opens in a new tab)</span>
+    </a>
+);
+
 const PortalDashboard = () => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
-    const [canAccessAdmin, setCanAccessAdmin] = useState(
-        () => localStorage.getItem('isAdmin') === 'true'
-    );
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -34,101 +62,62 @@ const PortalDashboard = () => {
                 setLoading(false);
             }
         };
-
-        setCanAccessAdmin(localStorage.getItem('isAdmin') === 'true');
         fetchApplications();
     }, []);
 
-    const filteredApps = applications.filter(app =>
-        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (app.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase();
+    const filteredApps = applications.filter(
+        (app) => app.name.toLowerCase().includes(q) || (app.description || '').toLowerCase().includes(q)
     );
 
-    const handleLaunch = (app: Application) => {
-        window.open(app.launch_url, '_blank');
-    };
-
     return (
-        <div className="space-y-page animate-in fade-in duration-500">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-card border-b border-border pb-8">
-                <div className="space-y-3 max-w-xl">
-                    <p className="text-xs font-semibold text-secondary">User portal</p>
-                    <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
-                        Your applications
-                    </h1>
-                    <p className="text-muted-foreground text-base leading-relaxed">
-                        Launch assigned apps and manage your identity settings from one place.
+        <div className="space-y-8">
+            <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 className="text-title-lg text-on-surface">Applications</h1>
+                    <p className="mt-1 text-body text-on-surface-subtle">
+                        {loading
+                            ? 'Loading your applications'
+                            : `${applications.length} ${applications.length === 1 ? 'app' : 'apps'} assigned to you`}
                     </p>
-                    {canAccessAdmin && (
-                        <Button
-                            onClick={() => window.location.assign(resolveManageConsoleUrl())}
-                            className="mt-2 h-10 px-5 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm shadow-sm"
-                        >
-                            <LayoutGrid className="w-4 h-4 mr-2" />
-                            Open admin console
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-full sm:w-72">
+                        <Input
+                            icon={<Search />}
+                            placeholder="Search"
+                            aria-label="Search applications"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    {isAdmin && (
+                        <Button variant="outline" onClick={() => window.location.assign(`${resolveManageConsoleUrl()}/dashboard`)}>
+                            Admin console
                         </Button>
                     )}
                 </div>
-
-                <div className="relative w-full max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search applications..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 pl-10 rounded-lg border-border bg-card shadow-xs"
-                    />
-                </div>
-            </div>
+            </header>
 
             {loading ? (
-                <div className="flex items-center justify-center py-24 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                    Loading applications…
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-[92px] animate-pulse rounded-xl border border-border bg-card" />
+                    ))}
                 </div>
             ) : filteredApps.length === 0 ? (
-                <GlassCard className="border border-border bg-card shadow-sm">
-                    <GlassCardContent className="py-16 flex flex-col items-center text-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                            <Box className="w-6 h-6 text-muted-foreground" />
-                        </div>
-                        <GlassCardTitle className="text-lg">No applications yet</GlassCardTitle>
-                        <GlassCardDescription className="max-w-sm">
-                            When your admin assigns apps to you, they will appear here.
-                        </GlassCardDescription>
-                    </GlassCardContent>
-                </GlassCard>
+                <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
+                    <p className="text-heading text-on-surface">{searchQuery ? 'No matching applications' : 'No applications yet'}</p>
+                    <p className="mx-auto mt-1 max-w-sm text-sm text-on-surface-subtle">
+                        {searchQuery
+                            ? `Nothing matches “${searchQuery}”`
+                            : 'Apps your administrator assigns to you will appear here'}
+                    </p>
+                </div>
             ) : (
-                <div className="grid gap-card sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {filteredApps.map((app) => (
-                        <GlassCard key={app.id} className="border border-border bg-card shadow-sm hover:border-secondary/40 transition-colors">
-                            <GlassCardHeader className="pb-2">
-                                <div className="flex items-start gap-3">
-                                    {app.icon_url ? (
-                                        <img src={app.icon_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-border" />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                            <Box className="w-5 h-5 text-secondary" />
-                                        </div>
-                                    )}
-                                    <div className="min-w-0">
-                                        <GlassCardTitle className="text-base truncate">{app.name}</GlassCardTitle>
-                                        <GlassCardDescription className="line-clamp-2 mt-1">
-                                            {app.description || 'Enterprise application'}
-                                        </GlassCardDescription>
-                                    </div>
-                                </div>
-                            </GlassCardHeader>
-                            <GlassCardContent>
-                                <Button
-                                    variant="outline"
-                                    className="w-full h-9 rounded-lg font-semibold text-sm"
-                                    onClick={() => handleLaunch(app)}
-                                >
-                                    Launch <ExternalLink className="w-3.5 h-3.5 ml-2" />
-                                </Button>
-                            </GlassCardContent>
-                        </GlassCard>
+                        <AppTile key={app.id} app={app} />
                     ))}
                 </div>
             )}

@@ -56,7 +56,7 @@ export function DeveloperAnalytics() {
                     <Button
                         onClick={fetchAnalytics}
                         variant="outline"
-                        className="h-9 rounded-lg font-semibold text-sm px-4 border border-border hover:bg-muted/40 transition-colors"
+                        className="h-9 rounded-lg font-medium text-sm px-4 border border-border hover:bg-muted/40 transition-colors"
                         disabled={loading}
                     >
                         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
@@ -121,7 +121,7 @@ export function DeveloperAnalytics() {
                         <div className="p-1.5 bg-primary/10 rounded-lg">
                             <Zap className="w-3.5 h-3.5 text-primary" />
                         </div>
-                        <GlassCardTitle className="text-sm font-medium tracking-tight text-on-surface">API traffic</GlassCardTitle>
+                        <GlassCardTitle className="text-sm font-medium text-on-surface">API traffic</GlassCardTitle>
                     </div>
                 </GlassCardHeader>
                 <GlassCardContent className="p-5">
@@ -163,10 +163,10 @@ export function DeveloperAnalytics() {
                         <Terminal className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <div>
-                        <h4 className="font-semibold text-sm tracking-tight text-on-surface">Interactive API logs</h4>
+                        <h4 className="font-medium text-sm text-on-surface">Interactive API logs</h4>
                         <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                             Looking for specific request payloads? Go to{' '}
-                            <a href="/developer/apps" className="text-primary hover:underline font-semibold">OAuth Apps</a>{' '}
+                            <a href="/developer/apps" className="text-primary hover:underline font-medium">OAuth Apps</a>{' '}
                             to view detailed logs tied to each credential.
                         </p>
                     </div>

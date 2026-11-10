@@ -40,11 +40,11 @@ const EmptyStateContent: React.FC<Omit<EmptyStateProps, "asTableRow" | "colSpan"
             </div>
         )}
         <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground italic">
+            <p className="text-sm font-medium text-muted-foreground">
                 {message}
             </p>
             {hint && (
-                <p className="text-xs font-medium text-muted-foreground italic">
+                <p className="text-xs font-medium text-muted-foreground">
                     {hint}
                 </p>
             )}

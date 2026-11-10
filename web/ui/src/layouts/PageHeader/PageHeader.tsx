@@ -71,7 +71,7 @@ const PageHeader = React.forwardRef<HTMLElement, PageHeaderProps>(
                         </a>
                       ) : (
                         <span
-                          className={isLast ? "font-semibold text-on-surface" : undefined}
+                          className={isLast ? "text-on-surface" : undefined}
                           aria-current={isLast ? "page" : undefined}
                         >
                           {crumb.label}
@@ -84,34 +84,23 @@ const PageHeader = React.forwardRef<HTMLElement, PageHeaderProps>(
             </nav>
           )}
 
-          <div className="flex items-center gap-3">
-            {icon && (
-              <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-secondary"
-                aria-hidden
-              >
-                {icon}
-              </div>
-            )}
-            <div className="min-w-0 space-y-1">
-              <h1 className="text-2xl font-medium leading-tight tracking-[-0.015em] text-on-surface [overflow-wrap:anywhere] lg:text-[28px]">
-                {title}
-              </h1>
-              {meta}
-            </div>
+          {/* `icon` is accepted for compatibility but not drawn: titles carry the page, not icon tiles. */}
+          <div className="min-w-0 space-y-1">
+            <h1 className="text-title-lg text-on-surface [overflow-wrap:anywhere]">{title}</h1>
+            {meta}
           </div>
 
           {description && (
-            <p className="max-w-2xl text-sm leading-relaxed text-on-surface-variant lg:text-[15px]">
+            <p className="max-w-2xl text-body text-on-surface-subtle">
               {description}
             </p>
           )}
         </div>
 
         {(search || actions) && (
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {search && <div className="w-full sm:w-64">{search}</div>}
-            {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
+            {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
           </div>
         )}
       </header>

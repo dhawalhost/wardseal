@@ -34,7 +34,7 @@ export interface FilterBarProps {
  *   value={filters.query}
  *   onChange={(v) => setFilters({ ...filters, query: v })}
  *   onSubmit={handleFilterSubmit}
- *   placeholder="Filter by name or ID..."
+ *   placeholder="Filter by name or ID"
  *   actions={<Button onClick={handleExport}>Export</Button>}
  * />
  */
@@ -64,7 +64,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         >
             {/* Search input */}
             <div className="flex-1 relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none z-10" />
                 <Input
                     placeholder={placeholder}
                     className="pl-9 h-9 border-none rounded-lg bg-card ring-1 ring-on-surface/5 focus-visible:ring-2 focus-visible:ring-ring transition-[color,background-color,border-color,opacity,transform] font-medium text-sm"
@@ -80,7 +80,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             {showFilterButton && (
                 <Button
                     type="submit"
-                    className="h-9 rounded-lg px-4 font-medium text-xs tracking-tight shadow-sm transition-[color,background-color,border-color,opacity,transform] shrink-0"
+                    className="h-9 rounded-lg px-4 font-medium text-xs shadow-sm transition-[color,background-color,border-color,opacity,transform] shrink-0"
                 >
                     <Filter className="mr-2 h-3.5 w-3.5" />
                     {submitLabel}
