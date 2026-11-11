@@ -34,7 +34,7 @@ services:
       - traefik.http.routers.authsvc.entrypoints=web
       - traefik.http.services.authsvc.loadbalancer.server.port=8080
       # id.wardseal.local — auth API paths proxied through idui nginx (SPA catch-all handled by idui)
-      - traefik.http.routers.authsvc-id.rule=Host(`id.wardseal.local`) && (PathPrefix(`/t/`) || PathPrefix(`/oauth2`) || PathPrefix(`/.well-known`) || PathPrefix(`/social/login`) || PathPrefix(`/login/lookup`) || PathPrefix(`/saml`) || PathPrefix(`/api/v1/mfa`) || PathPrefix(`/api/v1/user`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/roles`) || PathPrefix(`/api/v1/permissions`) || PathPrefix(`/api/v1/devices`) || PathPrefix(`/api/v1/branding`) || PathPrefix(`/api/v1/signup`) || PathPrefix(`/api/v1/setup`) || PathPrefix(`/api/v1/webauthn`) || PathPrefix(`/logout`) || PathPrefix(`/api/v1/logout`))
+      - traefik.http.routers.authsvc-id.rule=Host(`id.wardseal.local`) && ((PathPrefix(`/t/`) && !(Method(`GET`) && Path(`/t/{tenant:[^/]+}/login`))) || PathPrefix(`/oauth2`) || PathPrefix(`/.well-known`) || PathPrefix(`/social/login`) || PathPrefix(`/login/lookup`) || PathPrefix(`/saml`) || PathPrefix(`/api/v1/mfa`) || PathPrefix(`/api/v1/user`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/api/v1/roles`) || PathPrefix(`/api/v1/permissions`) || PathPrefix(`/api/v1/devices`) || PathPrefix(`/api/v1/branding`) || PathPrefix(`/api/v1/signup`) || PathPrefix(`/api/v1/setup`) || PathPrefix(`/api/v1/webauthn`) || PathPrefix(`/logout`) || PathPrefix(`/api/v1/logout`))
       - traefik.http.routers.authsvc-id.entrypoints=web
       - traefik.http.routers.authsvc-id.service=authsvc
       # manage.wardseal.local — auth API paths

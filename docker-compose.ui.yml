@@ -14,8 +14,8 @@ services:
       args:
         VITE_API_URL: http://manage.wardseal.local
         VITE_AUTHSVC_URL: http://manage.wardseal.local
-        VITE_GOVSVC_URL: http://api.wardseal.local
-        VITE_DIRSVC_URL: http://api.wardseal.local
+        VITE_GOVSVC_URL: http://manage.wardseal.local
+        VITE_DIRSVC_URL: http://manage.wardseal.local
         VITE_ID_URL: http://id.wardseal.local
         VITE_AUTH_URL: http://auth.wardseal.local
         VITE_APP_MODE: saas
@@ -40,8 +40,8 @@ services:
       args:
         VITE_API_URL: http://app.wardseal.local
         VITE_AUTHSVC_URL: http://app.wardseal.local
-        VITE_GOVSVC_URL: http://api.wardseal.local
-        VITE_DIRSVC_URL: http://api.wardseal.local
+        VITE_GOVSVC_URL: http://app.wardseal.local
+        VITE_DIRSVC_URL: http://app.wardseal.local
         VITE_ID_URL: http://id.wardseal.local
         VITE_AUTH_URL: http://auth.wardseal.local
         VITE_APP_MODE: saas
