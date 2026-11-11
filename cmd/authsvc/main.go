@@ -313,6 +313,7 @@ func main() {
 		}
 		log.Warn("REDIS_ADDR not set; using in-memory WebAuthn session repository (not suitable for multi-replica authsvc)")
 	}
+	authHandlers.SetPermissionChecker(rbacSvc)
 	authHandlers.RegisterRoutes(router)
 
 	// Register Prometheus metrics handler

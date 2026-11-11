@@ -108,6 +108,7 @@ type HTTPHandler struct {
 	loginAttemptStore LoginAttemptRepository
 	appStore          DeveloperAppRepository
 	webAuthnSessions  WebAuthnSessionRepository
+	permChecker       middleware.PermissionChecker
 }
 
 // NewHTTPHandler creates a new HTTPHandler.
@@ -119,6 +120,20 @@ func NewHTTPHandler(svc Service, logger *zap.Logger, loginAttemptStore LoginAtte
 		loginAttemptStore: loginAttemptStore,
 		appStore:          appStore,
 		webAuthnSessions:  newInMemoryWebAuthnSessionRepository(),
+	}
+}
+
+// SetPermissionChecker sets the RBAC checker used to gate administrative routes served by
+// this handler. Until it is set those routes fail closed (HTTP 500 "authorization not configured").
+func (h *HTTPHandler) SetPermissionChecker(checker middleware.PermissionChecker) {
+	h.permChecker = checker
+}
+
+// requirePermission gates a route on an RBAC permission. The checker is read per request, so
+// SetPermissionChecker may be called before or after RegisterRoutes.
+func (h *HTTPHandler) requirePermission(resource, action string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		middleware.RequirePermission(h.permChecker, resource, action)(c)
 	}
 }
 
@@ -239,7 +254,9 @@ func (h *HTTPHandler) RegisterRoutes(router *gin.Engine) {
 		userAPI.DELETE("/account", middleware.RequireScope("profile"), h.deleteUserAccount)
 
 		setupAPI := sessionProtected.Group("/api/v1/setup")
-		setupAPI.POST("/password-link", h.createPasswordSetupLink)
+		// Minting a reset/invite token for another user is an administrative act: it needs
+		// users:write, exactly like creating or editing that user in the directory.
+		setupAPI.POST("/password-link", h.requirePermission("users", "write"), h.createPasswordSetupLink)
 
 		mfaGroup := sessionProtected.Group("/api/v1/mfa")
 		h.RegisterWebAuthnRoutes(mfaGroup)
@@ -375,9 +392,47 @@ func (h *HTTPHandler) createPasswordSetupLink(c *gin.Context) {
 		return
 	}
 
+	// The target must exist in the caller's own organization; never mint a token for an unknown ID.
+	if _, err := h.svc.GetUserByID(c.Request.Context(), tenantID, req.UserID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
 	token, expiresAt, err := h.svc.GeneratePasswordSetupToken(tenantID, req.UserID, req.Mode, req.ExpiresHours)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	actor, _ := c.Get("user_id")
+	h.logger.Info("password setup link issued",
+		zap.String("tenant_id", tenantID),
+		zap.Any("actor_user_id", actor),
+		zap.String("target_user_id", req.UserID),
+		zap.String("mode", req.Mode),
+		zap.Bool("emailed", req.SendEmail),
+		zap.Time("expires_at", expiresAt))
+
+	if req.SendEmail {
+		// The link goes to the user's inbox only: it must not also travel back to the caller.
+		c.JSON(http.StatusAccepted, gin.H{
+			"mode":       req.Mode,
+			"expires_at": expiresAt.Format(time.RFC3339),
+			"emailed":    true,
+		})
+
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 30*time.Second)
+		go func(ctx context.Context) {
+			defer cancel()
+			defer func() {
+				if r := recover(); r != nil {
+					h.logger.Error("Panic recovered in SendPasswordSetupEmail goroutine", zap.Any("panic", r))
+				}
+			}()
+			if err := h.svc.SendPasswordSetupEmail(ctx, tenantID, req.UserID, req.Mode, req.ExpiresHours); err != nil {
+				h.logger.Error("Failed to send password setup email", zap.Error(err))
+			}
+		}(bgCtx)
 		return
 	}
 
@@ -390,22 +445,6 @@ func (h *HTTPHandler) createPasswordSetupLink(c *gin.Context) {
 		"url":        setupURL,
 		"expires_at": expiresAt.Format(time.RFC3339),
 	})
-
-	if req.SendEmail {
-		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 30*time.Second)
-		go func(ctx context.Context) {
-			defer cancel()
-			defer func() {
-				if r := recover(); r != nil {
-					h.logger.Error("Panic recovered in SendPasswordSetupEmail goroutine", zap.Any("panic", r))
-				}
-			}()
-			err := h.svc.SendPasswordSetupEmail(ctx, tenantID, req.UserID, req.Mode, req.ExpiresHours)
-			if err != nil {
-				h.logger.Error("Failed to send password setup email", zap.Error(err))
-			}
-		}(bgCtx)
-	}
 }
 
 func (h *HTTPHandler) completePasswordSetup(c *gin.Context) {
