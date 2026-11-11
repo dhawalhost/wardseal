@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import {
     PageHeader,
@@ -90,7 +91,7 @@ const MFASetup: React.FC = () => {
     };
 
     const handleDisable = async () => {
-        if (!window.confirm('Are you sure you want to disable TOTP MFA? This reduces your account security.')) return;
+        if (!(await confirmAction({ title: "Turn off authenticator app?", description: "You will sign in with your password only until you set up a second factor again.", confirmLabel: "Turn off" }))) return;
         try {
             await api.delete(`/api/v1/mfa/totp?user_id=${encodeURIComponent(getUserId())}`);
             setEnrolled(false);
@@ -291,10 +292,10 @@ const MFASetup: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-4 space-y-card">
-                    <GlassCard className="shadow-sm border-border bg-secondary text-secondary-foreground overflow-hidden rounded-xl p-6">
+                    <GlassCard className="border-border bg-surface-container-high text-on-surface overflow-hidden rounded-xl p-6">
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary-foreground/10 rounded-lg">
+                                <div className="p-2 bg-surface-container-highest rounded-lg">
                                     <Info className="w-5 h-5" />
                                 </div>
                                 <h4 className="text-base font-medium">Security overview</h4>
@@ -324,11 +325,11 @@ const MFASetup: React.FC = () => {
                                 ].map((stat) => (
                                     <div
                                         key={stat.label}
-                                        className="flex items-center justify-between border-b border-secondary-foreground/10 pb-3 last:border-0 last:pb-0"
+                                        className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="text-secondary-foreground">{stat.icon}</div>
-                                            <span className="text-xs font-medium text-secondary-foreground">
+                                            <div className="text-on-surface">{stat.icon}</div>
+                                            <span className="text-xs font-medium text-on-surface">
                                                 {stat.label}
                                             </span>
                                         </div>
@@ -337,8 +338,8 @@ const MFASetup: React.FC = () => {
                                 ))}
                             </div>
 
-                            <div className="bg-secondary-foreground/5 p-4 rounded-lg border border-secondary-foreground/10">
-                                <p className="text-xs leading-relaxed text-secondary-foreground">
+                            <div className="bg-surface-container-highest p-4 rounded-lg border border-border">
+                                <p className="text-xs leading-relaxed text-on-surface">
                                     Your organization may require multi-factor authentication for all users.
                                 </p>
                             </div>

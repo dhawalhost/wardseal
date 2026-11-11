@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -392,7 +393,7 @@ const DeveloperApps: React.FC = () => {
     };
 
     const handleDeleteSAMLProvider = async (entityID: string) => {
-        if (!window.confirm(`Delete SAML registration for ${entityID}?`)) return;
+        if (!(await confirmAction({ title: `Delete SAML registration for ${entityID}?`, description: "Sign-in through this service provider stops working.", confirmLabel: "Delete registration" }))) return;
         try {
             await deleteSAMLProvider(entityID);
             fetchSAMLProviders();
@@ -467,19 +468,19 @@ const DeveloperApps: React.FC = () => {
     };
 
     const handleDeleteApp = async (id: string) => {
-        if (!window.confirm('Delete this app?')) return;
+        if (!(await confirmAction({ title: "Delete this app?", description: "Its client credentials stop working immediately.", confirmLabel: "Delete app" }))) return;
         await api.delete(`/api/v1/apps/${id}`);
         fetchApps();
     };
 
     const handleRevokeKey = async (id: string) => {
-        if (!window.confirm('Revoke this API key?')) return;
+        if (!(await confirmAction({ title: "Revoke this API key?", description: "Anything using it will start failing with 401.", confirmLabel: "Revoke key" }))) return;
         await api.delete(`/api/v1/api-keys/${id}`);
         fetchAPIKeys();
     };
 
     const handleRotateSecret = async (id: string) => {
-        if (!window.confirm('Rotate this app\'s client secret? The old secret will stop working immediately.')) return;
+        if (!(await confirmAction({ title: "Rotate client secret?", description: "The current secret stops working immediately. Update every service that uses it.", confirmLabel: "Rotate secret" }))) return;
         try {
             const res = await api.post(`/api/v1/apps/${id}/rotate-secret`);
             setCreatedSecret(res.data.client_secret);

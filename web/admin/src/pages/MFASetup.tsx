@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import {
     PageHeader,
@@ -90,7 +91,7 @@ const MFASetup: React.FC = () => {
     };
 
     const handleDisable = async () => {
-        if (!window.confirm('Are you sure you want to disable TOTP MFA? This reduces your account security.')) return;
+        if (!(await confirmAction({ title: "Turn off authenticator app?", description: "You will sign in with your password only until you set up a second factor again.", confirmLabel: "Turn off" }))) return;
         try {
             await api.delete(`/api/v1/mfa/totp?user_id=${encodeURIComponent(getUserId())}`);
             setEnrolled(false);
@@ -136,7 +137,7 @@ const MFASetup: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
+                                <div className="p-2 bg-surface-container-high text-on-surface-variant rounded-lg">
                                     <Key className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -265,11 +266,11 @@ const MFASetup: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-4 space-y-page">
-                    <GlassCard className="border border-secondary/20 shadow-sm bg-secondary text-secondary-foreground overflow-hidden rounded-lg p-card h-fit">
+                    <GlassCard className="border border-secondary/20 bg-surface-container-high text-on-surface overflow-hidden rounded-lg p-card h-fit">
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary-foreground/10 rounded-lg">
-                                    <Info className="w-4 h-4 text-secondary-foreground" />
+                                <div className="p-2 bg-surface-container-highest rounded-lg">
+                                    <Info className="w-4 h-4 text-on-surface" />
                                 </div>
                                 <h4 className="text-base font-medium">Security overview</h4>
                             </div>
@@ -292,20 +293,20 @@ const MFASetup: React.FC = () => {
                                         icon: <Key className="w-4 h-4" /> 
                                     },
                                 ].map((stat) => (
-                                    <div key={stat.label} className="flex items-center justify-between border-b border-secondary-foreground/10 pb-3 last:border-0 last:pb-0">
+                                    <div key={stat.label} className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0">
                                         <div className="flex items-center gap-3">
-                                            <div className="text-secondary-foreground">
+                                            <div className="text-on-surface">
                                                 {stat.icon}
                                             </div>
-                                            <span className="text-xs font-medium text-secondary-foreground">{stat.label}</span>
+                                            <span className="text-xs font-medium text-on-surface">{stat.label}</span>
                                         </div>
-                                        <span className="text-xs font-medium font-mono text-secondary-foreground">{stat.value}</span>
+                                        <span className="text-xs font-medium font-mono text-on-surface">{stat.value}</span>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="bg-secondary-foreground/10 p-4 rounded-lg border border-secondary-foreground/10">
-                                <p className="text-xs leading-relaxed font-medium text-secondary-foreground">
+                            <div className="bg-surface-container-highest p-4 rounded-lg border border-border">
+                                <p className="text-xs leading-relaxed font-medium text-on-surface">
                                     Multi-factor authentication may be required by your organization&apos;s security policy.
                                 </p>
                             </div>
@@ -313,7 +314,7 @@ const MFASetup: React.FC = () => {
                     </GlassCard>
 
                     <div className="p-card rounded-lg border border-dashed border-border bg-card flex flex-col items-center gap-4">
-                        <div className="p-3 bg-secondary/10 rounded-lg">
+                        <div className="p-3 bg-surface-container-high rounded-lg">
                             <ShieldCheck className="h-6 w-6 text-secondary" />
                         </div>
                         <div className="text-center space-y-1">

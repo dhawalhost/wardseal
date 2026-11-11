@@ -98,13 +98,13 @@ const AccessRequests: React.FC = () => {
                     </GlassCardContent>
                 </GlassCard>
 
-                <GlassCard className="md:col-span-2 border border-secondary/20 shadow-sm bg-secondary overflow-hidden rounded-lg text-secondary-foreground">
+                <GlassCard className="md:col-span-2 border border-border shadow-sm bg-surface-container-low overflow-hidden rounded-lg text-on-surface">
                     <GlassCardContent className="p-card h-full flex flex-col justify-center relative overflow-hidden">
-                        <div className="absolute -right-6 -bottom-6 text-secondary-foreground rotate-12">
+                        <div className="absolute -right-6 -bottom-6 text-on-surface rotate-12">
                             <Activity className="w-32 h-32" />
                         </div>
                           <h3 className="text-xl font-medium tracking-tight relative z-10">Temporary Access</h3>
-                        <p className="text-sm font-medium text-secondary-foreground mt-2 relative z-10">
+                        <p className="text-sm font-medium text-on-surface mt-2 relative z-10">
                             All access decisions are logged for compliance auditing.
                         </p>
                     </GlassCardContent>
@@ -120,7 +120,7 @@ const AccessRequests: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardHeader className="py-card px-card border-b border-border">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-secondary/10 rounded-lg">
+                            <div className="p-2 bg-surface-container-high rounded-lg">
                                 <Activity className="w-4 h-4 text-secondary" />
                             </div>
                              <div>

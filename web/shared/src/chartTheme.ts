@@ -10,6 +10,7 @@ export const colors = {
   warning: "hsl(var(--warning))",
   error: "hsl(var(--destructive))",
   info: "hsl(var(--info))",
+  brand: "hsl(var(--brand))",
 
   surface: "hsl(var(--background))",
   surfaceContainer: "hsl(var(--surface-container))",
@@ -17,15 +18,16 @@ export const colors = {
   onSurface: "hsl(var(--on-surface))",
   onSurfaceVariant: "hsl(var(--on-surface-variant))",
 
+  // Ink leads, brass second; semantic colours only after the neutral-led series.
   chart: [
-    "hsl(var(--secondary))",
     "hsl(var(--primary))",
+    "hsl(var(--brand))",
+    "hsl(var(--info))",
+    "hsl(var(--on-surface-subtle))",
     "hsl(var(--success))",
     "hsl(var(--warning))",
-    "hsl(var(--muted-foreground))",
     "hsl(var(--destructive))",
-    "hsl(199 89% 48%)",
-    "hsl(222 20% 40%)",
+    "hsl(var(--surface-container-highest))",
   ],
 } as const;
 

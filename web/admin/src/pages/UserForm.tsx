@@ -213,7 +213,7 @@ export default function UserForm() {
                         <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                             <GlassCardHeader className="py-5 px-6 border-b border-border">
                                 <div className="flex items-center gap-6">
-                                    <div className="p-2.5 bg-secondary/10 rounded-lg text-secondary">
+                                    <div className="p-2.5 bg-surface-container-high rounded-lg text-on-surface-variant">
                                         <Layout className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -399,7 +399,7 @@ export default function UserForm() {
                             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                                 <GlassCardHeader className="py-5 px-6 border-b border-border">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-2.5 bg-secondary/10 rounded-lg text-secondary">
+                                        <div className="p-2.5 bg-surface-container-high rounded-lg text-on-surface-variant">
                                             <Building2 className="w-5 h-5" />
                                         </div>
                                         <div>
@@ -436,7 +436,7 @@ export default function UserForm() {
                             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                                 <GlassCardHeader className="py-5 px-6 border-b border-border">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-2.5 bg-secondary/10 rounded-lg text-secondary">
+                                        <div className="p-2.5 bg-surface-container-high rounded-lg text-on-surface-variant">
                                             <Users className="w-5 h-5" />
                                         </div>
                                         <div>

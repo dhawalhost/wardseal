@@ -164,10 +164,10 @@
   margin-top: 6px;
   border-radius: 50%;
   background: var(--bg-card);
-  border: 1.5px solid var(--accent);
+  border: 1.5px solid var(--brass);
 }
 .record-steps li:last-child .record-step-dot {
-  background: var(--accent);
+  background: var(--brass);
 }
 
 .record-step-title {
@@ -213,19 +213,13 @@
   bottom: -32px;
   width: 112px;
   height: 112px;
-  transform: rotate(-12deg);
-  filter: drop-shadow(0 6px 10px rgba(2, 8, 23, 0.35));
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.28));
 }
-.seal-outer { fill: hsl(201 96% 28%); }
-.seal-rule  { fill: none; stroke: hsl(0 0% 100% / 0.35); stroke-width: 0.75; }
-.seal-text  {
-  fill: hsl(0 0% 100% / 0.85);
-  font-family: var(--font-mono);
-  font-size: 7.5px;
-  letter-spacing: 0.06em;
-}
-.seal-glyph { fill: hsl(0 0% 100%); }
-.seal-cut   { fill: hsl(201 96% 28%); }
+.seal-outer { fill: var(--bg-card); stroke: var(--border); stroke-width: 1; }
+.seal-rule  { fill: none; stroke: var(--brass); stroke-width: 0.75; stroke-opacity: 0.45; }
+.seal-glyph { fill: var(--brass); }
+.seal-cut   { fill: var(--bg-card); }
 
 @keyframes record-in {
   from { opacity: 0; transform: translateY(8px); }

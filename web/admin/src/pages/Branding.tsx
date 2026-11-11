@@ -15,7 +15,7 @@ const Branding: React.FC = () => {
     const [config, setConfig] = useState<BrandingConfig>({
         tenant_id: '',
         logo_url: '/wardseal.svg',
-        primary_color: '#0369A1',
+        primary_color: '#14161B',
         background_color: '#F8FAFC',
         css_override: '',
         config: {}
@@ -49,13 +49,19 @@ const Branding: React.FC = () => {
         e.preventDefault();
         setError('');
         setSuccess('');
+        // Accept absolute http(s) URLs or a path on this site (e.g. the default /wardseal.svg).
+        const logo = config.logo_url.trim();
+        if (logo && !/^(https?:\/\/[^\s]+|\/[^\s/][^\s]*)$/i.test(logo)) {
+            setError('Use a full URL starting with https:// or a path starting with /, like /wardseal.svg');
+            return;
+        }
         setSaving(true);
         try {
             await updateBranding(config);
-            setSuccess('Branding updated successfully.');
+            setSuccess('Branding saved');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
-            setError('Failed to update branding');
+            setError('Branding could not be saved. Try again.');
             console.error(err);
         } finally {
             setSaving(false);
@@ -87,7 +93,7 @@ const Branding: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm rounded-xl bg-card">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
+                                <div className="p-2 bg-surface-container-high rounded-lg text-on-surface">
                                     <LayoutTemplate className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -104,13 +110,16 @@ const Branding: React.FC = () => {
                                     </Label>
                                     <Input
                                         id="logo"
-                                        type="url"
+                                        type="text"
+                                        inputMode="url"
+                                        autoComplete="off"
+                                        spellCheck={false}
                                         value={config.logo_url}
                                         onChange={e => setConfig({ ...config, logo_url: e.target.value })}
                                         placeholder="https://your-domain.com/logo.svg"
                                         className="h-10 border border-border rounded-lg bg-card focus-visible:ring-ring font-medium text-sm px-4"
                                     />
-                                    <p className="text-xs font-medium text-muted-foreground">Recommended: SVG or PNG with a transparent background.</p>
+                                    <p className="text-xs text-on-surface-subtle">A full URL or a path on this site, like /wardseal.svg. SVG or PNG with a transparent background works best.</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-card">
@@ -212,7 +221,7 @@ const Branding: React.FC = () => {
                                         {config.logo_url ? (
                                             <img src={config.logo_url} alt="Logo" className="mx-auto h-10 min-w-[48px] mb-4 object-contain" />
                                         ) : (
-                                            <div className="mx-auto h-10 w-10 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                                            <div className="mx-auto h-10 w-10 bg-surface-container-high rounded-lg flex items-center justify-center mb-4">
                                                 <Palette className="h-5 w-5 text-secondary" />
                                             </div>
                                         )}

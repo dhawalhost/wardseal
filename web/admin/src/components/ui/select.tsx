@@ -1,4 +1,4 @@
-/** SoT: @dhawalhost/wardseal-ui-kit@0.4.0 */
+/** SoT: @dhawalhost/wardseal-ui-kit@0.5.0 */
 export {
   Select,
   SelectGroup,

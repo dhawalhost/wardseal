@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import { getWebhooks, createWebhook, deleteWebhook } from '../api';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ const Webhooks: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("Delete this webhook?")) return;
+        if (!(await confirmAction({ title: "Delete this webhook?", description: "Events will stop being delivered to its URL.", confirmLabel: "Delete webhook" }))) return;
         try {
             await deleteWebhook(id);
             fetchData();
@@ -115,7 +116,7 @@ const Webhooks: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardHeader className="border-b border-border py-card px-card">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
+                                <div className="p-2 bg-surface-container-high rounded-lg text-on-surface">
                                     <Activity className="w-4 h-4" />
                                 </div>
                                 <GlassCardTitle className="text-base font-medium text-on-surface">Add webhook</GlassCardTitle>
@@ -145,7 +146,7 @@ const Webhooks: React.FC = () => {
                                             <div
                                                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${selectedEvents.includes(ev) ? 'bg-secondary border-secondary' : 'border-border bg-card group-hover:border-secondary/50'}`}
                                             >
-                                                {selectedEvents.includes(ev) && <Check className="h-3 w-3 text-secondary-foreground" />}
+                                                {selectedEvents.includes(ev) && <Check className="h-3 w-3 text-on-surface" />}
                                             </div>
                                             <span className={`text-sm font-medium transition-colors ${selectedEvents.includes(ev) ? 'text-on-surface' : 'text-muted-foreground'}`}>{ev}</span>
                                         </div>
@@ -187,7 +188,7 @@ const Webhooks: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                <div className="p-2 bg-surface-container-high rounded-lg">
                                     <ShieldCheck className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>

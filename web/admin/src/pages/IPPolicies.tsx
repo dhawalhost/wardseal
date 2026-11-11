@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import {
     getIPPolicies,
@@ -91,7 +92,7 @@ const IPPolicies: React.FC = () => {
     };
 
     const handleDeletePolicy = async (id: string) => {
-        if (!window.confirm('Delete this IP policy? This may affect user access.')) return;
+        if (!(await confirmAction({ title: "Delete this IP rule?", description: "Sign-ins it currently allows or blocks will be evaluated without it.", confirmLabel: "Delete rule" }))) return;
         try {
             await deleteIPPolicy(id);
             fetchPolicies();
@@ -194,7 +195,7 @@ const IPPolicies: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                <div className="p-2 bg-surface-container-high rounded-lg">
                                     <Activity className="w-4 h-4 text-secondary" />
                                 </div>
                                 <GlassCardTitle className="text-base font-medium">Status</GlassCardTitle>
@@ -212,9 +213,9 @@ const IPPolicies: React.FC = () => {
                         </GlassCardContent>
                     </GlassCard>
 
-                    <div className="bg-secondary text-secondary-foreground p-card rounded-xl flex items-start gap-3 shadow-sm border border-secondary/20">
-                        <ShieldAlert className="w-5 h-5 text-secondary-foreground flex-shrink-0 mt-0.5" />
-                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground">
+                    <div className="bg-surface-container-low text-on-surface p-card rounded-xl flex items-start gap-3 shadow-sm border border-border">
+                        <ShieldAlert className="w-5 h-5 text-on-surface flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium leading-relaxed text-on-surface">
                             Rules are evaluated by specificity. If no matching rule applies, traffic is allowed by default.
                         </p>
                     </div>
@@ -224,7 +225,7 @@ const IPPolicies: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                <div className="p-2 bg-surface-container-high rounded-lg">
                                     <Network className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>

@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import { getSlackStatus, configureSlack, disconnectSlack, SlackIntegration as SlackIntegType } from '../api';
 import { Button } from '@/components/ui/button';
@@ -87,7 +88,7 @@ const SlackIntegration: React.FC = () => {
     };
 
     const handleDisconnect = async () => {
-        if (!window.confirm('Are you sure you want to disconnect Slack? This will disable all ChatOps functionality.')) return;
+        if (!(await confirmAction({ title: "Disconnect Slack?", description: "ChatOps commands and Slack notifications stop until you reconnect.", confirmLabel: "Disconnect" }))) return;
         setLoading(true);
         try {
             await disconnectSlack();
@@ -147,7 +148,7 @@ const SlackIntegration: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                                <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
                                     <Zap className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -211,9 +212,9 @@ const SlackIntegration: React.FC = () => {
                         </GlassCardContent>
                     </GlassCard>
 
-                    <div className="bg-secondary text-secondary-foreground p-card rounded-lg flex items-start gap-4 shadow-sm border border-secondary/20">
-                        <Activity className="w-5 h-5 text-secondary-foreground flex-shrink-0 mt-0.5" />
-                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground">
+                    <div className="bg-surface-container-low text-on-surface p-card rounded-lg flex items-start gap-4 shadow-sm border border-border">
+                        <Activity className="w-5 h-5 text-on-surface flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium leading-relaxed text-on-surface">
                             Events are delivered over secure webhooks so identity actions stay in sync with Slack.
                         </p>
                     </div>
@@ -223,7 +224,7 @@ const SlackIntegration: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
+                                <div className="p-2 bg-surface-container-high text-on-surface-variant rounded-lg">
                                     <Layout className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -326,25 +327,25 @@ const SlackIntegration: React.FC = () => {
                 </div>
             </div>
 
-            <GlassCard className="border border-secondary/20 shadow-sm bg-secondary text-secondary-foreground overflow-hidden rounded-lg p-card">
+            <GlassCard className="border border-border shadow-sm bg-surface-container-low text-on-surface overflow-hidden rounded-lg p-card">
                 <div className="flex flex-col lg:flex-row items-start gap-card">
-                    <div className="p-3 bg-secondary-foreground/10 rounded-lg">
-                        <MessageSquare className="w-6 h-6 text-secondary-foreground" />
+                    <div className="p-3 bg-surface-container-high rounded-lg">
+                        <MessageSquare className="w-6 h-6 text-on-surface" />
                     </div>
                     <div className="space-y-6 flex-1">
                         <div className="space-y-2">
                             <h3 className="text-xl font-medium tracking-tight">Slash command endpoint</h3>
-                            <p className="text-sm font-medium text-secondary-foreground leading-relaxed max-w-2xl">
+                            <p className="text-sm font-medium text-on-surface leading-relaxed max-w-2xl">
                                 Point your Slack app&apos;s slash commands to this URL.
                             </p>
                         </div>
                         
-                        <div className="bg-secondary-foreground/10 p-4 rounded-lg border border-secondary-foreground/10">
+                        <div className="bg-surface-container-high p-4 rounded-lg border border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary-foreground/10 rounded-lg">
-                                    <Terminal className="h-4 w-4 text-secondary-foreground" />
+                                <div className="p-2 bg-surface-container-high rounded-lg">
+                                    <Terminal className="h-4 w-4 text-on-surface" />
                                 </div>
-                                <code className="font-mono text-sm font-medium text-secondary-foreground select-all break-all">
+                                <code className="font-mono text-sm font-medium text-on-surface select-all break-all">
                                     {window.location.origin}/integrations/slack/commands
                                 </code>
                             </div>
@@ -352,9 +353,9 @@ const SlackIntegration: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             {['/wardseal-whoami', '/wardseal-lock', '/wardseal-audit'].map(cmd => (
-                                <div key={cmd} className="flex items-center gap-3 py-3 px-4 rounded-lg bg-secondary-foreground/5 border border-secondary-foreground/10">
-                                    <Command className="h-4 w-4 text-secondary-foreground" />
-                                    <span className="font-mono text-xs font-medium text-secondary-foreground">{cmd}</span>
+                                <div key={cmd} className="flex items-center gap-3 py-3 px-4 rounded-lg bg-surface-container-high border border-border">
+                                    <Command className="h-4 w-4 text-on-surface" />
+                                    <span className="font-mono text-xs font-medium text-on-surface">{cmd}</span>
                                 </div>
                             ))}
                         </div>

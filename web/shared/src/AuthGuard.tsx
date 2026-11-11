@@ -33,7 +33,12 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     axios
       .get('/api/v1/user/profile', { withCredentials: true })
       .then((res) => {
-        seedSessionFromProfile(res.data ?? {});
+        // A proxy gap can answer with the SPA's index.html (200 text/html). Only a JSON
+        // profile counts as a session, so a routing mistake can never open the UI.
+        if (!res.data || typeof res.data !== 'object') {
+          throw new Error('profile response is not JSON');
+        }
+        seedSessionFromProfile(res.data);
         setStatus('ok');
       })
       .catch(() => {

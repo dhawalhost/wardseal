@@ -352,10 +352,7 @@ const Login: React.FC = () => {
         { label: 'Support', href: `${policyBaseUrl}/support` },
     ];
     const tenantBrand = branding.logo_url ? (
-        <span className="flex items-center gap-2.5">
-            <img src={branding.logo_url} alt="" className="h-6 w-6 object-contain" />
-            <span className="text-sm font-medium text-on-surface">{branding.tenant_name || 'WardSeal'}</span>
-        </span>
+        <img src={branding.logo_url} alt={branding.tenant_name || ''} className="h-9 w-9 object-contain" />
     ) : undefined;
     const errorBox = error && (
         <div role="alert" className="flex items-start gap-2.5 rounded-lg border border-error/20 bg-error-subtle px-3 py-2.5 text-sm text-error-subtle-foreground">

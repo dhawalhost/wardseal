@@ -1,2 +1,2 @@
-/** SoT: @dhawalhost/wardseal-ui-kit@0.4.0 */
+/** SoT: @dhawalhost/wardseal-ui-kit@0.5.0 */
 export { ScrollArea, ScrollBar } from "@dhawalhost/wardseal-ui-kit";

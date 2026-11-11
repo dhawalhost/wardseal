@@ -272,7 +272,7 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <p className="mt-2 text-sm text-on-surface-variant">{hygieneNote}</p>
                                 <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
-                                    <div className="h-full rounded-full bg-secondary" style={{ width: `${hygiene ?? 0}%` }} />
+                                    <div className="h-full rounded-full bg-primary" style={{ width: `${hygiene ?? 0}%` }} />
                                 </div>
 
                                 <h3 className="mt-8 text-sm text-on-surface-variant">Identities by privilege risk</h3>

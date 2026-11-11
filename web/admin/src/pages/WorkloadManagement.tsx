@@ -137,7 +137,7 @@ const WorkloadManagement: React.FC = () => {
             <GlassCard className="overflow-hidden border border-border shadow-sm bg-card rounded-xl">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                        <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
@@ -175,7 +175,7 @@ const WorkloadManagement: React.FC = () => {
                                         <GlassTableRow key={w.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
                                             <TableCell className="py-card pl-card">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                                    <div className="w-9 h-9 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center">
                                                         <Terminal className="h-4 w-4" />
                                                     </div>
                                                     <div className="flex flex-col">
@@ -239,7 +239,7 @@ const WorkloadManagement: React.FC = () => {
                 <DialogContent className="sm:max-w-[480px] rounded-xl border border-border p-0 overflow-hidden shadow-sm">
                     <DialogHeader className="bg-card p-card border-b border-border">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
+                            <div className="p-2 bg-surface-container-high rounded-lg text-on-surface">
                                 <Plus className="w-5 h-5" />
                             </div>
                             <div>

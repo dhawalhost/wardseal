@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import { getWebhooks, createWebhook, deleteWebhook } from '../api';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ const Webhooks: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("Delete this webhook?")) return;
+        if (!(await confirmAction({ title: "Delete this webhook?", description: "Events will stop being delivered to its URL.", confirmLabel: "Delete webhook" }))) return;
         try {
             await deleteWebhook(id);
             fetchData();
@@ -105,8 +106,8 @@ const Webhooks: React.FC = () => {
         <div className="space-y-6 animate-in fade-in duration-700">
             <PageHeader
                 icon={<WebhookIcon className="w-6 h-6 text-primary" />}
-                title="Event Tunnels"
-                description="Synchronous and asynchronous outbound data pipelines."
+                title="Webhooks"
+                description="Send outbound notifications when identity and access events occur"
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

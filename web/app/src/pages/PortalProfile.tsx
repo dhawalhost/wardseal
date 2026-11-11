@@ -120,19 +120,19 @@ const PortalProfile = () => {
                 </GlassCard>
 
                 <GlassCard className="shadow-sm border-border overflow-hidden rounded-xl bg-card">
-                    <GlassCardHeader className="bg-secondary text-secondary-foreground py-5 px-6 relative overflow-hidden border-b-0">
+                    <GlassCardHeader className="bg-surface-container-low text-on-surface py-5 px-6 relative overflow-hidden border-b-0">
                         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                             <Shield className="w-16 h-16" />
                         </div>
                         <div className="relative z-10 flex items-center gap-4">
-                            <div className="p-2 bg-secondary-foreground/10 rounded-lg border border-secondary-foreground/10">
+                            <div className="p-2 bg-surface-container-high rounded-lg border border-border">
                                 <Lock className="w-5 h-5" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-lg font-medium tracking-tight text-secondary-foreground leading-none">
+                                <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface leading-none">
                                     Security
                                 </GlassCardTitle>
-                                <p className="text-secondary-foreground text-sm mt-1.5">Password and MFA settings</p>
+                                <p className="text-on-surface text-sm mt-1.5">Password and MFA settings</p>
                             </div>
                         </div>
                     </GlassCardHeader>

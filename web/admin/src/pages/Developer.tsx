@@ -37,16 +37,16 @@ const Developer: React.FC = () => {
                         </div>
                     </div>
 
-                    <GlassCard className="bg-secondary text-secondary-foreground border border-secondary/20 shadow-sm overflow-hidden relative rounded-lg">
-                        <div className="absolute top-0 right-0 p-4 text-secondary-foreground">
+                    <GlassCard className="bg-surface-container-low text-on-surface border border-border shadow-sm overflow-hidden relative rounded-lg">
+                        <div className="absolute top-0 right-0 p-4 text-on-surface">
                             <Terminal className="w-20 h-20 rotate-12" />
                         </div>
                         <GlassCardContent className="p-card space-y-4 relative z-10">
                             <div className="space-y-1">
-                                <p className="text-xs font-medium text-secondary-foreground">Go SDK</p>
+                                <p className="text-xs font-medium text-on-surface">Go SDK</p>
                                 <h4 className="text-lg font-medium tracking-tight">wardseal/pkg/client</h4>
                             </div>
-                            <div className="bg-secondary-foreground/10 p-3 rounded-lg font-mono text-xs border border-secondary-foreground/10">
+                            <div className="bg-surface-container-high p-3 rounded-lg font-mono text-xs border border-border">
                                 <code>go get github.com/dhawalhost/wardseal/pkg/client</code>
                             </div>
                         </GlassCardContent>
@@ -57,7 +57,7 @@ const Developer: React.FC = () => {
                     <GlassCard className="overflow-hidden border border-border shadow-sm bg-card min-h-[800px] rounded-lg">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                <div className="p-2 bg-surface-container-high rounded-lg">
                                     <Code2 className="w-4 h-4 text-secondary" />
                                 </div>
                                 <GlassCardTitle className="text-base font-medium">API Reference</GlassCardTitle>

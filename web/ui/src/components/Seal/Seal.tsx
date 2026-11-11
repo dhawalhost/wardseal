@@ -11,34 +11,49 @@ const CUTS = [
 ];
 
 export interface SealProps extends React.SVGAttributes<SVGSVGElement> {
-  /** Engraved ring text; repeated twice around the seal. */
+  /**
+   * `logo` (default): the WardSeal shield itself, struck in brass.
+   * `ring`: the shield inside a ring of engraved text, for large sizes only.
+   */
+  variant?: "logo" | "ring";
+  /** Engraved ring text for `variant="ring"`; repeated twice around the seal. */
   label?: string;
 }
 
 /**
- * WardSeal brand seal — the shield inside a ring of engraved text.
- * Decorative; the signature motif for verified decisions. Use once per surface.
+ * WardSeal brand seal — the brand mark used as a seal for verified decisions.
+ * Decorative. Use once per surface.
  */
 const Seal = React.forwardRef<SVGSVGElement, SealProps>(
-  ({ className, label = "WARDSEAL · VERIFIED DECISION · ", ...props }, ref) => {
+  ({ className, variant = "logo", label = "WARDSEAL · VERIFIED DECISION · ", ...props }, ref) => {
     const id = React.useId().replace(/:/g, "");
+    if (variant === "logo") {
+      return (
+        <svg ref={ref} viewBox="0 0 341 400" aria-hidden focusable="false" className={cn("h-12 w-auto", className)} {...props}>
+          <path d={SHIELD} fill="hsl(var(--brand))" />
+          {CUTS.map((d) => (
+            <path key={d.slice(0, 12)} d={d} fill="hsl(var(--on-brand))" />
+          ))}
+        </svg>
+      );
+    }
     return (
       <svg ref={ref} viewBox="0 0 120 120" aria-hidden focusable="false" className={cn("h-28 w-28", className)} {...props}>
         <defs>
           <path id={`seal-ring-${id}`} d="M60 60 m-44 0 a44 44 0 1 1 88 0 a44 44 0 1 1 -88 0" />
         </defs>
-        <circle cx="60" cy="60" r="58" fill="hsl(var(--secondary))" />
-        <circle cx="60" cy="60" r="53" fill="none" stroke="rgb(255 255 255 / 0.35)" strokeWidth="0.75" />
-        <circle cx="60" cy="60" r="35" fill="none" stroke="rgb(255 255 255 / 0.35)" strokeWidth="0.75" />
-        <text fill="rgb(255 255 255 / 0.85)" fontFamily="var(--font-mono)" fontSize="7.5" letterSpacing="0.06em">
+        <circle cx="60" cy="60" r="58" fill="hsl(var(--brand))" />
+        <circle cx="60" cy="60" r="53" fill="none" stroke="hsl(var(--on-brand) / 0.4)" strokeWidth="0.75" />
+        <circle cx="60" cy="60" r="35" fill="none" stroke="hsl(var(--on-brand) / 0.4)" strokeWidth="0.75" />
+        <text fill="hsl(var(--on-brand) / 0.9)" fontFamily="var(--font-mono)" fontSize="7.5" letterSpacing="0.06em">
           <textPath href={`#seal-ring-${id}`} textLength="276">
             {label.repeat(2)}
           </textPath>
         </text>
         <g transform="translate(46 43) scale(0.082)">
-          <path d={SHIELD} fill="#fff" />
+          <path d={SHIELD} fill="hsl(var(--on-brand))" />
           {CUTS.map((d) => (
-            <path key={d.slice(0, 12)} d={d} fill="hsl(var(--secondary))" />
+            <path key={d.slice(0, 12)} d={d} fill="hsl(var(--brand))" />
           ))}
         </g>
       </svg>

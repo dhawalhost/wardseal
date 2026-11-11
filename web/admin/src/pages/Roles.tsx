@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import { getRoles, createRole, deleteRole, getPermissions, createPermission, getRolePermissions, assignPermissionToRole } from '../api';
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,7 @@ const Roles: React.FC = () => {
 
     const handleDeleteRole = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (window.confirm('Delete this role?')) {
+        if ((await confirmAction({ title: "Delete this role?", description: "Users holding it lose its permissions immediately.", confirmLabel: "Delete role" }))) {
             try {
                 await deleteRole(id);
                 if (selectedRole?.id === id) setSelectedRole(null);
@@ -220,19 +221,19 @@ const Roles: React.FC = () => {
                     <div className="flex-1 flex flex-col overflow-hidden bg-muted/30">
                         {selectedRole ? (
                             <>
-                                <div className="bg-secondary px-6 py-4 text-secondary-foreground shrink-0 flex items-center justify-between">
+                                <div className="bg-surface-container-low px-6 py-4 text-on-surface shrink-0 flex items-center justify-between border-b border-border">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-secondary-foreground/10 rounded-lg flex items-center justify-center">
-                                            <Shield className="w-4 h-4 text-secondary-foreground" />
+                                        <div className="w-8 h-8 bg-surface-container-high rounded-lg flex items-center justify-center">
+                                            <Shield className="w-4 h-4 text-on-surface" />
                                         </div>
                                         <div>
-                                            <h2 className="text-sm font-medium text-secondary-foreground">{selectedRole.name}</h2>
-                                            <p className="text-secondary-foreground text-xs mt-0.5">
+                                            <h2 className="text-sm font-medium text-on-surface">{selectedRole.name}</h2>
+                                            <p className="text-on-surface text-xs mt-0.5">
                                                 {rolePermissions.length} permission{rolePermissions.length !== 1 ? 's' : ''} assigned
                                             </p>
                                         </div>
                                     </div>
-                                    <Button aria-label="Close details" variant="ghost" size="icon" className="h-7 w-7 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground" onClick={() => setSelectedRole(null)}>
+                                    <Button aria-label="Close details" variant="ghost" size="icon" className="h-7 w-7 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary-foreground" onClick={() => setSelectedRole(null)}>
                                         <X className="w-3.5 h-3.5" />
                                     </Button>
                                 </div>
@@ -256,7 +257,7 @@ const Roles: React.FC = () => {
                                                     <div key={p.id} className="p-2.5 bg-card border border-border rounded-lg flex items-center justify-between shadow-sm">
                                                         <div>
                                                             <p className="font-mono text-xs font-medium text-on-surface">{p.resource}</p>
-                                                            <Badge className="mt-1 bg-secondary/10 text-secondary border-none rounded text-xs font-medium px-1.5">{p.action}</Badge>
+                                                            <Badge className="mt-1 bg-surface-container-high text-on-surface-variant border-none rounded text-xs font-medium px-1.5">{p.action}</Badge>
                                                         </div>
                                                         <div className="w-6 h-6 bg-success-subtle rounded flex items-center justify-center">
                                                             <ShieldCheck className="w-3 h-3 text-success" />
@@ -299,7 +300,7 @@ const Roles: React.FC = () => {
                             </>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                                <div className="w-14 h-14 bg-secondary/10 rounded-xl flex items-center justify-center mb-4">
+                                <div className="w-14 h-14 bg-surface-container-high rounded-xl flex items-center justify-center mb-4">
                                     <Shield className="h-6 w-6 text-secondary" />
                                 </div>
                                 <h3 className="text-sm font-medium text-on-surface mb-1">Select a role</h3>

@@ -60,7 +60,7 @@ const SetPassword: React.FC = () => {
       <GlassCard className="w-full max-w-md border border-border shadow-sm bg-card rounded-lg overflow-hidden">
         <GlassCardHeader className="p-card border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+            <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
               <KeyRound className="w-4 h-4" />
             </div>
             <div>

@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import { useState, useEffect } from 'react';
 import { getSSOProviders, createSSOProvider, updateSSOProvider, deleteSSOProvider, toggleSSOProvider } from '../api';
 import { Button } from '@/components/ui/button';
@@ -108,7 +109,7 @@ export default function SSOConfig() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this provider?')) {
+        if ((await confirmAction({ title: "Delete this identity provider?", description: "Users who sign in through it will no longer be able to.", confirmLabel: "Delete provider" }))) {
             try {
                 setLoading(true);
                 await deleteSSOProvider(id);
@@ -275,24 +276,24 @@ export default function SSOConfig() {
                 {selectedProvider ? (
                     <div className="flex-1 flex flex-col h-full overflow-hidden animate-in slide-in-from-right-4 duration-300">
                         {/* Header banner */}
-                        <div className="bg-secondary px-card py-card text-secondary-foreground shrink-0 relative overflow-hidden border-b border-secondary/20">
+                        <div className="bg-surface-container-low px-card py-card text-on-surface shrink-0 relative overflow-hidden border-b border-border">
                             <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
                                 <Building2 className="w-32 h-32" />
                             </div>
                             <div className="relative z-10 flex items-start justify-between">
                                 <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-secondary-foreground/10 rounded-lg flex items-center justify-center">
-                                        <Building2 className="w-6 h-6 text-secondary-foreground" />
+                                    <div className="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center">
+                                        <Building2 className="w-6 h-6 text-on-surface" />
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-medium tracking-tight text-secondary-foreground">
+                                        <h2 className="text-lg font-medium tracking-tight text-on-surface">
                                             {isCreating ? `New ${selectedProvider.type?.toUpperCase()} Federation` : selectedProvider.name}
                                         </h2>
                                         <div className="flex items-center gap-3 mt-1.5">
-                                            <Badge className="bg-secondary-foreground/10 text-secondary-foreground border-none text-xs font-medium px-2 shadow-none h-5">
+                                            <Badge className="bg-surface-container-high text-on-surface border-none text-xs font-medium px-2 shadow-none h-5">
                                                 {selectedProvider.type}
                                             </Badge>
-                                            <span className="text-secondary-foreground">•</span>
+                                            <span className="text-on-surface">•</span>
                                             <div className="flex items-center gap-2">
                                                 <Switch
                                                     checked={selectedProvider.enabled ?? false}
@@ -300,7 +301,7 @@ export default function SSOConfig() {
                                                     onCheckedChange={(checked) => handleToggle(selectedProvider.id!, checked)}
                                                     className="h-3.5 w-6 data-[state=checked]:bg-secondary-foreground/40"
                                                 />
-                                                <span className="text-xs font-medium text-secondary-foreground">
+                                                <span className="text-xs font-medium text-on-surface">
                                                     {selectedProvider.enabled ? 'Live' : 'Inactive'}
                                                 </span>
                                             </div>
@@ -562,7 +563,7 @@ export default function SSOConfig() {
                                                     <div className="p-5 flex flex-col gap-2">
                                                         <span className="text-xs font-medium text-muted-foreground">Cryptographic Options</span>
                                                         <div className="flex gap-4 mt-1">
-                                                            <Badge className="bg-secondary/10 text-secondary border border-secondary/20 shadow-none text-xs font-medium">
+                                                            <Badge className="bg-surface-container-high text-on-surface-variant border border-secondary/20 shadow-none text-xs font-medium">
                                                                 Sign assertions: {selectedProvider.saml_sign_assertions ? 'Yes' : 'No'}
                                                             </Badge>
                                                             <Badge className="bg-warning-subtle text-warning-subtle-foreground border border-warning/30 shadow-none text-xs font-medium">
@@ -585,7 +586,7 @@ export default function SSOConfig() {
 
                                     {/* Dynamic Integration Guides */}
                                     <div className="p-6 rounded-lg bg-surface-container/30 border border-border flex gap-4">
-                                        <div className="p-2.5 bg-secondary/10 text-secondary rounded-lg self-start">
+                                        <div className="p-2.5 bg-surface-container-high text-on-surface-variant rounded-lg self-start">
                                             <HelpCircle className="w-5 h-5" />
                                         </div>
                                         <div className="space-y-2">

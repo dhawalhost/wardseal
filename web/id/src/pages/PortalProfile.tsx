@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ const PortalProfile = () => {
     };
 
     const handleDeleteAccount = async () => {
-        if (!window.confirm("WARNING: This will permanently delete your account and all associated personal data. This action cannot be undone. Are you sure?")) {
+        if (!(await confirmAction({ title: "Delete your account?", description: "Your account and personal data are permanently deleted. This cannot be undone.", confirmLabel: "Delete account" }))) {
             return;
         }
         setIsDeleting(true);
@@ -162,19 +163,19 @@ const PortalProfile = () => {
                 </GlassCard>
 
                 <GlassCard className="shadow-sm border-border overflow-hidden rounded-xl bg-card">
-                    <GlassCardHeader className="bg-secondary text-secondary-foreground py-5 px-6 relative overflow-hidden border-b-0">
+                    <GlassCardHeader className="bg-surface-container-low text-on-surface py-5 px-6 relative overflow-hidden border-b-0">
                         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                             <Shield className="w-16 h-16" />
                         </div>
                         <div className="relative z-10 flex items-center gap-4">
-                            <div className="p-2 bg-secondary-foreground/10 rounded-lg border border-secondary-foreground/10">
+                            <div className="p-2 bg-surface-container-high rounded-lg border border-border">
                                 <Lock className="w-5 h-5" />
                             </div>
                             <div>
-                                <GlassCardTitle className="text-lg font-medium tracking-tight text-secondary-foreground leading-none">
+                                <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface leading-none">
                                     Security
                                 </GlassCardTitle>
-                                <p className="text-secondary-foreground text-sm mt-1.5">Password and MFA settings</p>
+                                <p className="text-on-surface text-sm mt-1.5">Password and MFA settings</p>
                             </div>
                         </div>
                     </GlassCardHeader>

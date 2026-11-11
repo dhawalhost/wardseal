@@ -107,13 +107,13 @@ const AccessRequests: React.FC = () => {
                     </GlassCardContent>
                 </GlassCard>
 
-                <GlassCard className="md:col-span-2 border border-secondary/20 shadow-sm bg-secondary overflow-hidden rounded-xl text-secondary-foreground">
+                <GlassCard className="md:col-span-2 border border-border shadow-sm bg-surface-container-low overflow-hidden rounded-xl text-on-surface">
                     <GlassCardContent className="p-6 h-full flex flex-col justify-center relative overflow-hidden">
                         <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
                             <Activity className="w-40 h-40" />
                         </div>
                         <h3 className="text-lg font-medium tracking-tight relative z-10">Temporary access</h3>
-                        <p className="text-sm text-secondary-foreground mt-2 relative z-10">
+                        <p className="text-sm text-on-surface mt-2 relative z-10">
                             Access decisions are logged for compliance auditing.
                         </p>
                     </GlassCardContent>

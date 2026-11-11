@@ -15,8 +15,9 @@
  *    :root only.
  * 5. Role map (aligned with design-system/wardseal/MASTER.md):
  *      --primary     → navy ink (#0F172A)
- *      --secondary   → CTA blue (#0369A1)  ← MASTER “Accent/CTA”
- *      --accent      → soft tint fill (not CTA)
+ *      --secondary   → CTA ink (same as primary since 0.5.0)  ← MASTER “Accent/CTA”
+ *      --accent      → soft brass tint fill (not CTA)
+ *      --brand       → brass: seal, focus ring, signature details only
  *
  * Contrast contract (WCAG 2.2 AA, measured against card, background, muted
  * and surface-container-high in both themes — see scripts/check-contrast.mjs):
@@ -79,65 +80,65 @@
 :root,
 .light {
   /* ── Surfaces ── */
-  --background: 220 20% 97%;
-  --foreground: 222 32% 9%;
+  --background: 43 26% 96%;
+  --foreground: 225 12% 9%;
 
-  --surface: 220 20% 97%;
-  --surface-dim: 220 16% 94%;
-  --surface-bright: 0 0% 100%;
-  --surface-container-lowest: 0 0% 100%;
-  --surface-container-low: 220 20% 98%;
-  --surface-container: 220 16% 95.5%;
-  --surface-container-high: 220 14% 91%;
-  --surface-container-highest: 220 12% 86%;
+  --surface: 43 26% 96%;
+  --surface-dim: 40 16% 92.5%;
+  --surface-bright: 45 60% 99.5%;
+  --surface-container-lowest: 45 60% 99.5%;
+  --surface-container-low: 43 30% 97.5%;
+  --surface-container: 40 18% 94.5%;
+  --surface-container-high: 40 13% 90%;
+  --surface-container-highest: 38 10% 85%;
 
   /* ── Text tiers ── */
-  --on-surface: 222 32% 9%;
-  --on-surface-variant: 220 12% 33%;
-  --on-surface-subtle: 220 10% 40%;
+  --on-surface: 225 12% 9%;
+  --on-surface-variant: 35 6% 31%;
+  --on-surface-subtle: 35 5% 38%;
 
   /* ── Lines ── */
-  --outline: 220 9% 50%;
-  --outline-variant: 220 14% 89%;
+  --outline: 35 6% 47%;
+  --outline-variant: 38 14% 87%;
 
   /* ── Brand ── */
-  --primary: 222 44% 12%;
-  --on-primary: 0 0% 100%;
-  --primary-container: 220 14% 91%;
-  --on-primary-container: 222 44% 12%;
+  --primary: 225 13% 9%;
+  --on-primary: 43 30% 96%;
+  --primary-container: 40 13% 90%;
+  --on-primary-container: 225 13% 9%;
 
-  --secondary: 206 92% 33%;
-  --on-secondary: 0 0% 100%;
-  --secondary-container: 206 80% 95%;
-  --on-secondary-container: 206 92% 24%;
+  --secondary: 225 13% 9%;
+  --on-secondary: 43 30% 96%;
+  --secondary-container: 40 13% 90%;
+  --on-secondary-container: 225 13% 9%;
 
   /* Soft fill — not the CTA */
-  --accent: 206 60% 95%;
-  --accent-foreground: 206 92% 24%;
+  --accent: 40 45% 92%;
+  --accent-foreground: 38 55% 26%;
 
   /* ── Components ── */
-  --card: 0 0% 100%;
-  --card-foreground: 222 32% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 32% 9%;
-  --muted: 220 16% 95%;
-  --muted-foreground: 220 12% 33%;
-  --border: 220 14% 90%;
-  --input: 220 9% 50%;
-  --ring: 206 92% 33%;
+  --card: 45 60% 99.5%;
+  --card-foreground: 225 12% 9%;
+  --popover: 45 60% 99.5%;
+  --popover-foreground: 225 12% 9%;
+  --muted: 40 18% 94%;
+  --muted-foreground: 35 6% 31%;
+  --border: 38 14% 88%;
+  --input: 35 6% 47%;
+  --ring: 39 46% 35%;
 
-  --surface-inverse: 222 44% 12%;
-  --on-surface-inverse: 220 20% 97%;
+  --surface-inverse: 225 13% 9%;
+  --on-surface-inverse: 43 30% 96%;
 
   /* ── Semantic ── */
-  --success: 142 72% 29%;
+  --success: 148 50% 28%;
   --success-foreground: 0 0% 100%;
-  --success-subtle: 145 60% 93%;
-  --success-subtle-foreground: 142 72% 24%;
-  --warning: 26 90% 37%;
+  --success-subtle: 140 40% 92%;
+  --success-subtle-foreground: 148 55% 23%;
+  --warning: 22 88% 38%;
   --warning-foreground: 0 0% 100%;
-  --warning-subtle: 48 90% 93%;
-  --warning-subtle-foreground: 26 90% 30%;
+  --warning-subtle: 30 85% 93%;
+  --warning-subtle-foreground: 20 85% 30%;
   --error: 0 72% 47%;
   --error-foreground: 0 0% 100%;
   --error-subtle: 0 80% 95%;
@@ -145,13 +146,13 @@
   /* Alias of --error for shadcn compat — prefer error-* in new code */
   --destructive: var(--error);
   --destructive-foreground: var(--error-foreground);
-  --info: 206 92% 33%;
+  --info: 212 28% 36%;
   --info-foreground: 0 0% 100%;
-  --info-subtle: 206 80% 95%;
-  --info-subtle-foreground: 206 92% 24%;
+  --info-subtle: 210 25% 92%;
+  --info-subtle-foreground: 212 32% 27%;
 
   /* ── Overlay (modal scrim) ── */
-  --overlay: 224 30% 6%;
+  --overlay: 225 15% 6%;
   --overlay-opacity: 0.55;
 
   /* ── Elevation ── */
@@ -159,82 +160,93 @@
   --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05);
   --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
   --shadow-overlay: 0 8px 24px -4px rgb(15 23 42 / 0.10), 0 0 0 1px rgb(15 23 42 / 0.06);
+
+  /* ── Brand (brass) — the seal, focus, signature moments only. Never a CTA fill. ── */
+  --brand: 39 46% 35%;
+  --on-brand: 43 30% 96%;
+  --brand-subtle: 40 45% 92%;
+  --brand-subtle-foreground: 38 55% 26%;
 }
 
 /* ═══════════════════════════════════════════════════════════════
    DARK THEME — colour + elevation only
    ═══════════════════════════════════════════════════════════════ */
 .dark {
-  --background: 224 28% 6%;
-  --foreground: 220 20% 95%;
+  --background: 30 5% 6.5%;
+  --foreground: 40 25% 93%;
 
-  --surface: 224 28% 6%;
-  --surface-dim: 224 30% 4%;
-  --surface-bright: 222 20% 11%;
-  --surface-container-lowest: 224 30% 4%;
-  --surface-container-low: 224 26% 7%;
-  --surface-container: 222 20% 9.5%;
-  --surface-container-high: 220 16% 13%;
-  --surface-container-highest: 220 14% 17%;
+  --surface: 30 5% 6.5%;
+  --surface-dim: 30 6% 4.5%;
+  --surface-bright: 30 5% 11%;
+  --surface-container-lowest: 30 6% 4.5%;
+  --surface-container-low: 30 5% 7.5%;
+  --surface-container: 30 5% 9.5%;
+  --surface-container-high: 30 5% 13%;
+  --surface-container-highest: 30 4% 17%;
 
-  --on-surface: 220 20% 95%;
-  --on-surface-variant: 220 12% 70%;
-  --on-surface-subtle: 220 9% 60%;
+  --on-surface: 40 25% 93%;
+  --on-surface-variant: 38 8% 71%;
+  --on-surface-subtle: 38 6% 61%;
 
-  --outline: 220 9% 46%;
-  --outline-variant: 220 14% 16%;
+  --outline: 38 5% 47%;
+  --outline-variant: 30 5% 16%;
 
-  --primary: 220 20% 95%;
-  --on-primary: 224 28% 8%;
-  --primary-container: 220 16% 16%;
-  --on-primary-container: 220 20% 95%;
+  --primary: 40 25% 92%;
+  --on-primary: 225 13% 8%;
+  --primary-container: 30 5% 16%;
+  --on-primary-container: 40 25% 93%;
 
-  --secondary: 207 88% 60%;
-  --on-secondary: 224 30% 6%;
-  --secondary-container: 208 40% 16%;
-  --on-secondary-container: 207 90% 82%;
+  --secondary: 40 25% 92%;
+  --on-secondary: 225 13% 8%;
+  --secondary-container: 30 5% 16%;
+  --on-secondary-container: 40 25% 93%;
 
-  --accent: 220 16% 13%;
-  --accent-foreground: 220 20% 95%;
+  --accent: 38 30% 16%;
+  --accent-foreground: 40 60% 78%;
 
-  --card: 222 20% 9%;
-  --card-foreground: 220 20% 95%;
-  --popover: 222 20% 10%;
-  --popover-foreground: 220 20% 95%;
-  --muted: 220 16% 13%;
-  --muted-foreground: 220 12% 70%;
-  --border: 220 14% 15%;
-  --input: 220 9% 46%;
-  --ring: 207 88% 60%;
+  --card: 30 5% 9%;
+  --card-foreground: 40 25% 93%;
+  --popover: 30 5% 10%;
+  --popover-foreground: 40 25% 93%;
+  --muted: 30 5% 13%;
+  --muted-foreground: 38 8% 71%;
+  --border: 30 5% 15%;
+  --input: 38 5% 47%;
+  --ring: 40 50% 58%;
 
-  --surface-inverse: 220 20% 95%;
-  --on-surface-inverse: 224 28% 8%;
+  --surface-inverse: 40 25% 93%;
+  --on-surface-inverse: 225 13% 8%;
 
   /* Bright fills in dark mode take dark ink text (white fails on these) */
   --success: 152 55% 40%;
   --success-foreground: 222 47% 6%;
   --success-subtle: 152 40% 14%;
   --success-subtle-foreground: 145 60% 70%;
-  --warning: 37 91% 45%;
+  --warning: 26 90% 52%;
   --warning-foreground: 222 47% 6%;
-  --warning-subtle: 48 40% 12%;
-  --warning-subtle-foreground: 45 90% 65%;
+  --warning-subtle: 24 40% 13%;
+  --warning-subtle-foreground: 28 90% 70%;
   --error: 0 84% 60%;
   --error-foreground: 222 47% 6%;
   --error-subtle: 0 50% 14%;
   --error-subtle-foreground: 0 85% 75%;
   --destructive: var(--error);
   --destructive-foreground: var(--error-foreground);
-  --info: 207 88% 60%;
-  --info-foreground: 222 47% 6%;
-  --info-subtle: 208 40% 16%;
-  --info-subtle-foreground: 207 90% 82%;
+  --info: 210 30% 62%;
+  --info-foreground: 225 13% 8%;
+  --info-subtle: 212 20% 15%;
+  --info-subtle-foreground: 210 35% 80%;
 
-  --overlay: 224 30% 3%;
+  --overlay: 30 6% 3%;
   --overlay-opacity: 0.7;
 
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.2);
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-card: 0 0 0 0 transparent; /* dark depth = surface steps + hairlines */
   --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
+
+  --brand: 40 50% 58%;
+  --on-brand: 225 13% 8%;
+  --brand-subtle: 38 30% 16%;
+  --brand-subtle-foreground: 40 60% 78%;
 }

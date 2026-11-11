@@ -192,9 +192,9 @@ export default function AuditLogs() {
                     </GlassCardContent>
                 </GlassCard>
 
-                <GlassCard className="lg:col-span-2 border border-border shadow-sm bg-secondary text-secondary-foreground">
+                <GlassCard className="lg:col-span-2 border border-border shadow-sm bg-surface-container-low text-on-surface">
                     <GlassCardContent className="h-full flex items-center p-card">
-                        <p className="text-sm font-medium text-secondary-foreground leading-relaxed">
+                        <p className="text-sm font-medium text-on-surface leading-relaxed">
                             Audit logs provide visibility into system activity for compliance and security review.
                         </p>
                     </GlassCardContent>
@@ -204,7 +204,7 @@ export default function AuditLogs() {
             <GlassCard className="border border-border shadow-sm bg-card">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
+                        <div className="p-2 bg-surface-container-high rounded-lg">
                             <Activity className="w-4 h-4 text-secondary" />
                         </div>
                         <div>

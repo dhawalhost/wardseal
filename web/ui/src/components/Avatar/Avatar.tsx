@@ -37,7 +37,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
             size={size}
             name={name}
             variant={variant}
-            colors={["#0F172A", "#0369A1", "#334155", "#E2E8F0", "#0284C7"]}
+            colors={["#14161B", "#8A6B2E", "#4A4F57", "#E9E4D9", "#5E6B78"]}
           />
         )}
       </div>

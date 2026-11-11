@@ -100,7 +100,7 @@ const Devices: React.FC = () => {
             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                        <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
                             <Lock className="w-4 h-4" />
                         </div>
                          <div>
@@ -148,18 +148,18 @@ const Devices: React.FC = () => {
                 </GlassCardContent>
             </GlassCard>
 
-            <div className="bg-secondary text-secondary-foreground p-card rounded-lg shadow-sm border border-secondary/20 relative overflow-hidden">
+            <div className="bg-surface-container-low text-on-surface p-card rounded-lg shadow-sm border border-border relative overflow-hidden">
                 <div className="flex flex-col md:flex-row items-center gap-card relative z-10">
-                    <div className="p-3 bg-secondary-foreground/10 rounded-lg">
-                        <Cpu className="w-8 h-8 text-secondary-foreground" />
+                    <div className="p-3 bg-surface-container-high rounded-lg">
+                        <Cpu className="w-8 h-8 text-on-surface" />
                     </div>
                       <div className="space-y-2 flex-1 text-center md:text-left">
                          <h3 className="text-xl font-medium tracking-tight">Device Security Policy</h3>
-                         <p className="text-sm font-medium text-secondary-foreground max-w-2xl leading-relaxed">
+                         <p className="text-sm font-medium text-on-surface max-w-2xl leading-relaxed">
                              All devices must be verified to access company data. Unrecognized devices will be blocked automatically according to global security policies.
                          </p>
                      </div>
-                     <Button variant="outline" className="h-9 px-4 rounded-lg border-secondary-foreground/20 bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground font-medium text-sm hidden lg:flex">
+                     <Button variant="outline" className="h-9 px-4 rounded-lg border-border bg-surface-container-high hover:bg-surface-container-highest text-secondary-foreground font-medium text-sm hidden lg:flex">
                          View Policy
                      </Button>
                 </div>

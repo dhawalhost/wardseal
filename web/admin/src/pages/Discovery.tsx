@@ -133,12 +133,12 @@ const Discovery: React.FC = () => {
             {currentJob && isScanning && (
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg relative">
                     <div 
-                        className="absolute top-0 left-0 h-1 bg-secondary transition-[color,background-color,border-color,opacity,transform] duration-1000" 
+                        className="absolute top-0 left-0 h-1 bg-primary transition-[color,background-color,border-color,opacity,transform] duration-1000" 
                         style={{ width: `${currentJob.progress}%` }}
                     />
                     <GlassCardContent className="p-card flex flex-col md:flex-row items-center justify-between gap-card">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-surface-container-high rounded-lg flex items-center justify-center">
                                 <Activity className="w-5 h-5 text-secondary" />
                             </div>
                             <div className="space-y-0.5">
@@ -205,7 +205,7 @@ const Discovery: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardHeader className="py-card px-card border-b border-border">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-secondary/10 rounded-lg">
+                            <div className="p-2 bg-surface-container-high rounded-lg">
                                 <Search className="w-4 h-4 text-secondary" />
                             </div>
                             <div>

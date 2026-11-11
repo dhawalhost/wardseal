@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import { getConnectors, createConnector, updateConnector, deleteConnector, toggleConnector, testConnector } from '../api';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,7 @@ export default function Connectors() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this connector?')) {
+        if ((await confirmAction({ title: "Delete this connector?", description: "Provisioning through it stops. Accounts it created are not removed.", confirmLabel: "Delete connector" }))) {
             try {
                 await deleteConnector(id);
                 loadConnectors();
@@ -130,7 +131,7 @@ export default function Connectors() {
                     <GlassCard className="w-full max-w-4xl border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-secondary-foreground shadow-sm">
+                                <div className="p-2 bg-surface-container-low rounded-lg text-on-surface shadow-sm">
                                     <ExternalLink className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -236,7 +237,7 @@ export default function Connectors() {
 
                                     {editingConnector.type === 'azure-ad' && (
                                         <div className="grid gap-card">
-                                            <div className="p-card rounded-xl bg-secondary/5 text-secondary border border-border flex items-start gap-3 text-sm font-medium leading-relaxed">
+                                            <div className="p-card rounded-xl bg-surface-container-high text-on-surface-variant border border-border flex items-start gap-3 text-sm font-medium leading-relaxed">
                                                 <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" />
                                                 This connection uses Microsoft Graph API. Ensure the app registration has Directory.Read.All permissions in Entra ID.
                                             </div>
@@ -380,7 +381,7 @@ export default function Connectors() {
                     className="h-28 flex flex-col gap-2 items-center justify-center border border-border bg-card hover:bg-muted/50 rounded-xl group transition-colors shadow-sm"
                     onClick={() => { setEditingConnector({ type: 'scim', enabled: true, credentials: {}, settings: {} }); setIsCreating(true); }}
                 >
-                    <div className="p-2 bg-secondary/10 rounded-lg text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors">
+                    <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant group-hover:bg-surface-container-highest group-hover:text-on-surface transition-colors">
                         <Plug className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col items-center gap-0.5">
@@ -393,7 +394,7 @@ export default function Connectors() {
                     className="h-28 flex flex-col gap-2 items-center justify-center border border-border bg-card hover:bg-muted/50 rounded-xl group transition-colors shadow-sm"
                     onClick={() => { setEditingConnector({ type: 'ldap', enabled: true, credentials: {}, settings: {} }); setIsCreating(true); }}
                 >
-                    <div className="p-2 bg-secondary/10 rounded-lg text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors">
+                    <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant group-hover:bg-surface-container-highest group-hover:text-on-surface transition-colors">
                         <Database className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col items-center gap-0.5">
@@ -406,7 +407,7 @@ export default function Connectors() {
                     className="h-28 flex flex-col gap-2 items-center justify-center border border-border bg-card hover:bg-muted/50 rounded-xl group transition-colors shadow-sm"
                     onClick={() => { setEditingConnector({ type: 'azure-ad', enabled: true, credentials: {}, settings: {} }); setIsCreating(true); }}
                 >
-                    <div className="p-2 bg-secondary/10 rounded-lg text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors">
+                    <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant group-hover:bg-surface-container-highest group-hover:text-on-surface transition-colors">
                         <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col items-center gap-0.5">
@@ -419,7 +420,7 @@ export default function Connectors() {
                     className="h-28 flex flex-col gap-2 items-center justify-center border border-border bg-card hover:bg-muted/50 rounded-xl group transition-colors shadow-sm"
                     onClick={() => { setEditingConnector({ type: 'google', enabled: true, credentials: {}, settings: { domain: '' } }); setIsCreating(true); }}
                 >
-                    <div className="p-2 bg-secondary/10 rounded-lg text-secondary group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors">
+                    <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant group-hover:bg-surface-container-highest group-hover:text-on-surface transition-colors">
                         <Link2 className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col items-center gap-0.5">
@@ -432,7 +433,7 @@ export default function Connectors() {
             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
+                        <div className="p-2 bg-surface-container-high rounded-lg">
                             <Link2 className="w-4 h-4 text-secondary" />
                         </div>
                         <div>
@@ -449,7 +450,7 @@ export default function Connectors() {
                             {connectors.map(c => (
                                 <div key={c.id} className="p-card flex flex-col md:flex-row items-start md:items-center justify-between hover:bg-muted/50 transition-colors group gap-card">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                        <div className="w-10 h-10 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center">
                                             <Plug className="h-4 w-4" />
                                         </div>
                                         <div className="flex flex-col gap-1">

@@ -194,14 +194,14 @@ const Devices: React.FC = () => {
                 </GlassCardContent>
             </GlassCard>
 
-            <div className="bg-secondary text-secondary-foreground p-6 rounded-xl shadow-sm border border-secondary/20 relative overflow-hidden">
+            <div className="bg-surface-container-low text-on-surface p-6 rounded-xl shadow-sm border border-border relative overflow-hidden">
                 <div className="flex flex-col md:flex-row items-center gap-5 relative z-10">
-                    <div className="p-3 bg-secondary-foreground/10 rounded-lg border border-secondary-foreground/10">
+                    <div className="p-3 bg-surface-container-high rounded-lg border border-border">
                         <Activity className="w-6 h-6" />
                     </div>
                     <div className="space-y-1 flex-1 text-center md:text-left">
                         <h3 className="text-lg font-medium tracking-tight">Device security policy</h3>
-                        <p className="text-sm text-secondary-foreground max-w-2xl leading-relaxed">
+                        <p className="text-sm text-on-surface max-w-2xl leading-relaxed">
                             Devices must be verified to access company data. Unrecognized devices may be blocked by policy.
                         </p>
                     </div>

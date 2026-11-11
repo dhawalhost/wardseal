@@ -112,7 +112,7 @@ const Policies: React.FC = () => {
                     <GlassCardHeader className="py-card px-card border-b border-border">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                                <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
                                     <FileJson className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -169,7 +169,7 @@ const Policies: React.FC = () => {
             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                        <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                         <div>
@@ -204,7 +204,7 @@ const Policies: React.FC = () => {
                                         <GlassTableRow key={policy.id} className="hover:bg-muted/50 transition-colors border-b border-border last:border-0 group">
                                             <TableCell className="py-card pl-card">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                                    <div className="w-9 h-9 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center">
                                                         <FileJson className="w-4 h-4" />
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
@@ -248,14 +248,14 @@ const Policies: React.FC = () => {
                 </GlassCardContent>
             </GlassCard>
 
-            <div className="bg-secondary text-secondary-foreground p-card rounded-xl shadow-sm border border-secondary/20">
+            <div className="bg-surface-container-low text-on-surface p-card rounded-xl shadow-sm border border-border">
                 <div className="flex flex-col lg:flex-row items-center gap-card">
-                    <div className="p-3 bg-secondary-foreground/10 rounded-lg">
-                        <ShieldCheck className="w-6 h-6 text-secondary-foreground" />
+                    <div className="p-3 bg-surface-container-high rounded-lg">
+                        <ShieldCheck className="w-6 h-6 text-on-surface" />
                     </div>
                     <div className="space-y-1 flex-1 text-center lg:text-left">
                         <h3 className="text-lg font-medium tracking-tight">Policy enforcement</h3>
-                        <p className="text-sm font-medium text-secondary-foreground max-w-2xl">
+                        <p className="text-sm font-medium text-on-surface max-w-2xl">
                             Policies apply after login across active sessions. Use valid JSON to avoid enforcement errors.
                         </p>
                     </div>

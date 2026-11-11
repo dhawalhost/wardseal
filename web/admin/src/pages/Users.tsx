@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSCIMUsers, deleteSCIMUser, requestPasswordSetupLink, updateSCIMUser } from '../api';
@@ -51,7 +52,7 @@ const Users: React.FC = () => {
     };
 
     const handleDeleteUser = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
+        if ((await confirmAction({ title: "Delete this user?", description: "They lose access to every connected application.", confirmLabel: "Delete user" }))) {
             try {
                 await deleteSCIMUser(id);
                 if (selectedUser?.id === id) setSelectedUser(null);
@@ -187,15 +188,15 @@ const Users: React.FC = () => {
 
             {selectedUser && (
                 <div className="flex-1 border-l border-border bg-card flex flex-col overflow-hidden animate-in slide-in-from-right-4 duration-300">
-                    <div className="bg-secondary px-6 py-5 text-secondary-foreground shrink-0">
+                    <div className="bg-surface-container-low px-6 py-5 text-on-surface shrink-0 border-b border-border">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-4">
-                                <Avatar name={selectedUser.emails?.[0]?.value || selectedUser.userName} size={48} className="h-12 w-12 rounded-xl border border-secondary-foreground/20 overflow-hidden" />
+                                <Avatar name={selectedUser.emails?.[0]?.value || selectedUser.userName} size={48} className="h-12 w-12 rounded-xl border border-border overflow-hidden" />
                                 <div>
-                                    <h2 className="text-base font-medium text-secondary-foreground">
+                                    <h2 className="text-base font-medium text-on-surface">
                                         {selectedUser.displayName || selectedUser.userName}
                                     </h2>
-                                    <p className="text-secondary-foreground text-xs font-medium mt-0.5">
+                                    <p className="text-on-surface text-xs font-medium mt-0.5">
                                         {selectedUser.emails?.[0]?.value || 'No email'}
                                     </p>
                                     <Badge className={cn(
@@ -211,7 +212,7 @@ const Users: React.FC = () => {
                             <Button aria-label="Close details"
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground"
+                                className="h-7 w-7 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary-foreground"
                                 onClick={() => setSelectedUser(null)}
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -246,7 +247,7 @@ const Users: React.FC = () => {
                             ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                     {(selectedUser.groups || []).map((g: any) => (
-                                        <Badge key={g.value} className="bg-secondary/10 text-secondary border border-border rounded-lg text-xs font-medium px-2 py-0.5">
+                                        <Badge key={g.value} className="bg-surface-container-high text-on-surface-variant border border-border rounded-lg text-xs font-medium px-2 py-0.5">
                                             {g.display}
                                         </Badge>
                                     ))}
@@ -311,7 +312,7 @@ const Users: React.FC = () => {
                 <DialogContent className="sm:max-w-[360px] rounded-xl border border-border bg-card shadow-sm p-card">
                     <DialogHeader>
                         <DialogTitle className="text-base font-medium text-on-surface flex items-center gap-2.5">
-                            <div className="p-1.5 bg-secondary/10 rounded-lg">
+                            <div className="p-1.5 bg-surface-container-high rounded-lg">
                                 <Lock className="w-3.5 h-3.5 text-secondary" />
                             </div>
                             Set password

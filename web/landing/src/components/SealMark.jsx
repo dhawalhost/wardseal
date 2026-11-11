@@ -1,20 +1,13 @@
 /**
- * Notary-style seal: the WardSeal shield inside a ring of engraved text.
- * Static, decorative. Used once per surface (hero record, console status).
+ * The WardSeal shield used as a seal: brass mark on a paper medallion.
+ * Static, decorative. Used once per surface (the hero record).
  */
-export default function SealMark({ className = '', label = 'WARDSEAL · VERIFIED DECISION · ' }) {
+export default function SealMark({ className = '' }) {
   return (
     <svg className={className} viewBox="0 0 120 120" aria-hidden="true">
-      <defs>
-        <path id="seal-ring" d="M60 60 m-44 0 a44 44 0 1 1 88 0 a44 44 0 1 1 -88 0" />
-      </defs>
-      <circle cx="60" cy="60" r="58" className="seal-outer" />
-      <circle cx="60" cy="60" r="53" className="seal-rule" />
-      <circle cx="60" cy="60" r="35" className="seal-rule" />
-      <text className="seal-text">
-        <textPath href="#seal-ring" textLength="276">{label.repeat(2)}</textPath>
-      </text>
-      <g transform="translate(46 43) scale(0.082)">
+      <circle cx="60" cy="60" r="57" className="seal-outer" />
+      <circle cx="60" cy="60" r="50" className="seal-rule" />
+      <g transform="translate(37 33) scale(0.135)">
         <path
           className="seal-glyph"
           d="M171.642 0L0 45V194.776C8.35821 317.164 118.408 382.587 172.388 400C227.281 378.705 265.311 349.284 291.113 318.657C330.416 272.005 340.298 222.388 340.298 194.776V45.5224L171.642 0Z"

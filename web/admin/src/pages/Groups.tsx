@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import {
     getGroups, createGroup, deleteGroup,
@@ -97,7 +98,7 @@ const Groups: React.FC = () => {
     };
 
     const handleDeleteGroup = async (id: string) => {
-        if (!window.confirm('Delete this group?')) return;
+        if (!(await confirmAction({ title: "Delete this group?", description: "Members keep their accounts but lose access granted through it.", confirmLabel: "Delete group" }))) return;
         try {
             await deleteGroup(id);
             if (selectedGroup?.id === id) setSelectedGroup(null);
@@ -168,15 +169,15 @@ const Groups: React.FC = () => {
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[420px] p-0 border border-border rounded-xl shadow-sm bg-card overflow-hidden">
-                                <div className="bg-secondary p-card text-secondary-foreground">
+                                <div className="bg-surface-container-low p-card text-on-surface border-b border-border">
                                     <DialogHeader>
-                                        <DialogTitle className="text-lg font-medium flex items-center gap-3 text-secondary-foreground">
-                                            <div className="w-8 h-8 bg-secondary-foreground/10 rounded-lg flex items-center justify-center">
+                                        <DialogTitle className="text-lg font-medium flex items-center gap-3 text-on-surface">
+                                            <div className="w-8 h-8 bg-surface-container-high rounded-lg flex items-center justify-center">
                                                 <Plus className="w-4 h-4" />
                                             </div>
                                             Create group
                                         </DialogTitle>
-                                        <DialogDescription className="text-secondary-foreground text-sm mt-1">
+                                        <DialogDescription className="text-on-surface text-sm mt-1">
                                             Group users together to manage shared access policies.
                                         </DialogDescription>
                                     </DialogHeader>
@@ -276,15 +277,15 @@ const Groups: React.FC = () => {
 
             {selectedGroup && (
                 <div className="flex-1 border-l border-border bg-card flex flex-col overflow-hidden animate-in slide-in-from-right-4 duration-300">
-                    <div className="bg-secondary px-6 py-5 text-secondary-foreground shrink-0">
+                    <div className="bg-surface-container-low px-6 py-5 text-on-surface shrink-0 border-b border-border">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-secondary-foreground/10 rounded-xl flex items-center justify-center">
-                                    <Users className="w-5 h-5 text-secondary-foreground" />
+                                <div className="w-10 h-10 bg-surface-container-high rounded-xl flex items-center justify-center">
+                                    <Users className="w-5 h-5 text-on-surface" />
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-medium text-secondary-foreground">{selectedGroup.name}</h2>
-                                    <p className="text-secondary-foreground text-xs font-medium mt-0.5">
+                                    <h2 className="text-base font-medium text-on-surface">{selectedGroup.name}</h2>
+                                    <p className="text-on-surface text-xs font-medium mt-0.5">
                                         {members.length} member{members.length !== 1 ? 's' : ''}
                                     </p>
                                 </div>
@@ -301,7 +302,7 @@ const Groups: React.FC = () => {
                                 <Button aria-label="Close details"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground"
+                                    className="h-7 w-7 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary-foreground"
                                     onClick={() => setSelectedGroup(null)}
                                 >
                                     <X className="w-3.5 h-3.5" />

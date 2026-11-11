@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AlertTriangle } from "lucide-react";
+import { createRoot } from "react-dom/client";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -11,48 +11,40 @@ import {
 } from "@/components/ui/dialog";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
 export interface ConfirmDialogProps {
-    /** Controls visibility */
+    /** Whether the dialog is open */
     open: boolean;
-    /** Called when the dialog should close (cancel or after confirm) */
+    /** Called when the dialog closes, confirmed or not */
     onClose: () => void;
-    /** Called when the user confirms the action */
+    /** Called when the user confirms */
     onConfirm: () => void | Promise<void>;
-    /** Dialog title */
+    /** Title, phrased as the action, e.g. "Delete this group?" */
     title?: string;
-    /** Description / warning message */
+    /** What happens if they go ahead */
     description?: string;
-    /** Label for the confirm button */
+    /** Confirm button label, the verb, e.g. "Delete group" */
     confirmLabel?: string;
-    /** Label for the cancel button */
+    /** Cancel button label */
     cancelLabel?: string;
-    /** Visual severity of the action */
+    /** Visual intent of the confirm button */
     variant?: "danger" | "warning" | "default";
-    /** Whether the confirm action is in progress */
+    /** Disables the buttons while the action runs */
     loading?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
+
 /**
  * Accessible confirmation dialog — replaces `window.confirm()` throughout the app.
- *
- * @example
- * <ConfirmDialog
- *   open={deleteOpen}
- *   onClose={() => setDeleteOpen(false)}
- *   onConfirm={handleDelete}
- *   title="Delete provider"
- *   description="This will permanently remove the SSO configuration."
- *   variant="danger"
- *   confirmLabel="Delete"
- * />
+ * For one-off checks inside handlers, use `confirmAction()` below.
  */
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     open,
     onClose,
     onConfirm,
-    title = "Confirm action",
-    description = "Are you sure you want to proceed? This action cannot be undone.",
+    title = "Are you sure?",
+    description = "This cannot be undone.",
     confirmLabel = "Confirm",
     cancelLabel = "Cancel",
     variant = "danger",
@@ -63,69 +55,61 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         onClose();
     };
 
-    const confirmButtonClass = {
-        danger:  "bg-destructive hover:bg-error text-destructive-foreground shadow-card shadow-destructive/20",
-        warning: "bg-warning hover:bg-warning text-warning-foreground shadow-card",
-        default: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm",
-    }[variant];
-
-    const iconColor = {
-        danger:  "text-destructive",
-        warning: "text-warning",
-        default: "text-primary",
-    }[variant];
-
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[480px] rounded-[32px] border-none p-0 overflow-hidden shadow-overlay">
-                <DialogHeader className="bg-surface-container/10 p-10 border-b border-on-surface/5">
-                    <div className="flex items-center gap-5">
-                        <div className={`p-3.5 rounded-2xl bg-current/10 ${iconColor}`}>
-                            <AlertTriangle className={`w-7 h-7 ${iconColor}`} />
-                        </div>
-                        <div>
-                            <DialogTitle className="text-2xl font-medium tracking-tight text-on-surface">
-                                {title}
-                            </DialogTitle>
-                            <DialogDescription className="text-muted-foreground font-medium text-xs mt-2">
-                                This action may be irreversible.
-                            </DialogDescription>
-                        </div>
-                    </div>
+        <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+            <DialogContent className="sm:max-w-[440px]">
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
-
-                <div className="p-10 bg-card space-y-8">
-                    <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
-                        {description}
-                    </p>
-
-                    <DialogFooter className="gap-3">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={onClose}
-                            disabled={loading}
-                            className="h-12 px-8 rounded-xl font-medium text-[12px] tracking-tight hover:bg-surface-container/20"
-                        >
-                            {cancelLabel}
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleConfirm}
-                            disabled={loading}
-                            className={`flex-1 h-12 rounded-xl font-medium tracking-tight text-[12px] transition-[color,background-color,border-color,opacity,transform] ${confirmButtonClass}`}
-                        >
-                            {loading ? (
-                                <span className="flex items-center gap-2">
-                                    <span className="h-4 w-4 border-2 border-on-inverse/30 border-t-white rounded-full animate-spin" />
-                                    Processing…
-                                </span>
-                            ) : confirmLabel}
-                        </Button>
-                    </DialogFooter>
-                </div>
+                <DialogFooter className="gap-2 sm:gap-2">
+                    <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                        {cancelLabel}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={variant === "danger" ? "destructive" : variant === "warning" ? "primary" : "secondary"}
+                        onClick={handleConfirm}
+                        isLoading={loading}
+                        autoFocus={variant !== "danger"}
+                    >
+                        {confirmLabel}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 };
 ConfirmDialog.displayName = "ConfirmDialog";
+
+// ── Imperative helper ─────────────────────────────────────────────────────────
+
+export type ConfirmActionOptions = Omit<ConfirmDialogProps, "open" | "onClose" | "onConfirm" | "loading">;
+
+/**
+ * Promise-based drop-in for `window.confirm()`:
+ *   if (!(await confirmAction({ title: "Delete this group?", confirmLabel: "Delete group" }))) return;
+ * Resolves true on confirm, false on cancel, Esc or outside click.
+ */
+export function confirmAction(options: ConfirmActionOptions | string): Promise<boolean> {
+    const opts: ConfirmActionOptions = typeof options === "string" ? { title: options } : options;
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+
+    return new Promise<boolean>((resolve) => {
+        let settled = false;
+        const finish = (value: boolean) => {
+            if (settled) return;
+            settled = true;
+            resolve(value);
+            root.render(<ConfirmDialog {...opts} open={false} onClose={() => {}} onConfirm={() => {}} />);
+            // Let the close animation finish before unmounting.
+            setTimeout(() => {
+                root.unmount();
+                host.remove();
+            }, 200);
+        };
+        root.render(<ConfirmDialog {...opts} open onClose={() => finish(false)} onConfirm={() => finish(true)} />);
+    });
+}

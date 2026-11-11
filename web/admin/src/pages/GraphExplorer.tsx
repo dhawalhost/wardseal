@@ -81,7 +81,7 @@ const GraphExplorer: React.FC = () => {
                     <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                         <GlassCardHeader className="py-card px-card border-b border-border">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/10 rounded-lg">
+                                <div className="p-2 bg-surface-container-high rounded-lg">
                                     <Activity className="w-4 h-4 text-secondary" />
                                 </div>
                                 <div>
@@ -124,16 +124,16 @@ const GraphExplorer: React.FC = () => {
                         </GlassCardContent>
                     </GlassCard>
 
-                    <div className="bg-secondary text-secondary-foreground p-card rounded-lg space-y-4 shadow-sm border border-secondary/20">
-                        <div className="flex items-center gap-3 text-secondary-foreground">
+                    <div className="bg-surface-container-low text-on-surface p-card rounded-lg space-y-4 shadow-sm border border-border">
+                        <div className="flex items-center gap-3 text-on-surface">
                             <Database className="w-5 h-5" />
                             <span className="text-sm font-medium">Graph metadata</span>
                         </div>
-                        <p className="text-sm font-medium leading-relaxed text-secondary-foreground">
+                        <p className="text-sm font-medium leading-relaxed text-on-surface">
                             Shows relationships between subjects, roles, and resources in your organization.
                         </p>
-                        <div className="pt-3 border-t border-secondary-foreground/10 flex items-center justify-between">
-                            <span className="text-xs font-medium text-secondary-foreground">Consistency</span>
+                        <div className="pt-3 border-t border-border flex items-center justify-between">
+                            <span className="text-xs font-medium text-on-surface">Consistency</span>
                             <Badge className="bg-success/20 text-success-subtle-foreground border-none rounded-md font-medium text-xs px-2 py-0.5 shadow-none">Synchronized</Badge>
                         </div>
                     </div>
@@ -192,7 +192,7 @@ const GraphExplorer: React.FC = () => {
                                                     </TableCell>
                                                     <TableCell className="py-card">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-1.5 bg-secondary/10 rounded-md">
+                                                            <div className="p-1.5 bg-surface-container-high rounded-md">
                                                                 <ArrowRight className="w-3.5 h-3.5 text-secondary" />
                                                             </div>
                                                             <Badge className="bg-card border border-border text-on-surface font-medium text-xs px-2 py-0.5 shadow-none">

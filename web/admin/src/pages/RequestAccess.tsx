@@ -46,7 +46,7 @@ const RequestAccess: React.FC = () => {
             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg text-secondary">
+                        <div className="p-2 bg-surface-container-high rounded-lg text-on-surface-variant">
                             <ShieldCheck className="w-4 h-4" />
                         </div>
                          <div>

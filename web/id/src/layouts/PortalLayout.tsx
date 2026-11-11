@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Activity, ShieldCheck, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { PortalLayout as KitPortalLayout, type RenderShellLink } from "@dhawalhost/wardseal-ui-kit";
 import {
@@ -110,7 +110,11 @@ const PortalLayout = () => {
 
     return (
         <KitPortalLayout
-            links={[]}
+            links={([['/portal','Applications'],['/mfa','Two-step verification'],['/passkeys','Passkeys'],['/profile','Profile']] as const).map(([href, label]) => ({
+                href,
+                label,
+                isActive: location.pathname === href || location.pathname.startsWith(`${href}/`),
+            }))}
             renderLink={renderRouterLink}
             brandName="WardSeal"
             brandSubtitle="User portal"
@@ -137,34 +141,19 @@ const PortalLayout = () => {
                             onClick={() => window.location.assign(resolveManageConsoleUrl())}
                             className="hidden items-center gap-2 md:flex"
                         >
-                            <ShieldCheck className="h-4 w-4 text-secondary" aria-hidden />
-                            Admin panel
+                            Admin console
                         </Button>
                     )}
                     <ModeToggle />
                 </>
             }
-            footerNote={<>&copy; {new Date().getFullYear()} WardSeal Managed Security. Identity &amp; Access Platform.</>}
+            footerNote={<>&copy; {new Date().getFullYear()} WardSeal</>}
             footerLinks={[
                 { label: 'Privacy', href: `${policyBaseUrl}/policies#privacy`, external: true },
-                { label: 'Terms', href: `${policyBaseUrl}/policies#privacy`, external: true },
-                { label: 'Security policies', href: `${policyBaseUrl}/policies`, external: true },
+                { label: 'Terms', href: `${policyBaseUrl}/policies#terms`, external: true },
+                { label: 'Policies', href: `${policyBaseUrl}/policies`, external: true },
             ]}
         >
-            {/* Session context — static labels, no animation (calm trust surface) */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 text-xs">
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                    <span className="flex items-center gap-2 font-medium text-on-surface">
-                        <span className="h-2 w-2 rounded-full bg-success" aria-hidden />
-                        Secure connection
-                    </span>
-                    <span className="flex items-center gap-2 text-on-surface-variant">
-                        <Activity className="h-3.5 w-3.5" aria-hidden />
-                        End-to-end encrypted
-                    </span>
-                </div>
-                <span className="hidden text-on-surface-subtle sm:inline">WardSeal Identity Platform</span>
-            </div>
             <Outlet />
         </KitPortalLayout>
     );

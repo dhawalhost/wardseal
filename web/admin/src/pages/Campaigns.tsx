@@ -217,12 +217,12 @@ export default function Campaigns() {
                     <>
                         <div className="md:col-span-4 space-y-page">
                             <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
-                                <GlassCardHeader className="bg-secondary p-card text-secondary-foreground">
+                                <GlassCardHeader className="bg-surface-container-low p-card text-on-surface border-b border-border">
                                      <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-secondary-foreground/10 rounded-lg">
-                                            <Plus className="w-4 h-4 text-secondary-foreground" />
+                                        <div className="p-2 bg-surface-container-high rounded-lg">
+                                            <Plus className="w-4 h-4 text-on-surface" />
                                         </div>
-                                        <GlassCardTitle className="text-base font-medium text-secondary-foreground">New campaign</GlassCardTitle>
+                                        <GlassCardTitle className="text-base font-medium text-on-surface">New campaign</GlassCardTitle>
                                     </div>
                                 </GlassCardHeader>
                                 <GlassCardContent className="p-card">
@@ -342,7 +342,7 @@ export default function Campaigns() {
                                         <div className="flex items-center justify-between gap-card">
                                             <div className="space-y-2 min-w-0">
                                                 <div className="flex items-center gap-3">
-                                                     <div className="p-2 bg-secondary/10 rounded-lg shrink-0">
+                                                     <div className="p-2 bg-surface-container-high rounded-lg shrink-0">
                                                         <Target className="w-5 h-5 text-secondary" />
                                                     </div>
                                                     <h2 className="text-xl font-medium tracking-tight text-on-surface truncate">{selectedCampaign.name}</h2>
@@ -473,7 +473,7 @@ export default function Campaigns() {
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center border border-dashed rounded-xl border-border bg-muted/30 min-h-[700px]">
                                     <div className="p-card bg-card rounded-xl shadow-sm border border-border flex flex-col items-center text-center max-w-md mx-auto">
-                                         <div className="w-14 h-14 bg-secondary/10 rounded-xl flex items-center justify-center mb-4">
+                                         <div className="w-14 h-14 bg-surface-container-high rounded-xl flex items-center justify-center mb-4">
                                             <Target className="h-6 w-6 text-secondary" />
                                         </div>
                                         <h3 className="text-base font-medium text-on-surface mb-2">Select a campaign</h3>
@@ -486,14 +486,14 @@ export default function Campaigns() {
                 ) : (
                     <div className="col-span-full max-w-4xl mx-auto w-full space-y-page">
                         <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-xl">
-                            <GlassCardHeader className="bg-secondary p-card text-secondary-foreground">
+                            <GlassCardHeader className="bg-surface-container-low p-card text-on-surface border-b border-border">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-secondary-foreground/10 rounded-lg">
-                                        <ShieldCheck className="w-5 h-5 text-secondary-foreground" />
+                                    <div className="p-2 bg-surface-container-high rounded-lg">
+                                        <ShieldCheck className="w-5 h-5 text-on-surface" />
                                     </div>
                                      <div>
-                                        <GlassCardTitle className="text-lg font-medium tracking-tight text-secondary-foreground">Review portal</GlassCardTitle>
-                                        <p className="text-secondary-foreground text-sm mt-0.5">Review and certify access for users assigned to you.</p>
+                                        <GlassCardTitle className="text-lg font-medium tracking-tight text-on-surface">Review portal</GlassCardTitle>
+                                        <p className="text-on-surface text-sm mt-0.5">Review and certify access for users assigned to you.</p>
                                     </div>
                                 </div>
                             </GlassCardHeader>

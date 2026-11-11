@@ -83,8 +83,8 @@ const Setup: React.FC = () => {
             <div className="w-full max-w-[420px] space-y-page animate-in fade-in duration-300">
                 <div className="text-center space-y-4">
                     <div className="flex justify-center">
-                        <div className="w-14 h-14 bg-secondary rounded-lg flex items-center justify-center shadow-sm">
-                            <ShieldCheck className="w-7 h-7 text-secondary-foreground" />
+                        <div className="w-14 h-14 bg-surface-container-low rounded-lg flex items-center justify-center shadow-sm">
+                            <ShieldCheck className="w-7 h-7 text-on-surface" />
                         </div>
                     </div>
                 </div>
@@ -92,7 +92,7 @@ const Setup: React.FC = () => {
                 <GlassCard className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <GlassCardHeader className="pt-card pb-4 px-card text-center">
                         <GlassCardTitle className="text-2xl font-medium tracking-tight">Initial Setup</GlassCardTitle>
-                        <div className="h-1 w-10 bg-secondary mx-auto mt-4 mb-3 rounded-full" />
+                        <div className="h-1 w-10 bg-brand mx-auto mt-4 mb-3 rounded-full" />
                         <GlassCardDescription className="text-sm text-muted-foreground">Create the first administrator account</GlassCardDescription>
                     </GlassCardHeader>
                     <form onSubmit={handleSubmit}>

@@ -1,3 +1,4 @@
+import { confirmAction } from '@/components/ui/confirm-dialog';
 import React, { useState, useEffect } from 'react';
 import {
     getOrganizations, createOrganization, deleteOrganization,
@@ -74,7 +75,7 @@ const Organizations: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Delete this organization?')) return;
+        if (!(await confirmAction({ title: "Delete this organization?", description: "Its domain verification and settings are removed.", confirmLabel: "Delete organization" }))) return;
         try {
             await deleteOrganization(id);
             if (selectedOrg?.id === id) setSelectedOrg(null);
@@ -230,17 +231,17 @@ const Organizations: React.FC = () => {
 
             {selectedOrg ? (
                 <div className="flex-1 flex flex-col overflow-hidden bg-card animate-in slide-in-from-right-4 duration-300">
-                    <div className="bg-secondary px-6 py-5 text-secondary-foreground shrink-0">
+                    <div className="bg-surface-container-low px-6 py-5 text-on-surface shrink-0 border-b border-border">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-secondary-foreground/10 rounded-xl flex items-center justify-center">
-                                    <Building2 className="w-5 h-5 text-secondary-foreground" />
+                                <div className="w-10 h-10 bg-surface-container-high rounded-xl flex items-center justify-center">
+                                    <Building2 className="w-5 h-5 text-on-surface" />
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-medium text-secondary-foreground">
+                                    <h2 className="text-base font-medium text-on-surface">
                                         {selectedOrg.display_name || selectedOrg.name}
                                     </h2>
-                                    <p className="text-secondary-foreground text-xs font-medium mt-0.5">
+                                    <p className="text-on-surface text-xs font-medium mt-0.5">
                                         {selectedOrg.domain || 'No domain configured'}
                                     </p>
                                     <Badge className={cn(
@@ -253,7 +254,7 @@ const Organizations: React.FC = () => {
                                     </Badge>
                                 </div>
                             </div>
-                            <Button aria-label="Close details" variant="ghost" size="icon" className="h-7 w-7 rounded-lg bg-secondary-foreground/10 hover:bg-secondary-foreground/20 text-secondary-foreground" onClick={() => setSelectedOrg(null)}>
+                            <Button aria-label="Close details" variant="ghost" size="icon" className="h-7 w-7 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary-foreground" onClick={() => setSelectedOrg(null)}>
                                 <X className="w-3.5 h-3.5" />
                             </Button>
                         </div>
@@ -290,16 +291,16 @@ const Organizations: React.FC = () => {
                                     </div>
                                 ) : verifyDetails ? (
                                     <div className="space-y-3">
-                                        <div className="bg-secondary text-secondary-foreground p-card rounded-xl space-y-3 shadow-sm border border-secondary/20">
-                                            <p className="text-xs font-medium text-secondary-foreground">Add this TXT record to your DNS</p>
+                                        <div className="bg-surface-container-low text-on-surface p-card rounded-xl space-y-3 shadow-sm border border-border">
+                                            <p className="text-xs font-medium text-on-surface">Add this TXT record to your DNS</p>
                                             <div className="space-y-2">
                                                 <div className="grid grid-cols-[60px_1fr] gap-2 items-start">
-                                                    <span className="font-mono text-xs font-medium text-secondary-foreground pt-1.5">Host</span>
-                                                    <code className="bg-secondary-foreground/10 border border-secondary-foreground/20 px-2 py-1.5 rounded font-mono text-xs text-secondary-foreground break-all">{verifyDetails.txt_record}</code>
+                                                    <span className="font-mono text-xs font-medium text-on-surface pt-1.5">Host</span>
+                                                    <code className="bg-surface-container-high border border-border px-2 py-1.5 rounded font-mono text-xs text-on-surface break-all">{verifyDetails.txt_record}</code>
                                                 </div>
                                                 <div className="grid grid-cols-[60px_1fr] gap-2 items-start">
-                                                    <span className="font-mono text-xs font-medium text-secondary-foreground pt-1.5">Value</span>
-                                                    <code className="bg-secondary-foreground/10 border border-secondary-foreground/20 px-2 py-1.5 rounded font-mono text-xs text-secondary-foreground break-all">{verifyDetails.token}</code>
+                                                    <span className="font-mono text-xs font-medium text-on-surface pt-1.5">Value</span>
+                                                    <code className="bg-surface-container-high border border-border px-2 py-1.5 rounded font-mono text-xs text-on-surface break-all">{verifyDetails.token}</code>
                                                 </div>
                                             </div>
                                         </div>
@@ -350,7 +351,7 @@ const Organizations: React.FC = () => {
                 </div>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-muted/30">
-                    <div className="w-14 h-14 bg-secondary/10 rounded-xl flex items-center justify-center mb-4">
+                    <div className="w-14 h-14 bg-surface-container-high rounded-xl flex items-center justify-center mb-4">
                         <Building2 className="h-6 w-6 text-secondary" />
                     </div>
                     <h3 className="text-sm font-medium text-on-surface mb-1">Select an organization</h3>

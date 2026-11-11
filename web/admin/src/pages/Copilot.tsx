@@ -179,8 +179,8 @@ const CopilotPage: React.FC = () => {
         <div className="lg:col-span-3 flex flex-col h-full bg-card rounded-lg shadow-sm overflow-hidden border border-border">
             <header className="bg-muted/30 px-card py-4 border-b border-border flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center shadow-sm">
-                        <Bot className="w-5 h-5 text-secondary-foreground" />
+                    <div className="w-10 h-10 bg-surface-container-low rounded-lg flex items-center justify-center shadow-sm">
+                        <Bot className="w-5 h-5 text-on-surface" />
                     </div>
                     <div>
                         <h4 className="text-base font-medium text-on-surface">WardSeal Copilot</h4>
@@ -225,7 +225,7 @@ const CopilotPage: React.FC = () => {
                     ))}
                     {loading && (
                         <div className="flex gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center border border-secondary/20">
+                            <div className="w-9 h-9 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center border border-secondary/20">
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             </div>
                             <div className="p-4 rounded-lg bg-card border border-dashed border-border text-sm font-medium text-muted-foreground">

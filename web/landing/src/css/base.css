@@ -16,7 +16,7 @@
 
   /* CTA — maps to kit secondary (MASTER Accent/CTA). Not kit soft accent. */
   --accent:        hsl(var(--secondary));
-  --accent-hover:  hsl(201 96% 27%);
+  --accent-hover:  hsl(225 13% 18%);
   --accent-text:   hsl(var(--on-secondary));
 
   --text:          hsl(var(--on-surface));
@@ -41,9 +41,10 @@
   --container: 1240px;
 
   --ink:           hsl(var(--primary));
-  --ink-deep:      hsl(222 60% 9%);
+  --ink-deep:      hsl(225 15% 8%);
   --ink-fg:        hsl(var(--on-primary));
   --primary-surface: hsl(var(--surface-container));
+  --brass:         hsl(var(--brand));
 }
 
 html { scroll-behavior: smooth; }

@@ -77,7 +77,7 @@ export function DeveloperAnalytics() {
                 <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
                     <GlassCardContent className="p-card flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-secondary/10 rounded-lg">
+                            <div className="p-2 bg-surface-container-high rounded-lg">
                                 <Activity className="h-4 w-4 text-secondary" />
                             </div>
                             <span className="text-xs font-medium text-muted-foreground">Total Calls (7d)</span>
@@ -89,7 +89,7 @@ export function DeveloperAnalytics() {
                 <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
                     <GlassCardContent className="p-card flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-secondary/10 rounded-lg">
+                            <div className="p-2 bg-surface-container-high rounded-lg">
                                 <Clock className="h-4 w-4 text-secondary" />
                             </div>
                             <span className="text-xs font-medium text-muted-foreground">Avg Latency</span>
@@ -118,7 +118,7 @@ export function DeveloperAnalytics() {
             <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
                 <GlassCardHeader className="py-card px-card border-b border-border">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
+                        <div className="p-2 bg-surface-container-high rounded-lg">
                             <Zap className="w-4 h-4 text-secondary" />
                         </div>
                         <GlassCardTitle className="text-base font-medium text-on-surface">API Traffic</GlassCardTitle>
@@ -158,7 +158,7 @@ export function DeveloperAnalytics() {
 
             <GlassCard className="border border-border shadow-sm bg-card rounded-lg overflow-hidden">
                 <GlassCardContent className="p-card flex gap-4 items-start">
-                    <div className="p-2 bg-secondary/10 rounded-lg shrink-0">
+                    <div className="p-2 bg-surface-container-high rounded-lg shrink-0">
                         <Terminal className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
