@@ -18,7 +18,7 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
+| Primary (ink) | `#14161B` | `--primary` |
 | On Primary | `#FFFFFF` | `--color-on-primary` |
 | Secondary | `#334155` | `--color-secondary` |
 | On Secondary | `#FFFFFF` | `--color-on-secondary` |
@@ -35,7 +35,7 @@
 | On Destructive | `#FFFFFF` | `--color-on-destructive` |
 | Ring | `#0F172A` | `--color-ring` |
 
-**Color Notes:** Professional navy + blue CTA.
+**Color Notes:** Ink and brass (since kit 0.5.0). Ink (`#14161B`) for text and every primary action; brass (`#836A30`, `--brand`) only for the seal, focus rings and signature details; warm paper surfaces. Blue is retired as a brand colour because it is the category default for identity products.
 
 **Runtime mapping (ui-kit):** In `@dhawalhost/wardseal-ui-kit`, MASTER **Accent/CTA** is implemented as `--secondary` (Tailwind `bg-secondary`) so product CTAs stay one token. Soft fills use `--accent`. Do not use `--accent` for primary buttons.
 
